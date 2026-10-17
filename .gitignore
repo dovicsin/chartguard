@@ -22,6 +22,7 @@
 !/prettier.config.js
 !/knip.json
 !/scripts/**/*.mjs
+!/tools/schema-generator/*.json
 
 # Fixtures
 !/examples/*.json

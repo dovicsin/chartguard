@@ -1,0 +1,84 @@
+{
+	"inventoryDate": "2026-10-17",
+	"roadmapId": "CG-01-01",
+	"libraries": [
+		{
+			"library": "chartjs",
+			"package": "chart.js",
+			"version": "4.5.1",
+			"integrity": "sha512-GIjfiT9dbmHRiYi6Nl2yFCq7kkwdkp1W/lp2J99rX0yo9tgJGn3lKQATztIjb5tVtevcBtIdICNWqlq5+E8/Pw==",
+			"license": { "spdx": "MIT", "redistribution": "allowed-with-attribution" },
+			"primary": {
+				"kind": "typescript-declarations",
+				"entries": ["dist/types/index.d.ts"],
+				"confidence": "authoritative"
+			},
+			"secondary": [
+				{
+					"kind": "markdown-docs",
+					"url": "https://github.com/chartjs/Chart.js/tree/v4.5.1/docs",
+					"pin": "git-tag:v4.5.1",
+					"use": "documentation anchors only"
+				}
+			],
+			"openIssues": ["Options are generic per chart type; generator needs the TypeChecker per ChartTypeRegistry entry."]
+		},
+		{
+			"library": "echarts",
+			"package": "echarts",
+			"version": "6.1.0",
+			"integrity": "sha512-q0yaFPggC9FUdsWH4blavRWFmxdrIodbkoKNAjJudAI6CA9gNPxHtV2RcZNEepZVlk4yvBYkOkbk6HIVpIyHZA==",
+			"license": { "spdx": "Apache-2.0", "redistribution": "allowed-with-license-and-notice" },
+			"primary": {
+				"kind": "typescript-declarations",
+				"entries": ["types/dist/option.d.ts", "types/dist/shared.d.ts"],
+				"confidence": "authoritative"
+			},
+			"secondary": [
+				{
+					"kind": "docs-option-tree",
+					"url": "https://echarts.apache.org/en/documents/option-parts/option-outline.json",
+					"sha256": "c7589d3e8cbb1dc1bea869d4c2eb5eab35040189a9f3f9d59f0ca243f65a4224",
+					"retrieved": "2026-10-17",
+					"pin": "unversioned",
+					"license": "Apache-2.0 (apache/echarts-doc)",
+					"confidence": "derived"
+				}
+			],
+			"openIssues": [
+				"Docs tree is unversioned; pin apache/echarts-doc by commit before use.",
+				"26268 of 58910 docs-tree nodes carry no type."
+			]
+		},
+		{
+			"library": "highcharts",
+			"package": "highcharts",
+			"version": "13.1.1",
+			"integrity": "sha512-k/smhxCgaqHDsuy9ZCWs8FJNTPrbzc8BmMA4M/8f9JMwv9HgmNZjulyWwZ9q9ly6AzHpskL9mhlW8vgsSqnstg==",
+			"license": {
+				"spdx": "LicenseRef-Highsoft",
+				"url": "https://www.highcharts.com/license",
+				"redistribution": "unresolved-legal-review-required"
+			},
+			"primary": {
+				"kind": "typescript-declarations",
+				"entries": ["highcharts.d.ts", "options/*.d.ts", "modules/*.d.ts"],
+				"confidence": "authoritative"
+			},
+			"secondary": [
+				{
+					"kind": "docs-option-tree",
+					"url": "https://api.highcharts.com/highcharts/tree.json",
+					"sha256": "0152fdd7ad3a3cfeaeb42798ea6742aeabac0feda8d7389b23f6b49b7a69fb00",
+					"retrieved": "2026-10-17",
+					"pin": "unversioned; _meta.version 13.1.0 lags npm 13.1.1",
+					"confidence": "derived"
+				}
+			],
+			"openIssues": [
+				"Do not commit or publish generated Highcharts artifacts until redistribution is cleared.",
+				"Current hand-curated config-highcharts subset targets 12.x."
+			]
+		}
+	]
+}
