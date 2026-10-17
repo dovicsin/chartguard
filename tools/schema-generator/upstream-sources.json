@@ -7,10 +7,15 @@
 			"package": "chart.js",
 			"version": "4.5.1",
 			"integrity": "sha512-GIjfiT9dbmHRiYi6Nl2yFCq7kkwdkp1W/lp2J99rX0yo9tgJGn3lKQATztIjb5tVtevcBtIdICNWqlq5+E8/Pw==",
-			"license": { "spdx": "MIT", "redistribution": "allowed-with-attribution" },
+			"license": {
+				"spdx": "MIT",
+				"redistribution": "allowed-with-attribution"
+			},
 			"primary": {
 				"kind": "typescript-declarations",
-				"entries": ["dist/types/index.d.ts"],
+				"entries": [
+					"dist/types/index.d.ts"
+				],
 				"confidence": "authoritative"
 			},
 			"secondary": [
@@ -21,17 +26,25 @@
 					"use": "documentation anchors only"
 				}
 			],
-			"openIssues": ["Options are generic per chart type; generator needs the TypeChecker per ChartTypeRegistry entry."]
+			"openIssues": [
+				"Options are generic per chart type; generator needs the TypeChecker per ChartTypeRegistry entry."
+			]
 		},
 		{
 			"library": "echarts",
 			"package": "echarts",
 			"version": "6.1.0",
 			"integrity": "sha512-q0yaFPggC9FUdsWH4blavRWFmxdrIodbkoKNAjJudAI6CA9gNPxHtV2RcZNEepZVlk4yvBYkOkbk6HIVpIyHZA==",
-			"license": { "spdx": "Apache-2.0", "redistribution": "allowed-with-license-and-notice" },
+			"license": {
+				"spdx": "Apache-2.0",
+				"redistribution": "allowed-with-license-and-notice"
+			},
 			"primary": {
 				"kind": "typescript-declarations",
-				"entries": ["types/dist/option.d.ts", "types/dist/shared.d.ts"],
+				"entries": [
+					"types/dist/option.d.ts",
+					"types/dist/shared.d.ts"
+				],
 				"confidence": "authoritative"
 			},
 			"secondary": [
@@ -62,7 +75,11 @@
 			},
 			"primary": {
 				"kind": "typescript-declarations",
-				"entries": ["highcharts.d.ts", "options/*.d.ts", "modules/*.d.ts"],
+				"entries": [
+					"highcharts.d.ts",
+					"options/*.d.ts",
+					"modules/*.d.ts"
+				],
 				"confidence": "authoritative"
 			},
 			"secondary": [
@@ -77,7 +94,7 @@
 			],
 			"openIssues": [
 				"Do not commit or publish generated Highcharts artifacts until redistribution is cleared.",
-				"Current hand-curated config-highcharts subset targets 12.x."
+				"Hand-curated config-highcharts subset (13.x) leaves union-typed fields open until CG-02-01."
 			]
 		}
 	]
