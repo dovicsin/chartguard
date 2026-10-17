@@ -1,0 +1,35 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"rootDir": "./src",
+		"outDir": "./dist",
+		"types": ["node"]
+	},
+	"include": ["src/**/*.ts"],
+	"references": [
+		{
+			"path": "../core"
+		},
+		{
+			"path": "../analysis/typescript"
+		},
+		{
+			"path": "../config/chartjs"
+		},
+		{
+			"path": "../quality/chartjs"
+		},
+		{
+			"path": "../config/echarts"
+		},
+		{
+			"path": "../quality/echarts"
+		},
+		{
+			"path": "../config/highcharts"
+		},
+		{
+			"path": "../quality/highcharts"
+		}
+	]
+}

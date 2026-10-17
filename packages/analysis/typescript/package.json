@@ -1,0 +1,31 @@
+{
+	"name": "@chartguard/analysis-typescript",
+	"version": "0.1.0",
+	"description": "Safe, bounded TypeScript compiler AST expression reader",
+	"type": "module",
+	"license": "MIT",
+	"sideEffects": false,
+	"engines": {
+		"node": ">=20.11"
+	},
+	"files": [
+		"dist/",
+		"README.md"
+	],
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc -b",
+		"test": "node --test tests/*.test.mjs"
+	},
+	"dependencies": {
+		"@chartguard/core": "0.1.0",
+		"typescript": "^5.8.3"
+	}
+}

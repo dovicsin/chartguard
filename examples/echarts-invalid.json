@@ -1,0 +1,9 @@
+{
+	"series": [
+		{
+			"type": "bar",
+			"data": [3, 4]
+		}
+	],
+	"animation": "yes"
+}

@@ -1,0 +1,41 @@
+{
+	"name": "@chartguard/cli",
+	"version": "0.1.0",
+	"description": "Single-library explicit CLI for chart checks",
+	"type": "module",
+	"license": "MIT",
+	"sideEffects": false,
+	"engines": {
+		"node": ">=20.11"
+	},
+	"files": [
+		"bin/",
+		"dist/",
+		"README.md"
+	],
+	"scripts": {
+		"build": "tsc -b",
+		"test": "node --test tests/*.test.mjs"
+	},
+	"dependencies": {
+		"@chartguard/core": "0.1.0",
+		"@chartguard/config-chartjs": "0.1.0",
+		"@chartguard/config-echarts": "0.1.0",
+		"@chartguard/config-highcharts": "0.1.0",
+		"@chartguard/quality-chartjs": "0.1.0",
+		"@chartguard/quality-echarts": "0.1.0",
+		"@chartguard/quality-highcharts": "0.1.0",
+		"@chartguard/analysis-typescript": "0.1.0"
+	},
+	"bin": {
+		"chartguard": "./bin/chartguard.mjs"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	}
+}

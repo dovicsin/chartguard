@@ -1,0 +1,14 @@
+{
+	"chart": {
+		"type": "column"
+	},
+	"series": [
+		{
+			"name": "Sales",
+			"data": [1, 2]
+		}
+	],
+	"credits": {
+		"enabled": "false"
+	}
+}

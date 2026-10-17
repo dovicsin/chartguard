@@ -1,0 +1,20 @@
+{
+	"type": "bar",
+	"data": {
+		"labels": ["2024", "2025"],
+		"datasets": [
+			{
+				"label": "Revenue",
+				"data": [120, 165]
+			}
+		]
+	},
+	"options": {
+		"scales": {
+			"y": {
+				"beginAtZerro": true,
+				"min": "50"
+			}
+		}
+	}
+}

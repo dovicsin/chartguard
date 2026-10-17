@@ -1,0 +1,46 @@
+# Allowlist: everything is ignored unless it is source, a test, a fixture or
+# the tooling that builds and guards them. Add new entries deliberately.
+*
+!*/
+
+# Root tooling
+!/.gitignore
+!/.editorconfig
+!/.npmrc
+!/.prettierignore
+!/.c8rc.json
+!/.husky/pre-commit
+!/.husky/pre-push
+!/.github/workflows/*.yml
+!/package.json
+!/README.md
+!/LICENSE
+!/package-lock.json
+!/tsconfig.json
+!/tsconfig.base.json
+!/eslint.config.js
+!/prettier.config.js
+!/knip.json
+!/scripts/*.mjs
+
+# Fixtures
+!/examples/*.json
+!/examples/*.ts
+
+# Packages
+!/packages/**/package.json
+!/packages/**/tsconfig.json
+!/packages/**/src/**/*.ts
+!/packages/**/tests/**/*.test.mjs
+!/packages/cli/bin/*.mjs
+
+# Never tracked, even below an allowlisted path
+node_modules/
+dist/
+coverage/
+.husky/_/
+*.d.ts
+*.map
+*.tsbuildinfo
+*.log
+.env*

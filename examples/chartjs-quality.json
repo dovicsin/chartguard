@@ -1,0 +1,17 @@
+{
+	"type": "bar",
+	"data": {
+		"datasets": [
+			{
+				"data": [90, 95]
+			}
+		]
+	},
+	"options": {
+		"scales": {
+			"y": {
+				"min": 85
+			}
+		}
+	}
+}

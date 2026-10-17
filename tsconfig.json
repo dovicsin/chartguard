@@ -1,0 +1,50 @@
+{
+	"files": [],
+	"references": [
+		{
+			"path": "./packages/core"
+		},
+		{
+			"path": "./packages/config/core"
+		},
+		{
+			"path": "./packages/quality/core"
+		},
+		{
+			"path": "./packages/analysis/typescript"
+		},
+		{
+			"path": "./packages/integrations/eslint"
+		},
+		{
+			"path": "./packages/config/chartjs"
+		},
+		{
+			"path": "./packages/quality/chartjs"
+		},
+		{
+			"path": "./packages/integrations/chartjs-runtime"
+		},
+		{
+			"path": "./packages/config/echarts"
+		},
+		{
+			"path": "./packages/quality/echarts"
+		},
+		{
+			"path": "./packages/integrations/echarts-runtime"
+		},
+		{
+			"path": "./packages/config/highcharts"
+		},
+		{
+			"path": "./packages/quality/highcharts"
+		},
+		{
+			"path": "./packages/integrations/highcharts-runtime"
+		},
+		{
+			"path": "./packages/cli"
+		}
+	]
+}

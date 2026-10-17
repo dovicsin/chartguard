@@ -1,0 +1,11 @@
+coverage
+dist
+docs
+apps
+tools
+package-lock.json
+AGENTS.md
+CONTRIBUTING.md
+SECURITY.md
+.github/**/*.md
+packages/**/README.md

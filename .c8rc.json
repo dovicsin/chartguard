@@ -1,0 +1,17 @@
+{
+	"all": true,
+	"src": ["packages"],
+	"include": ["packages/**/dist/**/*.js"],
+	"exclude": [
+		"**/node_modules/**",
+		"**/tests/**",
+		"packages/core/dist/diagnostic.js",
+		"packages/quality/core/dist/chart.js"
+	],
+	"reporter": ["text", "html"],
+	"check-coverage": true,
+	"lines": 95,
+	"functions": 90,
+	"branches": 90,
+	"statements": 95
+}
