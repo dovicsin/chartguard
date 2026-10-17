@@ -5,8 +5,10 @@
 	"type": "module",
 	"description": "Modular chart configuration validation and visualization quality toolkit",
 	"engines": {
-		"node": ">=20.19"
+		"node": ">=20.19",
+		"npm": ">=11"
 	},
+	"packageManager": "npm@11.6.2",
 	"workspaces": [
 		"packages/core",
 		"packages/config/*",
