@@ -1,9 +1,9 @@
 {
 	"$schema": "https://unpkg.com/knip@6/schema.json",
-	"ignore": ["examples/**"],
 	"workspaces": {
 		".": {
-			"entry": ["scripts/*.mjs"]
+			"entry": ["scripts/*.mjs", "scripts/tests/*.test.mjs"],
+			"project": ["scripts/**/*.mjs"]
 		},
 		"packages/*": {
 			"entry": ["tests/**/*.test.mjs"],

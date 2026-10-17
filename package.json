@@ -18,6 +18,7 @@
 	"scripts": {
 		"prepare": "husky",
 		"build": "node scripts/build.mjs",
+		"boundaries": "node scripts/check-boundaries.mjs",
 		"typecheck": "tsc -b tsconfig.json",
 		"test": "node scripts/test.mjs",
 		"test:coverage": "c8 node scripts/test.mjs",
@@ -26,9 +27,9 @@
 		"format": "prettier --check .",
 		"fix-format": "prettier --write .",
 		"knip": "knip",
-		"check": "npm run build && npm run lint && npm run format && npm run knip && npm run test:coverage",
-		"precommit": "npm run build && npm run fix-lint && npm run fix-format && npm run knip && npm run test:coverage",
-		"prepush": "npm run build && concurrently --kill-others-on-fail --names format,lint,knip,test \"npm run format\" \"npm run lint\" \"npm run knip\" \"npm run test:coverage\"",
+		"check": "npm run build && npm run boundaries && npm run lint && npm run format && npm run knip && npm run test:coverage",
+		"precommit": "npm run build && npm run boundaries && npm run fix-lint && npm run fix-format && npm run knip && npm run test:coverage",
+		"prepush": "npm run build && concurrently --kill-others-on-fail --names boundaries,format,lint,knip,test \"npm run boundaries\" \"npm run format\" \"npm run lint\" \"npm run knip\" \"npm run test:coverage\"",
 		"demo": "node packages/cli/bin/chartguard.mjs validate --library chartjs --file examples/chartjs-invalid.json",
 		"demo:quality": "node packages/cli/bin/chartguard.mjs quality --library chartjs --file examples/chartjs-quality.json",
 		"demo:source": "node packages/cli/bin/chartguard.mjs analyze --library chartjs --file examples/chartjs-source.ts"

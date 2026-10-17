@@ -16,7 +16,7 @@ function findTests(directory) {
 		});
 }
 
-const tests = findTests('packages');
+const tests = ['packages', 'scripts'].flatMap(findTests);
 console.log('TEST', tests.length, 'files');
 const { status } = spawnSync(process.execPath, ['--test', ...tests], { stdio: 'inherit' });
 process.exit(status ?? 1);
