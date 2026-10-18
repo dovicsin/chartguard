@@ -5,6 +5,7 @@ import { SCHEMA_IR_VERSION, SOURCE_KINDS } from './types.js';
 export type Report = (path: string, message: string) => void;
 
 const EXACT_VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+const DIGEST = /^sha256-[0-9a-f]{64}$/;
 const COVERAGES: ReadonlySet<unknown> = new Set(['partial', 'full']);
 const SOURCE_KIND_SET: ReadonlySet<unknown> = new Set(SOURCE_KINDS);
 
@@ -27,6 +28,12 @@ export function checkHeader(artifact: Record<string, unknown>, report: Report): 
 	const generator = artifact['generator'];
 	if (!isRecord(generator) || typeof generator['name'] !== 'string' || typeof generator['version'] !== 'string')
 		report('$.generator', 'expected { name, version } strings');
+	checkDigest(artifact['digest'], report);
+}
+
+function checkDigest(digest: unknown, report: Report): void {
+	if (digest !== undefined && (typeof digest !== 'string' || !DIGEST.test(digest)))
+		report('$.digest', `expected sha256-<64 hex digits>, got ${quote(digest)}`);
 }
 
 function checkSource(source: unknown, path: string, report: Report): void {

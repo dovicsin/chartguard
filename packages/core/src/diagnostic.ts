@@ -30,7 +30,10 @@ export interface ValidationResult {
 	valid: boolean;
 	status: ValidationStatus;
 	library: string;
+	/** The upstream version the schema describes. */
 	schemaVersion: string;
+	/** The exact schema artifact that produced this result (`sha256-…`), when it is generated. */
+	schemaDigest?: string;
 	coverage: Coverage;
 	diagnostics: Diagnostic[];
 }

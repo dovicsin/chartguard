@@ -1,8 +1,10 @@
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { isEntryPoint } from '../shared/entry.mjs';
 import { generateChartjs } from './lib/chartjs.mjs';
+import { serialize,withDigest } from './lib/digest.mjs';
 import { generateEcharts } from './lib/echarts.mjs';
 import { verifiedUpstream } from './lib/lock.mjs';
 
@@ -20,12 +22,14 @@ export function artifactPath(root, library, version) {
 	return join(root, GENERATORS[library].package, 'src/generated', `${library}-${version}.json`);
 }
 
-/** Deterministic artifact text for one library. */
+/** Deterministic artifact text for one library, carrying the digest of its own content. */
 export function generate(root, library) {
 	const pin = verifiedUpstream(root, library);
-	const artifact = GENERATORS[library].generate(root, pin);
-	return { path: artifactPath(root, library, pin.version), text: `${JSON.stringify(artifact, null, '\t')}\n` };
+	const artifact = withDigest(GENERATORS[library].generate(root, pin));
+	return { path: artifactPath(root, library, pin.version), text: serialize(artifact) };
 }
+
+export const LIBRARIES = Object.keys(GENERATORS);
 
 function currentText(path) {
 	try {
@@ -70,7 +74,5 @@ function main(argv) {
 	return stale.length > 0 ? EXIT_STALE : 0;
 }
 
-// npm may invoke this through a symlink, so compare resolved paths rather than URL text.
-const invokedPath = process.argv[1];
-if (invokedPath !== undefined && realpathSync(invokedPath) === fileURLToPath(import.meta.url))
+if (isEntryPoint(import.meta.url))
 	process.exitCode = main(process.argv.slice(2));

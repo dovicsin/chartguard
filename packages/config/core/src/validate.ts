@@ -11,5 +11,6 @@ export function validateConfig(
 	const walker = new ConfigWalker(manifest, options);
 	walker.walk(input, manifest.root);
 	const coverage = options.incomplete === true ? 'partial' : manifest.coverage;
-	return result(manifest.library, manifest.version, coverage, walker.diagnostics);
+	const checked = result(manifest.library, manifest.version, coverage, walker.diagnostics);
+	return manifest.digest === undefined ? checked : { ...checked, schemaDigest: manifest.digest };
 }

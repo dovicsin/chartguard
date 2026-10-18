@@ -6,9 +6,15 @@
 				"scripts/*.mjs",
 				"scripts/tests/*.test.mjs",
 				"tools/schema-generator/tests/*.test.mjs",
-				"tools/conformance/tests/*.test.mjs"
+				"tools/conformance/tests/*.test.mjs",
+				"tools/shared/tests/*.test.mjs"
 			],
-			"project": ["scripts/**/*.mjs", "tools/schema-generator/**/*.mjs", "tools/conformance/**/*.mjs"]
+			"project": [
+				"scripts/**/*.mjs",
+				"tools/schema-generator/**/*.mjs",
+				"tools/conformance/**/*.mjs",
+				"tools/shared/**/*.mjs"
+			]
 		},
 		"packages/*": {
 			"entry": ["tests/**/*.test.mjs"],

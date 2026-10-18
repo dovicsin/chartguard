@@ -28,6 +28,8 @@ export interface NodeSchema {
 export interface SchemaManifest {
 	readonly library: string;
 	readonly version: string;
+	/** Content digest of the generated artifact, when the manifest was lowered from one. */
+	readonly digest?: string;
 	readonly coverage: Coverage;
 	readonly root: NodeSchema;
 	readonly source: string;

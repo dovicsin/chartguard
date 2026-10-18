@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -121,4 +122,18 @@ test('help words and misplaced options', async () => {
 	assert.equal((await run(['-h'])).code, 0);
 	assert.equal((await run(['validate', '--library', 'chartjs', '--file', 'x.json', '--name', 'config'])).code, 2);
 	assert.equal((await run(['validate', 'extra', '--library', 'chartjs', '--file', 'x.json'])).code, 2);
+});
+
+const BIN = fileURLToPath(new URL('../bin/chartguard.mjs', import.meta.url));
+
+test('a reader that closes the pipe early is not a crash', { skip: process.platform === 'win32' }, () => {
+	const command = `"${process.execPath}" "${BIN}" analyze --library chartjs --file "${example('chartjs-source.ts')}" | head -c 1`;
+	const child = spawnSync('sh', ['-c', command], { encoding: 'utf8' });
+	assert.equal(child.stderr, '');
+});
+
+test('importing the bin from a non-path argv runs nothing and does not throw', () => {
+	const script = `await import(${JSON.stringify(new URL('../bin/chartguard.mjs', import.meta.url).href)});`;
+	const child = spawnSync(process.execPath, ['--input-type=module', '-e', script, 'not-a-path'], { encoding: 'utf8' });
+	assert.deepEqual([child.status, child.stdout, child.stderr], [0, '', '']);
 });

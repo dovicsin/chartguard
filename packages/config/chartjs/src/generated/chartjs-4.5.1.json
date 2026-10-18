@@ -7,6 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
+	"digest": "sha256-23174280b4eeb8b36b54307aab032306e7b8aa543e3f9a1bf26f8c3b2b13c105",
 	"sources": {
 		"chartjs": {
 			"kind": "npm-package",

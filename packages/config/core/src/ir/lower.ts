@@ -133,6 +133,7 @@ export function lowerArtifact(artifact: SchemaArtifact): LoweredSchema {
 		manifest: {
 			library: artifact.library,
 			version: artifact.libraryVersion,
+			...(artifact.digest === undefined ? {} : { digest: artifact.digest }),
 			coverage: exact ? 'full' : 'partial',
 			root,
 			source

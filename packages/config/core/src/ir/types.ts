@@ -127,6 +127,11 @@ export interface SchemaArtifact {
 	readonly libraryVersion: string;
 	readonly coverage: Coverage;
 	readonly generator: { readonly name: string; readonly version: string };
+	/**
+	 * `sha256-<hex>` of the artifact text without this field. Identifies the exact schema a result
+	 * came from: two artifacts for the same upstream version can differ when the generator changes.
+	 */
+	readonly digest?: string;
 	readonly sources: Readonly<Record<string, SourceRecord>>;
 	readonly definitions: Readonly<Record<string, IrNode>>;
 	readonly root: IrNode;

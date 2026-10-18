@@ -1,5 +1,4 @@
-import { readFileSync, realpathSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 import { validate as validateChartjs } from '@chartguard/config-chartjs';
@@ -9,6 +8,7 @@ import * as chartjsHelpers from 'chart.js/helpers';
 import * as echarts from 'echarts';
 import ts from 'typescript';
 
+import { isEntryPoint } from '../../shared/entry.mjs';
 import { verdictOf } from '../lib/capture.mjs';
 import { runChartjs } from '../lib/chartjs.mjs';
 import { runEcharts } from '../lib/echarts.mjs';
@@ -117,5 +117,4 @@ function main([libraryName, corpusPath]) {
 	process.stdout.write(JSON.stringify(corpus.files.map((file) => outcomeOf(library, file))));
 }
 
-const invokedPath = process.argv[1];
-if (invokedPath !== undefined && realpathSync(invokedPath) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
+if (isEntryPoint(import.meta.url)) main(process.argv.slice(2));

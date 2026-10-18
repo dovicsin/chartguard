@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
-import { realpathSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
+import { isEntryPoint } from '../../shared/entry.mjs';
 import { SOURCES } from './sources.mjs';
 
 /**
@@ -60,6 +61,5 @@ async function main([library, retrieved = new Date().toISOString().slice(0, 10)]
 	process.stdout.write(`${String(corpus.files.length)} examples -> ${target}\n`);
 }
 
-const invokedPath = process.argv[1];
-if (invokedPath !== undefined && realpathSync(invokedPath) === fileURLToPath(import.meta.url))
+if (isEntryPoint(import.meta.url))
 	await main(process.argv.slice(2));

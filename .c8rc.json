@@ -5,7 +5,8 @@
 		"packages/**/dist/**/*.js",
 		"scripts/boundaries/**/*.mjs",
 		"tools/schema-generator/lib/**/*.mjs",
-		"tools/conformance/lib/**/*.mjs"
+		"tools/conformance/lib/**/*.mjs",
+		"tools/shared/**/*.mjs"
 	],
 	"exclude": [
 		"**/node_modules/**",

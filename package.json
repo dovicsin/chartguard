@@ -23,6 +23,7 @@
 		"boundaries": "node scripts/check-boundaries.mjs",
 		"schema:generate": "node tools/schema-generator/generate.mjs write",
 		"schema:check": "node tools/schema-generator/generate.mjs check",
+		"schema:diff": "node tools/schema-generator/diff.mjs",
 		"conformance:import": "node tools/conformance/corpus/import.mjs",
 		"typecheck": "tsc -b tsconfig.json",
 		"test": "node scripts/test.mjs",

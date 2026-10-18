@@ -87,3 +87,11 @@ test('R7 shipped files are tracked: every non-build entry in a package `files` l
 	if (ignored.error !== undefined) return;
 	assert.equal(ignored.stdout.trim(), '');
 });
+
+test('R8 entry points: process.argv[1] is resolved only by the guarded helpers, never at import time unguarded', () => {
+	const allowed = new Set([join('tools', 'shared', 'entry.mjs'), join('packages', 'cli', 'bin', 'chartguard.mjs')]);
+	const entries = [...sources('tools'), ...sources('scripts'), ...sources('packages')].filter(
+		({ path }) => !allowed.has(path) && !path.split(sep).includes('tests')
+	);
+	assert.deepEqual(offenders(entries, /realpathSync\(\s*(invokedPath|process\.argv)/), []);
+});
