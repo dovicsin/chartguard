@@ -23,6 +23,7 @@
 !/knip.json
 !/scripts/**/*.mjs
 !/tools/schema-generator/*.json
+!/tools/schema-generator/**/*.mjs
 
 # Fixtures
 !/examples/*.json
@@ -32,7 +33,8 @@
 !/packages/**/package.json
 !/packages/**/tsconfig.json
 !/packages/**/src/**/*.ts
-!/packages/**/tests/**/*.test.mjs
+!/packages/**/src/generated/*.json
+!/packages/**/tests/**/*.mjs
 !/packages/cli/bin/*.mjs
 
 # Never tracked, even below an allowlisted path

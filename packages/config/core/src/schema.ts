@@ -1,6 +1,6 @@
 import type { Coverage } from '@chartguard/core';
 
-export type SchemaKind = 'object' | 'array' | 'string' | 'number' | 'boolean' | 'function' | 'any';
+export type SchemaKind = 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null' | 'function' | 'union' | 'any';
 export type EnumValue = string | number | boolean;
 /** 'warn' is correct while the schema is incomplete or extensible. */
 export type AdditionalProperties = 'allow' | 'warn' | 'deny';
@@ -12,6 +12,16 @@ export interface NodeSchema {
 	readonly required?: readonly string[];
 	readonly enum?: readonly EnumValue[];
 	readonly additionalProperties?: AdditionalProperties;
+	/** Object: schema for keys not listed in `properties` (a record of caller-chosen keys). */
+	readonly values?: NodeSchema;
+	/** Union members; a value is checked against the member matching its runtime kind. */
+	readonly anyOf?: readonly NodeSchema[];
+	/** Union: property whose literal value selects among object members. */
+	readonly discriminator?: string;
+	/** Union: index into `anyOf` used when the discriminator is absent. */
+	readonly defaultVariant?: number;
+	/** Union: unknown discriminator values may be registered by plugins, so they are not errors. */
+	readonly extensible?: boolean;
 	readonly doc?: string;
 }
 

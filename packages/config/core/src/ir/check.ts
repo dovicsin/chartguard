@@ -17,6 +17,19 @@ export interface ArtifactCheck {
 type Node = Record<string, unknown>;
 type ChildCheck = (checker: NodeChecker, node: Node, path: string, depth: number) => void;
 
+function isIndexBelow(value: unknown, size: number): boolean {
+	return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < size;
+}
+
+function checkUnionOptions(checker: NodeChecker, node: Node, path: string, size: number): void {
+	const { defaultVariant, extensible, discriminator } = node;
+	if (defaultVariant !== undefined && !isIndexBelow(defaultVariant, size))
+		checker.report(path, 'defaultVariant must index anyOf');
+	if (extensible !== undefined && typeof extensible !== 'boolean') checker.report(path, 'extensible must be a boolean');
+	if (discriminator !== undefined && typeof discriminator !== 'string')
+		checker.report(path, 'discriminator must be a string');
+}
+
 const CHILD_CHECKS: Partial<Record<string, ChildCheck>> = {
 	object: (checker, node, path, depth) => {
 		checker.checkProperties(node['properties'], `${path}.properties`, depth);
@@ -39,6 +52,7 @@ const CHILD_CHECKS: Partial<Record<string, ChildCheck>> = {
 			members.forEach((member, index) => {
 				checker.checkNode(member, `${path}.anyOf[${String(index)}]`, depth + 1);
 			});
+		checkUnionOptions(checker, node, path, Array.isArray(members) ? members.length : 0);
 	},
 	ref: (checker, node, path) => {
 		checker.checkRef(node['ref'], path);

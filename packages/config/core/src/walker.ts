@@ -1,7 +1,9 @@
 import { type Diagnostic, isContainer, ownDataProperty, suggestion } from '@chartguard/core';
 
-import { confirmed, unresolved } from './diagnostics.js';
+import { confirmed, inconclusive, unresolved } from './diagnostics.js';
+import { kindOf } from './kind.js';
 import type { NodeSchema, SchemaManifest } from './schema.js';
+import { type Selection, selectVariant } from './union.js';
 
 const MAX_DEPTH = 40;
 const MAX_ENTRIES = 20_000;
@@ -13,12 +15,6 @@ interface Cursor {
 
 function descend(cursor: Cursor, segment: string): Cursor {
 	return { path: `${cursor.path}${segment}`, depth: cursor.depth + 1 };
-}
-
-function kindOf(value: unknown): string {
-	if (value === null) return 'null';
-	if (Array.isArray(value)) return 'array';
-	return typeof value;
 }
 
 /** Walks a config against a schema without invoking getters or recursing through cycles. */
@@ -33,8 +29,48 @@ export class ConfigWalker {
 			this.diagnostics.push(unresolved('CFG_DEPTH', cursor.path, 'Maximum validation depth reached.'));
 			return;
 		}
+		if (schema.kind === 'union') {
+			this.walkUnion(value, selectVariant(value, schema), cursor);
+			return;
+		}
 		if (schema.kind === 'any' || !this.matchesShape(value, schema, cursor.path)) return;
 		if (isContainer(value)) this.walkContainer(value, schema, cursor);
+	}
+
+	private walkUnion(value: unknown, selection: Selection, cursor: Cursor): void {
+		const { path } = cursor;
+		switch (selection.kind) {
+			case 'variant':
+				this.walk(value, selection.schema, cursor);
+				return;
+			case 'accepted':
+				return;
+			case 'mismatch':
+				this.diagnostics.push(confirmed('CFG_TYPE', path, `Expected ${selection.expected}, got ${kindOf(value)}.`));
+				return;
+			case 'ambiguous':
+				this.diagnostics.push(
+					inconclusive('CFG_AMBIGUOUS', path, 'Value fits several schema variants; its contents are not checked.')
+				);
+				return;
+			case 'unknown-variant':
+			case 'invalid-variant':
+				this.reportVariant(selection, `${path}.${selection.key}`);
+		}
+	}
+
+	private reportVariant(selection: Extract<Selection, { key: string }>, path: string): void {
+		const known = selection.known.map(String);
+		if (selection.kind === 'invalid-variant') {
+			this.diagnostics.push(confirmed('CFG_ENUM', path, `Value must be one of: ${known.join(', ')}.`));
+			return;
+		}
+		const value = typeof selection.value === 'string' ? selection.value : kindOf(selection.value);
+		const match = typeof selection.value === 'string' ? suggestion(selection.value, known) : undefined;
+		this.diagnostics.push({
+			...unresolved('CFG_UNKNOWN_VARIANT', path, `"${value}" is not a built-in variant; it may come from a plugin.`),
+			...(match === undefined ? {} : { suggestion: `Did you mean "${match}"?` })
+		});
 	}
 
 	private matchesShape(value: unknown, schema: NodeSchema, path: string): boolean {
@@ -103,8 +139,9 @@ export class ConfigWalker {
 			);
 			return;
 		}
+		if (entry.value === undefined) return;
 		const known = schema.properties ?? {};
-		const field = Object.hasOwn(known, key) ? known[key] : undefined;
+		const field = Object.hasOwn(known, key) ? known[key] : schema.values;
 		if (field === undefined) this.reportUnknownKey(key, Object.keys(known), schema, cursor.path);
 		else this.walk(entry.value, field, cursor);
 	}

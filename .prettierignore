@@ -9,3 +9,4 @@ CONTRIBUTING.md
 SECURITY.md
 .github/**/*.md
 packages/**/README.md
+packages/**/generated

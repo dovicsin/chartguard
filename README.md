@@ -2,7 +2,7 @@
 
 Validates chart configurations for **Chart.js**, **Apache ECharts** and **Highcharts**, and flags visualization patterns that may mislead.
 
-> **Status: early starter.** Schemas are hand-curated **partial** subsets, so a clean result means "no confirmed error", not "fully compatible". The ESLint plugin has no rules yet.
+> **Status: early development.** The Chart.js schema is generated from the `chart.js@4.5.1` type declarations; the ECharts and Highcharts schemas are still hand-curated subsets. Coverage is **partial** everywhere, so a clean result means "no confirmed error", not "fully compatible". The ESLint plugin has no rules yet.
 
 ## Packages
 
@@ -40,7 +40,10 @@ npm run check
 | `npm run lint` / `fix-lint`     | ESLint (strict type-checked), zero warnings allowed |
 | `npm run format` / `fix-format` | Prettier                                            |
 | `npm run knip`                  | Unused files, exports and dependencies              |
-| `npm run check`                 | build → lint → format → knip → coverage             |
+| `npm run boundaries`            | Package dependency and import boundaries            |
+| `npm run schema:generate`       | Regenerate schema artifacts from pinned upstream    |
+| `npm run schema:check`          | Fail if a committed schema artifact is stale        |
+| `npm run check`                 | everything above, then tests with coverage          |
 
 Git hooks (husky): **pre-commit** runs the fixers and the full test suite, and **pre-push** runs every check.
 
@@ -59,6 +62,10 @@ import { validate } from '@chartguard/config-highcharts';
 
 const { status, diagnostics } = validate({ chart: { type: 'line' }, series: [{ data: [1, 2] }] });
 ```
+
+## Schema generation
+
+`tools/schema-generator` reads the TypeScript declarations of the exact upstream version pinned in `tools/schema-generator/upstream-sources.json`, verifies the installed package against that pin and the lockfile integrity, and writes a SchemaIR artifact to `packages/config/<library>/src/generated/`. Declarations are only type-checked, never executed. Every fact carries provenance (`chart.js/dist/types/index.d.ts:<line>`).
 
 ## Ground rules
 

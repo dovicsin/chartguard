@@ -82,7 +82,12 @@ export interface ArrayNode extends NodeBase {
 export interface UnionNode extends NodeBase {
 	readonly kind: 'union';
 	readonly anyOf: readonly IrNode[];
+	/** Property whose literal value selects among object members. */
 	readonly discriminator?: string;
+	/** Index into `anyOf` used when the discriminator is absent. */
+	readonly defaultVariant?: number;
+	/** The variant registry can be extended (e.g. by plugins), so unknown variants are not errors. */
+	readonly extensible?: boolean;
 }
 
 export interface RefNode extends NodeBase {

@@ -2,8 +2,8 @@
 	"$schema": "https://unpkg.com/knip@6/schema.json",
 	"workspaces": {
 		".": {
-			"entry": ["scripts/*.mjs", "scripts/tests/*.test.mjs"],
-			"project": ["scripts/**/*.mjs"]
+			"entry": ["scripts/*.mjs", "scripts/tests/*.test.mjs", "tools/schema-generator/tests/*.test.mjs"],
+			"project": ["scripts/**/*.mjs", "tools/schema-generator/**/*.mjs"]
 		},
 		"packages/*": {
 			"entry": ["tests/**/*.test.mjs"],
@@ -13,5 +13,6 @@
 			"entry": ["tests/**/*.test.mjs"],
 			"project": ["src/**/*.ts"]
 		}
-	}
+	},
+	"ignoreDependencies": ["chart.js"]
 }

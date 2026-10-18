@@ -12,6 +12,7 @@
 	"options": {
 		"scales": {
 			"y": {
+				"type": "linear",
 				"beginAtZerro": true,
 				"min": "50"
 			}

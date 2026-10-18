@@ -27,7 +27,7 @@
 				}
 			],
 			"openIssues": [
-				"Options are generic per chart type; generator needs the TypeChecker per ChartTypeRegistry entry."
+				"Scale type defaults depend on the axis and chart type; a scale without an explicit type is reported as inconclusive until context resolution (CG-02-04)."
 			]
 		},
 		{

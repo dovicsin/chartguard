@@ -7,3 +7,7 @@ export function confirmed(code: string, path: string, message: string): Diagnost
 export function unresolved(code: string, path: string, message: string): Diagnostic {
 	return { code, severity: 'warning', path, message, confidence: 'unknown' };
 }
+
+export function inconclusive(code: string, path: string, message: string): Diagnostic {
+	return { code, severity: 'info', path, message, confidence: 'unknown' };
+}

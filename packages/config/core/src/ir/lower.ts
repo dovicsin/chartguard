@@ -1,5 +1,5 @@
 import type { AdditionalProperties, EnumValue, NodeSchema, SchemaKind, SchemaManifest } from '../schema.js';
-import type { IrNode, LiteralNode, ObjectNode, SchemaArtifact } from './types.js';
+import type { IrNode, LiteralNode, ObjectNode, SchemaArtifact, UnionNode } from './types.js';
 
 export interface LoweredSchema {
 	readonly manifest: SchemaManifest;
@@ -46,12 +46,18 @@ class Lowerer {
 		number: () => ({ kind: 'number' }),
 		boolean: () => ({ kind: 'boolean' }),
 		function: () => ({ kind: 'function' }),
-		null: (_, path) => this.approximate(path),
+		null: () => ({ kind: 'null' }),
 		unknown: (_, path) => this.approximate(path),
-		record: (_, path) => this.approximate(path),
-		scriptable: (_, path) => this.approximate(path),
-		literal: (node, path) => this.lowerUnion([node], path),
-		union: (node, path) => this.lowerUnion(node.anyOf, path),
+		record: (node, path) => ({
+			kind: 'object',
+			properties: {},
+			values: this.lower(node.values, `${path}[*]`),
+			additionalProperties: 'allow'
+		}),
+		scriptable: (node, path) => ({ kind: 'union', anyOf: [this.lower(node.value, path), { kind: 'function' }] }),
+		literal: (node, path) =>
+			node.value === null ? { kind: 'null' } : this.lowerUnion({ kind: 'union', anyOf: [node] }, path),
+		union: (node, path) => this.lowerUnion(node, path),
 		array: (node, path) => ({ kind: 'array', element: this.lower(node.items, `${path}[]`) }),
 		object: (node, path) => this.lowerObject(node, path),
 		ref: (node, path) => this.lowerRef(node.ref, path)
@@ -67,8 +73,16 @@ class Lowerer {
 		return ANY;
 	}
 
-	private lowerUnion(members: readonly IrNode[], path: string): NodeSchema {
-		return enumOf(members) ?? this.approximate(path);
+	private lowerUnion(node: UnionNode, path: string): NodeSchema {
+		const enumeration = enumOf(node.anyOf);
+		if (enumeration !== undefined) return enumeration;
+		return {
+			kind: 'union',
+			anyOf: node.anyOf.map((member) => this.lower(member, path)),
+			...(node.discriminator === undefined ? {} : { discriminator: node.discriminator }),
+			...(node.defaultVariant === undefined ? {} : { defaultVariant: node.defaultVariant }),
+			...(node.extensible === undefined ? {} : { extensible: node.extensible })
+		};
 	}
 
 	private lowerObject(node: ObjectNode, path: string): NodeSchema {
