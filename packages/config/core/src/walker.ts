@@ -137,9 +137,11 @@ export class ConfigWalker {
 			this.diagnostics.push(
 				unresolved('CFG_DYNAMIC', cursor.path + rangeSegment(run), 'Array entry is a hole or accessor; not evaluated.')
 			);
+		// An explicit `undefined` element means "not provided", exactly as an `undefined` property does.
 		for (let index = 0; index < count; index++) {
 			const entry = ownDataProperty(items, String(index));
-			if (entry.found) this.walk(entry.value, element, descend(cursor, `[${String(index)}]`));
+			if (entry.found && entry.value !== undefined)
+				this.walk(entry.value, element, descend(cursor, `[${String(index)}]`));
 		}
 	}
 

@@ -123,6 +123,15 @@ export const RUNTIME_CONTRACT = [
 		runtime: 'accepted'
 	},
 	{
+		name: 'undefined data cells and dimensions (official calendar-lunar, custom-calendar-icon)',
+		config: {
+			...axes,
+			series: [{ type: 'scatter', dimensions: [undefined, { type: 'ordinal' }], data: [['a', 1, 'x', undefined]] }]
+		},
+		findings: [],
+		runtime: 'accepted'
+	},
+	{
 		name: 'series without type',
 		config: { series: [{ data: [1] }] },
 		findings: ['info CFG_AMBIGUOUS $.series[0]'],

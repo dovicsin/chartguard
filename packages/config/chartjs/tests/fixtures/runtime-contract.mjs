@@ -96,6 +96,21 @@ export const RUNTIME_CONTRACT = [
 		runtime: 'accepted'
 	},
 	{
+		name: 'built-in plugin disabled with false (docs scriptable samples)',
+		config: { ...bar(), options: { plugins: { legend: false, tooltip: true } } },
+		findings: [],
+		runtime: 'accepted'
+	},
+	{
+		name: 'scriptable title text (docs line/stepped sample)',
+		config: {
+			...bar(),
+			options: { plugins: { title: { display: true, text: (context) => context.chart.config.type } } }
+		},
+		findings: [],
+		runtime: 'accepted'
+	},
+	{
 		name: 'third-party plugin options',
 		config: { type: 'bar', data: { datasets: [] }, options: { plugins: { datalabels: { color: '#fff' } } } },
 		findings: [],

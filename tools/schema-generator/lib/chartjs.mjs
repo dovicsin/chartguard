@@ -1,5 +1,6 @@
 import { TypeEmitter } from './emitter.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
+import { makeOptionsScriptable } from './scriptable.mjs';
 import { artifactOf, typeLookups, unionMembers } from './types.mjs';
 
 const SOURCE_ID = 'chartjs';
@@ -40,7 +41,11 @@ function adjustChartType(lookups, { config, datasetTypes }, into) {
 	const datasetType = elementType(propertyType(data, 'datasets'));
 	const options = propertyType(config, 'options');
 	into.opaque.add(elementType(propertyType(config, 'plugins')));
-	into.open.add(propertyType(options, 'plugins'));
+	const plugins = propertyType(options, 'plugins');
+	into.open.add(plugins);
+	// getOpts (chart.js `PluginService`): `false` disables a plugin, `true` enables it with defaults.
+	for (const plugin of lookups.checker.getPropertiesOfType(plugins))
+		into.widened.set(plugin.declarations?.[0], [{ kind: 'boolean' }]);
 	into.extensible.add(indexValueType(propertyType(options, 'scales')));
 	into.runtimeOptional.add(property(config, 'data'));
 	into.runtimeOptional.add(property(data, 'datasets'));
@@ -57,6 +62,7 @@ function contractAdjustments(checker, chartTypes, aliases) {
 		open: new Set(),
 		extensible: new Set(),
 		runtimeOptional: new Set(),
+		widened: new Map(),
 		datasetVariants: new Map()
 	};
 	for (const chartType of chartTypes) {
@@ -91,6 +97,10 @@ export function generateChartjs(root, pin) {
 	const emitter = new TypeEmitter({ program, checker, sourceId: SOURCE_ID, packageName: pin.package, wrappers: WRAPPERS, ...adjustments });
 	emitter.overrides = datasetUnions(emitter, datasetVariants);
 	const configs = chartTypes.map((chartType) => emitter.reference(aliases.get(`Config_${chartType}`)));
+	makeOptionsScriptable(
+		emitter.definitions,
+		configs.map(({ ref }) => ref)
+	);
 	return artifactOf({
 		library: 'chartjs',
 		sourceId: SOURCE_ID,

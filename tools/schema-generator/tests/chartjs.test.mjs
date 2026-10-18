@@ -61,8 +61,11 @@ test('the artifact is well-formed and pinned to the verified upstream package', 
 	});
 });
 
-/** Follows a shared-definition reference (large unions are stored once and referenced). */
-const resolve = (node) => (node.kind === 'ref' ? artifact.definitions[node.ref] : node);
+/** Follows a shared-definition reference (large unions are stored once and referenced) and unwraps `scriptable`. */
+const resolve = (node) => {
+	const target = node.kind === 'ref' ? artifact.definitions[node.ref] : node;
+	return target.kind === 'scriptable' ? resolve(target.value) : target;
+};
 
 function provenances(node) {
 	if (node === null || typeof node !== 'object') return [];
@@ -83,11 +86,30 @@ test('scale unions are extensible, datasets inherit the chart type, runtime-defa
 	assert.equal(bar.properties.data.required, undefined);
 	const data = artifact.definitions[bar.properties.data.node.ref];
 	assert.equal(data.properties.datasets.required, undefined);
-	const options = artifact.definitions[bar.properties.options.node.ref];
-	const scales = artifact.definitions[options.properties.scales.node.ref];
+	const options = resolve(bar.properties.options.node);
+	const scales = resolve(options.properties.scales.node);
 	assert.equal(scales.kind, 'record');
 	const scale = resolve(scales.values);
 	assert.deepEqual([scale.discriminator, scale.extensible], ['type', true]);
+});
+
+test('every option value under options is scriptable; discriminators stay literal', () => {
+	const options = resolve(artifact.definitions.Config_line.properties.options.node);
+	const title = resolve(resolve(options.properties.plugins.node).properties.title.node).anyOf.map(resolve).find((member) => member.kind === 'object');
+	assert.equal(title.properties.text.node.kind, 'scriptable');
+	assert.equal(options.properties.responsive.node.kind, 'scriptable');
+	assert.equal(artifact.definitions.Config_line.properties.type.node.kind, 'literal');
+	const scale = resolve(resolve(options.properties.scales.node).values).anyOf.map(resolve)[0];
+	assert.equal(scale.properties.type.node.kind, 'literal');
+});
+
+test('a built-in plugin entry may be a boolean: getOpts disables it with false and enables it with true', () => {
+	const options = resolve(artifact.definitions.Config_bar.properties.options.node);
+	const plugins = resolve(options.properties.plugins.node);
+	for (const id of ['legend', 'tooltip', 'title', 'subtitle', 'decimation', 'filler', 'colors']) {
+		const members = resolve(plugins.properties[id].node).anyOf.map(resolve);
+		assert.ok(members.some((member) => member.kind === 'boolean'), id);
+	}
 });
 
 test('only known homomorphic wrappers pass primitives through; any other alias keeps its object shape', () => {

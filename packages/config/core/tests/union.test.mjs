@@ -166,3 +166,9 @@ test('typed arrays are arrays: chart runtimes accept them wherever they take dat
 	assert.deepEqual(codes(points, { data: new DataView(new ArrayBuffer(2)) }), ['CFG_TYPE error $.data']);
 	assert.deepEqual(codes(s.object({ data: s.object({}) }), { data: new Float32Array(1) }), ['CFG_TYPE error $.data']);
 });
+
+test('an undefined array element is "not provided", exactly as an undefined property is', () => {
+	const rows = s.object({ data: s.array(s.array(s.number())), dimensions: s.array(s.string()) });
+	assert.deepEqual(codes(rows, { data: [[1, undefined, 3]], dimensions: [undefined, 'y'] }), []);
+	assert.deepEqual(codes(rows, { data: [[1, null]] }), ['CFG_TYPE error $.data[0][1]']);
+});

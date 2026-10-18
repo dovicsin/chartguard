@@ -18,6 +18,5 @@
 			"entry": ["tests/**/*.test.mjs"],
 			"project": ["src/**/*.ts"]
 		}
-	},
-	"ignoreDependencies": ["chart.js", "echarts"]
+	}
 }

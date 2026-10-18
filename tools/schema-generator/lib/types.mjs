@@ -23,7 +23,7 @@ export function typeLookups(checker, library) {
 		if (element === undefined) throw changed('expected an array type');
 		return element;
 	};
-	return { property, propertyType, indexValueType, elementType };
+	return { checker, property, propertyType, indexValueType, elementType };
 }
 
 /** The members of a union type, or the type itself. */
