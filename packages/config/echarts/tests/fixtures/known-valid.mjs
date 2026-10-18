@@ -5,7 +5,10 @@ class LinearGradient {
 	}
 }
 
-/** Options shaped after the official Apache ECharts 6 examples (echarts.apache.org/examples). */
+/**
+ * Options shaped after the official Apache ECharts 6 examples (echarts.apache.org/examples).
+ * Each one renders on the pinned runtime without errors or warnings (tools/conformance).
+ */
 export const KNOWN_VALID = {
 	'line-simple': {
 		xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed'] },
@@ -65,6 +68,7 @@ export const KNOWN_VALID = {
 	},
 	heatmap: {
 		grid: { height: '50%', top: '10%' },
+		visualMap: { min: 0, max: 10, calculable: true, orient: 'horizontal', left: 'center', bottom: '15%' },
 		xAxis: { type: 'category', data: ['12a'], splitArea: { show: true } },
 		yAxis: { type: 'category', data: ['Sat'], splitArea: { show: true } },
 		series: [{ name: 'Punch Card', type: 'heatmap', data: [[0, 0, 5]], label: { show: true } }]
@@ -183,6 +187,8 @@ export const KNOWN_VALID = {
 		animationDuration: 1000,
 		animationEasing: 'elasticOut',
 		animationDelay: (index) => index * 10,
+		xAxis: { type: 'category', data: ['a'] },
+		yAxis: { type: 'value' },
 		series: [{ type: 'bar', data: [1] }]
 	},
 	graphic: { graphic: [{ type: 'text', left: 'center', top: 'center', style: { text: 'ECharts', fontSize: 80 } }] },
@@ -193,6 +199,8 @@ export const KNOWN_VALID = {
 	},
 	'typed-array-dataset': {
 		dataset: { source: new Float64Array([1, 2]), dimensions: ['v'] },
+		xAxis: { type: 'category' },
+		yAxis: { type: 'value' },
 		series: [{ type: 'line' }]
 	},
 	'date-values': {

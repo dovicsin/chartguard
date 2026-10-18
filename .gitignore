@@ -24,6 +24,7 @@
 !/scripts/**/*.mjs
 !/tools/schema-generator/*.json
 !/tools/schema-generator/**/*.mjs
+!/tools/conformance/**/*.mjs
 
 # Fixtures
 !/examples/*.json

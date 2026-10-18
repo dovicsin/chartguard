@@ -6,6 +6,7 @@ import { checkArtifact } from '@chartguard/config-core';
 import { schema, validate } from '../dist/index.js';
 import artifact from '../src/generated/echarts-6.1.0.json' with { type: 'json' };
 import { KNOWN_VALID } from './fixtures/known-valid.mjs';
+import { RUNTIME_CONTRACT } from './fixtures/runtime-contract.mjs';
 
 for (const [name, option] of Object.entries(KNOWN_VALID))
 	test(`known-valid: ${name}`, () => {
@@ -17,31 +18,17 @@ for (const [name, option] of Object.entries(KNOWN_VALID))
 		);
 	});
 
-const report = (option) => validate(option).diagnostics.map((d) => `${d.severity}/${d.confidence} ${d.code} ${d.path}`);
+const findingsOf = (option) => validate(option).diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`);
 
-test('known-invalid: wrong primitive types and undocumented enum values are confirmed errors', () => {
-	assert.deepEqual(report({ series: [{ type: 'bar', data: [1], barWidth: true }] }), [
-		'error/certain CFG_TYPE $.series[0].barWidth'
-	]);
-	assert.deepEqual(report({ series: [{ type: 'line', smooth: 'yes' }] }), [
-		'error/certain CFG_TYPE $.series[0].smooth'
-	]);
-	assert.deepEqual(report({ series: { type: 'scatter', symbolSize: 'big' } }), [
-		'error/certain CFG_TYPE $.series.symbolSize'
-	]);
-	assert.deepEqual(report({ title: { text: 42 } }), ['error/certain CFG_TYPE $.title.text']);
-	assert.deepEqual(report({ tooltip: { trigger: 'hover' } }), ['error/certain CFG_ENUM $.tooltip.trigger']);
-	assert.deepEqual(report({ xAxis: { type: 'catgory' } }), ['error/certain CFG_ENUM $.xAxis.type']);
-	assert.deepEqual(report({ series: [{ type: 'bar', label: { position: 'middel' } }] }), [
-		'error/certain CFG_ENUM $.series[0].label.position'
-	]);
-	assert.deepEqual(report({ animation: 'yes', darkMode: 'maybe' }), [
-		'error/certain CFG_TYPE $.animation',
-		'error/certain CFG_ENUM $.darkMode'
-	]);
-	assert.deepEqual(report({ xAxis: { type: 'value', boundaryGap: 'wide' } }), [
-		'error/certain CFG_TYPE $.xAxis.boundaryGap'
-	]);
+for (const { name, config, findings } of RUNTIME_CONTRACT)
+	test(`runtime contract: ${name}`, () => assert.deepEqual(findingsOf(config), findings));
+
+test('known-invalid: wrong types inside nested and list-valued components are confirmed errors', () => {
+	const report = (option) =>
+		validate(option).diagnostics.map((d) => `${d.severity}/${d.confidence} ${d.code} ${d.path}`);
+	assert.deepEqual(report({ title: [{ text: 'a' }, { text: 1 }] }), ['error/certain CFG_TYPE $.title[1].text']);
+	assert.deepEqual(report({ series: [{ type: 'pie', radius: false }] }), ['error/certain CFG_TYPE $.series[0].radius']);
+	assert.deepEqual(report({ grid: { left: {} } }), ['error/certain CFG_TYPE $.grid.left']);
 });
 
 test('known-invalid: a misspelt key is a warning with a suggestion, never an error, while coverage is partial', () => {

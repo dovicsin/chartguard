@@ -127,4 +127,12 @@ const tooling = {
 	}
 };
 
-export default [ignores, imports, js, ...ts, tests, tooling, prettierConfig];
+/** The conformance harness exists to intercept what chart runtimes print on the console. */
+const consoleCapture = {
+	files: ['tools/conformance/lib/capture.mjs', 'tools/conformance/tests/capture.test.mjs'],
+	rules: {
+		'no-console': 'off'
+	}
+};
+
+export default [ignores, imports, js, ...ts, tests, tooling, consoleCapture, prettierConfig];

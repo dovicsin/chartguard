@@ -1,7 +1,12 @@
 {
 	"all": true,
 	"src": ["packages", "scripts", "tools"],
-	"include": ["packages/**/dist/**/*.js", "scripts/boundaries/**/*.mjs", "tools/schema-generator/lib/**/*.mjs"],
+	"include": [
+		"packages/**/dist/**/*.js",
+		"scripts/boundaries/**/*.mjs",
+		"tools/schema-generator/lib/**/*.mjs",
+		"tools/conformance/lib/**/*.mjs"
+	],
 	"exclude": [
 		"**/node_modules/**",
 		"**/tests/**",
