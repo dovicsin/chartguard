@@ -52,9 +52,8 @@ const strict = {
 	coverage: 'full',
 	source: 'test',
 	root: s.object(
-		{ kind: s.string(['bar', 'line']), points: s.array(s.number()), legend: s.object({}, 'allow') },
-		'deny',
-		['kind']
+		{ kind: s.string(['bar', 'line']), points: s.array(s.number()), legend: s.object({}, { additional: 'allow' }) },
+		{ additional: 'deny', required: ['kind'] }
 	)
 };
 
@@ -98,4 +97,12 @@ test('excessive depth stops with an unknown diagnostic', () => {
 	let schema = deep.root;
 	for (let depth = 0; depth < 45; depth++) schema = schema.properties.next = s.object({});
 	assert.ok(validateConfig(root, deep).diagnostics.some((d) => d.code === 'CFG_DEPTH'));
+});
+
+test('a required property set to undefined is missing, exactly as the walker treats undefined', () => {
+	const codes = (input) => validateConfig(input, strict).diagnostics.map((d) => `${d.code} ${d.path}`);
+	assert.deepEqual(codes({ kind: undefined }), ['CFG_REQUIRED $.kind']);
+	const accessor = {};
+	Object.defineProperty(accessor, 'kind', { enumerable: true, get: () => 'bar' });
+	assert.deepEqual(codes(accessor), ['CFG_DYNAMIC $.kind']);
 });

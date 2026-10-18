@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { manifestFromArtifact } from '../dist/index.js';
-import { artifact, closedRoot, problems } from './fixtures.mjs';
+import { artifact, closedRoot, problems, prop } from './fixtures.mjs';
 
 test('malformed artifacts report every problem with its path', () => {
 	assert.deepEqual(problems(artifact(closedRoot, { irVersion: 2 })), ['$.irVersion: expected 1']);
@@ -93,5 +93,23 @@ test('provenance sources must be a list of known references', () => {
 	]);
 	assert.deepEqual(problems(root({ confidence: 'manual', sources: ['npm'] })), [
 		'$.root.provenance: expected { source } references'
+	]);
+});
+
+test('required must be a boolean and discriminated members must carry a literal discriminator', () => {
+	const root = {
+		kind: 'union',
+		discriminator: 'type',
+		anyOf: [
+			{ kind: 'object', additional: 'closed', properties: { type: prop({ kind: 'string' }, { required: 'yes' }) } },
+			{ kind: 'ref', ref: 'Loose' },
+			{ kind: 'object', additional: 'closed', properties: { type: prop({ kind: 'literal', value: 'ok' }) } }
+		]
+	};
+	const definitions = { Loose: { kind: 'object', additional: 'closed', properties: {} } };
+	assert.deepEqual(problems(artifact(root, { definitions })), [
+		'$.root.anyOf[0].properties.type: required must be a boolean',
+		'$.root.anyOf[0]: discriminator "type" must be a literal property of every object member',
+		'$.root.anyOf[1]: discriminator "type" must be a literal property of every object member'
 	]);
 });

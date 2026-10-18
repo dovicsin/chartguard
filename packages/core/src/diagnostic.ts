@@ -17,6 +17,14 @@ export interface Diagnostic {
 	column?: number;
 }
 
+export interface ValidationOptions {
+	/**
+	 * The input is a partial extraction (unresolved spreads or values were left out), so a
+	 * missing required key is unresolved rather than confirmed missing, and coverage is partial.
+	 */
+	readonly incomplete?: boolean;
+}
+
 export interface ValidationResult {
 	/** No confirmed errors; read `status` for completeness. */
 	valid: boolean;
@@ -25,4 +33,11 @@ export interface ValidationResult {
 	schemaVersion: string;
 	coverage: Coverage;
 	diagnostics: Diagnostic[];
+}
+
+/** Advisory findings about a chart's presentation. Never a verdict: there is no `valid` and no error severity. */
+export interface QualityReport {
+	readonly library: string;
+	readonly rulesVersion: string;
+	readonly diagnostics: readonly Diagnostic[];
 }

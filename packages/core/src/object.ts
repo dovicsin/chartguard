@@ -10,7 +10,10 @@ export function isContainer(value: unknown): value is object {
 	return typeof value === 'object' && value !== null;
 }
 
-/** Reads an own data property. Accessors are reported as missing so getters never run. */
+/**
+ * Reads an own data property. Accessors are reported as missing so getters never run.
+ * A Proxy is the caller's object: its `getOwnPropertyDescriptor` trap does run, and an error it throws propagates.
+ */
 export function ownDataProperty(target: object, key: string): OwnProperty {
 	const descriptor = Object.getOwnPropertyDescriptor(target, key);
 	if (descriptor === undefined || !('value' in descriptor)) return MISSING;

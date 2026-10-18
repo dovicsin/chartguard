@@ -1,13 +1,14 @@
-import type { ValidationResult } from '@chartguard/core';
-import { asNumber, asString, type NormalizedChart, readPath, review } from '@chartguard/quality-core';
+import type { QualityReport } from '@chartguard/core';
+import { type NormalizedChart, numberAt, review, stringAt } from '@chartguard/quality-core';
 
 export function normalize(config: unknown): NormalizedChart {
 	return {
-		kind: asString(readPath(config, ['type'])),
-		yMin: asNumber(readPath(config, ['options', 'scales', 'y', 'min']))
+		kind: stringAt(config, ['type']),
+		yMin: numberAt(config, ['options', 'scales', 'y', 'min']),
+		title: stringAt(config, ['options', 'plugins', 'title', 'text'])
 	};
 }
 
-export function analyze(config: unknown): ValidationResult {
+export function analyze(config: unknown): QualityReport {
 	return review(normalize(config), 'chartjs');
 }

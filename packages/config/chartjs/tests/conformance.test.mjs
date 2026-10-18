@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { manifest, validate } from '../dist/index.js';
+import { checkArtifact } from '@chartguard/config-core';
+
+import { schema, validate } from '../dist/index.js';
+import artifact from '../src/generated/chartjs-4.5.1.json' with { type: 'json' };
 
 /** Configurations shaped after the official Chart.js 4.x documentation samples. */
 const KNOWN_VALID = {
@@ -92,7 +95,26 @@ test('known-invalid: wrong primitive types are confirmed errors', () => {
 		errorsOf({ type: 'bar', data: { datasets: [] }, options: { scales: { y: { type: 'linear', min: '50' } } } }),
 		['CFG_TYPE $.options.scales.y.min']
 	);
-	assert.deepEqual(errorsOf({ type: 'bar' }), ['CFG_REQUIRED $.data']);
+});
+
+test('known-tolerated: keys the runtime defaults are not required (initConfig/initData, _dataCheck)', () => {
+	assert.deepEqual(errorsOf({ type: 'bar' }), []);
+	assert.deepEqual(errorsOf({ type: 'bar', data: { labels: ['a'] } }), []);
+	assert.deepEqual(errorsOf({ type: 'bar', data: { datasets: [{ label: 'a' }] } }), []);
+	assert.deepEqual(errorsOf({ type: 'bar', data: 'x' }), ['CFG_TYPE $.data']);
+});
+
+test('a plugin-registered scale type is unresolved, not an error: ScaleTypeRegistry is declaration-merged', () => {
+	const result = validate({ type: 'line', data: { datasets: [] }, options: { scales: { x: { type: 'realtime' } } } });
+	assert.equal(result.valid, true);
+	assert.deepEqual(
+		result.diagnostics.map((d) => [d.code, d.severity]),
+		[['CFG_UNKNOWN_VARIANT', 'warning']]
+	);
+	assert.deepEqual(
+		errorsOf({ type: 'line', data: { datasets: [] }, options: { scales: { x: { type: 'linear', min: '1' } } } }),
+		['CFG_TYPE $.options.scales.x.min']
+	);
 });
 
 test('unknown chart types and keys are warnings with suggestions, never errors', () => {
@@ -119,7 +141,19 @@ test('a scale without a type is reported as inconclusive, not guessed', () => {
 });
 
 test('the manifest is generated for the exact pinned version', () => {
+	const { manifest } = schema();
 	assert.equal(manifest.version, '4.5.1');
 	assert.equal(manifest.coverage, 'partial');
 	assert.equal(manifest.source, 'chart.js@4.5.1');
+});
+
+test('the shipped artifact is well-formed, so the adapter may skip the check at import time', () => {
+	assert.deepEqual(checkArtifact(artifact).problems, []);
+	assert.equal(schema(), schema());
+});
+
+test('scriptable colors accept strings, arrays, host objects and callbacks alike', () => {
+	const dataset = (backgroundColor) => ({ type: 'bar', data: { datasets: [{ data: [1], backgroundColor }] } });
+	for (const color of ['red', ['red', 'blue'], () => 'red']) assert.deepEqual(errorsOf(dataset(color)), []);
+	assert.deepEqual(errorsOf(dataset(true)), ['CFG_TYPE $.data.datasets[0].backgroundColor']);
 });

@@ -36,7 +36,7 @@ test('closed objects without authoritative provenance only warn', () => {
 	assert.equal(result.diagnostics[0].severity, 'warning');
 });
 
-test('unions, scriptables, records and null lower exactly; open objects and recursion stay lossy', () => {
+test('unions, scriptables, records, null and open objects lower exactly; only recursion stays lossy', () => {
 	const root = {
 		kind: 'object',
 		additional: 'closed',
@@ -56,7 +56,7 @@ test('unions, scriptables, records and null lower exactly; open objects and recu
 		Tree: { kind: 'object', additional: 'unknown', properties: { child: prop({ kind: 'ref', ref: 'Tree' }) } }
 	};
 	const { manifest, lossy } = lowerArtifact(artifact(root, { definitions }));
-	assert.deepEqual(lossy, ['$.plugins', '$.tree.child']);
+	assert.deepEqual(lossy, ['$.tree.child']);
 	assert.equal(manifest.coverage, 'partial');
 	const config = {
 		size: '50%',
@@ -148,4 +148,35 @@ test('null literals and mixed literal unions lower to exact unions', () => {
 	assert.equal(validateConfig(null, manifest).valid, true);
 	assert.equal(validateConfig('auto', manifest).valid, true);
 	assert.equal(validateConfig('x', manifest).diagnostics[0].code, 'CFG_ENUM');
+});
+
+test('a scriptable whose value is a union accepts every member and a function', () => {
+	const root = {
+		kind: 'object',
+		additional: 'closed',
+		provenance: typed('Options'),
+		properties: {
+			color: prop({ kind: 'scriptable', value: { kind: 'union', anyOf: [{ kind: 'string' }, { kind: 'number' }] } })
+		}
+	};
+	const { manifest, lossy } = lowerArtifact(artifact(root));
+	assert.deepEqual(lossy, []);
+	const codes = (config) => validateConfig(config, manifest).diagnostics.map((d) => `${d.code} ${d.path}`);
+	assert.deepEqual(codes({ color: 'red' }), []);
+	assert.deepEqual(codes({ color: 3 }), []);
+	assert.deepEqual(codes({ color: () => 'red' }), []);
+	assert.deepEqual(codes({ color: true }), ['CFG_TYPE $.color']);
+});
+
+test('an artifact with only open extension points and no unknowns lowers to full coverage', () => {
+	const root = {
+		kind: 'object',
+		additional: 'closed',
+		provenance: typed('Options'),
+		properties: { plugins: prop({ kind: 'object', additional: 'open', properties: {} }) }
+	};
+	const { manifest, lossy } = lowerArtifact(artifact(root));
+	assert.deepEqual(lossy, []);
+	assert.equal(manifest.coverage, 'full');
+	assert.equal(validateConfig({ plugins: { anything: { nested: true } } }, manifest).status, 'valid');
 });

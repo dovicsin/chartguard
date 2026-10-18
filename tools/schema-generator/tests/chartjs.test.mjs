@@ -7,8 +7,10 @@ import { fileURLToPath } from 'node:url';
 
 import { checkArtifact } from '@chartguard/config-core';
 
-import { generate } from '../generate.mjs';
+import { generate, run } from '../generate.mjs';
+import { TypeEmitter } from '../lib/emitter.mjs';
 import { verifiedUpstream } from '../lib/lock.mjs';
+import { createEntryProgram, exportedAliasTypes } from '../lib/program.mjs';
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url));
 const first = generate(ROOT, 'chartjs');
@@ -17,6 +19,34 @@ const artifact = JSON.parse(first.text);
 test('generation is deterministic and matches the committed artifact', () => {
 	assert.equal(generate(ROOT, 'chartjs').text, first.text);
 	assert.equal(readFileSync(first.path, 'utf8'), first.text);
+	assert.deepEqual(run('check', ['chartjs']), []);
+});
+
+test('definition names are bounded, unique and never truncated into collisions', () => {
+	const names = Object.keys(artifact.definitions);
+	assert.equal(new Set(names).size, names.length);
+	for (const name of names) assert.ok(name.length <= 140, name);
+	const hashed = names.filter((name) => name.includes('…#'));
+	assert.ok(hashed.every((name) => /…#[0-9a-f]{10}(~\d+)?$/.test(name)));
+});
+
+test('platform object types are shared definitions, not thousands of inline copies', () => {
+	const inlineOpen = (node) => {
+		if (node === null || typeof node !== 'object') return 0;
+		const own = node.kind === 'object' && node.additional === 'open' && Object.keys(node.properties).length === 0 ? 1 : 0;
+		return own + Object.values(node).reduce((sum, child) => sum + inlineOpen(child), 0);
+	};
+	const nested = Object.values(artifact.definitions).reduce(
+		(sum, definition) => sum + Object.values(definition).reduce((inner, child) => inner + inlineOpen(child), 0),
+		0
+	);
+	assert.equal(nested, 0);
+	const gradient = Object.keys(artifact.definitions).filter(
+		(name) => name.includes('CanvasGradient') && artifact.definitions[name].kind === 'object'
+	);
+	assert.ok(gradient.length > 0);
+	for (const name of gradient)
+		assert.deepEqual(artifact.definitions[name], { kind: 'object', additional: 'open', properties: {} });
 });
 
 test('the artifact is well-formed and pinned to the verified upstream package', () => {
@@ -31,18 +61,56 @@ test('the artifact is well-formed and pinned to the verified upstream package', 
 	});
 });
 
+/** Follows a shared-definition reference (large unions are stored once and referenced). */
+const resolve = (node) => (node.kind === 'ref' ? artifact.definitions[node.ref] : node);
+
 function provenances(node) {
 	if (node === null || typeof node !== 'object') return [];
 	const own = node.provenance === undefined ? [] : [node.provenance];
 	return [...own, ...Object.values(node).flatMap(provenances)];
 }
 
-test('every fact traces to a declaration inside the chart.js package', () => {
+test('every authoritative fact points at a declaration inside the chart.js package', () => {
 	const all = provenances(artifact.definitions);
 	assert.ok(all.length > 1000);
 	assert.ok(all.every(({ confidence, sources }) => confidence === 'authoritative' && sources[0].source === 'chartjs'));
-	const outside = all.map(({ sources }) => sources[0].pointer).filter((pointer) => pointer !== undefined && !pointer.startsWith('chart.js/'));
-	assert.deepEqual(outside, []);
+	const pointers = all.map(({ sources }) => sources[0].pointer);
+	assert.ok(pointers.every((pointer) => typeof pointer === 'string' && pointer.startsWith('chart.js/')));
+});
+
+test('scale unions are extensible, datasets inherit the chart type, runtime-defaulted keys are optional', () => {
+	const bar = artifact.definitions.Config_bar;
+	assert.equal(bar.properties.data.required, undefined);
+	const data = artifact.definitions[bar.properties.data.node.ref];
+	assert.equal(data.properties.datasets.required, undefined);
+	const options = artifact.definitions[bar.properties.options.node.ref];
+	const scales = artifact.definitions[options.properties.scales.node.ref];
+	assert.equal(scales.kind, 'record');
+	const scale = resolve(scales.values);
+	assert.deepEqual([scale.discriminator, scale.extensible], ['type', true]);
+});
+
+test('only known homomorphic wrappers pass primitives through; any other alias keeps its object shape', () => {
+	const entry = [
+		"type Wrap<T> = { v: T };",
+		"type Pair<T> = { a: T; b: T };",
+		"type Partialish<T> = { [K in keyof T]?: T[K] };",
+		"export type U = { w: Wrap<'x'>; p: Pair<number>; q: Partialish<number> };"
+	].join('\n');
+	const { program, checker, entry: file } = createEntryProgram(ROOT, entry);
+	const emit = (wrappers) => {
+		const emitter = new TypeEmitter({ program, checker, sourceId: 't', packageName: 'test', wrappers });
+		const node = emitter.emit(exportedAliasTypes(checker, file).get('U'));
+		return { node, definitions: emitter.definitions };
+	};
+	const strict = emit(new Set());
+	const shape = (name) => strict.definitions[strict.definitions.U.properties[name].node.ref];
+	assert.equal(shape('w').kind, 'object');
+	assert.deepEqual(Object.keys(shape('w').properties), ['v']);
+	assert.deepEqual(Object.keys(shape('p').properties), ['a', 'b']);
+	const lenient = emit(new Set(['Partialish']));
+	assert.deepEqual(lenient.definitions.U.properties.q.node, { kind: 'number' });
+	assert.equal(lenient.definitions.U.properties.w.node.kind, 'ref');
 });
 
 test('the artifact never embeds local paths', () => {

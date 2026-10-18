@@ -3,7 +3,13 @@ import type { IrNode, LiteralNode, ObjectNode, SchemaArtifact, UnionNode } from 
 
 export interface LoweredSchema {
 	readonly manifest: SchemaManifest;
-	/** Paths the engine checks only approximately; any entry makes coverage partial. */
+	/**
+	 * Paths the engine checks only approximately; any entry makes coverage partial.
+	 * Documented extension points (`additional: 'open'`) are not lossy: accepting
+	 * unknown keys there is the exact behaviour, not an approximation.
+	 * A shared definition is lowered once, so a lossy spot inside it is listed under the
+	 * path where the definition was first reached, not under every path that reuses it.
+	 */
 	readonly lossy: readonly string[];
 }
 
@@ -91,14 +97,11 @@ class Lowerer {
 			entries.map(([key, property]) => [key, this.lower(property.node, `${path}.${key}`)])
 		);
 		const required = entries.filter(([, property]) => property.required === true).map(([key]) => key);
-		return { kind: 'object', properties, required, additionalProperties: this.additionalOf(node, path) };
+		return { kind: 'object', properties, required, additionalProperties: this.additionalOf(node) };
 	}
 
-	private additionalOf(node: ObjectNode, path: string): AdditionalProperties {
-		if (node.additional === 'open') {
-			this.lossy.push(path);
-			return 'allow';
-		}
+	private additionalOf(node: ObjectNode): AdditionalProperties {
+		if (node.additional === 'open') return 'allow';
 		const authoritative = node.provenance?.confidence === 'authoritative';
 		return node.additional === 'closed' && authoritative ? 'deny' : 'warn';
 	}

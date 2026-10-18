@@ -16,8 +16,9 @@ const COMPILER_OPTIONS = {
 /**
  * Type-checks a generated in-memory entry file against installed declarations.
  * Declarations are only parsed and type-checked; nothing is executed.
+ * A previous program for the same root lets TypeScript reuse its parsed declaration files.
  */
-export function createEntryProgram(root, entryText) {
+export function createEntryProgram(root, entryText, previous) {
 	const entryPath = resolve(root, '__chartguard_schema_entry__.ts');
 	const host = ts.createCompilerHost(COMPILER_OPTIONS);
 	const readSourceFile = host.getSourceFile.bind(host);
@@ -27,7 +28,7 @@ export function createEntryProgram(root, entryText) {
 			? ts.createSourceFile(fileName, entryText, languageVersion, true)
 			: readSourceFile(fileName, languageVersion, ...rest);
 	host.fileExists = (fileName) => fileName === entryPath || fileExists(fileName);
-	const program = ts.createProgram([entryPath], COMPILER_OPTIONS, host);
+	const program = ts.createProgram([entryPath], COMPILER_OPTIONS, host, previous);
 	const entry = program.getSourceFile(entryPath);
 	return { program, checker: program.getTypeChecker(), entry };
 }

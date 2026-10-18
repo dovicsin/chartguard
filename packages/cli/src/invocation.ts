@@ -20,22 +20,25 @@ const OPTIONS = {
 	json: { type: 'boolean', default: false }
 } as const;
 
+const HELP_WORDS: ReadonlySet<string> = new Set(['help', '--help', '-h']);
+
 function isCommand(value: string | undefined): value is Command {
 	return COMMANDS.some((command) => command === value);
 }
 
 export function isHelpRequest(argv: readonly string[]): boolean {
 	const [first] = argv;
-	return first === undefined || first === 'help' || first === '--help';
+	return first === undefined || HELP_WORDS.has(first);
 }
 
-/** Returns undefined for any malformed invocation. */
+/** Returns undefined for any malformed invocation; `--name` belongs to `analyze` only. */
 export function parseInvocation(argv: readonly string[]): Invocation | undefined {
 	try {
 		const { positionals, values } = parseArgs({ args: [...argv], options: OPTIONS, allowPositionals: true });
-		const [command] = positionals;
+		const [command, ...rest] = positionals;
 		const { library, file, name, json } = values;
-		if (!isCommand(command) || library === undefined || file === undefined || !isLibrary(library)) return undefined;
+		if (!isCommand(command) || rest.length > 0 || library === undefined || file === undefined) return undefined;
+		if (!isLibrary(library) || (name !== undefined && command !== 'analyze')) return undefined;
 		return { command, library, file, name, json };
 	} catch {
 		return undefined;

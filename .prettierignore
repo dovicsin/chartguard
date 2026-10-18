@@ -10,3 +10,4 @@ SECURITY.md
 .github/**/*.md
 packages/**/README.md
 packages/**/generated
+examples/chartjs-syntax-error.ts

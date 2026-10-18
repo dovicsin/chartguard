@@ -33,17 +33,34 @@ export interface SchemaManifest {
 	readonly source: string;
 }
 
+export interface ObjectOptions {
+	readonly additional?: AdditionalProperties;
+	readonly required?: readonly string[];
+}
+
+export interface UnionOptions {
+	readonly discriminator?: string;
+	readonly defaultVariant?: number;
+	readonly extensible?: boolean;
+}
+
 export const s = {
-	object: (
-		properties: Readonly<Record<string, NodeSchema>>,
-		additionalProperties: AdditionalProperties = 'warn',
-		required: readonly string[] = []
-	): NodeSchema => ({ kind: 'object', properties, additionalProperties, required }),
+	object: (properties: Readonly<Record<string, NodeSchema>>, options: ObjectOptions = {}): NodeSchema => ({
+		kind: 'object',
+		properties,
+		additionalProperties: options.additional ?? 'warn',
+		required: options.required ?? []
+	}),
 	array: (element: NodeSchema): NodeSchema => ({ kind: 'array', element }),
 	string: (values?: readonly string[]): NodeSchema =>
 		values === undefined ? { kind: 'string' } : { kind: 'string', enum: values },
 	number: (): NodeSchema => ({ kind: 'number' }),
 	boolean: (): NodeSchema => ({ kind: 'boolean' }),
 	func: (): NodeSchema => ({ kind: 'function' }),
+	/** An empty union accepts nothing and is a programming error, not a schema. */
+	union: (anyOf: readonly NodeSchema[], options: UnionOptions = {}): NodeSchema => {
+		if (anyOf.length === 0) throw new Error('s.union needs at least one member');
+		return { kind: 'union', anyOf, ...options };
+	},
 	any: (): NodeSchema => ({ kind: 'any' })
 };

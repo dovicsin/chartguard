@@ -1,4 +1,4 @@
-import type { ConfigValidator, ValidationResult } from '@chartguard/core';
+import type { ConfigValidator, QualityReport } from '@chartguard/core';
 
 const LIBRARIES = ['chartjs', 'echarts', 'highcharts'] as const;
 export type Library = (typeof LIBRARIES)[number];
@@ -8,7 +8,7 @@ interface ConfigAdapter {
 }
 
 interface QualityAdapter {
-	readonly analyze: (config: unknown) => ValidationResult;
+	readonly analyze: (config: unknown) => QualityReport;
 }
 
 /** Adapters load lazily so a run only pulls in the requested library. */

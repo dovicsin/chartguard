@@ -1,7 +1,7 @@
-import { type Diagnostic, isContainer, ownDataProperty, suggestion } from '@chartguard/core';
+import { type Diagnostic, isContainer, ownDataProperty, suggestion, type ValidationOptions } from '@chartguard/core';
 
 import { confirmed, inconclusive, unresolved } from './diagnostics.js';
-import { kindOf } from './kind.js';
+import { isListLike, kindOf } from './kind.js';
 import type { NodeSchema, SchemaManifest } from './schema.js';
 import { type Selection, selectVariant } from './union.js';
 
@@ -17,12 +17,38 @@ function descend(cursor: Cursor, segment: string): Cursor {
 	return { path: `${cursor.path}${segment}`, depth: cursor.depth + 1 };
 }
 
-/** Walks a config against a schema without invoking getters or recursing through cycles. */
+interface HoleRun {
+	readonly first: number;
+	readonly last: number;
+}
+
+function holeRuns(items: ArrayLike<unknown>, count: number): HoleRun[] {
+	const runs: HoleRun[] = [];
+	for (let index = 0; index < count; index++) {
+		if (ownDataProperty(items, String(index)).found) continue;
+		const open = runs.at(-1);
+		if (open?.last === index - 1) runs[runs.length - 1] = { first: open.first, last: index };
+		else runs.push({ first: index, last: index });
+	}
+	return runs;
+}
+
+function rangeSegment({ first, last }: HoleRun): string {
+	return first === last ? `[${String(first)}]` : `[${String(first)}..${String(last)}]`;
+}
+
+/**
+ * Walks a config against a schema without invoking getters or recursing through cycles.
+ * Own-property reads on a Proxy still run its traps; that is the caller's object, not a getter.
+ */
 export class ConfigWalker {
 	readonly diagnostics: Diagnostic[] = [];
 	private readonly ancestors = new WeakSet();
 
-	constructor(private readonly manifest: SchemaManifest) {}
+	constructor(
+		private readonly manifest: SchemaManifest,
+		private readonly options: ValidationOptions = {}
+	) {}
 
 	walk(value: unknown, schema: NodeSchema, cursor: Cursor = { path: '$', depth: 0 }): void {
 		if (cursor.depth > MAX_DEPTH) {
@@ -93,27 +119,27 @@ export class ConfigWalker {
 		}
 		this.ancestors.add(container);
 		try {
-			if (Array.isArray(container)) this.walkArray(container, schema, cursor);
+			if (isListLike(container)) this.walkArray(container, schema, cursor);
 			else this.walkObject(container, schema, cursor);
 		} finally {
 			this.ancestors.delete(container);
 		}
 	}
 
-	private walkArray(items: readonly unknown[], schema: NodeSchema, cursor: Cursor): void {
+	/** Consecutive holes are one finding (`$.a[3..9]`), so a sparse array cannot flood the report. */
+	private walkArray(items: ArrayLike<unknown>, schema: NodeSchema, cursor: Cursor): void {
 		if (items.length > MAX_ENTRIES)
 			this.diagnostics.push(unresolved('CFG_TRUNCATED', cursor.path, 'Array inspection limit reached.'));
 		const { element } = schema;
 		if (element === undefined) return;
 		const count = Math.min(items.length, MAX_ENTRIES);
+		for (const run of holeRuns(items, count))
+			this.diagnostics.push(
+				unresolved('CFG_DYNAMIC', cursor.path + rangeSegment(run), 'Array entry is a hole or accessor; not evaluated.')
+			);
 		for (let index = 0; index < count; index++) {
-			const child = descend(cursor, `[${String(index)}]`);
 			const entry = ownDataProperty(items, String(index));
-			if (entry.found) this.walk(entry.value, element, child);
-			else
-				this.diagnostics.push(
-					unresolved('CFG_DYNAMIC', child.path, 'Array entry is a hole or accessor; not evaluated.')
-				);
+			if (entry.found) this.walk(entry.value, element, descend(cursor, `[${String(index)}]`));
 		}
 	}
 
@@ -125,10 +151,19 @@ export class ConfigWalker {
 		for (const key of keys.slice(0, MAX_ENTRIES)) this.walkProperty(object, key, schema, descend(cursor, `.${key}`));
 	}
 
+	/**
+	 * An explicit `undefined` is absent, exactly as `walkProperty` treats it; an accessor counts as present.
+	 * For an incomplete input (static extraction with unresolved spreads) a missing key is unresolved,
+	 * because the part that was not extracted may supply it.
+	 */
 	private checkRequired(object: object, required: readonly string[], path: string): void {
-		for (const key of required)
-			if (!Object.hasOwn(object, key))
-				this.diagnostics.push(confirmed('CFG_REQUIRED', `${path}.${key}`, `Missing required property ${key}.`));
+		const report = this.options.incomplete === true ? unresolved : confirmed;
+		for (const key of required) {
+			const entry = ownDataProperty(object, key);
+			const present = Object.hasOwn(object, key) && !(entry.found && entry.value === undefined);
+			if (!present)
+				this.diagnostics.push(report('CFG_REQUIRED', `${path}.${key}`, `Missing required property ${key}.`));
+		}
 	}
 
 	private walkProperty(object: object, key: string, schema: NodeSchema, cursor: Cursor): void {

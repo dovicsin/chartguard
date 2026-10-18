@@ -21,7 +21,7 @@ Every adapter installs on its own and never pulls in another chart library.
 
 ## Requirements
 
-Node.js 20.19+ and npm 10+.
+Node.js 20.19+ and npm 11+.
 
 ## Setup
 
@@ -55,7 +55,7 @@ node packages/cli/bin/chartguard.mjs quality --library chartjs --file examples/c
 node packages/cli/bin/chartguard.mjs analyze --library chartjs --file examples/chartjs-source.ts
 ```
 
-Exit codes: `0` no confirmed errors, `1` confirmed errors, `2` invocation failure.
+Exit codes: `0` no confirmed errors, `1` confirmed errors, `2` bad arguments or unusable input, `3` internal failure.
 
 ```ts
 import { validate } from '@chartguard/config-highcharts';

@@ -1,15 +1,19 @@
 import type { SourceObject } from '@chartguard/analysis-typescript';
-import { type ConfigValidator, type Diagnostic, isConfirmedError, type ValidationResult } from '@chartguard/core';
+import type { ConfigValidator, Diagnostic, ValidationResult } from '@chartguard/core';
 
 import type { Io } from './io.js';
 
-const DEFAULT_CONFIG_NAMES: ReadonlySet<string> = new Set(['config', 'options', 'chartConfig']);
+/** `options` is deliberately absent: it names a sub-tree, and only whole configs are validated today. */
+const DEFAULT_CONFIG_NAMES: ReadonlySet<string> = new Set(['config', 'chartConfig']);
 
 export interface AnalyzedEntry {
 	readonly name: string;
 	readonly line: number;
 	readonly complete: boolean;
-	readonly result: ValidationResult;
+	/** Why the object could not be taken at face value; validation ran only when this is empty or dynamic. */
+	readonly notes: readonly Diagnostic[];
+	/** Absent for a reassignable binding: its initializer may not be the value the chart is built with. */
+	readonly result: ValidationResult | undefined;
 }
 
 export function selectConfigs(objects: readonly SourceObject[], name: string | undefined): SourceObject[] {
@@ -18,34 +22,26 @@ export function selectConfigs(objects: readonly SourceObject[], name: string | u
 	);
 }
 
-/** An unresolved spread or value may supply missing required keys. Do not invent a hard error. */
-function softenRequired(diagnostic: Diagnostic): Diagnostic {
-	return diagnostic.code === 'CFG_REQUIRED'
-		? { ...diagnostic, severity: 'warning', confidence: 'unknown' }
-		: diagnostic;
-}
-
+/** A partially extracted object is validated as incomplete input; the engine then treats missing keys as unresolved. */
 export function analyzeEntry(object: SourceObject, validate: ConfigValidator): AnalyzedEntry {
-	const base = validate(object.value);
-	const diagnostics = object.complete ? base.diagnostics : base.diagnostics.map(softenRequired);
-	const valid = !diagnostics.some(isConfirmedError);
-	return {
-		name: object.name,
-		line: object.line,
-		complete: object.complete,
-		result: { ...base, diagnostics, valid, status: valid ? 'partial' : 'invalid' }
-	};
+	const { name, line, complete, binding, diagnostics: notes } = object;
+	const result = binding === 'const' ? validate(object.value, { incomplete: !complete }) : undefined;
+	return { name, line, complete, notes, result };
 }
 
-export function printEntries(
-	entries: readonly AnalyzedEntry[],
-	sourceDiagnostics: readonly Diagnostic[],
-	io: Io
-): void {
-	for (const { name, line, complete, result } of entries) {
-		io.out(`${name} @ line ${String(line)}: ${result.status}${complete ? '' : ' (dynamic / partial)'}`);
-		for (const { severity, path, message, suggestion } of result.diagnostics)
-			io.out(`  ${severity}: ${[path, message, suggestion].filter((part) => part !== undefined).join(' ')}`);
+function describeEntry({ name, line, complete, result }: AnalyzedEntry): string {
+	const status = result === undefined ? 'not validated' : result.status;
+	return `${name} @ line ${String(line)}: ${status}${complete ? '' : ' (dynamic / partial)'}`;
+}
+
+function describeDiagnostic({ severity, path, message, suggestion }: Diagnostic): string {
+	return `  ${severity}: ${[path, message, suggestion].filter((part) => part !== undefined).join(' ')}`;
+}
+
+export function printEntries(entries: readonly AnalyzedEntry[], io: Io): void {
+	for (const entry of entries) {
+		io.out(describeEntry(entry));
+		for (const diagnostic of [...entry.notes, ...(entry.result?.diagnostics ?? [])])
+			io.out(describeDiagnostic(diagnostic));
 	}
-	for (const { severity, message } of sourceDiagnostics) io.out(`${severity}: ${message}`);
 }

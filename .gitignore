@@ -31,6 +31,8 @@
 
 # Packages
 !/packages/**/package.json
+!/packages/**/README.md
+!/packages/**/NOTICE
 !/packages/**/tsconfig.json
 !/packages/**/src/**/*.ts
 !/packages/**/src/generated/*.json

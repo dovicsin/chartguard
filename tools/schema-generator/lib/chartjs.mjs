@@ -1,29 +1,19 @@
 import { TypeEmitter } from './emitter.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
+import { artifactOf, typeLookups, unionMembers } from './types.mjs';
 
 const SOURCE_ID = 'chartjs';
-
-function propertyType(checker, type, name) {
-	const symbol = checker.getPropertyOfType(type, name);
-	if (symbol === undefined) throw new Error(`chart.js types changed: no "${name}" property`);
-	return checker.getNonNullableType(checker.getTypeOfSymbol(symbol));
-}
-
-function elementType(checker, arrayType) {
-	const [element] = checker.getTypeArguments(arrayType);
-	if (element === undefined) throw new Error('chart.js types changed: expected an array type');
-	return element;
-}
+/** `DeepPartial<T>` / `_DeepPartialObject<T>` (dist/types/utils.d.ts) map over primitives unchanged. */
+const WRAPPERS = new Set(['DeepPartial', '_DeepPartialObject']);
 
 /** Chart types as declared by the augmentable `ChartTypeRegistry`. */
 function registeredChartTypes(root) {
-	const { checker, entry } = createEntryProgram(
+	const { program, checker, entry } = createEntryProgram(
 		root,
 		"import type { ChartTypeRegistry } from 'chart.js';\nexport type Registry = keyof ChartTypeRegistry;"
 	);
 	const registry = exportedAliasTypes(checker, entry).get('Registry');
-	const members = registry.isUnion() ? registry.types : [registry];
-	return members.map((member) => member.value).sort();
+	return { program, chartTypes: unionMembers(registry).map((member) => member.value).sort() };
 }
 
 function entryText(chartTypes) {
@@ -37,24 +27,44 @@ function entryText(chartTypes) {
 /**
  * Positions where the declarations are narrower or wider than the runtime contract:
  * data points depend on the caller's generic `TData`, inline plugins are user objects,
- * and `options.plugins` is extended by third-party plugins through declaration merging.
+ * `options.plugins` is extended by third-party plugins through declaration merging,
+ * `options.scales[*]` variants come from `ScaleTypeRegistry`, which plugins merge into
+ * (chartjs-plugin-streaming, chartjs-chart-matrix), and `config.data`, `data.datasets`
+ * and `dataset.data` are defaulted by the runtime (`initConfig`/`initData` in
+ * chart.js/dist/chart.js, `config.data = config.data || {}`, `data.datasets = data.datasets || []`,
+ * `_dataCheck`: `dataset.data || (dataset.data = [])`), so their absence is not an error.
  */
+function adjustChartType(lookups, { config, datasetTypes }, into) {
+	const { property, propertyType, indexValueType, elementType } = lookups;
+	const data = propertyType(config, 'data');
+	const datasetType = elementType(propertyType(data, 'datasets'));
+	const options = propertyType(config, 'options');
+	into.opaque.add(elementType(propertyType(config, 'plugins')));
+	into.open.add(propertyType(options, 'plugins'));
+	into.extensible.add(indexValueType(propertyType(options, 'scales')));
+	into.runtimeOptional.add(property(config, 'data'));
+	into.runtimeOptional.add(property(data, 'datasets'));
+	for (const dataset of [datasetType, ...datasetTypes]) {
+		into.opaque.add(propertyType(dataset, 'data'));
+		into.runtimeOptional.add(property(dataset, 'data'));
+	}
+	into.datasetVariants.set(datasetType, [datasetType, ...datasetTypes]);
+}
+
 function contractAdjustments(checker, chartTypes, aliases) {
-	const opaque = new Set();
-	const open = new Set();
-	const datasetVariants = new Map();
+	const into = {
+		opaque: new Set(),
+		open: new Set(),
+		extensible: new Set(),
+		runtimeOptional: new Set(),
+		datasetVariants: new Map()
+	};
 	for (const chartType of chartTypes) {
 		const config = aliases.get(`Config_${chartType}`);
-		const data = propertyType(checker, config, 'data');
-		const datasetType = elementType(checker, propertyType(checker, data, 'datasets'));
-		opaque.add(propertyType(checker, datasetType, 'data'));
-		opaque.add(elementType(checker, propertyType(checker, config, 'plugins')));
-		open.add(propertyType(checker, propertyType(checker, config, 'options'), 'plugins'));
-		const others = chartTypes.filter((other) => other !== chartType).map((other) => aliases.get(`Dataset_${other}`));
-		for (const other of others) opaque.add(propertyType(checker, other, 'data'));
-		datasetVariants.set(datasetType, [datasetType, ...others]);
+		const datasetTypes = chartTypes.filter((other) => other !== chartType).map((other) => aliases.get(`Dataset_${other}`));
+		adjustChartType(typeLookups(checker, 'chart.js'), { config, datasetTypes }, into);
 	}
-	return { opaque, open, datasetVariants };
+	return into;
 }
 
 /** Mixed charts: a dataset without `type` inherits the chart type; plugins may register more types. */
@@ -74,30 +84,19 @@ function datasetUnions(emitter, datasetVariants) {
 }
 
 export function generateChartjs(root, pin) {
-	const chartTypes = registeredChartTypes(root);
-	const { program, checker, entry } = createEntryProgram(root, entryText(chartTypes));
+	const { program: registryProgram, chartTypes } = registeredChartTypes(root);
+	const { program, checker, entry } = createEntryProgram(root, entryText(chartTypes), registryProgram);
 	const aliases = exportedAliasTypes(checker, entry);
-	const { opaque, open, datasetVariants } = contractAdjustments(checker, chartTypes, aliases);
-	const emitter = new TypeEmitter({ program, checker, sourceId: SOURCE_ID, opaque, open });
+	const { datasetVariants, ...adjustments } = contractAdjustments(checker, chartTypes, aliases);
+	const emitter = new TypeEmitter({ program, checker, sourceId: SOURCE_ID, packageName: pin.package, wrappers: WRAPPERS, ...adjustments });
 	emitter.overrides = datasetUnions(emitter, datasetVariants);
 	const configs = chartTypes.map((chartType) => emitter.reference(aliases.get(`Config_${chartType}`)));
-	return {
-		irVersion: 1,
+	return artifactOf({
 		library: 'chartjs',
-		libraryVersion: pin.version,
-		// Not full until official examples pass against the runtime (CG-01-08).
-		coverage: 'partial',
-		generator: { name: '@chartguard/schema-generator', version: '0.1.0' },
-		sources: {
-			[SOURCE_ID]: {
-				kind: 'npm-package',
-				locator: `${pin.package}@${pin.version}`,
-				integrity: pin.integrity,
-				license: pin.license.spdx
-			}
-		},
+		sourceId: SOURCE_ID,
+		pin,
 		definitions: emitter.definitions,
 		root: { kind: 'union', anyOf: configs, discriminator: 'type', extensible: true }
-	};
+	});
 }
 

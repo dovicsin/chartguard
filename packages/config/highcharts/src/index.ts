@@ -1,5 +1,5 @@
 import { s, type SchemaManifest, validateConfig } from '@chartguard/config-core';
-import type { ValidationResult } from '@chartguard/core';
+import type { ValidationOptions, ValidationResult } from '@chartguard/core';
 
 const toggle = s.object({ enabled: s.boolean() });
 const text = s.object({ text: s.string() });
@@ -40,6 +40,6 @@ export const manifest: SchemaManifest = {
 	})
 };
 
-export function validate(input: unknown): ValidationResult {
-	return validateConfig(input, manifest);
+export function validate(input: unknown, options?: ValidationOptions): ValidationResult {
+	return validateConfig(input, manifest, options);
 }

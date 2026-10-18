@@ -1,9 +1,10 @@
-import type { Diagnostic, ValidationResult } from '@chartguard/core';
+import type { Diagnostic, QualityReport, ValidationResult } from '@chartguard/core';
 
 import { EXIT_INVALID, EXIT_OK } from './exit-codes.js';
 import type { Io } from './io.js';
 
 const PARTIAL_NOTE = '  NOTE: partial schema coverage; absence of errors is not a compatibility guarantee.';
+const ADVISORY_NOTE = '  NOTE: quality findings are advisory and depend on context; they never fail a build.';
 
 function describe(diagnostic: Diagnostic): string {
 	const { severity, code, path, message, suggestion } = diagnostic;
@@ -15,14 +16,23 @@ export function printJson(value: unknown, io: Io): void {
 	io.out(JSON.stringify(value, null, 2));
 }
 
-export type ReportedResult = ValidationResult & { readonly mode?: string };
-
-export function reportResult(checked: ReportedResult, json: boolean, io: Io): number {
-	if (json) printJson(checked, io);
+export function reportResult(checked: ValidationResult, json: boolean, io: Io): number {
+	if (json) printJson({ mode: 'validate', ...checked }, io);
 	else {
 		io.out(`${checked.library} ${checked.status} (coverage: ${checked.coverage}; schema ${checked.schemaVersion})`);
 		for (const diagnostic of checked.diagnostics) io.out(describe(diagnostic));
 		if (checked.status === 'partial') io.out(PARTIAL_NOTE);
 	}
 	return checked.valid ? EXIT_OK : EXIT_INVALID;
+}
+
+/** Quality is advisory: the exit status is always success. */
+export function reportQuality(report: QualityReport, json: boolean, io: Io): number {
+	if (json) printJson({ mode: 'quality', ...report }, io);
+	else {
+		io.out(`${report.library} quality review (rules ${report.rulesVersion})`);
+		for (const diagnostic of report.diagnostics) io.out(describe(diagnostic));
+		io.out(ADVISORY_NOTE);
+	}
+	return EXIT_OK;
 }

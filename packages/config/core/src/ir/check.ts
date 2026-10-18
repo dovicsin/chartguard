@@ -30,6 +30,20 @@ function checkUnionOptions(checker: NodeChecker, node: Node, path: string, size:
 		checker.report(path, 'discriminator must be a string');
 }
 
+/** A member's discriminator property must be a literal (or a union of literals) so it can select the member. */
+function hasLiteralDiscriminator(member: Node, key: string): boolean {
+	const properties = member['properties'];
+	const property = isRecord(properties) ? properties[key] : undefined;
+	const node = isRecord(property) ? property['node'] : undefined;
+	if (!isRecord(node)) return false;
+	if (node['kind'] === 'literal') return true;
+	return (
+		node['kind'] === 'union' &&
+		Array.isArray(node['anyOf']) &&
+		node['anyOf'].every((item) => isRecord(item) && item['kind'] === 'literal')
+	);
+}
+
 const CHILD_CHECKS: Partial<Record<string, ChildCheck>> = {
 	object: (checker, node, path, depth) => {
 		checker.checkProperties(node['properties'], `${path}.properties`, depth);
@@ -51,6 +65,7 @@ const CHILD_CHECKS: Partial<Record<string, ChildCheck>> = {
 		else
 			members.forEach((member, index) => {
 				checker.checkNode(member, `${path}.anyOf[${String(index)}]`, depth + 1);
+				checker.checkDiscriminated(member, node['discriminator'], `${path}.anyOf[${String(index)}]`);
 			});
 		checkUnionOptions(checker, node, path, Array.isArray(members) ? members.length : 0);
 	},
@@ -98,6 +113,8 @@ class NodeChecker {
 			if (!isRecord(property)) this.report(propertyPath, 'expected an object');
 			else {
 				this.checkProvenance(property['provenance'], `${propertyPath}.provenance`);
+				if (property['required'] !== undefined && typeof property['required'] !== 'boolean')
+					this.report(propertyPath, 'required must be a boolean');
 				this.checkNode(property['node'], `${propertyPath}.node`, depth + 1);
 			}
 		}
@@ -106,6 +123,15 @@ class NodeChecker {
 	checkRef(ref: unknown, path: string): void {
 		if (typeof ref !== 'string' || !Object.hasOwn(this.definitions, ref))
 			this.report(path, `unresolved ref ${quote(ref)}`);
+	}
+
+	/** Object members of a discriminated union (inline or by ref) must carry a literal discriminator. */
+	checkDiscriminated(member: unknown, key: unknown, path: string): void {
+		if (typeof key !== 'string') return;
+		const target = isRecord(member) && member['kind'] === 'ref' ? this.definitions[String(member['ref'])] : member;
+		if (!isRecord(target) || target['kind'] !== 'object') return;
+		if (!hasLiteralDiscriminator(target, key))
+			this.report(path, `discriminator "${key}" must be a literal property of every object member`);
 	}
 
 	private checkProvenance(value: unknown, path: string): void {

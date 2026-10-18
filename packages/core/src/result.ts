@@ -1,13 +1,12 @@
 import type { Coverage, Diagnostic, ValidationResult, ValidationStatus } from './diagnostic.js';
 
-const UNRESOLVED_CODES: ReadonlySet<string> = new Set(['CFG_UNKNOWN_KEY', 'CFG_DYNAMIC']);
-
 export function isConfirmedError(diagnostic: Diagnostic): boolean {
 	return diagnostic.severity === 'error';
 }
 
+/** Producers mark anything they could not decide with `confidence: 'unknown'`; codes carry no meaning here. */
 function isUnresolved(diagnostic: Diagnostic): boolean {
-	return diagnostic.confidence === 'unknown' || UNRESOLVED_CODES.has(diagnostic.code);
+	return diagnostic.confidence === 'unknown';
 }
 
 function statusOf(coverage: Coverage, diagnostics: readonly Diagnostic[]): ValidationStatus {
@@ -16,6 +15,7 @@ function statusOf(coverage: Coverage, diagnostics: readonly Diagnostic[]): Valid
 	return 'valid';
 }
 
+/** The only place that derives `valid` and `status`; callers never assemble a result by hand. */
 export function result(
 	library: string,
 	schemaVersion: string,

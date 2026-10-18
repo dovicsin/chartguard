@@ -60,7 +60,8 @@
 			],
 			"openIssues": [
 				"Docs tree is unversioned; pin apache/echarts-doc by commit before use.",
-				"26268 of 58910 docs-tree nodes carry no type."
+				"26268 of 58910 docs-tree nodes carry no type.",
+				"Runtime subtype defaults (dataZoom, legend, visualMap, timeline, axes) are not in the declarations; those components are inconclusive until CG-02-04."
 			]
 		},
 		{

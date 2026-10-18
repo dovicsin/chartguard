@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"sideEffects": false,
 	"engines": {
-		"node": ">=20.11"
+		"node": ">=20.19"
 	},
 	"files": [
 		"bin/",

@@ -14,5 +14,5 @@
 			"project": ["src/**/*.ts"]
 		}
 	},
-	"ignoreDependencies": ["chart.js"]
+	"ignoreDependencies": ["chart.js", "echarts"]
 }
