@@ -42,6 +42,14 @@
 !/packages/**/tests/**/*.mjs
 !/packages/cli/bin/*.mjs
 
+# Apps (code only; their README files stay local)
+!/apps/playground/package.json
+!/apps/playground/tsconfig.json
+!/apps/playground/src/**/*.ts
+!/apps/playground/static/*
+!/apps/playground/scripts/*.mjs
+!/apps/playground/tests/*.mjs
+
 # Never tracked, even below an allowlisted path
 node_modules/
 dist/

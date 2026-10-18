@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import { moduleReferences } from './imports.mjs';
@@ -41,9 +41,12 @@ function packageViolations(packageDir, policy) {
 	return [...manifestViolations, ...sources].map((violation) => ({ ...violation, packageName: manifest.name }));
 }
 
-/** All boundary violations below `<root>/packages`, with paths relative to root. */
+/** All boundary violations below `<root>/packages` and `<root>/apps`, with paths relative to root. */
 export function checkWorkspace(root, policy) {
-	return findPackageDirs(join(root, 'packages'))
+	return ['packages', 'apps']
+		.map((directory) => join(root, directory))
+		.filter((directory) => existsSync(directory))
+		.flatMap((directory) => findPackageDirs(directory))
 		.flatMap((packageDir) => packageViolations(packageDir, policy))
 		.map((violation) => ({ ...violation, file: relative(root, violation.file) }));
 }

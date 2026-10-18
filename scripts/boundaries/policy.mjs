@@ -48,5 +48,10 @@ export const POLICY = {
 		peer: ['eslint']
 	}),
 	'@chartguard/cli': rule({ internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, ANALYSIS], node: true }),
+	/** A browser app: published adapter entry points and the two runtimes it renders with; no Node built-ins. */
+	'@chartguard/playground': rule({
+		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS],
+		external: [...CHART_RUNTIMES.chartjs, ...CHART_RUNTIMES.echarts, 'date-fns']
+	}),
 	...Object.fromEntries(LIBRARIES.flatMap(libraryRules))
 };

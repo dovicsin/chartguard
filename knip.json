@@ -20,6 +20,10 @@
 			"entry": ["tests/**/*.test.mjs"],
 			"project": ["src/**/*.ts"]
 		},
+		"apps/playground": {
+			"entry": ["src/main.ts", "scripts/*.mjs", "tests/*.test.mjs"],
+			"project": ["src/**/*.ts", "scripts/*.mjs"]
+		},
 		"packages/*/*": {
 			"entry": ["tests/**/*.test.mjs"],
 			"project": ["src/**/*.ts"]

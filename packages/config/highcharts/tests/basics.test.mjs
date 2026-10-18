@@ -2,19 +2,15 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { validate } from '../dist/index.js';
+import { KNOWN_VALID } from './fixtures/known-valid.mjs';
 test('rejects nonobject root', () => assert.equal(validate(42).status, 'invalid'));
 
-test('valid 13.x union forms are not rejected', () => {
-	const config = {
-		chart: { type: 'line', height: '50%', width: null },
-		xAxis: [{ categories: ['a', 'b'] }, { opposite: true }],
-		yAxis: { min: null, max: '2026-01-01', title: { text: null } },
-		series: [{ type: 'line', data: [1, 2], color: { linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 }, stops: [] } }]
-	};
-	const result = validate(config);
-	assert.equal(result.valid, true);
-	assert.deepEqual(result.diagnostics, []);
-});
+for (const [name, config] of Object.entries(KNOWN_VALID))
+	test(`known-valid: ${name}`, () => {
+		const result = validate(config);
+		assert.equal(result.valid, true);
+		assert.deepEqual(result.diagnostics, []);
+	});
 
 test('closed primitive fields are still confirmed errors', () => {
 	const result = validate({ credits: { enabled: 'false' }, series: [{ name: 7 }] });

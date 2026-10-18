@@ -150,3 +150,27 @@ test('workspace scan reports violations with file and line', (t) => {
 		}
 	]);
 });
+
+test('the playground may use published adapters and the two runtimes, but no Node built-ins or deep imports', () => {
+	const rule = POLICY['@chartguard/playground'];
+	const declared = new Set(['@chartguard/config-chartjs', 'chart.js', 'echarts', 'date-fns']);
+	const check = (specifier) =>
+		checkImport({
+			rule,
+			declared,
+			packageDir: '/repo/apps/playground',
+			file: '/repo/apps/playground/src/main.ts',
+			specifier
+		});
+	assert.equal(check('@chartguard/config-chartjs'), undefined);
+	assert.equal(check('chart.js'), undefined);
+	assert.equal(check('echarts'), undefined);
+	assert.equal(check('node:fs'), 'must not import Node.js built-in "node:fs"');
+	assert.equal(
+		check('@chartguard/config-chartjs/dist/walker.js'),
+		'deep import "@chartguard/config-chartjs/dist/walker.js"; import the package entry point'
+	);
+	assert.deepEqual(checkManifest({ name: '@chartguard/playground', dependencies: { highcharts: '13.1.1' } }, POLICY), [
+		'pulls in the highcharts chart runtime "highcharts" (dependencies)'
+	]);
+});

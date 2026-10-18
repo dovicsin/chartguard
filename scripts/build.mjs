@@ -25,4 +25,8 @@ function compactGeneratedArtifacts(directory) {
 }
 
 compactGeneratedArtifacts('packages');
+
+// The playground bundle needs the compiled packages above.
+const playground = spawnSync(process.execPath, ['apps/playground/scripts/build.mjs'], { stdio: 'inherit' });
+if (playground.status !== 0) process.exit(playground.status ?? 1);
 console.log('Build successful; CLI is native ESM.');

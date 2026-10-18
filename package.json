@@ -15,7 +15,8 @@
 		"packages/quality/*",
 		"packages/analysis/*",
 		"packages/integrations/*",
-		"packages/cli"
+		"packages/cli",
+		"apps/playground"
 	],
 	"scripts": {
 		"prepare": "husky",
@@ -25,6 +26,7 @@
 		"schema:check": "node tools/schema-generator/generate.mjs check",
 		"schema:diff": "node tools/schema-generator/diff.mjs",
 		"conformance:import": "node tools/conformance/corpus/import.mjs",
+		"playground": "node apps/playground/scripts/serve.mjs",
 		"typecheck": "tsc -b tsconfig.json",
 		"test": "node scripts/test.mjs",
 		"test:coverage": "c8 node scripts/test.mjs",
@@ -47,6 +49,7 @@
 		"chart.js": "4.5.1",
 		"concurrently": "^9.2.5",
 		"echarts": "6.1.0",
+		"esbuild": "^0.28.2",
 		"eslint": "^9.39.5",
 		"eslint-config-prettier": "^9.1.2",
 		"eslint-plugin-simple-import-sort": "^12.1.1",

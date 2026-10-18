@@ -129,7 +129,11 @@ const tooling = {
 
 /** The conformance harness exists to intercept what chart runtimes print on the console. */
 const consoleCapture = {
-	files: ['tools/conformance/lib/capture.mjs', 'tools/conformance/tests/capture.test.mjs'],
+	files: [
+		'tools/conformance/lib/capture.mjs',
+		'tools/conformance/tests/capture.test.mjs',
+		'apps/playground/src/runtime.ts'
+	],
 	rules: {
 		'no-console': 'off'
 	}
