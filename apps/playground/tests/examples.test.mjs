@@ -21,6 +21,11 @@ test('examples come from the runtime-verified fixtures of every library, with un
 	const ids = examples.map(({ id }) => id);
 	assert.equal(new Set(ids).size, ids.length);
 	for (const library of ['chartjs', 'echarts', 'highcharts']) assert.ok(examples.some((example) => example.library === library), library);
+	// The Highcharts contract pins the locally generated schema; the playground validates with the curated subset.
+	assert.deepEqual(
+		examples.filter((example) => example.library === 'highcharts' && example.group === 'contract'),
+		[]
+	);
 	for (const example of examples) {
 		assert.ok(isJsonSafe(example.config), example.id);
 		assert.equal(example.group === 'contract', example.expected !== undefined, example.id);

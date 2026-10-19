@@ -1,15 +1,12 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import test from 'node:test';
 
+import { browserSkipReason, dumpDom } from '../../../tools/shared/chrome.mjs';
 import { OUT } from '../scripts/build.mjs';
 
-const CHROME = [process.env['CHROME_PATH'], '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find(
-	(path) => path !== undefined && existsSync(path)
-);
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.map': 'application/json' };
 
 /** Serves the built playground from OUT on a free loopback port. */
@@ -26,21 +23,9 @@ function serve() {
 	return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
-function dumpDom(url) {
-	const sandbox = process.getuid?.() === 0 ? ['--no-sandbox'] : [];
-	const args = ['--headless=new', '--disable-gpu', '--no-first-run', ...sandbox, '--virtual-time-budget=120000', '--dump-dom', url];
-	return new Promise((resolve, reject) => {
-		const chrome = spawn(CHROME, args, { stdio: ['ignore', 'pipe', 'ignore'] });
-		let html = '';
-		chrome.stdout.on('data', (chunk) => (html += chunk));
-		chrome.on('error', reject);
-		chrome.on('close', () => resolve(html));
-	});
-}
-
 const unescape = (text) => text.replaceAll('&quot;', '"').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&');
 
-test('in a real browser every example reproduces its pinned validator findings and runtime verdict', { skip: CHROME === undefined || !existsSync(join(OUT, 'main.js')) ? 'needs Chrome and a built playground' : false, timeout: 180_000 }, async (t) => {
+test('in a real browser every example reproduces its pinned validator findings and runtime verdict', { skip: browserSkipReason() ?? (existsSync(join(OUT, 'main.js')) ? false : 'needs a built playground'), timeout: 180_000 }, async (t) => {
 	const server = await serve();
 	t.after(() => server.close());
 	const html = await dumpDom(`http://127.0.0.1:${String(server.address().port)}/?selftest`);

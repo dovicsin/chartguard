@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import * as echarts from 'echarts';
 
 import { renderWith } from './echarts-render.mjs';
+import { isJson } from './json.mjs';
 
 const CORE_CHILD = fileURLToPath(new URL('echarts-core-child.mjs', import.meta.url));
 
@@ -13,14 +14,6 @@ const CORE_CHILD = fileURLToPath(new URL('echarts-core-child.mjs', import.meta.u
  */
 export function runEcharts(option) {
 	return renderWith(echarts, option);
-}
-
-/** Survives the trip to a child process unchanged: no functions, `undefined`, class instances or non-finite numbers. */
-function isJson(value) {
-	if (value === null || typeof value === 'string' || typeof value === 'boolean') return true;
-	if (typeof value === 'number') return Number.isFinite(value);
-	if (Array.isArray(value)) return value.every(isJson);
-	return typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype && Object.values(value).every(isJson);
 }
 
 /**

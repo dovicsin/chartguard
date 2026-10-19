@@ -10,10 +10,14 @@ import { TREE_SHAKEN_CONTRACT as CHARTJS_TREE_SHAKEN } from '../../../packages/c
 import { KNOWN_VALID as ECHARTS_VALID } from '../../../packages/config/echarts/tests/fixtures/known-valid.mjs';
 import { RUNTIME_CONTRACT as ECHARTS_CONTRACT } from '../../../packages/config/echarts/tests/fixtures/runtime-contract.mjs';
 import { TREE_SHAKEN_CONTRACT as ECHARTS_TREE_SHAKEN } from '../../../packages/config/echarts/tests/fixtures/tree-shaken-contract.mjs';
+import { KNOWN_VALID as HIGHCHARTS_VALID } from '../../../packages/config/highcharts/tests/fixtures/known-valid.mjs';
+import { RUNTIME_CONTRACT as HIGHCHARTS_CONTRACT } from '../../../packages/config/highcharts/tests/fixtures/runtime-contract.mjs';
+import { browserSkipReason } from '../../shared/chrome.mjs';
 import { verdictOf } from '../lib/capture.mjs';
 import { runChartjs, withChartjsModules } from '../lib/chartjs.mjs';
 import { requiredExplanation } from '../lib/contract.mjs';
 import { runEcharts, runEchartsModules } from '../lib/echarts.mjs';
+import { runHighcharts } from '../lib/highcharts.mjs';
 
 /** `runModules(config, modules)`: the outcome on a runtime with only `modules` registered, and its registry context. */
 const LIBRARIES = [
@@ -110,4 +114,33 @@ test('a tree-shaken ECharts run rejects what it cannot pass to a child process',
 		message: 'a tree-shaken case must be plain JSON'
 	});
 	assert.throws(() => runEchartsModules({}, ['NoSuchChart']), /not an echarts chart or component: NoSuchChart/);
+});
+
+// Highcharts needs a DOM: every case renders in one headless Chrome run, then each is checked.
+const highcharts = { skip: browserSkipReason() ?? false };
+const highchartsCases = [
+	...Object.entries(HIGHCHARTS_VALID).map(([name, config]) => ({ name: `known-valid renders silently: ${name}`, config, runtime: 'accepted' })),
+	...HIGHCHARTS_CONTRACT.map((entry) => ({ ...entry, name: `runtime contract: ${entry.name}` }))
+];
+const highchartsOutcomes = highcharts.skip === false ? await runHighcharts(highchartsCases) : [];
+
+highchartsCases.forEach((entry, index) =>
+	test(`highcharts ${entry.name}`, highcharts, () => {
+		const { verdict, threw, messages } = described(highchartsOutcomes[index]);
+		assert.equal(verdict, entry.runtime, JSON.stringify({ threw, messages }));
+		if (entry.findings === undefined) return;
+		const prefix = requiredExplanation(entry);
+		if (prefix === undefined) assert.equal(entry.why, undefined, 'an agreeing case needs no explanation');
+		else assert.ok(entry.why?.startsWith(prefix), `expected why to start with "${prefix}"`);
+	})
+);
+
+test('the Highcharts runner takes plain JSON and module names only, and option text cannot escape the page script', highcharts, async () => {
+	await assert.rejects(runHighcharts([{ config: { series: [{ data: [1], events: { click: () => 0 } }] } }]), {
+		message: 'a Highcharts case must be plain JSON (explicit undefined allowed)'
+	});
+	await assert.rejects(runHighcharts([{ config: {}, modules: ['../../etc/passwd'] }]), { message: 'not a module name: ../../etc/passwd' });
+	await assert.rejects(runHighcharts([{ config: {}, modules: ['no-such-module'] }]), { message: 'not a highcharts file: modules/no-such-module.src.js' });
+	const [escaped] = await runHighcharts([{ config: { title: { text: '</script><script>document.title = 1</script>' }, series: [{ data: [1] }] } }]);
+	assert.equal(verdictOf(escaped), 'accepted', JSON.stringify(escaped));
 });

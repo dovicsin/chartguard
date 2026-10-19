@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createValidator } from '../dist/index.js';
 import { KNOWN_VALID } from './fixtures/known-valid.mjs';
+import { RUNTIME_CONTRACT } from './fixtures/runtime-contract.mjs';
 
 /** Generated from the installed highcharts by `npm run build`; never committed (CG-01-05). */
 const LOCAL = fileURLToPath(
@@ -24,6 +25,9 @@ for (const [name, config] of Object.entries(KNOWN_VALID))
 			[]
 		);
 	});
+
+for (const { name, config, findings: expected } of RUNTIME_CONTRACT)
+	test(`generated schema, runtime contract: ${name}`, () => assert.deepEqual(findings(config), expected));
 
 test('the result names the exact schema it came from', () => {
 	const result = validate({});

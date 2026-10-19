@@ -11,11 +11,16 @@ const APP = fileURLToPath(new URL('..', import.meta.url));
 const ROOT = join(APP, '..', '..');
 export const OUT = join(APP, 'dist', 'web');
 
-/** The runtime-verified fixtures each config package owns; the playground shows the JSON-safe ones. */
-const FIXTURES = ['chartjs', 'echarts', 'highcharts'].map((library) => ({
-	library,
-	directory: join(ROOT, 'packages', 'config', library, 'tests', 'fixtures')
-}));
+/**
+ * The runtime-verified fixtures each config package owns; the playground shows the JSON-safe ones.
+ * The Highcharts contract pins findings of the locally generated schema, which the playground
+ * validates with the curated subset instead: it may not bundle a Highcharts-derived schema (CG-01-05).
+ */
+const FIXTURES = [
+	{ library: 'chartjs', contract: true },
+	{ library: 'echarts', contract: true },
+	{ library: 'highcharts', contract: false }
+].map((entry) => ({ ...entry, directory: join(ROOT, 'packages', 'config', entry.library, 'tests', 'fixtures') }));
 
 const slug = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -23,9 +28,9 @@ async function fixtureModule(directory, file) {
 	return readdirSync(directory).includes(file) ? import(pathToFileURL(join(directory, file)).href) : {};
 }
 
-async function examplesOf({ library, directory }) {
+async function examplesOf({ library, contract: withContract, directory }) {
 	const { KNOWN_VALID = {} } = await fixtureModule(directory, 'known-valid.mjs');
-	const { RUNTIME_CONTRACT = [] } = await fixtureModule(directory, 'runtime-contract.mjs');
+	const { RUNTIME_CONTRACT = [] } = withContract ? await fixtureModule(directory, 'runtime-contract.mjs') : {};
 	const valid = Object.entries(KNOWN_VALID).map(([title, config]) => ({ title, group: 'valid', config }));
 	const contract = RUNTIME_CONTRACT.map(({ name, config, findings, runtime, why }) => ({
 		title: name,
