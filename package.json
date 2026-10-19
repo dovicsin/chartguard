@@ -15,6 +15,7 @@
 		"packages/quality/*",
 		"packages/analysis/*",
 		"packages/integrations/*",
+		"packages/schema-generator",
 		"packages/cli",
 		"apps/playground"
 	],

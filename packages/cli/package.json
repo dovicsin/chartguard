@@ -25,7 +25,8 @@
 		"@chartguard/quality-chartjs": "0.1.0",
 		"@chartguard/quality-echarts": "0.1.0",
 		"@chartguard/quality-highcharts": "0.1.0",
-		"@chartguard/analysis-typescript": "0.1.0"
+		"@chartguard/analysis-typescript": "0.1.0",
+		"@chartguard/schema-generator": "0.1.0"
 	},
 	"bin": {
 		"chartguard": "./bin/chartguard.mjs"

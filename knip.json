@@ -16,6 +16,10 @@
 				"tools/shared/**/*.mjs"
 			]
 		},
+		"packages/schema-generator": {
+			"entry": ["tests/**/*.test.mjs"],
+			"project": ["lib/**/*.mjs"]
+		},
 		"packages/*": {
 			"entry": ["tests/**/*.test.mjs"],
 			"project": ["src/**/*.ts"]

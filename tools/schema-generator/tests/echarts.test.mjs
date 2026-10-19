@@ -4,9 +4,9 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { checkArtifact } from '@chartguard/config-core';
+import { verifiedUpstream } from '@chartguard/schema-generator';
 
 import { generate, run } from '../generate.mjs';
-import { verifiedUpstream } from '../lib/lock.mjs';
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url));
 const first = generate(ROOT, 'echarts');

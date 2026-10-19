@@ -46,7 +46,8 @@ export function makeOptionsScriptable(definitions, configRefs) {
 		const target = resolve(node);
 		for (const [name, property] of target.kind === 'object' ? Object.entries(target.properties) : []) {
 			visit(property.node);
-			if (!discriminators.has(name) && !acceptsFunction(property.node)) property.node = { kind: 'scriptable', value: property.node };
+			if (!discriminators.has(name) && !acceptsFunction(property.node))
+				property.node = { kind: 'scriptable', value: property.node };
 		}
 		for (const child of childrenOf(target)) visit(child);
 	};

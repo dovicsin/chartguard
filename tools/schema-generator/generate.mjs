@@ -2,34 +2,26 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { checkArtifact } from '@chartguard/config-core';
+import {
+	generateArtifact,
+	isRedistributable,
+	LIBRARIES,
+	LOCAL_ARTIFACTS,
+	localSchemaPath,
+	verifiedUpstream
+} from '@chartguard/schema-generator';
 
 import { runAsEntryPoint } from '../shared/entry.mjs';
-import { generateChartjs } from './lib/chartjs.mjs';
-import { serialize,withDigest } from './lib/digest.mjs';
-import { generateEcharts } from './lib/echarts.mjs';
-import { generateHighcharts } from './lib/highcharts.mjs';
-import { verifiedUpstream } from './lib/lock.mjs';
-
-const GENERATORS = {
-	chartjs: { package: 'packages/config/chartjs', generate: generateChartjs },
-	echarts: { package: 'packages/config/echarts', generate: generateEcharts },
-	highcharts: { package: 'packages/config/highcharts', generate: generateHighcharts }
-};
-
-/** Upstream licenses under which a derived artifact may be committed and published. */
-const REDISTRIBUTABLE = new Set(['allowed-with-attribution', 'allowed-with-license-and-notice']);
 
 /**
- * Where artifacts are written that may not be redistributed (Highcharts: its license does not
- * clear re-publishing derived option metadata). Under node_modules, so never tracked by git and
- * never inside a package's `files`; every checkout generates its own from its own install.
+ * The maintainer's entry point: regenerates the committed artifacts from this repository's pinned
+ * installs (`write`) or verifies they are current (`check`). The generator itself is the
+ * `@chartguard/schema-generator` package, which users run on their own installs.
  */
-export const LOCAL_ARTIFACTS = 'node_modules/.cache/chartguard';
+export { isRedistributable, LIBRARIES, LOCAL_ARTIFACTS };
 
-export function isRedistributable(pin) {
-	return REDISTRIBUTABLE.has(pin.license.redistribution);
-}
+/** The adapter package that ships each library's committed artifact. */
+const ADAPTERS = { chartjs: 'packages/config/chartjs', echarts: 'packages/config/echarts', highcharts: 'packages/config/highcharts' };
 /** The repository root, independent of the directory the command is run from. */
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const MODES = new Set(['write', 'check']);
@@ -38,20 +30,15 @@ const EXIT_USAGE = 2;
 
 /** Committed next to the adapter when the license allows it; otherwise local to this checkout. */
 export function artifactPath(root, pin, library) {
-	const file = `${library}-${pin.version}.json`;
-	return isRedistributable(pin) ? join(root, GENERATORS[library].package, 'src/generated', file) : join(root, LOCAL_ARTIFACTS, file);
+	if (!isRedistributable(pin)) return localSchemaPath(root, library, pin.version);
+	return join(root, ADAPTERS[library], 'src/generated', `${library}-${pin.version}.json`);
 }
 
-/** Deterministic artifact text for one library, carrying the digest of its own content; never a malformed one. */
+/** Deterministic artifact text for one library from this repository's pinned install. */
 export function generate(root, library) {
 	const pin = verifiedUpstream(root, library);
-	const artifact = withDigest(GENERATORS[library].generate(root, pin));
-	const { problems } = checkArtifact(artifact);
-	if (problems.length > 0) throw new Error(`${library}: generated artifact is malformed:\n${problems.slice(0, 20).join('\n')}`);
-	return { path: artifactPath(root, pin, library), text: serialize(artifact) };
+	return { path: artifactPath(root, pin, library), text: generateArtifact(root, library, pin).text };
 }
-
-export const LIBRARIES = Object.keys(GENERATORS);
 
 function currentText(path) {
 	try {
@@ -78,7 +65,7 @@ export function run(mode, libraries) {
 
 function usage(argv) {
 	const [mode = 'write', ...libraries] = argv;
-	const unknown = libraries.filter((library) => !Object.hasOwn(GENERATORS, library));
+	const unknown = libraries.filter((library) => !LIBRARIES.includes(library));
 	if (!MODES.has(mode)) return `Unknown mode "${mode}"; expected write or check.`;
 	if (unknown.length > 0) return `No generator for: ${unknown.join(', ')}.`;
 	return undefined;
@@ -87,11 +74,11 @@ function usage(argv) {
 function main(argv) {
 	const problem = usage(argv);
 	if (problem !== undefined) {
-		process.stderr.write(`${problem}\nUsage: generate.mjs [write|check] [${Object.keys(GENERATORS).join('|')}]...\n`);
+		process.stderr.write(`${problem}\nUsage: generate.mjs [write|check] [${LIBRARIES.join('|')}]...\n`);
 		return EXIT_USAGE;
 	}
 	const [mode = 'write', ...libraries] = argv;
-	const stale = run(mode, libraries.length > 0 ? libraries : Object.keys(GENERATORS));
+	const stale = run(mode, libraries.length > 0 ? libraries : LIBRARIES);
 	for (const path of stale) process.stderr.write(`Stale schema artifact: ${path}; run npm run schema:generate\n`);
 	return stale.length > 0 ? EXIT_STALE : 0;
 }

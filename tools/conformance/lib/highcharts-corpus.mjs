@@ -3,10 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { verifiedUpstream } from '@chartguard/schema-generator';
 import { build } from 'esbuild';
 
 import { artifactPath } from '../../schema-generator/generate.mjs';
-import { verifiedUpstream } from '../../schema-generator/lib/lock.mjs';
 import { dumpDom } from '../../shared/chrome.mjs';
 import { verdictOf } from './capture.mjs';
 import { PACKAGE } from './highcharts.mjs';

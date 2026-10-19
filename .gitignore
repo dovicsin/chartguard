@@ -22,7 +22,6 @@
 !/prettier.config.js
 !/knip.json
 !/scripts/**/*.mjs
-!/tools/schema-generator/*.json
 !/tools/schema-generator/**/*.mjs
 !/tools/conformance/**/*.mjs
 !/tools/conformance/corpus/*.json
@@ -41,6 +40,10 @@
 !/packages/**/src/generated/*.json
 !/packages/**/tests/**/*.mjs
 !/packages/cli/bin/*.mjs
+# The schema generator is JavaScript with JSDoc (types are emitted from it); its pin file ships with it.
+!/packages/schema-generator/index.mjs
+!/packages/schema-generator/lib/*.mjs
+!/packages/schema-generator/upstream-sources.json
 
 # Apps (code only; their README files stay local)
 !/apps/playground/package.json

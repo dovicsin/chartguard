@@ -163,7 +163,13 @@ export class TypeEmitter {
 		const discriminator = this.discriminatorOf(members);
 		if (discriminator === undefined) return union;
 		if (registered === undefined) return { ...union, discriminator };
-		return { ...union, discriminator, extensible: true, registry: registered.registry, provenance: registered.provenance };
+		return {
+			...union,
+			discriminator,
+			extensible: true,
+			registry: registered.registry,
+			provenance: registered.provenance
+		};
 	}
 
 	/**
@@ -173,7 +179,10 @@ export class TypeEmitter {
 	 */
 	discriminatorOf(members) {
 		const objects = members.filter((member) => !this.checker.isArrayType(member) && !this.checker.isTupleType(member));
-		if (objects.length < 2 || !objects.every((member) => isFlag(member, ts.TypeFlags.Object | ts.TypeFlags.Intersection)))
+		if (
+			objects.length < 2 ||
+			!objects.every((member) => isFlag(member, ts.TypeFlags.Object | ts.TypeFlags.Intersection))
+		)
 			return undefined;
 		const [first] = objects;
 		const candidates = this.checker.getPropertiesOfType(first).map((symbol) => symbol.name);
@@ -207,7 +216,8 @@ export class TypeEmitter {
 
 	emitObjectLike(type) {
 		if (type.getCallSignatures().length > 0 || type.getConstructSignatures().length > 0) return { kind: 'function' };
-		if (GLOBAL_FUNCTIONS.has(type.getSymbol()?.escapedName) && this.isLibraryDeclared(type.getSymbol())) return { kind: 'function' };
+		if (GLOBAL_FUNCTIONS.has(type.getSymbol()?.escapedName) && this.isLibraryDeclared(type.getSymbol()))
+			return { kind: 'function' };
 		if (this.checker.isArrayType(type) || this.checker.isTupleType(type)) return this.emitArray(type);
 		const unwrapped = this.emitUnwrapped(type);
 		if (unwrapped !== undefined) return unwrapped;
@@ -240,7 +250,8 @@ export class TypeEmitter {
 
 	emitWrappedArray(type) {
 		const element = this.checker.getIndexInfoOfType(type, ts.IndexKind.Number)?.type;
-		if (element === undefined || !this.isLibraryDeclared(this.checker.getPropertyOfType(type, 'length'))) return undefined;
+		if (element === undefined || !this.isLibraryDeclared(this.checker.getPropertyOfType(type, 'length')))
+			return undefined;
 		return { kind: 'array', items: this.emit(element) };
 	}
 

@@ -3,7 +3,8 @@
 	"compilerOptions": {
 		"rootDir": "./src",
 		"outDir": "./dist",
-		"types": ["node"]
+		"types": ["node"],
+		"disableSourceOfProjectReferenceRedirect": true
 	},
 	"include": ["src/**/*.ts"],
 	"references": [
@@ -30,6 +31,9 @@
 		},
 		{
 			"path": "../quality/highcharts"
+		},
+		{
+			"path": "../schema-generator"
 		}
 	]
 }

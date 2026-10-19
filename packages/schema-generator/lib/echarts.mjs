@@ -16,7 +16,10 @@ const SOURCE_ID = 'echarts';
 const ENTRY = ["import type { EChartsOption } from 'echarts';", 'export type Option = EChartsOption;'].join('\n');
 
 const changed = (what) => new Error(`echarts types changed: ${what}`);
-const SERIES_LOOKUP = { file: 'lib/model/Global.js', pattern: 'error("Series " + subType + " is used but not imported.' };
+const SERIES_LOOKUP = {
+	file: 'lib/model/Global.js',
+	pattern: 'error("Series " + subType + " is used but not imported.'
+};
 
 /** The `xAxis` variant whose `type` literal is `axisType`. */
 function axisVariant(lookups, checker, option, axisType) {
@@ -52,7 +55,10 @@ function contractAdjustments(root, lookups, checker, aliases) {
 	const series = lookups.propertyType(option, 'series');
 	const list = unionMembers(series).find((member) => checker.isArrayType(member));
 	if (list === undefined) throw changed('series is no longer `SeriesOption | SeriesOption[]`');
-	const registered = { registry: { id: 'echarts', prefix: 'series.', enforced: true }, provenance: runtimeProvenance(root, { sourceId: SOURCE_ID, packageName: 'echarts' }, SERIES_LOOKUP) };
+	const registered = {
+		registry: { id: 'echarts', prefix: 'series.', enforced: true },
+		provenance: runtimeProvenance(root, { sourceId: SOURCE_ID, packageName: 'echarts' }, SERIES_LOOKUP)
+	};
 	return {
 		registries: new Map([series, lookups.elementType(list)].map((type) => [type, registered])),
 		widened: new Map([[boundaryGapDeclaration(lookups, checker, option), [{ kind: 'boolean' }]]])

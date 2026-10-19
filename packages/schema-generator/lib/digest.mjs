@@ -12,13 +12,22 @@ export function omit(object, keys) {
 
 /** `sha256-<hex>` of the canonical text with the `digest` field left out. */
 export function digestOf(artifact) {
-	return `sha256-${createHash('sha256').update(serialize(omit(artifact, ['digest']))).digest('hex')}`;
+	return `sha256-${createHash('sha256')
+		.update(serialize(omit(artifact, ['digest'])))
+		.digest('hex')}`;
 }
 
 /** The artifact with its digest placed in the header, right after `generator`. */
 export function withDigest(artifact) {
 	const digest = digestOf(artifact);
 	return Object.fromEntries(
-		Object.entries(artifact).flatMap(([key, value]) => (key === 'generator' ? [[key, value], ['digest', digest]] : [[key, value]]))
+		Object.entries(artifact).flatMap(([key, value]) =>
+			key === 'generator'
+				? [
+						[key, value],
+						['digest', digest]
+					]
+				: [[key, value]]
+		)
 	);
 }

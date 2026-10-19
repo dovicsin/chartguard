@@ -31,5 +31,8 @@ export function runtimeSection(root, packageName, { end, ...fact }) {
 
 /** An authoritative provenance record citing one runtime line of the pinned package. */
 export function runtimeProvenance(root, { sourceId, packageName }, fact) {
-	return { confidence: 'authoritative', sources: [{ source: sourceId, pointer: runtimePointer(root, packageName, fact) }] };
+	return {
+		confidence: 'authoritative',
+		sources: [{ source: sourceId, pointer: runtimePointer(root, packageName, fact) }]
+	};
 }

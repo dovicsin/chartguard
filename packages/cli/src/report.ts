@@ -2,6 +2,7 @@ import type { Diagnostic, QualityReport, ValidationResult } from '@chartguard/co
 
 import { EXIT_INVALID, EXIT_OK } from './exit-codes.js';
 import type { Io } from './io.js';
+import { schemaNote, type SchemaSource } from './schema-source.js';
 
 const PARTIAL_NOTE = '  NOTE: partial schema coverage; absence of errors is not a compatibility guarantee.';
 const ADVISORY_NOTE = '  NOTE: quality findings are advisory and depend on context; they never fail a build.';
@@ -21,10 +22,12 @@ export function printJson(value: unknown, io: Io): void {
 	io.out(JSON.stringify(value, null, 2));
 }
 
-export function reportResult(checked: ValidationResult, json: boolean, io: Io): number {
-	if (json) printJson({ mode: 'validate', ...checked }, io);
+export function reportResult(checked: ValidationResult, schema: SchemaSource, json: boolean, io: Io): number {
+	if (json) printJson({ mode: 'validate', ...checked, schema }, io);
 	else {
 		io.out(`${checked.library} ${checked.status} (coverage: ${checked.coverage}; schema ${schemaLabel(checked)})`);
+		const note = schemaNote(schema, checked.library);
+		if (note !== undefined) io.out(note);
 		for (const diagnostic of checked.diagnostics) io.out(describe(diagnostic));
 		if (checked.status === 'partial') io.out(PARTIAL_NOTE);
 	}

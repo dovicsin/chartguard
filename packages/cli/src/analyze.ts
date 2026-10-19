@@ -42,7 +42,9 @@ function describeDiagnostic({ severity, path, message, suggestion }: Diagnostic)
 	return `  ${severity}: ${[path, message, suggestion].filter((part) => part !== undefined).join(' ')}`;
 }
 
-export function printEntries(entries: readonly AnalyzedEntry[], io: Io): void {
+/** The entries as text, after the note on which schema checked them, if there is one. */
+export function printEntries(entries: readonly AnalyzedEntry[], schemaNote: string | undefined, io: Io): void {
+	if (schemaNote !== undefined) io.out(schemaNote.trimStart());
 	for (const entry of entries) {
 		io.out(describeEntry(entry));
 		for (const diagnostic of [...entry.notes, ...(entry.result?.diagnostics ?? [])])

@@ -47,6 +47,9 @@
 			"path": "./packages/integrations/highcharts-runtime"
 		},
 		{
+			"path": "./packages/schema-generator"
+		},
+		{
 			"path": "./packages/cli"
 		}
 	]

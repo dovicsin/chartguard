@@ -10,6 +10,7 @@ const CORE = '@chartguard/core';
 const CONFIG_CORE = '@chartguard/config-core';
 const QUALITY_CORE = '@chartguard/quality-core';
 const ANALYSIS = '@chartguard/analysis-typescript';
+const SCHEMA_GENERATOR = '@chartguard/schema-generator';
 const CONFIG_ADAPTERS = LIBRARIES.map((library) => `@chartguard/config-${library}`);
 const QUALITY_ADAPTERS = LIBRARIES.map((library) => `@chartguard/quality-${library}`);
 
@@ -47,7 +48,12 @@ export const POLICY = {
 		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, ANALYSIS],
 		peer: ['eslint']
 	}),
-	'@chartguard/cli': rule({ internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, ANALYSIS], node: true }),
+	/** Reads a chart library's declarations and runtime files from a project; never imports or runs them. */
+	[SCHEMA_GENERATOR]: rule({ internal: [CONFIG_CORE], external: ['typescript'], node: true }),
+	'@chartguard/cli': rule({
+		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, ANALYSIS, SCHEMA_GENERATOR],
+		node: true
+	}),
 	/** A browser app: published adapter entry points and the two runtimes it renders with; no Node built-ins. */
 	'@chartguard/playground': rule({
 		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS],

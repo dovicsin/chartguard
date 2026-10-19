@@ -8,7 +8,8 @@ import { runtimePointer } from './runtime.mjs';
  */
 const DESCRIPTORS = { file: 'dist/chart.js', pattern: 'const opts = getOpts(options[id], all);' };
 
-const pluginPointer = (root, id) => runtimePointer(root, 'chart.js', { file: 'dist/chart.js', pattern: `id: '${id}',` });
+const pluginPointer = (root, id) =>
+	runtimePointer(root, 'chart.js', { file: 'dist/chart.js', pattern: `id: '${id}',` });
 
 /**
  * Every built-in plugin namespace under `options.plugins` of the given configurations, with the

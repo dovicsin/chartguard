@@ -6,12 +6,13 @@ import { analyzeEntry, printEntries, selectConfigs } from './analyze.js';
 import { InputError } from './errors.js';
 import { EXIT_INVALID, EXIT_OK } from './exit-codes.js';
 import { installedVersion } from './installed.js';
-import type { Command, Invocation } from './invocation.js';
+import type { ConfigCommand, ConfigInvocation } from './invocation.js';
 import type { Io } from './io.js';
-import { loadConfigAdapter, loadQualityAdapter } from './libraries.js';
+import { loadQualityAdapter } from './libraries.js';
 import { printJson, reportQuality, reportResult } from './report.js';
+import { loadConfigValidator, schemaNote } from './schema-source.js';
 
-type CommandHandler = (invocation: Invocation, io: Io) => Promise<number>;
+type CommandHandler = (invocation: ConfigInvocation, io: Io) => Promise<number>;
 
 const BOM = '﻿';
 
@@ -43,7 +44,7 @@ function describeSyntax(file: string, diagnostics: readonly Diagnostic[]): strin
 }
 
 /** `--library-version auto` reads the installed package; an explicit version is passed as given. */
-async function versionOptions({ library, file, libraryVersion }: Invocation): Promise<ValidationOptions> {
+async function versionOptions({ library, file, libraryVersion }: ConfigInvocation): Promise<ValidationOptions> {
 	if (libraryVersion === undefined) return {};
 	return { libraryVersion: libraryVersion === 'auto' ? await installedVersion(library, file) : libraryVersion };
 }
@@ -52,7 +53,7 @@ async function versionOptions({ library, file, libraryVersion }: Invocation): Pr
  * The validation context the invocation gives. The registry file must be readable JSON (input
  * error otherwise); its shape is the validator's to judge, so a malformed context is a finding.
  */
-async function validationOptions(invocation: Invocation): Promise<ValidationOptions> {
+async function validationOptions(invocation: ConfigInvocation): Promise<ValidationOptions> {
 	const version = await versionOptions(invocation);
 	if (invocation.registries === undefined) return version;
 	// Untrusted JSON: the validator reads it structurally and reports a malformed context.
@@ -63,8 +64,8 @@ async function validationOptions(invocation: Invocation): Promise<ValidationOpti
 const validateCommand: CommandHandler = async (invocation, io) => {
 	const { library, file, json } = invocation;
 	const config = await readJson(file);
-	const { validate } = await loadConfigAdapter(library);
-	return reportResult(validate(config, await validationOptions(invocation)), json, io);
+	const { validate, schema } = await loadConfigValidator(library, file);
+	return reportResult(validate(config, await validationOptions(invocation)), schema, json, io);
 };
 
 const qualityCommand: CommandHandler = async ({ library, file, json }, io) => {
@@ -81,15 +82,15 @@ const analyzeCommand: CommandHandler = async (invocation, io) => {
 	if (source.diagnostics.length > 0) throw new InputError(describeSyntax(file, source.diagnostics));
 	const configs = selectConfigs(source.objects, name);
 	if (configs.length === 0) throw new InputError('No suitable static object found. Specify --name <variable>.');
-	const { validate } = await loadConfigAdapter(library);
+	const { validate, schema } = await loadConfigValidator(library, file);
 	const options = await validationOptions(invocation);
 	const entries = configs.map((object) => analyzeEntry(object, validate, options));
-	if (json) printJson({ mode: 'analyze', library, entries }, io);
-	else printEntries(entries, io);
+	if (json) printJson({ mode: 'analyze', library, schema, entries }, io);
+	else printEntries(entries, schemaNote(schema, library), io);
 	return entries.some((entry) => entry.result?.valid === false) ? EXIT_INVALID : EXIT_OK;
 };
 
-export const COMMAND_HANDLERS: Record<Command, CommandHandler> = {
+export const COMMAND_HANDLERS: Record<ConfigCommand, CommandHandler> = {
 	validate: validateCommand,
 	quality: qualityCommand,
 	analyze: analyzeCommand

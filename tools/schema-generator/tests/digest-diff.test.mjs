@@ -6,11 +6,11 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { checkArtifact } from '@chartguard/config-core';
+import { digestOf, omit, serialize, withDigest } from '@chartguard/schema-generator';
+import { verifiedUpstream } from '@chartguard/schema-generator';
 
 import { artifactPath, LIBRARIES } from '../generate.mjs';
 import { canonicalPaths, diffArtifacts, formatDiff } from '../lib/diff.mjs';
-import { digestOf, omit, serialize, withDigest } from '../lib/digest.mjs';
-import { verifiedUpstream } from '../lib/lock.mjs';
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url));
 /** The artifact on disk: committed, or generated locally by the build (Highcharts). */

@@ -10,36 +10,81 @@ import { runtimeProvenance } from './runtime.mjs';
 const COMPONENTS = {
 	dataZoom: {
 		variants: {
-			SliderDataZoomOption: { literal: 'slider', file: 'lib/component/dataZoom/SliderZoomModel.js', pattern: "SliderZoomModel.type = 'dataZoom.slider'" },
-			InsideDataZoomOption: { literal: 'inside', file: 'lib/component/dataZoom/InsideZoomModel.js', pattern: "InsideZoomModel.type = 'dataZoom.inside'" }
+			SliderDataZoomOption: {
+				literal: 'slider',
+				file: 'lib/component/dataZoom/SliderZoomModel.js',
+				pattern: "SliderZoomModel.type = 'dataZoom.slider'"
+			},
+			InsideDataZoomOption: {
+				literal: 'inside',
+				file: 'lib/component/dataZoom/InsideZoomModel.js',
+				pattern: "InsideZoomModel.type = 'dataZoom.inside'"
+			}
 		},
-		default: { literal: 'slider', file: 'lib/component/dataZoom/installCommon.js', pattern: "registerSubTypeDefaulter('dataZoom'" }
+		default: {
+			literal: 'slider',
+			file: 'lib/component/dataZoom/installCommon.js',
+			pattern: "registerSubTypeDefaulter('dataZoom'"
+		}
 	},
 	legend: {
 		variants: {
-			LegendOption: { literal: 'plain', file: 'lib/component/legend/LegendModel.js', pattern: "LegendModel.type = 'legend.plain'" },
-			ScrollableLegendOption: { literal: 'scroll', file: 'lib/component/legend/ScrollableLegendModel.js', pattern: "ScrollableLegendModel.type = 'legend.scroll'" }
+			LegendOption: {
+				literal: 'plain',
+				file: 'lib/component/legend/LegendModel.js',
+				pattern: "LegendModel.type = 'legend.plain'"
+			},
+			ScrollableLegendOption: {
+				literal: 'scroll',
+				file: 'lib/component/legend/ScrollableLegendModel.js',
+				pattern: "ScrollableLegendModel.type = 'legend.scroll'"
+			}
 		},
-		default: { literal: 'plain', file: 'lib/component/legend/installLegendPlain.js', pattern: "registerSubTypeDefaulter('legend'" }
+		default: {
+			literal: 'plain',
+			file: 'lib/component/legend/installLegendPlain.js',
+			pattern: "registerSubTypeDefaulter('legend'"
+		}
 	},
 	timeline: {
 		// The base option and the slider option are identical; `slider` is the only registered subtype.
 		variants: {
-			TimelineOption: { literal: 'slider', file: 'lib/component/timeline/SliderTimelineModel.js', pattern: "SliderTimelineModel.type = 'timeline.slider'" },
-			SliderTimelineOption: { literal: 'slider', file: 'lib/component/timeline/SliderTimelineModel.js', pattern: "SliderTimelineModel.type = 'timeline.slider'" }
+			TimelineOption: {
+				literal: 'slider',
+				file: 'lib/component/timeline/SliderTimelineModel.js',
+				pattern: "SliderTimelineModel.type = 'timeline.slider'"
+			},
+			SliderTimelineOption: {
+				literal: 'slider',
+				file: 'lib/component/timeline/SliderTimelineModel.js',
+				pattern: "SliderTimelineModel.type = 'timeline.slider'"
+			}
 		},
-		default: { literal: 'slider', file: 'lib/component/timeline/install.js', pattern: "registerSubTypeDefaulter('timeline'" }
+		default: {
+			literal: 'slider',
+			file: 'lib/component/timeline/install.js',
+			pattern: "registerSubTypeDefaulter('timeline'"
+		}
 	},
 	visualMap: {
 		variants: {
-			ContinuousVisualMapOption: { literal: 'continuous', file: 'lib/component/visualMap/ContinuousModel.js', pattern: "ContinuousModel.type = 'visualMap.continuous'" },
-			PiecewiseVisualMapOption: { literal: 'piecewise', file: 'lib/component/visualMap/PiecewiseModel.js', pattern: "PiecewiseModel.type = 'visualMap.piecewise'" }
+			ContinuousVisualMapOption: {
+				literal: 'continuous',
+				file: 'lib/component/visualMap/ContinuousModel.js',
+				pattern: "ContinuousModel.type = 'visualMap.continuous'"
+			},
+			PiecewiseVisualMapOption: {
+				literal: 'piecewise',
+				file: 'lib/component/visualMap/PiecewiseModel.js',
+				pattern: "PiecewiseModel.type = 'visualMap.piecewise'"
+			}
 		},
 		// The whole expression is the pattern: a change to it fails generation instead of going stale.
 		default: {
 			literal: 'continuous',
 			file: 'lib/component/visualMap/installCommon.js',
-			pattern: "return !option.categories && (!(option.pieces ? option.pieces.length > 0 : option.splitNumber > 0) || option.calculable) ? 'continuous' : 'piecewise';"
+			pattern:
+				"return !option.categories && (!(option.pieces ? option.pieces.length > 0 : option.splitNumber > 0) || option.calculable) ? 'continuous' : 'piecewise';"
 		},
 		when: [
 			{ test: 'truthy', property: 'categories', literal: 'piecewise' },
@@ -52,11 +97,17 @@ const COMPONENTS = {
 };
 
 /** Component subtypes are looked up as `<mainType>.<subType>`; one that is not registered throws. */
-const SUBTYPE_LOOKUP = { file: 'lib/util/clazz.js', pattern: "'Component ' + mainType + '.' + (subType || '') + ' is used but not imported.'" };
+const SUBTYPE_LOOKUP = {
+	file: 'lib/util/clazz.js',
+	pattern: "'Component ' + mainType + '.' + (subType || '') + ' is used but not imported.'"
+};
 
 /** Every axis created by `axisModelCreator` resolves its type with `getAxisType`. */
 const AXES = ['xAxis', 'yAxis', 'angleAxis', 'radiusAxis', 'singleAxis', 'parallelAxis'];
-const AXIS_TYPE = { file: 'lib/coord/axisModelCreator.js', pattern: "option.type || (option.data ? 'category' : 'value')" };
+const AXIS_TYPE = {
+	file: 'lib/coord/axisModelCreator.js',
+	pattern: "option.type || (option.data ? 'category' : 'value')"
+};
 
 const changed = (what) => new Error(`echarts runtime changed: ${what}`);
 
@@ -82,7 +133,8 @@ function subtypeComponent(root, definitions, union, [mainType, component]) {
 		typed.node = { kind: 'literal', value: variant.literal };
 		typed.provenance = provenance(root, variant);
 	}
-	const indexOf = (literal) => union.anyOf.findIndex((member) => component.variants[memberName(member)]?.literal === literal);
+	const indexOf = (literal) =>
+		union.anyOf.findIndex((member) => component.variants[memberName(member)]?.literal === literal);
 	const defaultWhen = (component.when ?? []).map(({ literal, ...rule }) => ({ ...rule, variant: indexOf(literal) }));
 	Object.assign(union, {
 		discriminator: 'type',
@@ -90,21 +142,32 @@ function subtypeComponent(root, definitions, union, [mainType, component]) {
 		...(defaultWhen.length === 0 ? {} : { defaultWhen }),
 		extensible: true,
 		registry: { id: 'echarts', prefix: `${mainType}.`, enforced: true },
-		provenance: { confidence: 'authoritative', sources: [component.default, SUBTYPE_LOOKUP].flatMap((fact) => provenance(root, fact).sources) }
+		provenance: {
+			confidence: 'authoritative',
+			sources: [component.default, SUBTYPE_LOOKUP].flatMap((fact) => provenance(root, fact).sources)
+		}
 	});
 }
 
 function axisDefaults(root, definitions, union) {
 	const indexOf = (literal) =>
-		union.anyOf.findIndex((member) => member.kind === 'ref' && definitions[member.ref].properties.type?.node.value === literal);
+		union.anyOf.findIndex(
+			(member) => member.kind === 'ref' && definitions[member.ref].properties.type?.node.value === literal
+		);
 	const [category, value] = [indexOf('category'), indexOf('value')];
 	if (category === -1 || value === -1) throw changed('axis variants');
-	Object.assign(union, { defaultWhen: [{ test: 'truthy', property: 'data', variant: category }], defaultVariant: value, provenance: provenance(root, AXIS_TYPE) });
+	Object.assign(union, {
+		defaultWhen: [{ test: 'truthy', property: 'data', variant: category }],
+		defaultVariant: value,
+		provenance: provenance(root, AXIS_TYPE)
+	});
 }
 
 /** Rewrites, in place, the component and axis unions under the root `EChartsOption` definition. */
 export function resolveComponentSubtypes(root, definitions, option) {
 	for (const entry of Object.entries(COMPONENTS))
-		for (const union of unionsOf(definitions, option.properties[entry[0]].node)) subtypeComponent(root, definitions, union, entry);
-	for (const name of AXES) for (const union of unionsOf(definitions, option.properties[name].node)) axisDefaults(root, definitions, union);
+		for (const union of unionsOf(definitions, option.properties[entry[0]].node))
+			subtypeComponent(root, definitions, union, entry);
+	for (const name of AXES)
+		for (const union of unionsOf(definitions, option.properties[name].node)) axisDefaults(root, definitions, union);
 }

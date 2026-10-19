@@ -1,4 +1,4 @@
-import { omit } from './digest.mjs';
+import { omit } from '@chartguard/schema-generator';
 
 /**
  * Semantic diff of two SchemaIR artifacts. Definitions are matched by their canonical path, the

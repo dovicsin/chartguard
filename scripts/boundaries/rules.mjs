@@ -1,5 +1,5 @@
 import { isBuiltin } from 'node:module';
-import { relative, resolve } from 'node:path';
+import { relative, resolve, sep } from 'node:path';
 
 import { chartRuntimeOf } from './policy.mjs';
 
@@ -44,17 +44,29 @@ export function checkManifest(manifest, policy) {
 }
 
 function checkRelative({ packageDir, file, specifier }) {
+	// Compared by path segment: a sibling directory named `..lib` is inside the package.
 	const target = relative(packageDir, resolve(file, '..', specifier));
-	return target.startsWith('..') ? `relative import "${specifier}" escapes the package` : undefined;
+	return target.split(sep)[0] === '..' ? `relative import "${specifier}" escapes the package` : undefined;
 }
 
 function checkBuiltin(specifier, rule) {
 	return rule.node ? undefined : `must not import Node.js built-in "${specifier}"`;
 }
 
-function checkPackageImport(specifier, rule, declared) {
+/** `@chartguard/x/sub` for every subpath a workspace package declares in its `exports`. */
+export function publicEntryPoints(manifests) {
+	return new Set(
+		manifests.flatMap(({ name, exports }) =>
+			Object.keys(typeof exports === 'object' && exports !== null ? exports : {})
+				.filter((key) => key.startsWith('./'))
+				.map((key) => `${name}${key.slice(1)}`)
+		)
+	);
+}
+
+function checkPackageImport(specifier, rule, declared, entryPoints) {
 	const name = packageNameOf(specifier);
-	if (name.startsWith(INTERNAL_SCOPE) && name !== specifier)
+	if (name.startsWith(INTERNAL_SCOPE) && name !== specifier && !entryPoints.has(specifier))
 		return `deep import "${specifier}"; import the package entry point`;
 	if (!declared.has(name))
 		return chartRuntimeOf(name) === undefined ? `imports undeclared package ${name}` : runtimeMessage(name);
@@ -62,9 +74,9 @@ function checkPackageImport(specifier, rule, declared) {
 }
 
 /** Policy violation for one module reference in a source file, if any. */
-export function checkImport({ rule, declared, packageDir, file, specifier }) {
+export function checkImport({ rule, declared, packageDir, file, specifier, entryPoints = new Set() }) {
 	if (specifier === undefined) return 'computed module specifier cannot be verified statically';
 	if (specifier.startsWith('.')) return checkRelative({ packageDir, file, specifier });
 	if (isBuiltin(specifier)) return checkBuiltin(specifier, rule);
-	return checkPackageImport(specifier, rule, declared);
+	return checkPackageImport(specifier, rule, declared, entryPoints);
 }

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { moduleReferences } from '../boundaries/imports.mjs';
 import { chartRuntimeOf, POLICY } from '../boundaries/policy.mjs';
-import { checkImport, checkManifest, declaredDependencies } from '../boundaries/rules.mjs';
+import { checkImport, checkManifest, declaredDependencies, publicEntryPoints } from '../boundaries/rules.mjs';
 import { checkWorkspace } from '../boundaries/workspace.mjs';
 
 const REPO_ROOT = fileURLToPath(new URL('../..', import.meta.url));
@@ -173,4 +173,54 @@ test('the playground may use published adapters and the two runtimes, but no Nod
 	assert.deepEqual(checkManifest({ name: '@chartguard/playground', dependencies: { highcharts: '13.1.1' } }, POLICY), [
 		'pulls in the highcharts chart runtime "highcharts" (dependencies)'
 	]);
+});
+
+test('a package is checked wherever its sources live: bin scripts and JavaScript packages too', (t) => {
+	const root = mkdtempSync(join(tmpdir(), 'boundaries-js-'));
+	t.after(() => rmSync(root, { recursive: true, force: true }));
+	const packageDir = join(root, 'packages', 'schema-generator');
+	mkdirSync(join(packageDir, 'lib'), { recursive: true });
+	mkdirSync(join(packageDir, 'tests'), { recursive: true });
+	writeFileSync(join(packageDir, 'package.json'), JSON.stringify({ name: '@chartguard/schema-generator' }));
+	writeFileSync(join(packageDir, 'lib', 'emit.mjs'), "import 'highcharts';\n");
+	writeFileSync(join(packageDir, 'tests', 'emit.test.mjs'), "import 'echarts';\n");
+	assert.deepEqual(
+		checkWorkspace(root, POLICY).map(({ file, line, message }) => `${file}:${String(line)} ${message}`),
+		[`${join('packages', 'schema-generator', 'lib', 'emit.mjs')}:1 pulls in the highcharts chart runtime "highcharts"`]
+	);
+});
+
+test('a subpath a workspace package declares in its exports is an entry point; any other subpath is a deep import', () => {
+	const entryPoints = publicEntryPoints([
+		{ name: '@chartguard/schema-generator', exports: { '.': './index.mjs', './paths': './lib/paths.mjs' } },
+		{ name: '@chartguard/core', exports: { '.': './dist/index.js' } }
+	]);
+	assert.deepEqual([...entryPoints], ['@chartguard/schema-generator/paths']);
+	const check = (specifier) =>
+		checkImport({
+			rule: POLICY['@chartguard/cli'],
+			declared: new Set(['@chartguard/schema-generator']),
+			packageDir: '/repo/packages/cli',
+			file: '/repo/packages/cli/src/a.ts',
+			specifier,
+			entryPoints
+		});
+	assert.equal(check('@chartguard/schema-generator/paths'), undefined);
+	assert.equal(
+		check('@chartguard/schema-generator/lib/lock.mjs'),
+		'deep import "@chartguard/schema-generator/lib/lock.mjs"; import the package entry point'
+	);
+});
+
+test('a relative import is judged by path segment: a sibling directory whose name starts with two dots is inside', () => {
+	const check = (specifier) =>
+		checkImport({
+			rule: POLICY['@chartguard/core'],
+			declared: new Set(),
+			packageDir: '/repo/packages/core',
+			file: '/repo/packages/core/src/a.ts',
+			specifier
+		});
+	assert.equal(check('./..lib/b.js'), undefined);
+	assert.equal(check('../../x.js'), 'relative import "../../x.js" escapes the package');
 });

@@ -1,0 +1,38 @@
+{
+	"name": "@chartguard/schema-generator",
+	"version": "0.1.0",
+	"description": "Generates ChartGuard schema artifacts from a chart library's own declarations and runtime, in your project",
+	"type": "module",
+	"license": "MIT",
+	"sideEffects": false,
+	"engines": {
+		"node": ">=20.19"
+	},
+	"files": [
+		"index.mjs",
+		"lib/",
+		"dist/**/*.d.mts",
+		"upstream-sources.json",
+		"README.md"
+	],
+	"main": "./index.mjs",
+	"types": "./dist/index.d.mts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.mts",
+			"import": "./index.mjs"
+		},
+		"./paths": {
+			"types": "./dist/lib/paths.d.mts",
+			"import": "./lib/paths.mjs"
+		}
+	},
+	"scripts": {
+		"build": "tsc -b",
+		"test": "node --test tests/*.test.mjs"
+	},
+	"dependencies": {
+		"@chartguard/config-core": "0.1.0",
+		"typescript": "^5.8.3"
+	}
+}

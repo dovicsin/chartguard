@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const { libraries } = JSON.parse(
-	readFileSync(new URL('../../tools/schema-generator/upstream-sources.json', import.meta.url), 'utf8')
+	readFileSync(new URL('../../packages/schema-generator/upstream-sources.json', import.meta.url), 'utf8')
 );
 
 test('every supported library is pinned to an exact, integrity-checked version', () => {

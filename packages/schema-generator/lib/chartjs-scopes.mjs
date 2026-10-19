@@ -24,13 +24,16 @@ const capitalize = (name) => `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
 
 /** `radius` → `pointRadius`; `hoverRadius` → `pointHoverRadius`, the `<element>Hover` prefix. */
 function prefixed(element, name) {
-	return name.startsWith('hover') && name.length > 5 ? `${element}Hover${name.slice(5)}` : `${element}${capitalize(name)}`;
+	return name.startsWith('hover') && name.length > 5
+		? `${element}Hover${name.slice(5)}`
+		: `${element}${capitalize(name)}`;
 }
 
 /** Records one declared type for a name; a name shared by several elements collects each distinct type. */
 function collect(collected, key, property, sources) {
 	const entry = collected.get(key) ?? { nodes: [], sources: [...property.provenance.sources, ...sources] };
-	if (!entry.nodes.some((node) => JSON.stringify(node) === JSON.stringify(property.node))) entry.nodes.push(property.node);
+	if (!entry.nodes.some((node) => JSON.stringify(node) === JSON.stringify(property.node)))
+		entry.nodes.push(property.node);
 	collected.set(key, entry);
 }
 
@@ -71,16 +74,24 @@ function datasetNames(config, resolve) {
  */
 export function planOptionScopes(root, definitions, configNames) {
 	const resolve = (node) => (node.kind === 'ref' ? definitions[node.ref] : node);
-	const sources = [RUNTIME.scopes, RUNTIME.prefixes].map((fact) => ({ source: 'chartjs', pointer: runtimePointer(root, 'chart.js', fact) }));
+	const sources = [RUNTIME.scopes, RUNTIME.prefixes].map((fact) => ({
+		source: 'chartjs',
+		pointer: runtimePointer(root, 'chart.js', fact)
+	}));
 	const configs = configNames.map((name) => definitions[name]);
 	const optionsNames = configs.map((config) => config.properties.options.node.ref);
 	const animationNames = optionsNames.flatMap((name) =>
-		(resolve(definitions[name].properties.animation.node).anyOf ?? []).filter((member) => resolve(member).kind === 'object').map((member) => member.ref)
+		(resolve(definitions[name].properties.animation.node).anyOf ?? [])
+			.filter((member) => resolve(member).kind === 'object')
+			.map((member) => member.ref)
 	);
 	return {
 		scope: scopeDefinition(resolve(definitions[optionsNames[0]].properties.elements.node), resolve, sources),
 		includedBy: [...new Set([...optionsNames, ...configs.flatMap((config) => datasetNames(config, resolve))])],
 		openAnimations: [...new Set(animationNames)],
-		animationProvenance: { confidence: 'authoritative', sources: [{ source: 'chartjs', pointer: runtimePointer(root, 'chart.js', RUNTIME.animations) }] }
+		animationProvenance: {
+			confidence: 'authoritative',
+			sources: [{ source: 'chartjs', pointer: runtimePointer(root, 'chart.js', RUNTIME.animations) }]
+		}
 	};
 }

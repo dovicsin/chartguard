@@ -52,7 +52,11 @@ export class Provenance {
 	/** `export type Dataset_bar = ChartDataset<'bar'>` in the entry file names `ChartDataset`. */
 	aliasTarget(type) {
 		const declaration = type.aliasSymbol?.declarations?.[0];
-		if (declaration === undefined || !ts.isTypeAliasDeclaration(declaration) || !ts.isTypeReferenceNode(declaration.type))
+		if (
+			declaration === undefined ||
+			!ts.isTypeAliasDeclaration(declaration) ||
+			!ts.isTypeReferenceNode(declaration.type)
+		)
 			return undefined;
 		const referenced = this.checker.getSymbolAtLocation(declaration.type.typeName);
 		if (referenced === undefined) return undefined;
@@ -67,6 +71,9 @@ export class Provenance {
 		const declaration = symbol.declarations[0];
 		const file = declaration.getSourceFile();
 		const { line } = file.getLineAndCharacterOfPosition(declaration.getStart(file));
-		return { confidence: 'authoritative', sources: [{ source: this.sourceId, pointer: `${path}:${String(line + 1)}` }] };
+		return {
+			confidence: 'authoritative',
+			sources: [{ source: this.sourceId, pointer: `${path}:${String(line + 1)}` }]
+		};
 	}
 }

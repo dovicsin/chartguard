@@ -37,7 +37,12 @@ function registeredChartTypes(root) {
 		"import type { ChartTypeRegistry } from 'chart.js';\nexport type Registry = keyof ChartTypeRegistry;"
 	);
 	const registry = exportedAliasTypes(checker, entry).get('Registry');
-	return { program, chartTypes: unionMembers(registry).map((member) => member.value).sort() };
+	return {
+		program,
+		chartTypes: unionMembers(registry)
+			.map((member) => member.value)
+			.sort()
+	};
 }
 
 function entryText(chartTypes) {
@@ -90,7 +95,9 @@ function contractAdjustments(checker, chartTypes, aliases, facts) {
 	};
 	for (const chartType of chartTypes) {
 		const config = aliases.get(`Config_${chartType}`);
-		const datasetTypes = chartTypes.filter((other) => other !== chartType).map((other) => aliases.get(`Dataset_${other}`));
+		const datasetTypes = chartTypes
+			.filter((other) => other !== chartType)
+			.map((other) => aliases.get(`Dataset_${other}`));
 		adjustChartType(typeLookups(checker, 'chart.js'), { config, datasetTypes, facts }, into);
 	}
 	return into;
@@ -143,10 +150,21 @@ export function generateChartjs(root, pin) {
 	const aliases = exportedAliasTypes(checker, entry);
 	const facts = registryFacts(root);
 	const { datasetVariants, ...adjustments } = contractAdjustments(checker, chartTypes, aliases, facts);
-	const emitter = new TypeEmitter({ program, checker, sourceId: SOURCE_ID, packageName: pin.package, wrappers: WRAPPERS, ...adjustments });
+	const emitter = new TypeEmitter({
+		program,
+		checker,
+		sourceId: SOURCE_ID,
+		packageName: pin.package,
+		wrappers: WRAPPERS,
+		...adjustments
+	});
 	emitter.overrides = datasetUnions(emitter, datasetVariants, facts.dataset);
 	const configs = chartTypes.map((chartType) => emitter.reference(aliases.get(`Config_${chartType}`)));
-	const definitions = withRuntimeFacts(root, emitter.definitions, configs.map(({ ref }) => ref));
+	const definitions = withRuntimeFacts(
+		root,
+		emitter.definitions,
+		configs.map(({ ref }) => ref)
+	);
 	return artifactOf({
 		library: 'chartjs',
 		sourceId: SOURCE_ID,
@@ -155,4 +173,3 @@ export function generateChartjs(root, pin) {
 		root: { kind: 'union', anyOf: configs, discriminator: 'type', extensible: true, ...facts.chartType }
 	});
 }
-

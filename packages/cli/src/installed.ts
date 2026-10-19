@@ -20,18 +20,31 @@ async function versionAt(manifestPath: string): Promise<string | undefined> {
 	}
 }
 
+/** Where a library is installed for a project: its version, and the directory holding that `node_modules`. */
+export interface Install {
+	readonly version: string;
+	readonly root: string;
+}
+
 /**
- * The version of `library` installed for the project that contains `file`, found the way Node
- * resolves packages: `node_modules/<package>/package.json` in the file's directory and upwards.
- * Nothing is executed or imported.
+ * The install of `library` for the project that contains `file`, found the way Node resolves
+ * packages: `node_modules/<package>/package.json` in the file's directory and upwards. Nothing is
+ * executed or imported.
  */
-export async function installedVersion(library: Library, file: string): Promise<string> {
+export async function findInstall(library: Library, file: string): Promise<Install | undefined> {
 	const packageName = PACKAGES[library];
-	const start = dirname(resolve(file));
-	for (let directory = start; ; directory = dirname(directory)) {
+	for (let directory = dirname(resolve(file)); ; directory = dirname(directory)) {
 		const version = await versionAt(join(directory, 'node_modules', packageName, 'package.json'));
-		if (version !== undefined) return version;
-		if (dirname(directory) === directory) break;
+		if (version !== undefined) return { version, root: directory };
+		if (dirname(directory) === directory) return undefined;
 	}
-	throw new InputError(`${packageName} is not installed for ${start}; pass --library-version <version>.`);
+}
+
+/** The version of `library` installed for the project that contains `file`. */
+export async function installedVersion(library: Library, file: string): Promise<string> {
+	const install = await findInstall(library, file);
+	if (install !== undefined) return install.version;
+	throw new InputError(
+		`${PACKAGES[library]} is not installed for ${dirname(resolve(file))}; pass --library-version <version>.`
+	);
 }

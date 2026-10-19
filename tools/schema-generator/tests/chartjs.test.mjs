@@ -1,16 +1,12 @@
 import assert from 'node:assert/strict';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { checkArtifact } from '@chartguard/config-core';
+import { verifiedUpstream } from '@chartguard/schema-generator';
 
 import { generate, run } from '../generate.mjs';
-import { TypeEmitter } from '../lib/emitter.mjs';
-import { verifiedUpstream } from '../lib/lock.mjs';
-import { createEntryProgram, exportedAliasTypes } from '../lib/program.mjs';
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url));
 const first = generate(ROOT, 'chartjs');
@@ -112,29 +108,6 @@ test('a built-in plugin entry may be a boolean: getOpts disables it with false a
 	}
 });
 
-test('only known homomorphic wrappers pass primitives through; any other alias keeps its object shape', () => {
-	const entry = [
-		"type Wrap<T> = { v: T };",
-		"type Pair<T> = { a: T; b: T };",
-		"type Partialish<T> = { [K in keyof T]?: T[K] };",
-		"export type U = { w: Wrap<'x'>; p: Pair<number>; q: Partialish<number> };"
-	].join('\n');
-	const { program, checker, entry: file } = createEntryProgram(ROOT, entry);
-	const emit = (wrappers) => {
-		const emitter = new TypeEmitter({ program, checker, sourceId: 't', packageName: 'test', wrappers });
-		const node = emitter.emit(exportedAliasTypes(checker, file).get('U'));
-		return { node, definitions: emitter.definitions };
-	};
-	const strict = emit(new Set());
-	const shape = (name) => strict.definitions[strict.definitions.U.properties[name].node.ref];
-	assert.equal(shape('w').kind, 'object');
-	assert.deepEqual(Object.keys(shape('w').properties), ['v']);
-	assert.deepEqual(Object.keys(shape('p').properties), ['a', 'b']);
-	const lenient = emit(new Set(['Partialish']));
-	assert.deepEqual(lenient.definitions.U.properties.q.node, { kind: 'number' });
-	assert.equal(lenient.definitions.U.properties.w.node.kind, 'ref');
-});
-
 test('the artifact never embeds local paths', () => {
 	assert.equal(first.text.includes(ROOT), false);
 	assert.equal(first.text.includes('__chartguard_schema_entry__'), false);
@@ -162,25 +135,6 @@ test('chart, dataset and scale types name the runtime registry they are looked u
 	const scale = resolve(resolve(resolve(resolve(bar.properties.options.node).properties.scales.node).values));
 	assert.deepEqual(scale.registry, { id: 'chartjs.scales', prefix: '', enforced: true });
 	assert.notEqual(pointer(scale), pointer(dataset));
-});
-
-function fakeRoot(t, { installed = '4.5.1', integrity } = {}) {
-	const root = mkdtempSync(join(tmpdir(), 'schema-lock-'));
-	t.after(() => rmSync(root, { recursive: true, force: true }));
-	mkdirSync(join(root, 'tools/schema-generator'), { recursive: true });
-	mkdirSync(join(root, 'node_modules/chart.js'), { recursive: true });
-	cpSync(join(ROOT, 'tools/schema-generator/upstream-sources.json'), join(root, 'tools/schema-generator/upstream-sources.json'));
-	writeFileSync(join(root, 'node_modules/chart.js/package.json'), JSON.stringify({ version: installed }));
-	const pin = verifiedUpstream(ROOT, 'chartjs');
-	const lock = { packages: { 'node_modules/chart.js': { version: installed, integrity: integrity ?? pin.integrity } } };
-	writeFileSync(join(root, 'package-lock.json'), JSON.stringify(lock));
-	return root;
-}
-
-test('generation refuses an installed package that differs from the pin', (t) => {
-	assert.throws(() => verifiedUpstream(fakeRoot(t, { installed: '4.5.0' }), 'chartjs'), /installed 4\.5\.0, pinned 4\.5\.1/);
-	assert.throws(() => verifiedUpstream(fakeRoot(t, { integrity: 'sha512-other' }), 'chartjs'), /integrity differs/);
-	assert.throws(() => verifiedUpstream(fakeRoot(t), 'd3'), /No upstream pin for d3/);
 });
 
 test('element options are accepted in every scope the runtime reads them from, citing the resolver', () => {

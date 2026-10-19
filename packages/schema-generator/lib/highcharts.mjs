@@ -19,7 +19,10 @@ const ENTRY = ["import type { Options } from 'highcharts';", 'export type Option
  * `UnknownSeriesOptions`) takes `chart.type`, which `ChartDefaults` sets to `'line'`.
  */
 const SERIES_LOOKUP = { file: 'highcharts.src.js', pattern: 'error(17, true, chart, { missingModuleFor: type });' };
-const SERIES_TYPE = { file: 'highcharts.src.js', pattern: 'optionsChart.type), SeriesClass = Chart_seriesTypes[type];' };
+const SERIES_TYPE = {
+	file: 'highcharts.src.js',
+	pattern: 'optionsChart.type), SeriesClass = Chart_seriesTypes[type];'
+};
 const CHART_DEFAULTS = { file: 'highcharts.src.js', pattern: 'const ChartDefaults = {', end: '};' };
 /** A member of the `ChartDefaults` object itself, not of a nested one: four spaces of indentation. */
 const DEFAULT_TYPE = /^ {4}type: '(\w+)',$/;
@@ -37,7 +40,11 @@ function seriesDefault(root) {
 	const defaults = runtimeSection(root, 'highcharts', CHART_DEFAULTS);
 	const index = defaults.lines.findIndex((line) => DEFAULT_TYPE.test(line));
 	if (index === -1) throw new Error(`highcharts runtime changed: no default chart type at ${defaults.pointer}`);
-	const pointers = [runtimePointer(root, 'highcharts', SERIES_LOOKUP), runtimePointer(root, 'highcharts', SERIES_TYPE), defaults.pointerAt(index)];
+	const pointers = [
+		runtimePointer(root, 'highcharts', SERIES_LOOKUP),
+		runtimePointer(root, 'highcharts', SERIES_TYPE),
+		defaults.pointerAt(index)
+	];
 	return {
 		fallback: DEFAULT_TYPE.exec(defaults.lines[index])[1],
 		provenance: { confidence: 'authoritative', sources: pointers.map((pointer) => ({ source: SOURCE_ID, pointer })) }
@@ -59,7 +66,8 @@ function seriesUnion(root, definitions, option) {
 	const union = definitions[name];
 	if (union?.kind !== 'union') throw changed('series is no longer Array<SeriesOptionsType | UnknownSeriesOptions>');
 	const typed = union.anyOf.filter((member) => typeLiteral(definitions, member) !== undefined);
-	if (union.anyOf.length - typed.length !== 1) throw changed('expected exactly one series member without a type literal');
+	if (union.anyOf.length - typed.length !== 1)
+		throw changed('expected exactly one series member without a type literal');
 	const { fallback, provenance } = seriesDefault(root);
 	const variants = Object.fromEntries(
 		typed.map((member) => [member.ref, withOptionalType(definitions[member.ref], provenance)])

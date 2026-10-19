@@ -1,0 +1,15 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"rootDir": ".",
+		"outDir": "./dist",
+		"types": ["node"],
+		"allowJs": true,
+		"checkJs": false,
+		"emitDeclarationOnly": true,
+		"declarationMap": false,
+		"sourceMap": false
+	},
+	"include": ["index.mjs", "lib/**/*.mjs"],
+	"references": [{ "path": "../config/core" }]
+}

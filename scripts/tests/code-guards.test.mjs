@@ -100,8 +100,10 @@ test('R9 tool entry points go through runAsEntryPoint, which tolerates a closed 
 });
 
 test('R10 runtime facts are read from the pinned package through one helper that cites the line (D16)', () => {
-	const allowed = new Set(['runtime.mjs', 'lock.mjs'].map((file) => join('tools', 'schema-generator', 'lib', file)));
-	const readers = sources('tools').filter(({ path }) => !allowed.has(path) && !path.split(sep).includes('tests'));
+	const allowed = new Set(['runtime.mjs', 'lock.mjs'].map((file) => join('packages', 'schema-generator', 'lib', file)));
+	const readers = [...sources('tools'), ...sources('packages/schema-generator', ['.mjs'])].filter(
+		({ path }) => !allowed.has(path) && !path.split(sep).includes('tests')
+	);
 	assert.deepEqual(offenders(readers, /['"]node_modules['"]\s*,/), []);
 });
 
@@ -112,7 +114,7 @@ test('R11 a value handed to another process is checked structurally, not by a JS
 
 /** Schema artifacts (`irVersion` + `library`) among JSON files, with whether their upstream license allows shipping them. */
 function artifactsIn(paths) {
-	const upstream = JSON.parse(readFileSync(join(ROOT, 'tools/schema-generator/upstream-sources.json'), 'utf8'));
+	const upstream = JSON.parse(readFileSync(join(ROOT, 'packages/schema-generator/upstream-sources.json'), 'utf8'));
 	const pins = new Map(upstream.libraries.map((pin) => [pin.library, pin]));
 	return paths
 		.filter((path) => path.endsWith('.json'))
@@ -128,7 +130,8 @@ function artifactsIn(paths) {
 test('R12 no schema artifact whose upstream license does not allow it is tracked by git (CG-01-05)', () => {
 	const tracked = spawnSync('git', ['ls-files', '-z', '--', '*.json'], { cwd: ROOT, encoding: 'utf8' });
 	assert.equal(tracked.status, 0, tracked.stderr);
-	const found = artifactsIn(tracked.stdout.split('\0').filter(Boolean));
+	// Tracked files deleted in the working tree (a move not committed yet) have nothing to check.
+	const found = artifactsIn(tracked.stdout.split('\0').filter((path) => path !== '' && existsSync(join(ROOT, path))));
 	assert.ok(found.length >= 2, 'the committed Chart.js and ECharts artifacts are found');
 	assert.deepEqual(
 		found.filter(({ allowed }) => !allowed).map(({ path }) => path),

@@ -13,9 +13,7 @@
 			},
 			"primary": {
 				"kind": "typescript-declarations",
-				"entries": [
-					"dist/types/index.d.ts"
-				],
+				"entries": ["dist/types/index.d.ts"],
 				"confidence": "authoritative"
 			},
 			"secondary": [
@@ -41,10 +39,7 @@
 			},
 			"primary": {
 				"kind": "typescript-declarations",
-				"entries": [
-					"types/dist/option.d.ts",
-					"types/dist/shared.d.ts"
-				],
+				"entries": ["types/dist/option.d.ts", "types/dist/shared.d.ts"],
 				"confidence": "authoritative"
 			},
 			"secondary": [
@@ -76,11 +71,7 @@
 			},
 			"primary": {
 				"kind": "typescript-declarations",
-				"entries": [
-					"highcharts.d.ts",
-					"options/*.d.ts",
-					"modules/*.d.ts"
-				],
+				"entries": ["highcharts.d.ts", "options/*.d.ts", "modules/*.d.ts"],
 				"confidence": "authoritative"
 			},
 			"secondary": [

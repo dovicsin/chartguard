@@ -2,11 +2,12 @@ import { parseArgs } from 'node:util';
 
 import { isLibrary, type Library } from './libraries.js';
 
-const COMMANDS = ['validate', 'quality', 'analyze'] as const;
-export type Command = (typeof COMMANDS)[number];
+const CONFIG_COMMANDS = ['validate', 'quality', 'analyze'] as const;
+export type ConfigCommand = (typeof CONFIG_COMMANDS)[number];
 
-export interface Invocation {
-	readonly command: Command;
+/** `validate`, `quality` or `analyze` one input file. */
+export interface ConfigInvocation {
+	readonly command: ConfigCommand;
 	readonly library: Library;
 	readonly file: string;
 	readonly name: string | undefined;
@@ -17,19 +18,32 @@ export interface Invocation {
 	readonly json: boolean;
 }
 
+/** `schema build`: generate a library's schema from the install in a project directory. */
+export interface SchemaInvocation {
+	readonly command: 'schema';
+	readonly library: Library;
+	readonly directory: string;
+	readonly json: boolean;
+}
+
+export type Invocation = ConfigInvocation | SchemaInvocation;
+
 const OPTIONS = {
 	library: { type: 'string' },
 	file: { type: 'string' },
 	name: { type: 'string' },
 	'library-version': { type: 'string' },
 	registries: { type: 'string' },
+	dir: { type: 'string' },
 	json: { type: 'boolean', default: false }
 } as const;
 
+type Values = ReturnType<typeof parseArgs<{ options: typeof OPTIONS; allowPositionals: true }>>['values'];
+
 const HELP_WORDS: ReadonlySet<string> = new Set(['help', '--help', '-h']);
 
-function isCommand(value: string | undefined): value is Command {
-	return COMMANDS.some((command) => command === value);
+function isConfigCommand(value: string | undefined): value is ConfigCommand {
+	return CONFIG_COMMANDS.some((command) => command === value);
 }
 
 export function isHelpRequest(argv: readonly string[]): boolean {
@@ -38,13 +52,29 @@ export function isHelpRequest(argv: readonly string[]): boolean {
 }
 
 /** `--name` belongs to `analyze`; `--library-version` and `--registries` to the config checks, not to `quality`. */
-function misplaced(
-	command: Command,
-	name: string | undefined,
-	contextOptions: readonly (string | undefined)[]
-): boolean {
-	const context = contextOptions.some((value) => value !== undefined);
+function misplaced(command: ConfigCommand, { name, registries, 'library-version': libraryVersion }: Values): boolean {
+	const context = libraryVersion !== undefined || registries !== undefined;
 	return (name !== undefined && command !== 'analyze') || (context && command === 'quality');
+}
+
+function configInvocation(
+	command: ConfigCommand,
+	rest: readonly string[],
+	values: Values
+): ConfigInvocation | undefined {
+	const { library, file, name, json, registries, dir, 'library-version': libraryVersion } = values;
+	if (rest.length > 0 || library === undefined || file === undefined || dir !== undefined) return undefined;
+	if (!isLibrary(library) || misplaced(command, values)) return undefined;
+	return { command, library, file, name, libraryVersion, registries, json };
+}
+
+/** `schema build --library <library> [--dir <project>] [--json]`, and nothing else. */
+function schemaInvocation(rest: readonly string[], values: Values): SchemaInvocation | undefined {
+	const { library, dir, json, file, name, registries, 'library-version': libraryVersion } = values;
+	const foreign = [file, name, registries, libraryVersion].some((value) => value !== undefined);
+	if (rest.length !== 1 || rest[0] !== 'build' || foreign || library === undefined || !isLibrary(library))
+		return undefined;
+	return { command: 'schema', library, directory: dir ?? '.', json };
 }
 
 /** Returns undefined for any malformed invocation. */
@@ -52,10 +82,8 @@ export function parseInvocation(argv: readonly string[]): Invocation | undefined
 	try {
 		const { positionals, values } = parseArgs({ args: [...argv], options: OPTIONS, allowPositionals: true });
 		const [command, ...rest] = positionals;
-		const { library, file, name, json, registries, 'library-version': libraryVersion } = values;
-		if (!isCommand(command) || rest.length > 0 || library === undefined || file === undefined) return undefined;
-		if (!isLibrary(library) || misplaced(command, name, [libraryVersion, registries])) return undefined;
-		return { command, library, file, name, libraryVersion, registries, json };
+		if (command === 'schema') return schemaInvocation(rest, values);
+		return isConfigCommand(command) ? configInvocation(command, rest, values) : undefined;
 	} catch {
 		return undefined;
 	}
