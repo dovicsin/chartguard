@@ -1,5 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { runtimePointer } from './runtime.mjs';
 
 /**
  * Chart.js resolves element options through a scope chain that ends at the options root, and
@@ -20,13 +19,6 @@ const RUNTIME = {
 
 const changed = (what) => new Error(`chart.js changed: ${what}`);
 const compareText = (left, right) => (left < right ? -1 : Number(left > right));
-
-function runtimePointer(root, { file, pattern }) {
-	const lines = readFileSync(join(root, 'node_modules', 'chart.js', file), 'utf8').split('\n');
-	const index = lines.findIndex((line) => line.includes(pattern));
-	if (index === -1) throw changed(`"${pattern}" not found in ${file}`);
-	return `chart.js/${file}:${String(index + 1)}`;
-}
 
 const capitalize = (name) => `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
 
@@ -79,7 +71,7 @@ function datasetNames(config, resolve) {
  */
 export function planOptionScopes(root, definitions, configNames) {
 	const resolve = (node) => (node.kind === 'ref' ? definitions[node.ref] : node);
-	const sources = [RUNTIME.scopes, RUNTIME.prefixes].map((fact) => ({ source: 'chartjs', pointer: runtimePointer(root, fact) }));
+	const sources = [RUNTIME.scopes, RUNTIME.prefixes].map((fact) => ({ source: 'chartjs', pointer: runtimePointer(root, 'chart.js', fact) }));
 	const configs = configNames.map((name) => definitions[name]);
 	const optionsNames = configs.map((config) => config.properties.options.node.ref);
 	const animationNames = optionsNames.flatMap((name) =>
@@ -89,6 +81,6 @@ export function planOptionScopes(root, definitions, configNames) {
 		scope: scopeDefinition(resolve(definitions[optionsNames[0]].properties.elements.node), resolve, sources),
 		includedBy: [...new Set([...optionsNames, ...configs.flatMap((config) => datasetNames(config, resolve))])],
 		openAnimations: [...new Set(animationNames)],
-		animationProvenance: { confidence: 'authoritative', sources: [{ source: 'chartjs', pointer: runtimePointer(root, RUNTIME.animations) }] }
+		animationProvenance: { confidence: 'authoritative', sources: [{ source: 'chartjs', pointer: runtimePointer(root, 'chart.js', RUNTIME.animations) }] }
 	};
 }

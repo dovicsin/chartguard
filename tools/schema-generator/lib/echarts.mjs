@@ -1,18 +1,21 @@
 import { resolveComponentSubtypes } from './echarts-components.mjs';
 import { TypeEmitter } from './emitter.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
+import { runtimeProvenance } from './runtime.mjs';
 import { artifactOf, typeLookups, unionMembers } from './types.mjs';
 
 const SOURCE_ID = 'echarts';
 
 /**
  * `EChartsOption` is what `chart.setOption(option)` accepts with the full `echarts` bundle.
- * `echarts/core` + `use([...])` registers fewer components; an option for an unregistered
- * component is ignored by the runtime, so the full option set never rejects a valid config.
+ * `echarts/core` + `use([...])` registers fewer: the runtime rejects an unregistered series or
+ * component subtype. Each variant is registered as `<mainType>.<subType>` (`series.bar`,
+ * `dataZoom.inside`), which the series and component unions name as their registry.
  */
 const ENTRY = ["import type { EChartsOption } from 'echarts';", 'export type Option = EChartsOption;'].join('\n');
 
 const changed = (what) => new Error(`echarts types changed: ${what}`);
+const SERIES_LOOKUP = { file: 'lib/model/Global.js', pattern: 'error("Series " + subType + " is used but not imported.' };
 
 /** The `xAxis` variant whose `type` literal is `axisType`. */
 function axisVariant(lookups, checker, option, axisType) {
@@ -43,13 +46,14 @@ function boundaryGapDeclaration(lookups, checker, option) {
  * series (`echarts-wordcloud`, `echarts-liquidfill`), so the series union is extensible;
  * numeric axes accept a boolean `boundaryGap` (see `boundaryGapDeclaration`).
  */
-function contractAdjustments(lookups, checker, aliases) {
+function contractAdjustments(root, lookups, checker, aliases) {
 	const option = aliases.get('Option');
 	const series = lookups.propertyType(option, 'series');
 	const list = unionMembers(series).find((member) => checker.isArrayType(member));
 	if (list === undefined) throw changed('series is no longer `SeriesOption | SeriesOption[]`');
+	const registered = { registry: { id: 'echarts', prefix: 'series.', enforced: true }, provenance: runtimeProvenance(root, { sourceId: SOURCE_ID, packageName: 'echarts' }, SERIES_LOOKUP) };
 	return {
-		extensible: new Set([series, lookups.elementType(list)]),
+		registries: new Map([series, lookups.elementType(list)].map((type) => [type, registered])),
 		widened: new Map([[boundaryGapDeclaration(lookups, checker, option), [{ kind: 'boolean' }]]])
 	};
 }
@@ -57,7 +61,7 @@ function contractAdjustments(lookups, checker, aliases) {
 export function generateEcharts(root, pin) {
 	const { program, checker, entry } = createEntryProgram(root, ENTRY);
 	const aliases = exportedAliasTypes(checker, entry);
-	const adjustments = contractAdjustments(typeLookups(checker, 'echarts'), checker, aliases);
+	const adjustments = contractAdjustments(root, typeLookups(checker, 'echarts'), checker, aliases);
 	const emitter = new TypeEmitter({ program, checker, sourceId: SOURCE_ID, packageName: pin.package, ...adjustments });
 	const optionRef = emitter.reference(aliases.get('Option'));
 	resolveComponentSubtypes(root, emitter.definitions, emitter.definitions[optionRef.ref]);

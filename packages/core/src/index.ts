@@ -3,6 +3,7 @@ export type {
 	Coverage,
 	Diagnostic,
 	QualityReport,
+	RegistryContext,
 	Severity,
 	ValidationOptions,
 	ValidationResult,

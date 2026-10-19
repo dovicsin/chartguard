@@ -1,10 +1,31 @@
 import { ELEMENT_SCOPE, planOptionScopes } from './chartjs-scopes.mjs';
 import { TypeEmitter } from './emitter.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
+import { runtimeProvenance } from './runtime.mjs';
 import { makeOptionsScriptable } from './scriptable.mjs';
 import { artifactOf, typeLookups, unionMembers } from './types.mjs';
 
 const SOURCE_ID = 'chartjs';
+/**
+ * The runtime registries (`Chart.register`) the `type` values are looked up in: every dataset's
+ * controller (`dataset.type || config.type`) and every configured scale. The chart `type` itself is
+ * read only through its datasets: with none, an unregistered chart type renders, so it is not enforced.
+ */
+const LOOKUPS = {
+	controllers: { file: 'dist/chart.js', pattern: 'const ControllerClass = registry.getController(type);' },
+	scales: { file: 'dist/chart.js', pattern: 'const scaleClass = registry.getScale(scaleType);' }
+};
+
+function registryFacts(root) {
+	const provenance = (fact) => runtimeProvenance(root, { sourceId: SOURCE_ID, packageName: 'chart.js' }, fact);
+	const fact = (id, enforced, lookup) => ({ registry: { id, prefix: '', enforced }, provenance: provenance(lookup) });
+	return {
+		chartType: fact('chartjs.controllers', false, LOOKUPS.controllers),
+		dataset: fact('chartjs.controllers', true, LOOKUPS.controllers),
+		scale: fact('chartjs.scales', true, LOOKUPS.scales)
+	};
+}
+
 /** `DeepPartial<T>` / `_DeepPartialObject<T>` (dist/types/utils.d.ts) map over primitives unchanged. */
 const WRAPPERS = new Set(['DeepPartial', '_DeepPartialObject']);
 
@@ -36,7 +57,7 @@ function entryText(chartTypes) {
  * chart.js/dist/chart.js, `config.data = config.data || {}`, `data.datasets = data.datasets || []`,
  * `_dataCheck`: `dataset.data || (dataset.data = [])`), so their absence is not an error.
  */
-function adjustChartType(lookups, { config, datasetTypes }, into) {
+function adjustChartType(lookups, { config, datasetTypes, facts }, into) {
 	const { property, propertyType, indexValueType, elementType } = lookups;
 	const data = propertyType(config, 'data');
 	const datasetType = elementType(propertyType(data, 'datasets'));
@@ -47,7 +68,7 @@ function adjustChartType(lookups, { config, datasetTypes }, into) {
 	// getOpts (chart.js `PluginService`): `false` disables a plugin, `true` enables it with defaults.
 	for (const plugin of lookups.checker.getPropertiesOfType(plugins))
 		into.widened.set(plugin.declarations?.[0], [{ kind: 'boolean' }]);
-	into.extensible.add(indexValueType(propertyType(options, 'scales')));
+	into.registries.set(indexValueType(propertyType(options, 'scales')), facts.scale);
 	into.runtimeOptional.add(property(config, 'data'));
 	into.runtimeOptional.add(property(data, 'datasets'));
 	for (const dataset of [datasetType, ...datasetTypes]) {
@@ -57,11 +78,11 @@ function adjustChartType(lookups, { config, datasetTypes }, into) {
 	into.datasetVariants.set(datasetType, [datasetType, ...datasetTypes]);
 }
 
-function contractAdjustments(checker, chartTypes, aliases) {
+function contractAdjustments(checker, chartTypes, aliases, facts) {
 	const into = {
 		opaque: new Set(),
 		open: new Set(),
-		extensible: new Set(),
+		registries: new Map(),
 		runtimeOptional: new Set(),
 		widened: new Map(),
 		datasetVariants: new Map()
@@ -69,13 +90,13 @@ function contractAdjustments(checker, chartTypes, aliases) {
 	for (const chartType of chartTypes) {
 		const config = aliases.get(`Config_${chartType}`);
 		const datasetTypes = chartTypes.filter((other) => other !== chartType).map((other) => aliases.get(`Dataset_${other}`));
-		adjustChartType(typeLookups(checker, 'chart.js'), { config, datasetTypes }, into);
+		adjustChartType(typeLookups(checker, 'chart.js'), { config, datasetTypes, facts }, into);
 	}
 	return into;
 }
 
 /** Mixed charts: a dataset without `type` inherits the chart type; plugins may register more types. */
-function datasetUnions(emitter, datasetVariants) {
+function datasetUnions(emitter, datasetVariants, { registry, provenance }) {
 	return new Map(
 		[...datasetVariants].map(([datasetType, variants]) => [
 			datasetType,
@@ -84,7 +105,9 @@ function datasetUnions(emitter, datasetVariants) {
 				anyOf: variants.map((variant) => emitter.reference(variant)),
 				discriminator: 'type',
 				defaultVariant: 0,
-				extensible: true
+				extensible: true,
+				registry,
+				provenance
 			})
 		])
 	);
@@ -94,9 +117,10 @@ export function generateChartjs(root, pin) {
 	const { program: registryProgram, chartTypes } = registeredChartTypes(root);
 	const { program, checker, entry } = createEntryProgram(root, entryText(chartTypes), registryProgram);
 	const aliases = exportedAliasTypes(checker, entry);
-	const { datasetVariants, ...adjustments } = contractAdjustments(checker, chartTypes, aliases);
+	const facts = registryFacts(root);
+	const { datasetVariants, ...adjustments } = contractAdjustments(checker, chartTypes, aliases, facts);
 	const emitter = new TypeEmitter({ program, checker, sourceId: SOURCE_ID, packageName: pin.package, wrappers: WRAPPERS, ...adjustments });
-	emitter.overrides = datasetUnions(emitter, datasetVariants);
+	emitter.overrides = datasetUnions(emitter, datasetVariants, facts.dataset);
 	const configs = chartTypes.map((chartType) => emitter.reference(aliases.get(`Config_${chartType}`)));
 	// Element options in every scope the runtime reads them from; open per-property animations.
 	const scopes = planOptionScopes(root, emitter.definitions, configs.map(({ ref }) => ref));
@@ -113,7 +137,7 @@ export function generateChartjs(root, pin) {
 		sourceId: SOURCE_ID,
 		pin,
 		definitions: emitter.definitions,
-		root: { kind: 'union', anyOf: configs, discriminator: 'type', extensible: true }
+		root: { kind: 'union', anyOf: configs, discriminator: 'type', extensible: true, ...facts.chartType }
 	});
 }
 

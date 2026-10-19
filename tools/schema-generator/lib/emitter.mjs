@@ -56,7 +56,7 @@ export class TypeEmitter {
 		packageName,
 		opaque = new Set(),
 		open = new Set(),
-		extensible = new Set(),
+		registries = new Map(),
 		runtimeOptional = new Set(),
 		widened = new Map(),
 		wrappers = new Set()
@@ -68,8 +68,11 @@ export class TypeEmitter {
 		this.opaque = opaque;
 		/** Object types that are documented extension points. */
 		this.open = open;
-		/** Union types whose variant registry plugins may extend. */
-		this.extensible = extensible;
+		/**
+		 * Union type → `{ registry, provenance }`: the runtime registry its variants are looked up in,
+		 * which plugins extend, so the union is extensible and checked against the caller's registry.
+		 */
+		this.registries = registries;
 		/** Property symbols the declarations require but the runtime defaults. */
 		this.runtimeOptional = runtimeOptional;
 		/**
@@ -143,18 +146,19 @@ export class TypeEmitter {
 		nodes.push(...rest.map((member) => this.emit(member)));
 		const unique = [...new Map(nodes.map((node) => [JSON.stringify(node), node])).values()];
 		if (unique.length === 1) return unique[0];
-		return this.withDiscriminator({ kind: 'union', anyOf: unique }, rest, this.isExtensible(type));
+		return this.withDiscriminator({ kind: 'union', anyOf: unique }, rest, this.registryOf(type));
 	}
 
 	/** Callers may name either `T` or the `T | undefined` of an optional property. */
-	isExtensible(type) {
-		return this.extensible.has(type) || this.extensible.has(this.checker.getNonNullableType(type));
+	registryOf(type) {
+		return this.registries.get(type) ?? this.registries.get(this.checker.getNonNullableType(type));
 	}
 
-	withDiscriminator(union, members, extensible) {
+	withDiscriminator(union, members, registered) {
 		const discriminator = this.discriminatorOf(members);
 		if (discriminator === undefined) return union;
-		return { ...union, discriminator, ...(extensible ? { extensible: true } : {}) };
+		if (registered === undefined) return { ...union, discriminator };
+		return { ...union, discriminator, extensible: true, registry: registered.registry, provenance: registered.provenance };
 	}
 
 	/**

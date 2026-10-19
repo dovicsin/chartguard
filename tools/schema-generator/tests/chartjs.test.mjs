@@ -149,6 +149,21 @@ test('the root is an extensible union over the registered chart types', () => {
 	assert.deepEqual(types, ['bar', 'bubble', 'doughnut', 'line', 'pie', 'polarArea', 'radar', 'scatter']);
 });
 
+test('chart, dataset and scale types name the runtime registry they are looked up in, citing the lookup', () => {
+	const pointer = (node) => node.provenance.sources[0].pointer;
+	// The chart type is only read through its datasets, so it recognises extensions but is not enforced.
+	assert.deepEqual(artifact.root.registry, { id: 'chartjs.controllers', prefix: '', enforced: false });
+	assert.match(pointer(artifact.root), /^chart\.js\/dist\/chart\.js:\d+$/);
+	const bar = artifact.definitions.Config_bar;
+	const datasets = resolve(resolve(bar.properties.data.node).properties.datasets.node);
+	const dataset = resolve(datasets.items);
+	assert.deepEqual(dataset.registry, { id: 'chartjs.controllers', prefix: '', enforced: true });
+	assert.equal(pointer(dataset), pointer(artifact.root));
+	const scale = resolve(resolve(resolve(resolve(bar.properties.options.node).properties.scales.node).values));
+	assert.deepEqual(scale.registry, { id: 'chartjs.scales', prefix: '', enforced: true });
+	assert.notEqual(pointer(scale), pointer(dataset));
+});
+
 function fakeRoot(t, { installed = '4.5.1', integrity } = {}) {
 	const root = mkdtempSync(join(tmpdir(), 'schema-lock-'));
 	t.after(() => rmSync(root, { recursive: true, force: true }));

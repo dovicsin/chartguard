@@ -1,7 +1,8 @@
 import { isContainer, ownDataProperty } from '@chartguard/core';
 
 import { isListLike, kindOf } from './kind.js';
-import type { DefaultChoice, DefaultTest, EnumValue, NodeSchema } from './schema.js';
+import { type Registration, registration, type Registries } from './registry.js';
+import type { DefaultChoice, DefaultTest, EnumValue, NodeSchema, RegistryRef } from './schema.js';
 
 export type Selection =
 	| { readonly kind: 'variant'; readonly schema: NodeSchema }
@@ -13,6 +14,16 @@ export type Selection =
 			readonly key: string;
 			readonly value: unknown;
 			readonly known: readonly EnumValue[];
+	  }
+	/** Registered by the caller's runtime, unknown to the schema: an extension whose options are not checked. */
+	| { readonly kind: 'registered'; readonly key: string; readonly value: string }
+	/** Not in the caller's complete registry, so the runtime rejects it; `defaulted` when the runtime chose it. */
+	| {
+			readonly kind: 'unregistered';
+			readonly key: string;
+			readonly value: string;
+			readonly defaulted: boolean;
+			readonly registration: Registration;
 	  };
 
 const ACCEPTED: Selection = { kind: 'accepted' };
@@ -86,6 +97,44 @@ function memberAt(union: NodeSchema, index: number): Selection | undefined {
 	return member === undefined ? undefined : variant(member);
 }
 
+const sameRegistry = (left: RegistryRef, right: RegistryRef): boolean =>
+	left.id === right.id && left.prefix === right.prefix && left.enforced === right.enforced;
+
+/** The registry of the union itself, or the one every nested union that names one agrees on. */
+function registryOf(union: NodeSchema): RegistryRef | undefined {
+	if (union.registry !== undefined) return union.registry;
+	const nested = (union.anyOf ?? []).filter(isUnion).flatMap((member) => registryOf(member) ?? []);
+	const [first] = nested;
+	return first !== undefined && nested.every((ref) => sameRegistry(ref, first)) ? first : undefined;
+}
+
+/** What the caller's registry says about an explicit discriminator value; `undefined` leaves the usual rules. */
+function byRegistration(
+	found: Registration | undefined,
+	selected: NodeSchema | undefined,
+	key: string,
+	value: string
+): Selection | undefined {
+	if (found === undefined) return undefined;
+	if (found.registered) return selected === undefined ? { kind: 'registered', key, value } : variant(selected);
+	return found.rejected ? { kind: 'unregistered', key, value, defaulted: false, registration: found } : undefined;
+}
+
+/** A default variant the runtime picks must be registered too: a complete registry without it is rejected. */
+function checkDefault(
+	selection: Selection,
+	key: string,
+	ref: RegistryRef | undefined,
+	registries: Registries
+): Selection {
+	if (selection.kind !== 'variant' || ref === undefined) return selection;
+	const [literal] = discriminatorValues(selection.schema, key).filter((value) => typeof value === 'string');
+	if (typeof literal !== 'string') return selection;
+	const found = registration(registries, ref, literal);
+	if (found?.rejected !== true) return selection;
+	return { kind: 'unregistered', key, value: literal, defaulted: true, registration: found };
+}
+
 /** A union is extensible when it or any nested union that carries the discriminator says so. */
 function isExtensible(union: NodeSchema): boolean {
 	return union.extensible === true || (union.anyOf ?? []).filter(isUnion).some(isExtensible);
@@ -109,21 +158,44 @@ function discriminatorValues(member: NodeSchema, key: string): readonly EnumValu
 	return (Object.hasOwn(properties, key) ? properties[key]?.enum : undefined) ?? [];
 }
 
-function selectByDiscriminator(value: object, union: NodeSchema, members: readonly NodeSchema[]): Selection {
+/** The member an explicit discriminator value selects, as the caller's registry and the schema decide. */
+/** A union whose object members are told apart by the literal values of `key`. */
+interface Discriminated {
+	readonly union: NodeSchema;
+	readonly members: readonly NodeSchema[];
+	readonly key: string;
+}
+
+function selectExplicit(value: unknown, { union, members, key }: Discriminated, registries: Registries): Selection {
+	const selected = members.find((member) => discriminatorValues(member, key).some((known) => known === value));
+	const ref = registryOf(union);
+	if (ref !== undefined && typeof value === 'string') {
+		const decided = byRegistration(registration(registries, ref, value), selected, key, value);
+		if (decided !== undefined) return decided;
+	}
+	if (selected !== undefined) return variant(selected);
+	const known = members.flatMap((member) => discriminatorValues(member, key));
+	return { kind: isExtensible(union) ? 'unknown-variant' : 'invalid-variant', key, value, known };
+}
+
+function selectByDiscriminator(
+	value: object,
+	union: NodeSchema,
+	members: readonly NodeSchema[],
+	registries: Registries
+): Selection {
 	const key = discriminatorOf(union);
 	// A member without literal values for the key can never be told apart: do not guess.
 	if (key === undefined || members.some((member) => discriminatorValues(member, key).length === 0)) return AMBIGUOUS;
 	const entry = ownDataProperty(value, key);
 	if (!entry.found && entry.accessor) return AMBIGUOUS;
-	if (!entry.found || entry.value === undefined) return defaultOf(union, value) ?? AMBIGUOUS;
-	const selected = members.find((member) => discriminatorValues(member, key).some((known) => known === entry.value));
-	if (selected !== undefined) return variant(selected);
-	const known = members.flatMap((member) => discriminatorValues(member, key));
-	return { kind: isExtensible(union) ? 'unknown-variant' : 'invalid-variant', key, value: entry.value, known };
+	if (!entry.found || entry.value === undefined)
+		return checkDefault(defaultOf(union, value) ?? AMBIGUOUS, key, registryOf(union), registries);
+	return selectExplicit(entry.value, { union, members, key }, registries);
 }
 
 /** Chooses the union member that applies to a value, without guessing between look-alike objects. */
-export function selectVariant(value: unknown, union: NodeSchema): Selection {
+export function selectVariant(value: unknown, union: NodeSchema, registries: Registries = new Map()): Selection {
 	const members = flatMembers(union);
 	if (members.some((member) => member.kind === 'any')) return ACCEPTED;
 	const actual = kindOf(value);
@@ -137,6 +209,6 @@ export function selectVariant(value: unknown, union: NodeSchema): Selection {
 	if (isContainer(value))
 		return discriminatorOf(union) === undefined && matching.length === 1
 			? variant(only)
-			: selectByDiscriminator(value, union, matching);
+			: selectByDiscriminator(value, union, matching, registries);
 	return matching.length === 1 ? variant(only) : variant(mergePrimitives(matching));
 }

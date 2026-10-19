@@ -2,6 +2,7 @@ import { type Diagnostic, isContainer, ownDataProperty, suggestion, type Validat
 
 import { confirmed, inconclusive, unresolved } from './diagnostics.js';
 import { isListLike, kindOf } from './kind.js';
+import type { Registries } from './registry.js';
 import type { NodeSchema, SchemaManifest } from './schema.js';
 import { type Selection, selectVariant } from './union.js';
 
@@ -47,7 +48,8 @@ export class ConfigWalker {
 
 	constructor(
 		private readonly manifest: SchemaManifest,
-		private readonly options: ValidationOptions = {}
+		private readonly options: ValidationOptions = {},
+		private readonly registries: Registries = new Map()
 	) {}
 
 	walk(value: unknown, schema: NodeSchema, cursor: Cursor = { path: '$', depth: 0 }): void {
@@ -56,7 +58,7 @@ export class ConfigWalker {
 			return;
 		}
 		if (schema.kind === 'union') {
-			this.walkUnion(value, selectVariant(value, schema), cursor);
+			this.walkUnion(value, selectVariant(value, schema, this.registries), cursor);
 			return;
 		}
 		if (schema.kind === 'any' || !this.matchesShape(value, schema, cursor.path)) return;
@@ -82,10 +84,41 @@ export class ConfigWalker {
 			case 'unknown-variant':
 			case 'invalid-variant':
 				this.reportVariant(selection, `${path}.${selection.key}`);
+				return;
+			case 'registered':
+			case 'unregistered':
+				this.reportRegistration(selection, path);
 		}
 	}
 
-	private reportVariant(selection: Extract<Selection, { key: string }>, path: string): void {
+	private reportRegistration(
+		selection: Extract<Selection, { kind: 'registered' | 'unregistered' }>,
+		path: string
+	): void {
+		const { key, value } = selection;
+		if (selection.kind === 'registered') {
+			const message = `"${value}" is registered by an extension; its options are not checked.`;
+			this.diagnostics.push(inconclusive('CFG_REGISTERED_VARIANT', `${path}.${key}`, message));
+			return;
+		}
+		const { name, siblings } = selection.registration;
+		const message = selection.defaulted
+			? `No ${key} given: the runtime picks "${value}" (${name}), which is not registered, so it rejects it.`
+			: `"${value}" is not registered with the runtime (${name}), which rejects it.`;
+		const hint =
+			siblings.length === 0
+				? `Register ${name}.`
+				: `Register ${name}, or use a registered one: ${siblings.join(', ')}.`;
+		this.diagnostics.push({
+			...confirmed('CFG_UNREGISTERED', selection.defaulted ? path : `${path}.${key}`, message),
+			suggestion: hint
+		});
+	}
+
+	private reportVariant(
+		selection: Extract<Selection, { kind: 'unknown-variant' | 'invalid-variant' }>,
+		path: string
+	): void {
 		const known = selection.known.map(String);
 		if (selection.kind === 'invalid-variant') {
 			this.diagnostics.push(confirmed('CFG_ENUM', path, `Value must be one of: ${known.join(', ')}.`));

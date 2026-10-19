@@ -101,6 +101,42 @@ test('discriminated unions keep their default variant and extensibility', () => 
 	]);
 });
 
+test('a union registry lowers unchanged and is checked against the caller registry context', () => {
+	const variant = (value) => ({
+		kind: 'object',
+		additional: 'unknown',
+		properties: { type: prop({ kind: 'literal', value }) }
+	});
+	const root = {
+		kind: 'union',
+		anyOf: [variant('bar'), variant('line')],
+		discriminator: 'type',
+		extensible: true,
+		registry: { id: 'test', prefix: 'series.', enforced: true }
+	};
+	assert.deepEqual(problems(artifact(root)), []);
+	const manifest = manifestFromArtifact(artifact(root));
+	assert.deepEqual(manifest.root.registry, { id: 'test', prefix: 'series.', enforced: true });
+	const registries = { test: { names: ['series.line'], complete: true } };
+	assert.deepEqual(
+		validateConfig({ type: 'bar' }, manifest, { registries }).diagnostics.map((d) => `${d.code} ${d.path}`),
+		['CFG_UNREGISTERED $.type']
+	);
+	for (const [registry, extra] of [
+		[{ id: '', prefix: '' }, {}],
+		[{ id: 'test' }, {}],
+		[{ id: 'test', prefix: '' }, {}],
+		['test', {}]
+	])
+		assert.deepEqual(problems(artifact({ ...root, registry, ...extra })), [
+			'$.root: registry must be { id: <non-empty string>, prefix: <string>, enforced: <boolean> }'
+		]);
+	for (const extra of [{ extensible: false }, { discriminator: undefined }])
+		assert.deepEqual(problems(artifact({ ...root, ...extra })), [
+			'$.root: a registry needs a discriminator and extensible: true'
+		]);
+});
+
 test('every primitive kind and arrays lower to exact engine checks', () => {
 	const root = {
 		kind: 'object',

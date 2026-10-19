@@ -1,20 +1,42 @@
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
 import * as echarts from 'echarts';
 
-import { observe } from './capture.mjs';
-import { copyPlain } from './copy.mjs';
+import { renderWith } from './echarts-render.mjs';
+
+const CORE_CHILD = fileURLToPath(new URL('echarts-core-child.mjs', import.meta.url));
 
 /**
  * Renders an option with the pinned echarts runtime in server-side mode (SVG string, no DOM).
  * The full bundle registers every built-in component and series, matching the generated schema.
  */
 export function runEcharts(option) {
-	return observe(() => {
-		const chart = echarts.init(null, null, { renderer: 'svg', ssr: true, width: 400, height: 300 });
-		try {
-			chart.setOption(copyPlain(option));
-			chart.renderToSVGString();
-		} finally {
-			chart.dispose();
-		}
+	return renderWith(echarts, option);
+}
+
+/** Survives the trip to a child process unchanged: no functions, `undefined`, class instances or non-finite numbers. */
+function isJson(value) {
+	if (value === null || typeof value === 'string' || typeof value === 'boolean') return true;
+	if (typeof value === 'number') return Number.isFinite(value);
+	if (Array.isArray(value)) return value.every(isJson);
+	return typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype && Object.values(value).every(isJson);
+}
+
+/**
+ * Renders an option with `echarts/core` and only `modules` registered (`use([LineChart, GridComponent])`,
+ * export names from `echarts/charts` and `echarts/components`). This process already holds the full
+ * bundle, so the tree-shaken runtime runs in a child, with a development `NODE_ENV` like every
+ * verdict. Returns the outcome and the registry context read back from that runtime.
+ */
+export function runEchartsModules(option, modules) {
+	if (!isJson(option)) throw new Error('a tree-shaken case must be plain JSON');
+	const input = JSON.stringify({ option, modules });
+	const child = spawnSync(process.execPath, [CORE_CHILD, input], {
+		encoding: 'utf8',
+		timeout: 30_000,
+		env: { ...process.env, NODE_ENV: 'development' }
 	});
+	if (child.status !== 0) throw new Error(`echarts/core child failed (${String(child.status)}): ${child.stderr}`);
+	return JSON.parse(child.stdout);
 }

@@ -38,12 +38,29 @@ function checkDefaultWhen(checker: NodeChecker, rules: unknown, path: string, si
 		);
 }
 
+/** A registry names where the runtime looks the discriminator up, so the union needs both, and must be extensible. */
+function checkRegistry(checker: NodeChecker, node: Node, path: string): void {
+	const { registry } = node;
+	if (registry === undefined) return;
+	const wellFormed =
+		isRecord(registry) &&
+		typeof registry['id'] === 'string' &&
+		registry['id'] !== '' &&
+		typeof registry['prefix'] === 'string' &&
+		typeof registry['enforced'] === 'boolean';
+	if (!wellFormed)
+		checker.report(path, 'registry must be { id: <non-empty string>, prefix: <string>, enforced: <boolean> }');
+	else if (typeof node['discriminator'] !== 'string' || node['extensible'] !== true)
+		checker.report(path, 'a registry needs a discriminator and extensible: true');
+}
+
 function checkUnionOptions(checker: NodeChecker, node: Node, path: string, size: number): void {
 	const { defaultVariant, extensible, discriminator } = node;
 	if (defaultVariant !== undefined && !isIndexBelow(defaultVariant, size))
 		checker.report(path, 'defaultVariant must index anyOf');
 	checkDefaultWhen(checker, node['defaultWhen'], path, size);
 	if (extensible !== undefined && typeof extensible !== 'boolean') checker.report(path, 'extensible must be a boolean');
+	checkRegistry(checker, node, path);
 	if (discriminator !== undefined && typeof discriminator !== 'string')
 		checker.report(path, 'discriminator must be a string');
 }

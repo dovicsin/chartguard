@@ -1,5 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { runtimeProvenance } from './runtime.mjs';
 
 /**
  * ECharts picks a component's subtype at runtime (`registerSubTypeDefaulter`), while the
@@ -52,21 +51,16 @@ const COMPONENTS = {
 	}
 };
 
+/** Component subtypes are looked up as `<mainType>.<subType>`; one that is not registered throws. */
+const SUBTYPE_LOOKUP = { file: 'lib/util/clazz.js', pattern: "'Component ' + mainType + '.' + (subType || '') + ' is used but not imported.'" };
+
 /** Every axis created by `axisModelCreator` resolves its type with `getAxisType`. */
 const AXES = ['xAxis', 'yAxis', 'angleAxis', 'radiusAxis', 'singleAxis', 'parallelAxis'];
 const AXIS_TYPE = { file: 'lib/coord/axisModelCreator.js', pattern: "option.type || (option.data ? 'category' : 'value')" };
 
 const changed = (what) => new Error(`echarts runtime changed: ${what}`);
 
-/** `echarts/lib/…:<line>` of the first line containing `pattern` in the pinned package. */
-function runtimePointer(root, { file, pattern }) {
-	const lines = readFileSync(join(root, 'node_modules', 'echarts', file), 'utf8').split('\n');
-	const index = lines.findIndex((line) => line.includes(pattern));
-	if (index === -1) throw changed(`"${pattern}" not found in ${file}`);
-	return `echarts/${file}:${String(index + 1)}`;
-}
-
-const provenance = (root, fact) => ({ confidence: 'authoritative', sources: [{ source: 'echarts', pointer: runtimePointer(root, fact) }] });
+const provenance = (root, fact) => runtimeProvenance(root, { sourceId: 'echarts', packageName: 'echarts' }, fact);
 
 /** The union a root property holds, and the union of its array items when it is `T | T[]`. */
 function unionsOf(definitions, node) {
@@ -79,7 +73,7 @@ function unionsOf(definitions, node) {
 
 const memberName = (member) => (member.kind === 'ref' ? member.ref : undefined);
 
-function subtypeComponent(root, definitions, union, component) {
+function subtypeComponent(root, definitions, union, [mainType, component]) {
 	const objects = union.anyOf.filter((member) => member.kind === 'ref');
 	for (const member of objects) {
 		const variant = component.variants[memberName(member)];
@@ -95,7 +89,8 @@ function subtypeComponent(root, definitions, union, component) {
 		defaultVariant: indexOf(component.default.literal),
 		...(defaultWhen.length === 0 ? {} : { defaultWhen }),
 		extensible: true,
-		provenance: provenance(root, component.default)
+		registry: { id: 'echarts', prefix: `${mainType}.`, enforced: true },
+		provenance: { confidence: 'authoritative', sources: [component.default, SUBTYPE_LOOKUP].flatMap((fact) => provenance(root, fact).sources) }
 	});
 }
 
@@ -109,7 +104,7 @@ function axisDefaults(root, definitions, union) {
 
 /** Rewrites, in place, the component and axis unions under the root `EChartsOption` definition. */
 export function resolveComponentSubtypes(root, definitions, option) {
-	for (const [name, component] of Object.entries(COMPONENTS))
-		for (const union of unionsOf(definitions, option.properties[name].node)) subtypeComponent(root, definitions, union, component);
+	for (const entry of Object.entries(COMPONENTS))
+		for (const union of unionsOf(definitions, option.properties[entry[0]].node)) subtypeComponent(root, definitions, union, entry);
 	for (const name of AXES) for (const union of unionsOf(definitions, option.properties[name].node)) axisDefaults(root, definitions, union);
 }

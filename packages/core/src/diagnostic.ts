@@ -17,6 +17,16 @@ export interface Diagnostic {
 	column?: number;
 }
 
+/**
+ * What the caller's runtime has registered in one registry (CG-02-04). `complete`: `names` is
+ * everything registered (a tree-shaken build), so anything else is rejected by the runtime.
+ * Otherwise `names` are extensions known to be registered on top of the built-ins.
+ */
+export interface RegistryContext {
+	readonly names: readonly string[];
+	readonly complete: boolean;
+}
+
 export interface ValidationOptions {
 	/**
 	 * The input is a partial extraction (unresolved spreads or values were left out), so a
@@ -28,6 +38,8 @@ export interface ValidationOptions {
 	 * schema's turns confirmed errors into warnings; another major is not validated (CG-01-07).
 	 */
 	readonly libraryVersion?: string;
+	/** Registered names per registry id the schema uses (`echarts`, `chartjs.controllers`). */
+	readonly registries?: Readonly<Record<string, RegistryContext>>;
 }
 
 export interface ValidationResult {

@@ -19,6 +19,18 @@ export interface DefaultChoice {
 	readonly variant: number;
 }
 
+/**
+ * The runtime registry a union's discriminator values are registered in, each as `<prefix><value>`.
+ * `enforced`: the runtime looks the value up right here, so a value missing from a complete registry
+ * is rejected. Otherwise a registered extension is still recognised, but a missing value is left to
+ * the usual rules (Chart.js reads the chart `type` only through its datasets, which enforce it).
+ */
+export interface RegistryRef {
+	readonly id: string;
+	readonly prefix: string;
+	readonly enforced: boolean;
+}
+
 export interface NodeSchema {
 	readonly kind: SchemaKind;
 	readonly properties?: Readonly<Record<string, NodeSchema>>;
@@ -38,6 +50,8 @@ export interface NodeSchema {
 	readonly defaultWhen?: readonly DefaultChoice[];
 	/** Union: unknown discriminator values may be registered by plugins, so they are not errors. */
 	readonly extensible?: boolean;
+	/** Union: where the runtime looks the discriminator value up; checked against the caller's registry context. */
+	readonly registry?: RegistryRef;
 	readonly doc?: string;
 }
 
@@ -61,6 +75,7 @@ export interface UnionOptions {
 	readonly defaultVariant?: number;
 	readonly defaultWhen?: readonly DefaultChoice[];
 	readonly extensible?: boolean;
+	readonly registry?: RegistryRef;
 }
 
 export const s = {

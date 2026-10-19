@@ -1,6 +1,6 @@
 import type { Coverage } from '@chartguard/core';
 
-import type { DefaultChoice } from '../schema.js';
+import type { DefaultChoice, RegistryRef } from '../schema.js';
 
 export const SCHEMA_IR_VERSION = 1;
 
@@ -100,6 +100,8 @@ export interface UnionNode extends NodeBase {
 	readonly defaultWhen?: readonly DefaultRule[];
 	/** The variant registry can be extended (e.g. by plugins), so unknown variants are not errors. */
 	readonly extensible?: boolean;
+	/** The runtime registry the discriminator values live in (`echarts`, prefix `series.`); requires `extensible`. */
+	readonly registry?: RegistryRef;
 }
 
 export type DefaultRule = DefaultChoice;

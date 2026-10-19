@@ -1,4 +1,5 @@
-import { _adapters, Chart, registerables } from 'chart.js';
+import * as chartjs from 'chart.js';
+import { _adapters, Chart, registerables, registry } from 'chart.js';
 
 import { observe } from './capture.mjs';
 import { copyPlain } from './copy.mjs';
@@ -57,4 +58,36 @@ export function runChartjs(config) {
 		// Chart.js writes its default scales into the config it receives; the caller's stays untouched.
 		new Chart(canvas, copyPlain(config)).destroy();
 	});
+}
+
+const EVERY_REGISTERABLE = registerables.flatMap((group) => (Array.isArray(group) ? group : Object.values(group)));
+
+/** What the runtime has registered, as the validator's registry context (`chartjs.controllers`, `chartjs.scales`). */
+function registeredNow() {
+	const names = (typed) => Object.keys(typed.items).sort();
+	return {
+		'chartjs.controllers': { names: names(registry.controllers), complete: true },
+		'chartjs.scales': { names: names(registry.scales), complete: true }
+	};
+}
+
+/**
+ * Runs `body` against a tree-shaken Chart.js: only `modules` (export names such as `LineController`,
+ * `CategoryScale`) are registered, as `Chart.register(...)` in an application that imports from
+ * `chart.js` rather than `chart.js/auto`. `body` receives the registry context read back from the
+ * runtime. Every built-in is registered again afterwards, even when `body` throws.
+ */
+export function withChartjsModules(modules, body) {
+	const items = modules.map((name) => {
+		if (!EVERY_REGISTERABLE.includes(chartjs[name])) throw new Error(`not a chart.js registerable: ${name}`);
+		return chartjs[name];
+	});
+	Chart.unregister(...EVERY_REGISTERABLE);
+	try {
+		Chart.register(...items);
+		return body(registeredNow());
+	} finally {
+		Chart.unregister(...items);
+		Chart.register(...EVERY_REGISTERABLE);
+	}
 }

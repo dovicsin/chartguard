@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-0cb3e9875d838ec48fbaf9d6e88e84b027e66a60ed30f1c28ab245dfa82f016b",
+	"digest": "sha256-a33e1a39bd3245f5328c94e96da3982deab175ff37d4d55450c8351da67df2b0",
 	"sources": {
 		"echarts": {
 			"kind": "npm-package",
@@ -502,12 +502,21 @@
 						"discriminator": "type",
 						"defaultVariant": 0,
 						"extensible": true,
+						"registry": {
+							"id": "echarts",
+							"prefix": "timeline.",
+							"enforced": true
+						},
 						"provenance": {
 							"confidence": "authoritative",
 							"sources": [
 								{
 									"source": "echarts",
 									"pointer": "echarts/lib/component/timeline/install.js:33"
+								},
+								{
+									"source": "echarts",
+									"pointer": "echarts/lib/util/clazz.js:238"
 								}
 							]
 						}
@@ -551,12 +560,21 @@
 									"discriminator": "type",
 									"defaultVariant": 0,
 									"extensible": true,
+									"registry": {
+										"id": "echarts",
+										"prefix": "legend.",
+										"enforced": true
+									},
 									"provenance": {
 										"confidence": "authoritative",
 										"sources": [
 											{
 												"source": "echarts",
 												"pointer": "echarts/lib/component/legend/installLegendPlain.js:52"
+											},
+											{
+												"source": "echarts",
+												"pointer": "echarts/lib/util/clazz.js:238"
 											}
 										]
 									}
@@ -566,12 +584,21 @@
 						"discriminator": "type",
 						"defaultVariant": 0,
 						"extensible": true,
+						"registry": {
+							"id": "echarts",
+							"prefix": "legend.",
+							"enforced": true
+						},
 						"provenance": {
 							"confidence": "authoritative",
 							"sources": [
 								{
 									"source": "echarts",
 									"pointer": "echarts/lib/component/legend/installLegendPlain.js:52"
+								},
+								{
+									"source": "echarts",
+									"pointer": "echarts/lib/util/clazz.js:238"
 								}
 							]
 						}
@@ -615,12 +642,21 @@
 									"discriminator": "type",
 									"defaultVariant": 0,
 									"extensible": true,
+									"registry": {
+										"id": "echarts",
+										"prefix": "dataZoom.",
+										"enforced": true
+									},
 									"provenance": {
 										"confidence": "authoritative",
 										"sources": [
 											{
 												"source": "echarts",
 												"pointer": "echarts/lib/component/dataZoom/installCommon.js:52"
+											},
+											{
+												"source": "echarts",
+												"pointer": "echarts/lib/util/clazz.js:238"
 											}
 										]
 									}
@@ -630,12 +666,21 @@
 						"discriminator": "type",
 						"defaultVariant": 0,
 						"extensible": true,
+						"registry": {
+							"id": "echarts",
+							"prefix": "dataZoom.",
+							"enforced": true
+						},
 						"provenance": {
 							"confidence": "authoritative",
 							"sources": [
 								{
 									"source": "echarts",
 									"pointer": "echarts/lib/component/dataZoom/installCommon.js:52"
+								},
+								{
+									"source": "echarts",
+									"pointer": "echarts/lib/util/clazz.js:238"
 								}
 							]
 						}
@@ -706,12 +751,21 @@
 										}
 									],
 									"extensible": true,
+									"registry": {
+										"id": "echarts",
+										"prefix": "visualMap.",
+										"enforced": true
+									},
 									"provenance": {
 										"confidence": "authoritative",
 										"sources": [
 											{
 												"source": "echarts",
 												"pointer": "echarts/lib/component/visualMap/installCommon.js:56"
+											},
+											{
+												"source": "echarts",
+												"pointer": "echarts/lib/util/clazz.js:238"
 											}
 										]
 									}
@@ -748,12 +802,21 @@
 							}
 						],
 						"extensible": true,
+						"registry": {
+							"id": "echarts",
+							"prefix": "visualMap.",
+							"enforced": true
+						},
 						"provenance": {
 							"confidence": "authoritative",
 							"sources": [
 								{
 									"source": "echarts",
 									"pointer": "echarts/lib/component/visualMap/installCommon.js:56"
+								},
+								{
+									"source": "echarts",
+									"pointer": "echarts/lib/util/clazz.js:238"
 								}
 							]
 						}
@@ -212981,7 +213044,21 @@
 				}
 			],
 			"discriminator": "type",
-			"extensible": true
+			"extensible": true,
+			"registry": {
+				"id": "echarts",
+				"prefix": "series.",
+				"enforced": true
+			},
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/model/Global.js:301"
+					}
+				]
+			}
 		},
 		"SeriesOption$1 | SeriesOption$1[]": {
 			"kind": "union",
@@ -213087,7 +213164,21 @@
 				}
 			],
 			"discriminator": "type",
-			"extensible": true
+			"extensible": true,
+			"registry": {
+				"id": "echarts",
+				"prefix": "series.",
+				"enforced": true
+			},
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/model/Global.js:301"
+					}
+				]
+			}
 		},
 		"MediaUnit": {
 			"kind": "object",

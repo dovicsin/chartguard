@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-b6b424d411eafb478cc22bdb5630d622bd998a56d2148e4aded62d4c1a95a293",
+	"digest": "sha256-57312aa7340e61d85ce0d1061c261c5a3feac4f1639100291869dcbc80c473ae",
 	"sources": {
 		"chartjs": {
 			"kind": "npm-package",
@@ -214,7 +214,21 @@
 							],
 							"discriminator": "type",
 							"defaultVariant": 0,
-							"extensible": true
+							"extensible": true,
+							"registry": {
+								"id": "chartjs.controllers",
+								"prefix": "",
+								"enforced": true
+							},
+							"provenance": {
+								"confidence": "authoritative",
+								"sources": [
+									{
+										"source": "chartjs",
+										"pointer": "chart.js/dist/chart.js:5891"
+									}
+								]
+							}
 						}
 					},
 					"provenance": {
@@ -30923,7 +30937,21 @@
 				}
 			],
 			"discriminator": "type",
-			"extensible": true
+			"extensible": true,
+			"registry": {
+				"id": "chartjs.scales",
+				"prefix": "",
+				"enforced": true
+			},
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/chart.js:5823"
+					}
+				]
+			}
 		},
 		"Config_bubble": {
 			"kind": "object",
@@ -31122,7 +31150,21 @@
 							],
 							"discriminator": "type",
 							"defaultVariant": 0,
-							"extensible": true
+							"extensible": true,
+							"registry": {
+								"id": "chartjs.controllers",
+								"prefix": "",
+								"enforced": true
+							},
+							"provenance": {
+								"confidence": "authoritative",
+								"sources": [
+									{
+										"source": "chartjs",
+										"pointer": "chart.js/dist/chart.js:5891"
+									}
+								]
+							}
 						}
 					},
 					"provenance": {
@@ -37369,7 +37411,21 @@
 							],
 							"discriminator": "type",
 							"defaultVariant": 0,
-							"extensible": true
+							"extensible": true,
+							"registry": {
+								"id": "chartjs.controllers",
+								"prefix": "",
+								"enforced": true
+							},
+							"provenance": {
+								"confidence": "authoritative",
+								"sources": [
+									{
+										"source": "chartjs",
+										"pointer": "chart.js/dist/chart.js:5891"
+									}
+								]
+							}
 						}
 					},
 					"provenance": {
@@ -42855,7 +42911,21 @@
 							],
 							"discriminator": "type",
 							"defaultVariant": 0,
-							"extensible": true
+							"extensible": true,
+							"registry": {
+								"id": "chartjs.controllers",
+								"prefix": "",
+								"enforced": true
+							},
+							"provenance": {
+								"confidence": "authoritative",
+								"sources": [
+									{
+										"source": "chartjs",
+										"pointer": "chart.js/dist/chart.js:5891"
+									}
+								]
+							}
 						}
 					},
 					"provenance": {
@@ -48445,7 +48515,21 @@
 							],
 							"discriminator": "type",
 							"defaultVariant": 0,
-							"extensible": true
+							"extensible": true,
+							"registry": {
+								"id": "chartjs.controllers",
+								"prefix": "",
+								"enforced": true
+							},
+							"provenance": {
+								"confidence": "authoritative",
+								"sources": [
+									{
+										"source": "chartjs",
+										"pointer": "chart.js/dist/chart.js:5891"
+									}
+								]
+							}
 						}
 					},
 					"provenance": {
@@ -54331,7 +54415,21 @@
 							],
 							"discriminator": "type",
 							"defaultVariant": 0,
-							"extensible": true
+							"extensible": true,
+							"registry": {
+								"id": "chartjs.controllers",
+								"prefix": "",
+								"enforced": true
+							},
+							"provenance": {
+								"confidence": "authoritative",
+								"sources": [
+									{
+										"source": "chartjs",
+										"pointer": "chart.js/dist/chart.js:5891"
+									}
+								]
+							}
 						}
 					},
 					"provenance": {
@@ -61544,7 +61642,21 @@
 							],
 							"discriminator": "type",
 							"defaultVariant": 0,
-							"extensible": true
+							"extensible": true,
+							"registry": {
+								"id": "chartjs.controllers",
+								"prefix": "",
+								"enforced": true
+							},
+							"provenance": {
+								"confidence": "authoritative",
+								"sources": [
+									{
+										"source": "chartjs",
+										"pointer": "chart.js/dist/chart.js:5891"
+									}
+								]
+							}
 						}
 					},
 					"provenance": {
@@ -67172,7 +67284,21 @@
 							],
 							"discriminator": "type",
 							"defaultVariant": 0,
-							"extensible": true
+							"extensible": true,
+							"registry": {
+								"id": "chartjs.controllers",
+								"prefix": "",
+								"enforced": true
+							},
+							"provenance": {
+								"confidence": "authoritative",
+								"sources": [
+									{
+										"source": "chartjs",
+										"pointer": "chart.js/dist/chart.js:5891"
+									}
+								]
+							}
 						}
 					},
 					"provenance": {
@@ -76418,6 +76544,20 @@
 			}
 		],
 		"discriminator": "type",
-		"extensible": true
+		"extensible": true,
+		"registry": {
+			"id": "chartjs.controllers",
+			"prefix": "",
+			"enforced": false
+		},
+		"provenance": {
+			"confidence": "authoritative",
+			"sources": [
+				{
+					"source": "chartjs",
+					"pointer": "chart.js/dist/chart.js:5891"
+				}
+			]
+		}
 	}
 }

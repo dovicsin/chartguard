@@ -120,3 +120,17 @@ test('the visualMap subtype follows the runtime expression rule by rule, citing 
 	);
 	assert.match(visualMap.provenance.sources[0].pointer, /^echarts\/lib\/component\/visualMap\/installCommon\.js:\d+$/);
 });
+
+test('series and component subtypes name the runtime class registry (`series.bar`, `dataZoom.inside`)', () => {
+	const series = resolve(option.properties.series.node);
+	const items = resolve(series.anyOf.find((member) => resolve(member).kind === 'array').items);
+	for (const union of [series, items]) {
+		assert.deepEqual(union.registry, { id: 'echarts', prefix: 'series.', enforced: true });
+		assert.match(union.provenance.sources[0].pointer, /^echarts\/lib\/model\/Global\.js:\d+$/);
+	}
+	for (const name of ['dataZoom', 'legend', 'timeline', 'visualMap']) {
+		const union = resolve(option.properties[name].node);
+		assert.deepEqual(union.registry, { id: 'echarts', prefix: `${name}.`, enforced: true }, name);
+		assert.match(union.provenance.sources.at(-1).pointer, /^echarts\/lib\/util\/clazz\.js:\d+$/, name);
+	}
+});

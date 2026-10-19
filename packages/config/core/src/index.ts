@@ -6,6 +6,7 @@ export type {
 	EnumValue,
 	NodeSchema,
 	ObjectOptions,
+	RegistryRef,
 	SchemaKind,
 	SchemaManifest,
 	UnionOptions

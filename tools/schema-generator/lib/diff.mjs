@@ -87,7 +87,7 @@ function signature(node, paths) {
 	);
 }
 
-const UNION_FIELDS = ['discriminator', 'defaultVariant', 'defaultWhen', 'extensible'];
+const UNION_FIELDS = ['discriminator', 'defaultVariant', 'defaultWhen', 'extensible', 'registry'];
 
 function compareProperty(at, old, next, changes) {
 	if (old === undefined) changes.push({ kind: 'property-added', path: at, after: next.node });
