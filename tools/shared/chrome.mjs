@@ -16,10 +16,15 @@ export function browserSkipReason() {
 	return 'needs Chrome (set CHROME_PATH)';
 }
 
-/** The DOM of `url` after the page ran, in headless Chrome with virtual time. */
-export function dumpDom(url) {
+/**
+ * The DOM of `url` after the page ran, in headless Chrome with virtual time. `offline` blocks every
+ * host name lookup, for pages that run upstream code: nothing it does can reach the network.
+ */
+export function dumpDom(url, { offline = false, virtualTime = 120_000 } = {}) {
 	const sandbox = process.getuid?.() === 0 ? ['--no-sandbox'] : [];
-	const args = ['--headless=new', '--disable-gpu', '--no-first-run', ...sandbox, '--virtual-time-budget=120000', '--dump-dom', url];
+	const network = offline ? ['--host-resolver-rules=MAP * ~NOTFOUND'] : [];
+	const budget = `--virtual-time-budget=${String(virtualTime)}`;
+	const args = ['--headless=new', '--disable-gpu', '--no-first-run', ...sandbox, ...network, budget, '--dump-dom', url];
 	return new Promise((resolve, reject) => {
 		const chrome = spawn(CHROME, args, { stdio: ['ignore', 'pipe', 'ignore'] });
 		let html = '';

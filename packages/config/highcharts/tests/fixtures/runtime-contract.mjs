@@ -31,9 +31,8 @@ export const RUNTIME_CONTRACT = [
 	{
 		name: 'axis title disabled with null',
 		config: { ...line(), yAxis: { title: { text: null } } },
-		findings: ['error CFG_TYPE $.yAxis.title.text'],
-		runtime: 'accepted',
-		why: 'Type contract: declared `string | undefined` (13.x disables the title with undefined); the runtime reads `text || ""`.'
+		findings: [],
+		runtime: 'accepted'
 	},
 	{
 		name: 'series type typo',

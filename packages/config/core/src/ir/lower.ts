@@ -114,7 +114,8 @@ class Lowerer {
 			})
 		);
 		const required = entries.filter(([, property]) => property.required === true).map(([key]) => key);
-		return { kind: 'object', properties, required, additionalProperties: this.additionalOf(node) };
+		const nullAsAbsent = node.nullAsAbsent === true ? { nullAsAbsent: true } : {};
+		return { kind: 'object', properties, required, additionalProperties: this.additionalOf(node), ...nullAsAbsent };
 	}
 
 	private additionalOf(node: ObjectNode): AdditionalProperties {

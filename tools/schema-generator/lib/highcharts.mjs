@@ -1,5 +1,6 @@
 import { omit } from './digest.mjs';
 import { TypeEmitter } from './emitter.mjs';
+import { withHighchartsRuntimeFacts } from './highcharts-runtime.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
 import { runtimePointer, runtimeSection } from './runtime.mjs';
 import { artifactOf } from './types.mjs';
@@ -85,6 +86,10 @@ export function generateHighcharts(root, pin) {
 	const emitter = new TypeEmitter({ program, checker, sourceId: SOURCE_ID, packageName: pin.package });
 	const optionRef = emitter.reference(aliases.get('Option'));
 	const series = seriesUnion(root, emitter.definitions, emitter.definitions[optionRef.ref]);
-	const definitions = { ...emitter.definitions, ...series.variants, [series.name]: series.definition };
+	const declared = { ...emitter.definitions, ...series.variants, [series.name]: series.definition };
+	const definitions = withHighchartsRuntimeFacts(root, declared, {
+		optionName: optionRef.ref,
+		seriesVariants: Object.keys(series.variants)
+	});
 	return artifactOf({ library: 'highcharts', sourceId: SOURCE_ID, pin, definitions, root: optionRef });
 }

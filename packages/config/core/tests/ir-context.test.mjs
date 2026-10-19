@@ -104,3 +104,17 @@ test('a default named elsewhere needs a path, a literal fallback and a discrimin
 	delete undiscriminated.properties.series.node.items.discriminator;
 	assert.ok(problems(artifact(undiscriminated)).includes(`${at}: defaultFrom needs a discriminator`));
 });
+
+test('nullAsAbsent lowers onto the object and must be a boolean', () => {
+	const root = {
+		kind: 'object',
+		additional: 'closed',
+		nullAsAbsent: true,
+		properties: { color: prop({ kind: 'string' }) }
+	};
+	assert.deepEqual(problems(artifact(root)), []);
+	const manifest = manifestFromArtifact(artifact(root));
+	assert.equal(manifest.root.nullAsAbsent, true);
+	assert.deepEqual(validateConfig({ color: null }, manifest).diagnostics, []);
+	assert.deepEqual(problems(artifact({ ...root, nullAsAbsent: 'yes' })), ['$.root: nullAsAbsent must be a boolean']);
+});

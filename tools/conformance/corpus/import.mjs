@@ -1,14 +1,17 @@
 import { createHash } from 'node:crypto';
-import { writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 
 import { runAsEntryPoint } from '../../shared/entry.mjs';
+import { corpusFile } from '../lib/corpus.mjs';
 import { SOURCES } from './sources.mjs';
 
 /**
- * Downloads a pinned example corpus and writes it as `<library>.json` next to this file.
- * Run by hand when a pin changes: `node tools/conformance/corpus/import.mjs chartjs`.
- * Nothing downloaded is executed here; the conformance sandbox runs it in isolation.
+ * Downloads a pinned example corpus and writes it where `corpusFile` says: next to this file, or
+ * to the local cache when its license does not clear redistribution (Highcharts).
+ * Run when a pin changes, and once per checkout for a local corpus:
+ * `node tools/conformance/corpus/import.mjs highcharts`.
+ * Nothing downloaded is executed here; the conformance sandboxes run it in isolation.
  */
 const RAW = 'https://raw.githubusercontent.com';
 const API = 'https://api.github.com';
@@ -35,7 +38,9 @@ async function importCorpus(library, retrieved) {
 	for (const path of paths) {
 		const original = await raw(path);
 		const code = source.extract(original);
-		if (code !== undefined) files.push({ path, sha256: sha256(original), code });
+		if (code === undefined) continue;
+		const page = source.page === undefined ? undefined : await raw(source.page(path));
+		files.push({ path, sha256: sha256(original), code, ...(page === undefined ? {} : { page, pageSha256: sha256(page) }) });
 	}
 	const notice = source.noticePath === undefined ? undefined : await raw(source.noticePath);
 	return {
@@ -56,7 +61,8 @@ async function importCorpus(library, retrieved) {
 async function main([library, retrieved = new Date().toISOString().slice(0, 10)]) {
 	if (!Object.hasOwn(SOURCES, library)) throw new Error(`Usage: import.mjs <${Object.keys(SOURCES).join('|')}> [date]`);
 	const corpus = await importCorpus(library, retrieved);
-	const target = fileURLToPath(new URL(`${library}.json`, import.meta.url));
+	const target = corpusFile(library);
+	mkdirSync(dirname(target), { recursive: true });
 	writeFileSync(target, `${JSON.stringify(corpus, null, '\t')}\n`);
 	process.stdout.write(`${String(corpus.files.length)} examples -> ${target}\n`);
 }

@@ -5,6 +5,8 @@ import { join, relative, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { SOURCES } from '../../tools/conformance/corpus/sources.mjs';
+import { corpusFile } from '../../tools/conformance/lib/corpus.mjs';
 import { isRedistributable } from '../../tools/schema-generator/generate.mjs';
 
 /**
@@ -144,6 +146,21 @@ function npmJson(args) {
 	assert.equal(result.status, 0, result.stderr);
 	return JSON.parse(result.stdout);
 }
+
+test('R12 an example corpus whose license does not clear redistribution is local only and never tracked (CG-01-05)', () => {
+	const local = Object.keys(SOURCES).filter((library) => SOURCES[library].redistributable === false);
+	assert.deepEqual(local, ['highcharts']);
+	for (const library of local) assert.equal(relative(ROOT, corpusFile(library)).split(sep)[0], 'node_modules', library);
+	const tracked = spawnSync('git', ['ls-files', '-z', '--', 'tools/conformance/corpus'], {
+		cwd: ROOT,
+		encoding: 'utf8'
+	});
+	const corpora = tracked.stdout.split('\0').filter((path) => path.endsWith('.json'));
+	assert.deepEqual(
+		corpora.filter((path) => local.some((library) => path.endsWith(`${library}.json`))),
+		[]
+	);
+});
 
 test('R12 no package publishes a schema artifact whose upstream license does not allow it (CG-01-05)', () => {
 	const locations = new Map(npmJson(['query', '.workspace']).map(({ name, location }) => [name, location]));

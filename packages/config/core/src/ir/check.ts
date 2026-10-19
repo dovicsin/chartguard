@@ -107,6 +107,8 @@ const CHILD_CHECKS: Partial<Record<string, ChildCheck>> = {
 		if (!OPENNESS_SET.has(node['additional']))
 			checker.report(path, 'expected additional to be "closed", "open" or "unknown"');
 		checker.checkIncludes(node['includes'], path);
+		if (node['nullAsAbsent'] !== undefined && typeof node['nullAsAbsent'] !== 'boolean')
+			checker.report(path, 'nullAsAbsent must be a boolean');
 	},
 	record: (checker, node, path, depth) => {
 		checker.checkNode(node['values'], `${path}.values`, depth + 1);

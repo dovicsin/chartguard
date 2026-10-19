@@ -57,6 +57,8 @@ export interface NodeSchema {
 	readonly required?: readonly string[];
 	readonly enum?: readonly EnumValue[];
 	readonly additionalProperties?: AdditionalProperties;
+	/** Object: a `null` optional property counts as absent (the runtime reads options with `pick()`, Highcharts). */
+	readonly nullAsAbsent?: boolean;
 	/** Object: schema for keys not listed in `properties` (a record of caller-chosen keys). */
 	readonly values?: NodeSchema;
 	/** Union members; a value is checked against the member matching its runtime kind. */

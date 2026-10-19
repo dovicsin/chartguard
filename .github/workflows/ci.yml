@@ -18,4 +18,6 @@ jobs:
       # The lockfile is written by npm 11; npm 10 (bundled with Node 20/22) rejects it.
       - run: npm install --global npm@11.6.2
       - run: npm ci
+      # The Highcharts demos may not be committed (license); each run imports them at the pinned commit.
+      - run: npm run conformance:import -- highcharts
       - run: npm run check

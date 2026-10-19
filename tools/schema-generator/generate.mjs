@@ -2,6 +2,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { checkArtifact } from '@chartguard/config-core';
+
 import { runAsEntryPoint } from '../shared/entry.mjs';
 import { generateChartjs } from './lib/chartjs.mjs';
 import { serialize,withDigest } from './lib/digest.mjs';
@@ -40,10 +42,12 @@ export function artifactPath(root, pin, library) {
 	return isRedistributable(pin) ? join(root, GENERATORS[library].package, 'src/generated', file) : join(root, LOCAL_ARTIFACTS, file);
 }
 
-/** Deterministic artifact text for one library, carrying the digest of its own content. */
+/** Deterministic artifact text for one library, carrying the digest of its own content; never a malformed one. */
 export function generate(root, library) {
 	const pin = verifiedUpstream(root, library);
 	const artifact = withDigest(GENERATORS[library].generate(root, pin));
+	const { problems } = checkArtifact(artifact);
+	if (problems.length > 0) throw new Error(`${library}: generated artifact is malformed:\n${problems.slice(0, 20).join('\n')}`);
 	return { path: artifactPath(root, pin, library), text: serialize(artifact) };
 }
 

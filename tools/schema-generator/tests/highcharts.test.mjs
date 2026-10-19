@@ -79,3 +79,23 @@ test('series are discriminated by type in the runtime series registry; a series 
 	assert.deepEqual(series.anyOf.filter((member) => resolve(member).properties.type.required !== undefined), []);
 	for (const type of ['line', 'bar', 'pie', 'sankey', 'candlestick', 'map']) assert.ok(types.includes(type), type);
 });
+
+test('the global Function type is a function, never an open object (D18)', () => {
+	assert.equal(JSON.parse(first.text).definitions.Function, undefined);
+});
+
+test('runtime facts the demos rely on are applied, each citing its runtime line', () => {
+	const pointer = (node) => node.provenance.sources.at(-1).pointer;
+	assert.equal(option.nullAsAbsent, true);
+	assert.match(pointer(option), /^highcharts\/highcharts\.src\.js:\d+$/);
+	assert.deepEqual(definitions.DashStyleValue.kind, 'string');
+	assert.equal(definitions.DataMappingOptionsObject.additional, 'open');
+	const plotOptions = resolve(option.properties.plotOptions.node);
+	const anySeries = resolve(plotOptions.properties.series.node);
+	for (const key of ['borderRadius', 'center', 'pointPadding', 'depth', 'neckWidth']) assert.ok(Object.hasOwn(anySeries.properties, key), key);
+	const line = resolve(resolve(resolve(option.properties.series.node).items).anyOf.find((member) => resolve(member).properties.type.node.value === 'line'));
+	const point = line.properties.data.node.items.anyOf;
+	assert.ok(point.some((member) => member.kind === 'number') && point.some((member) => member.kind === 'null'));
+	assert.ok(point.some((member) => member.kind === 'array' && member.items.kind === 'unknown'));
+	assert.deepEqual(definitions.XAxisLabelsOptions.properties.rotation.node.anyOf.at(-1), { kind: 'literal', value: 'auto' });
+});

@@ -134,3 +134,7 @@ test('series and component subtypes name the runtime class registry (`series.bar
 		assert.match(union.provenance.sources.at(-1).pointer, /^echarts\/lib\/util\/clazz\.js:\d+$/, name);
 	}
 });
+
+test('the global Function type is a function, never an open object (D18)', () => {
+	assert.equal(JSON.parse(first.text).definitions.Function, undefined);
+});

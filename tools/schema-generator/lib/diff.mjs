@@ -124,6 +124,8 @@ function compareObjects(path, before, after, changes) {
 		changes.push({ kind: 'openness-changed', path, before: before.additional, after: after.additional });
 	if (JSON.stringify(before.includes ?? []) !== JSON.stringify(after.includes ?? []))
 		changes.push({ kind: 'includes-changed', path, before: before.includes ?? [], after: after.includes ?? [] });
+	if ((before.nullAsAbsent === true) !== (after.nullAsAbsent === true))
+		changes.push({ kind: 'nullAsAbsent-changed', path, before: before.nullAsAbsent === true, after: after.nullAsAbsent === true });
 }
 
 /** A union without its selection fields, which are reported on their own. */

@@ -6,7 +6,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dumpDom } from '../../shared/chrome.mjs';
 import { isJsonOrUndefined } from './json.mjs';
 
-const PACKAGE = fileURLToPath(new URL('../../../node_modules/highcharts/', import.meta.url));
+/** The pinned highcharts package the conformance pages load their scripts from. */
+export const PACKAGE = fileURLToPath(new URL('../../../node_modules/highcharts/', import.meta.url));
 /** Loaded on every page: Highcharts recommends it and warns on every chart rendered without it. */
 const ALWAYS = ['accessibility'];
 const MODULE_NAME = /^[\w-]+$/;

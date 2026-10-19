@@ -55,9 +55,9 @@ test('known-invalid: closed types and enums inside series, axes and components a
 	);
 });
 
-test('type contract: an axis title disabled with null is outside the declared type (13.x disables it with undefined)', () => {
-	// The runtime reads `title.text || ''`, so null renders like undefined; the declarations and docs say undefined.
-	assert.deepEqual(findings({ yAxis: { title: { text: null } } }), ['error CFG_TYPE $.yAxis.title.text']);
+test('null on an optional option is unset, as pick() reads it; a required option still needs a value', () => {
+	assert.deepEqual(findings({ yAxis: { title: { text: null } }, chart: { plotBackgroundColor: null } }), []);
+	assert.deepEqual(findings({ yAxis: { title: { text: 7 } } }), ['error CFG_TYPE $.yAxis.title.text']);
 });
 
 test('a series without type is checked as the chart type, or as line when the chart names none', () => {

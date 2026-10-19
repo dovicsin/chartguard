@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-4db0bb7219fb823803f4aef0e065c1fff2ab40c5b41064c3273e29cb7a3d3661",
+	"digest": "sha256-52226cd86f90c6507f7a8409c90a9365c59ebe1ed58d293b3c184d25ea1565e8",
 	"sources": {
 		"echarts": {
 			"kind": "npm-package",
@@ -115987,8 +115987,7 @@
 				},
 				"done": {
 					"node": {
-						"kind": "ref",
-						"ref": "Function"
+						"kind": "function"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -116002,8 +116001,7 @@
 				},
 				"aborted": {
 					"node": {
-						"kind": "ref",
-						"ref": "Function"
+						"kind": "function"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -116072,11 +116070,6 @@
 					}
 				}
 			}
-		},
-		"Function": {
-			"kind": "object",
-			"additional": "open",
-			"properties": {}
 		},
 		"EventProcessor<{ mousemove: (e: ElementEvent) => boolean | void; click: (e: Elem…#627fb11dc3": {
 			"kind": "object",

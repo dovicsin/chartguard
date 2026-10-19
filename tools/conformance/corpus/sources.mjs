@@ -1,7 +1,9 @@
 /**
  * Official example corpora, pinned by commit. `select` picks the example files from the
- * repository tree; `extract` turns one file into the code that builds a config. Both run at
- * import time only (network); tests read the committed corpus files offline.
+ * repository tree; `extract` turns one file into the code that builds a config; `page`, when
+ * set, names a sibling file kept with it (the HTML that loads a demo's modules). All of it runs at
+ * import time only (network); tests read the corpus files offline. A corpus whose license does
+ * not clear redistribution (`redistributable: false`) is written only to the local cache.
  */
 export const SOURCES = {
 	chartjs: {
@@ -22,5 +24,16 @@ export const SOURCES = {
 		licensePath: 'LICENSE',
 		select: (path) => /^public\/examples\/ts\/[^/]+\.ts$/.test(path),
 		extract: (text) => text
+	},
+	highcharts: {
+		repository: 'highcharts/highcharts',
+		ref: 'v13.1.1',
+		commit: '81b13135ebaf3a2bedc9383b7f4aa84bde77eda6',
+		license: 'LicenseRef-Highsoft',
+		licensePath: 'license.txt',
+		redistributable: false,
+		select: (path) => /^samples\/highcharts\/demo\/[^/]+\/demo\.js$/.test(path),
+		extract: (text) => text,
+		page: (path) => path.replace(/demo\.js$/, 'demo.html')
 	}
 };

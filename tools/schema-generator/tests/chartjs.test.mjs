@@ -196,3 +196,7 @@ test('element options are accepted in every scope the runtime reads them from, c
 	const animation = resolve(options.properties.animation.node).anyOf.map(resolve).filter((member) => member.kind === 'object');
 	assert.ok(animation.length > 0 && animation.every((member) => member.additional === 'open'));
 });
+
+test('the global Function type is a function, never an open object (D18)', () => {
+	assert.equal(JSON.parse(first.text).definitions.Function, undefined);
+});

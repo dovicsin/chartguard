@@ -70,6 +70,8 @@ export interface ObjectNode extends NodeBase {
 	readonly kind: 'object';
 	readonly properties: Readonly<Record<string, PropertyNode>>;
 	readonly additional: Openness;
+	/** A `null` optional property counts as absent: the runtime reads options with `pick()`. */
+	readonly nullAsAbsent?: boolean;
 	/**
 	 * Object definitions whose properties this object also accepts (one level; own properties win).
 	 * Lets many objects share a large property set, e.g. Chart.js element options at every scope.

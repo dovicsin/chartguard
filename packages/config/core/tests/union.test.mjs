@@ -172,3 +172,14 @@ test('an undefined array element is "not provided", exactly as an undefined prop
 	assert.deepEqual(codes(rows, { data: [[1, undefined, 3]], dimensions: [undefined, 'y'] }), []);
 	assert.deepEqual(codes(rows, { data: [[1, null]] }), ['CFG_TYPE error $.data[0][1]']);
 });
+
+test('nullAsAbsent: a null optional property counts as absent, as runtimes that read options with pick() treat it', () => {
+	const options = {
+		...s.object({ color: s.string(), width: s.number() }, { required: ['width'] }),
+		nullAsAbsent: true
+	};
+	assert.deepEqual(codes(options, { color: null, width: 1 }), []);
+	assert.deepEqual(codes(s.object({ color: s.string() }), { color: null }), ['CFG_TYPE error $.color']);
+	// A required property is still required, and null is no value for it.
+	assert.deepEqual(codes(options, { width: null }), ['CFG_TYPE error $.width']);
+});

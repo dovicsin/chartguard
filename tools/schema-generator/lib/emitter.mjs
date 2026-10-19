@@ -11,6 +11,11 @@ const NAME_PREFIX = 80;
 const NAME_FLAGS = ts.TypeFormatFlags.NoTruncation;
 /** Platform objects (CanvasGradient, HTMLElement, …) are checked only as "some object". */
 const HOST_OBJECT = { kind: 'object', additional: 'open', properties: {} };
+/**
+ * TypeScript's global function interfaces declare no call signature, so they would pass for
+ * platform objects; a value of these types is a function (`(Function | Options)` in Highcharts).
+ */
+const GLOBAL_FUNCTIONS = new Set(['Function', 'CallableFunction', 'NewableFunction']);
 /** A union whose emitted node is larger than this is stored once as a definition and referenced. */
 const SHARED_UNION_BYTES = 300;
 
@@ -202,6 +207,7 @@ export class TypeEmitter {
 
 	emitObjectLike(type) {
 		if (type.getCallSignatures().length > 0 || type.getConstructSignatures().length > 0) return { kind: 'function' };
+		if (GLOBAL_FUNCTIONS.has(type.getSymbol()?.escapedName) && this.isLibraryDeclared(type.getSymbol())) return { kind: 'function' };
 		if (this.checker.isArrayType(type) || this.checker.isTupleType(type)) return this.emitArray(type);
 		const unwrapped = this.emitUnwrapped(type);
 		if (unwrapped !== undefined) return unwrapped;
