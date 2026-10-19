@@ -1,4 +1,6 @@
 export * from './ir/index.js';
+export type { ConfigRule, Item, Read, RuleContext } from './rules.js';
+export { itemsOf, readOwn } from './rules.js';
 export type {
 	AdditionalProperties,
 	DefaultChoice,

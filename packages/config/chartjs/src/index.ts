@@ -2,6 +2,7 @@ import { lowerArtifact, type LoweredSchema, type SchemaArtifact, validateConfig 
 import type { ValidationOptions, ValidationResult } from '@chartguard/core';
 
 import artifact from './generated/chartjs-4.5.1.json' with { type: 'json' };
+import { RULES } from './rules.js';
 
 let lowered: LoweredSchema | undefined;
 
@@ -16,5 +17,5 @@ export function schema(): LoweredSchema {
 }
 
 export function validate(input: unknown, options?: ValidationOptions): ValidationResult {
-	return validateConfig(input, schema().manifest, options);
+	return validateConfig(input, schema().manifest, options, RULES);
 }

@@ -44,7 +44,7 @@ export const EXPECTATIONS = [
 		]
 	},
 	{
-		why: "False negative (CG-02-08): in styled mode (`chart.styledMode`) Highcharts warns about presentational options (#35); a cross-property rule.",
+		why: "Environment: styled mode needs Highcharts' CSS; warning #35 (`warnIfCSSNotLoaded`) says the page has not loaded `highcharts.css`, which the demo's own stylesheet imports and the harness does not load.",
 		paths: [
 			"styled-mode-column/demo.js",
 			"styled-mode-pie/demo.js"

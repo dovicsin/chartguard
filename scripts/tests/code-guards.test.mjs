@@ -178,6 +178,16 @@ test('R12 no package publishes a schema artifact whose upstream license does not
 	);
 });
 
+test('R13 cross-option rules read the config only through readOwn/itemsOf, never by casting it to a record (A27)', () => {
+	const rules = [
+		...sources('packages/config/echarts/src/rules'),
+		...sources('packages/config/chartjs/src').filter(({ path }) => path.endsWith('rules.ts')),
+		...sources('packages/config/core/src').filter(({ path }) => path.endsWith('rules.ts'))
+	];
+	assert.ok(rules.length >= 5, 'the rule sources are found');
+	assert.deepEqual(offenders(rules, /\bas\s+(Record<|\{\s*\[)/), []);
+});
+
 test('R8 entry points: process.argv[1] is resolved only by the guarded helpers, never at import time unguarded', () => {
 	const allowed = new Set([join('tools', 'shared', 'entry.mjs'), join('packages', 'cli', 'bin', 'chartguard.mjs')]);
 	const entries = [...sources('tools'), ...sources('scripts'), ...sources('packages')].filter(

@@ -6,6 +6,7 @@ import { checkArtifact } from '@chartguard/config-core';
 import { schema, validate } from '../dist/index.js';
 import artifact from '../src/generated/echarts-6.1.0.json' with { type: 'json' };
 import { KNOWN_VALID } from './fixtures/known-valid.mjs';
+import { RULES_CONTRACT } from './fixtures/rules-contract.mjs';
 import { RUNTIME_CONTRACT } from './fixtures/runtime-contract.mjs';
 
 for (const [name, option] of Object.entries(KNOWN_VALID))
@@ -20,7 +21,7 @@ for (const [name, option] of Object.entries(KNOWN_VALID))
 
 const findingsOf = (option) => validate(option).diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`);
 
-for (const { name, config, findings } of RUNTIME_CONTRACT)
+for (const { name, config, findings } of [...RUNTIME_CONTRACT, ...RULES_CONTRACT])
 	test(`runtime contract: ${name}`, () => assert.deepEqual(findingsOf(config), findings));
 
 test('known-invalid: wrong types inside nested and list-valued components are confirmed errors', () => {
@@ -32,7 +33,7 @@ test('known-invalid: wrong types inside nested and list-valued components are co
 });
 
 test('known-invalid: a misspelt key is a warning with a suggestion, never an error, while coverage is partial', () => {
-	const result = validate({ series: [{ type: 'line', smoth: true }], xAxis: { type: 'category', dat: [] } });
+	const result = validate({ series: [{ type: 'line', smoth: true }], xAxis: { type: 'category', dat: [] }, yAxis: {} });
 	assert.equal(result.valid, true);
 	assert.deepEqual(
 		result.diagnostics.map((d) => [d.code, d.severity, d.path, d.suggestion]),

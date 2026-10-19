@@ -222,15 +222,13 @@ export const RUNTIME_CONTRACT = [
 			yAxis: { type: 'category', data: ['b'] },
 			series: [{ type: 'heatmap', data: [[0, 0, 1]] }]
 		},
-		findings: [],
-		runtime: 'rejected',
-		why: 'False negative (CG-02-08): a heatmap on a cartesian grid needs a visualMap component, a cross-property rule.'
+		findings: ['error CFG_REQUIRES $.series[0]'],
+		runtime: 'rejected'
 	},
 	{
 		name: 'cartesian series without axes',
 		config: { series: [{ type: 'bar', data: [1] }] },
-		findings: [],
-		runtime: 'rejected',
-		why: 'False negative (CG-02-08): cartesian series need xAxis and yAxis components, a cross-property rule.'
+		findings: ['error CFG_REQUIRES $.series[0]', 'error CFG_REQUIRES $.series[0]'],
+		runtime: 'rejected'
 	}
 ];

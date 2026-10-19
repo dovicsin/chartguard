@@ -8,6 +8,7 @@ import { KNOWN_VALID as CHARTJS_VALID } from '../../../packages/config/chartjs/t
 import { RUNTIME_CONTRACT as CHARTJS_CONTRACT } from '../../../packages/config/chartjs/tests/fixtures/runtime-contract.mjs';
 import { TREE_SHAKEN_CONTRACT as CHARTJS_TREE_SHAKEN } from '../../../packages/config/chartjs/tests/fixtures/tree-shaken-contract.mjs';
 import { KNOWN_VALID as ECHARTS_VALID } from '../../../packages/config/echarts/tests/fixtures/known-valid.mjs';
+import { RULES_CONTRACT as ECHARTS_RULES } from '../../../packages/config/echarts/tests/fixtures/rules-contract.mjs';
 import { RUNTIME_CONTRACT as ECHARTS_CONTRACT } from '../../../packages/config/echarts/tests/fixtures/runtime-contract.mjs';
 import { TREE_SHAKEN_CONTRACT as ECHARTS_TREE_SHAKEN } from '../../../packages/config/echarts/tests/fixtures/tree-shaken-contract.mjs';
 import { KNOWN_VALID as HIGHCHARTS_VALID } from '../../../packages/config/highcharts/tests/fixtures/known-valid.mjs';
@@ -36,7 +37,7 @@ const LIBRARIES = [
 		runModules: runEchartsModules,
 		validate: validateEcharts,
 		valid: ECHARTS_VALID,
-		contract: [...ECHARTS_CONTRACT, ...ECHARTS_TREE_SHAKEN]
+		contract: [...ECHARTS_CONTRACT, ...ECHARTS_RULES, ...ECHARTS_TREE_SHAKEN]
 	}
 ];
 
@@ -81,6 +82,7 @@ test('the explanation rule covers every combination', () => {
 		[['warning CFG_INEFFECTIVE $.a'], 'accepted', 'No effect:'],
 		[['warning CFG_INEFFECTIVE $.a', 'warning CFG_UNKNOWN_KEY $.b'], 'accepted', 'Unresolved:'],
 		[['warning CFG_UNKNOWN_VARIANT $.a'], 'rejected', 'Unresolved:'],
+		[['warning CFG_UNKNOWN_REFERENCE $.a'], 'complained', undefined],
 		[['info CFG_AMBIGUOUS $.a'], 'accepted', undefined],
 		[['info CFG_AMBIGUOUS $.a'], 'rejected', 'False negative (CG-'],
 		[[], 'accepted', undefined],

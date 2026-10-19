@@ -10,6 +10,12 @@ const line = (extra = {}) => ({ type: 'line', data: { labels: ['a', 'b'], datase
 
 export const RUNTIME_CONTRACT = [
 	{
+		name: 'fill with the Filler plugin disabled in the options',
+		config: { ...line({ fill: true }), options: { plugins: { filler: false } } },
+		findings: ['warning CFG_INEFFECTIVE $.data.datasets[0].fill'],
+		runtime: 'complained'
+	},
+	{
 		name: 'data is not an object',
 		config: { type: 'bar', data: 'x' },
 		findings: ['error CFG_TYPE $.data'],

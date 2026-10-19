@@ -57,5 +57,19 @@ export const TREE_SHAKEN_CONTRACT = [
 		config: { ...line(), options: { plugins: { legend: { position: 'left' } } } },
 		findings: [],
 		runtime: 'accepted'
+	},
+	{
+		name: 'fill without the Filler plugin',
+		modules: LINE_ONLY,
+		config: line({ fill: true }),
+		findings: ['warning CFG_INEFFECTIVE $.data.datasets[0].fill'],
+		runtime: 'complained'
+	},
+	{
+		name: 'fill with the Filler plugin',
+		modules: [...LINE_ONLY, 'Filler'],
+		config: line({ fill: true }),
+		findings: [],
+		runtime: 'accepted'
 	}
 ];

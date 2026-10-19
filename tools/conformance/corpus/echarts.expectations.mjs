@@ -127,7 +127,7 @@ export const EXPECTATIONS = [
 		]
 	},
 	{
-		why: "False negative (CG-02-08): `legend.data` names a series that does not exist; the runtime warns, the validator does not compare the two yet.",
+		why: "Agreement: `legend.data` names a series and data item that do not exist; the validator warns (`CFG_UNKNOWN_REFERENCE`, rule echarts/legend-names) as the runtime does.",
 		paths: [
 			"candlestick-sh-2015.ts",
 			"custom-cartesian-polygon.ts",

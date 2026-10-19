@@ -27,13 +27,16 @@ export function isClean(outcome) {
  * could not be run, or that the runtime rejects for reasons outside the config (no DOM, a map
  * that is downloaded at runtime), is `Environment:`; a runtime complaint the validator cannot see
  * by design (a call inside a callback) is `Out of scope:`. Everything else follows the contract
- * rule of the fixture tables, with one difference: an example still renders when the runtime only
- * complains, so a confirmed error there is a type contract too (the complaint may be about anything).
+ * rule of the fixture tables, except where an example still renders and the runtime only
+ * complains: a finding of ours may then be the runtime's own complaint (`Agreement:`, reviewed) or
+ * a coincidence (`Type contract:`, `Unresolved:`), so it is always listed. Fixture tables pin one
+ * cause per case and need no such review.
  */
 export function allowedExplanations(outcome) {
 	if (outcome.status !== 'ran') return ['Environment:'];
 	const required = requiredExplanation(outcome);
-	const confirmed = outcome.findings.some((finding) => finding.startsWith('error '));
-	if (required === undefined) return confirmed && outcome.runtime === 'complained' ? ['Type contract:'] : [];
-	return required === 'False negative (CG-' ? [required, 'Environment:', 'Out of scope:'] : [required];
+	if (required !== undefined) return required === 'False negative (CG-' ? [required, 'Environment:', 'Out of scope:'] : [required];
+	if (outcome.runtime !== 'complained') return [];
+	if (outcome.findings.some((finding) => finding.startsWith('error '))) return ['Type contract:', 'Agreement:'];
+	return outcome.findings.some((finding) => finding.startsWith('warning ')) ? ['Unresolved:', 'Agreement:'] : [];
 }
