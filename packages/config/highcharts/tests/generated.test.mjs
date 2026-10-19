@@ -100,3 +100,23 @@ test('createValidator refuses a malformed artifact or one for another library', 
 		message: 'Expected a highcharts schema artifact, got one for chartjs.'
 	});
 });
+
+test('a plugin series is checked through createValidator extensions; it is unknown without them', async () => {
+	const { s } = await import('@chartguard/config-core');
+	const flame = { id: 'flame3d', variants: { 'highcharts.series': { flame3d: s.object({ depth: s.number() }) } } };
+	const extended = createValidator(artifact, { extensions: [flame] });
+	const config = { series: [{ type: 'flame3d', depth: 'deep' }] };
+	assert.deepEqual(
+		extended(config).diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`),
+		['error CFG_TYPE $.series[0].depth']
+	);
+	assert.deepEqual(extended(config).extensions, ['flame3d']);
+	assert.deepEqual(findings(config), ['warning CFG_UNKNOWN_VARIANT $.series[0].type']);
+	assert.throws(
+		() =>
+			createValidator(artifact, {
+				extensions: [{ id: 'x', variants: { 'highcharts.series': { line: s.object({}) } } }]
+			}),
+		/"line" is a built-in variant of highcharts.series/
+	);
+});

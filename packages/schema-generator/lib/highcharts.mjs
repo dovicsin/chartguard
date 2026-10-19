@@ -83,6 +83,7 @@ function seriesUnion(root, definitions, option) {
 			extensible: true,
 			defaultFrom: { path: ['chart', 'type'], fallback },
 			registry: { id: 'highcharts.series', prefix: '', enforced: true },
+			extensionPoint: 'highcharts.series',
 			provenance
 		}
 	};

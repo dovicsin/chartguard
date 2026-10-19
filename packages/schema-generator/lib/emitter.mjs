@@ -169,6 +169,7 @@ export class TypeEmitter {
 			discriminator,
 			extensible: true,
 			registry: registered.registry,
+			...(registered.extensionPoint === undefined ? {} : { extensionPoint: registered.extensionPoint }),
 			provenance: registered.provenance
 		};
 	}

@@ -66,6 +66,8 @@ export interface ObjectNode extends NodeBase {
 	readonly kind: 'object';
 	readonly properties: Readonly<Record<string, PropertyNode>>;
 	readonly additional: Openness;
+	/** A point where plugins add named options (`chartjs.plugins`), for `withExtensions`. */
+	readonly extensionPoint?: string;
 	/** A `null` optional property counts as absent: the runtime reads options with `pick()`. */
 	readonly nullAsAbsent?: boolean;
 	/**
@@ -104,6 +106,11 @@ export interface UnionNode extends NodeBase {
 	readonly extensible?: boolean;
 	/** The runtime registry the discriminator values live in (`echarts`, prefix `series.`); requires `extensible`. */
 	readonly registry?: RegistryRef;
+	/**
+	 * Plugins may add variants to this union through `withExtensions`, keyed by its registry id,
+	 * which this must equal. Unmarked registries (Chart.js controllers) take no variant extensions.
+	 */
+	readonly extensionPoint?: string;
 }
 
 export type DefaultRule = DefaultChoice;

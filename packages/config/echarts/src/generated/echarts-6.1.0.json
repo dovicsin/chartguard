@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-545a1f66a41db6c21e9a0fa0395f3db110b6b94f8e69a9bc8b1f0e8c5a914202",
+	"digest": "sha256-767c1a24a462c99d709a949197754b03e60aa8a5b4721371b79de11e8b7d5e8f",
 	"sources": {
 		"echarts": {
 			"kind": "npm-package",
@@ -1558,7 +1558,8 @@
 						]
 					}
 				}
-			}
+			},
+			"extensionPoint": "echarts.options"
 		},
 		"DatasetOption": {
 			"kind": "object",
@@ -213466,6 +213467,7 @@
 				"prefix": "series.",
 				"enforced": true
 			},
+			"extensionPoint": "echarts",
 			"provenance": {
 				"confidence": "authoritative",
 				"sources": [
@@ -213586,6 +213588,7 @@
 				"prefix": "series.",
 				"enforced": true
 			},
+			"extensionPoint": "echarts",
 			"provenance": {
 				"confidence": "authoritative",
 				"sources": [

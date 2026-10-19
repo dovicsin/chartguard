@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-eba4a5c2a7a3ed73cd05f9999b7a0dd6394f7215f08c0740bd16354f95025fcb",
+	"digest": "sha256-57e0cad112ba96b9d01f399b63b950cd56580c31e7327dd7b05e05187431dd93",
 	"sources": {
 		"chartjs": {
 			"kind": "npm-package",
@@ -21264,7 +21264,8 @@
 						"enforced": false
 					}
 				}
-			}
+			},
+			"extensionPoint": "chartjs.plugins"
 		},
 		"_DeepPartialObject<ColorsPluginOptions>": {
 			"kind": "object",
@@ -31034,6 +31035,7 @@
 				"prefix": "",
 				"enforced": true
 			},
+			"extensionPoint": "chartjs.scales",
 			"provenance": {
 				"confidence": "authoritative",
 				"sources": [
@@ -35631,7 +35633,8 @@
 						"enforced": false
 					}
 				}
-			}
+			},
+			"extensionPoint": "chartjs.plugins"
 		},
 		"_DeepPartialObject<LegendOptions<\"bubble\">>": {
 			"kind": "object",
@@ -41222,7 +41225,8 @@
 						"enforced": false
 					}
 				}
-			}
+			},
+			"extensionPoint": "chartjs.plugins"
 		},
 		"_DeepPartialObject<LegendOptions<\"doughnut\">>": {
 			"kind": "object",
@@ -46917,7 +46921,8 @@
 						"enforced": false
 					}
 				}
-			}
+			},
+			"extensionPoint": "chartjs.plugins"
 		},
 		"_DeepPartialObject<LegendOptions<\"line\">>": {
 			"kind": "object",
@@ -52908,7 +52913,8 @@
 						"enforced": false
 					}
 				}
-			}
+			},
+			"extensionPoint": "chartjs.plugins"
 		},
 		"_DeepPartialObject<LegendOptions<\"pie\">>": {
 			"kind": "object",
@@ -58801,7 +58807,8 @@
 						"enforced": false
 					}
 				}
-			}
+			},
+			"extensionPoint": "chartjs.plugins"
 		},
 		"_DeepPartialObject<LegendOptions<\"polarArea\">>": {
 			"kind": "object",
@@ -65959,7 +65966,8 @@
 						"enforced": false
 					}
 				}
-			}
+			},
+			"extensionPoint": "chartjs.plugins"
 		},
 		"_DeepPartialObject<LegendOptions<\"radar\">>": {
 			"kind": "object",
@@ -72130,7 +72138,8 @@
 						"enforced": false
 					}
 				}
-			}
+			},
+			"extensionPoint": "chartjs.plugins"
 		},
 		"_DeepPartialObject<LegendOptions<\"scatter\">>": {
 			"kind": "object",

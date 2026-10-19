@@ -1,5 +1,6 @@
 import { isContainer, ownDataProperty } from '@chartguard/core';
 
+import type { ResolvedExtensions } from './extensions.js';
 import { inheritedValue } from './inherited.js';
 import { isListLike, kindOf } from './kind.js';
 import { type Registration, registration, type Registries } from './registry.js';
@@ -134,6 +135,16 @@ const sameRegistry = (left: RegistryRef, right: RegistryRef): boolean =>
 	left.id === right.id && left.prefix === right.prefix && left.enforced === right.enforced;
 
 /** The registry of the union itself, or the one every nested union that names one agrees on. */
+/** The variant a plugin extension registers under this value in the union's registry, if any. */
+function extensionVariant(
+	ref: RegistryRef | undefined,
+	value: unknown,
+	extensions: ResolvedExtensions | undefined
+): NodeSchema | undefined {
+	if (ref === undefined || typeof value !== 'string') return undefined;
+	return extensions?.variants.get(ref.id)?.get(`${ref.prefix}${value}`);
+}
+
 function registryOf(union: NodeSchema, seen = new Set<NodeSchema>()): RegistryRef | undefined {
 	if (union.registry !== undefined) return union.registry;
 	const nested = nestedUnions(union, seen).flatMap((member) => registryOf(member, seen) ?? []);
@@ -199,9 +210,12 @@ interface Discriminated {
 	readonly key: string;
 }
 
-function selectExplicit(value: unknown, { union, members, key }: Discriminated, registries: Registries): Selection {
-	const selected = members.find((member) => discriminatorValues(member, key).some((known) => known === value));
+function selectExplicit(value: unknown, { union, members, key }: Discriminated, context: SelectionContext): Selection {
+	const { registries } = context;
 	const ref = registryOf(union);
+	const selected =
+		members.find((member) => discriminatorValues(member, key).some((known) => known === value)) ??
+		extensionVariant(ref, value, context.extensions);
 	if (ref !== undefined && typeof value === 'string') {
 		const decided = byRegistration(registration(registries, ref, value), selected, key, value);
 		if (decided !== undefined) return decided;
@@ -215,13 +229,15 @@ function selectExplicit(value: unknown, { union, members, key }: Discriminated, 
 export interface SelectionContext {
 	readonly registries: Registries;
 	readonly root: unknown;
+	/** Plugin variants by registry, consulted for a discriminator value no built-in member has. */
+	readonly extensions?: ResolvedExtensions | undefined;
 }
 
 function selectByDiscriminator(
 	value: object,
 	union: NodeSchema,
 	members: readonly NodeSchema[],
-	{ registries, root }: SelectionContext
+	{ registries, root, extensions }: SelectionContext
 ): Selection {
 	const key = discriminatorOf(union);
 	// A member without literal values for the key can never be told apart: do not guess.
@@ -230,7 +246,7 @@ function selectByDiscriminator(
 	if (!entry.found && entry.accessor) return AMBIGUOUS;
 	if (!entry.found || entry.value === undefined)
 		return checkDefault(defaultOf(union, value, root) ?? AMBIGUOUS, key, registryOf(union), registries);
-	return selectExplicit(entry.value, { union, members, key }, registries);
+	return selectExplicit(entry.value, { union, members, key }, { registries, root, extensions });
 }
 
 /** Chooses the union member that applies to a value, without guessing between look-alike objects. */

@@ -1,4 +1,4 @@
-import { planPluginHandlers } from './chartjs-plugins.mjs';
+import { planPluginHandlers, pluginDefinitions } from './chartjs-plugins.mjs';
 import { ELEMENT_SCOPE, planOptionScopes } from './chartjs-scopes.mjs';
 import { TypeEmitter } from './emitter.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
@@ -17,13 +17,17 @@ const LOOKUPS = {
 	scales: { file: 'dist/chart.js', pattern: 'const scaleClass = registry.getScale(scaleType);' }
 };
 
+/**
+ * Scales take plugin variants (`withExtensions`, CG-02-05); controllers do not yet: one controller
+ * adds a chart type and a dataset type at once, which a single variant cannot express (part 2).
+ */
 function registryFacts(root) {
 	const provenance = (fact) => runtimeProvenance(root, { sourceId: SOURCE_ID, packageName: 'chart.js' }, fact);
 	const fact = (id, enforced, lookup) => ({ registry: { id, prefix: '', enforced }, provenance: provenance(lookup) });
 	return {
 		chartType: fact('chartjs.controllers', false, LOOKUPS.controllers),
 		dataset: fact('chartjs.controllers', true, LOOKUPS.controllers),
-		scale: fact('chartjs.scales', true, LOOKUPS.scales)
+		scale: { ...fact('chartjs.scales', true, LOOKUPS.scales), extensionPoint: 'chartjs.scales' }
 	};
 }
 
@@ -124,7 +128,8 @@ function datasetUnions(emitter, datasetVariants, { registry, provenance }) {
 /**
  * What the declarations leave out, read from the runtime: element options in every scope the
  * runtime reads them from, open per-property animations, built-in plugin options that take effect
- * only when the plugin is registered; then every option value becomes scriptable.
+ * only when the plugin is registered, the plugin extension point; then every option value becomes
+ * scriptable.
  */
 function withRuntimeFacts(root, definitions, configNames) {
 	const scopes = planOptionScopes(root, definitions, configNames);
@@ -140,6 +145,8 @@ function withRuntimeFacts(root, definitions, configNames) {
 			properties: { ...next[definition].properties, [property]: { ...target, handledBy, provenance } }
 		};
 	}
+	for (const name of pluginDefinitions(definitions, configNames))
+		next[name] = { ...next[name], extensionPoint: 'chartjs.plugins' };
 	makeOptionsScriptable(next, configNames);
 	return next;
 }

@@ -18,6 +18,8 @@ const validateFull = createValidator(JSON.parse(readFileSync(artifactPath, "utf8
 validateFull(config, { libraryVersion: "13.1.1" });
 ```
 
-`createValidator` throws for a malformed artifact or one generated for another library. A series without `type` takes `chart.type` at runtime; that series is reported as inconclusive (`CFG_AMBIGUOUS`), never checked against a guessed type.
+`createValidator` throws for a malformed artifact or one generated for another library.
+
+A series type added by a plugin is an unknown variant (a warning); describe it to have it checked: `createValidator(artifact, { extensions: [{ id: "flame3d", variants: { "highcharts.series": { flame3d: s.object({ depth: s.number() }) } } }] })` (`s` from `@chartguard/config-core`). The variant schema is the whole series (shared options such as `data` are not inherited; open the object with `{ additional: "allow" }` to keep them unchecked). A built-in type cannot be replaced; a refused extension throws `ExtensionError`. A series without `type` takes `chart.type` at runtime; that series is reported as inconclusive (`CFG_AMBIGUOUS`), never checked against a guessed type.
 
 A command that generates the artifact from an installed `highcharts` is not part of a release yet; inside the ChartGuard repository, `npm run build` writes it to `node_modules/.cache/chartguard/`.

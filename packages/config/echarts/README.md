@@ -12,3 +12,19 @@ const result = validate(option);
 - Options for components that `echarts/core` + `use([...])` did not register are not rejected; module-aware validation is CG-02-04.
 
 The schema artifact is derived from Apache-2.0 licensed declarations; see `NOTICE`. See `docs/specs/CG-01-04-echarts-generator.md` for the contract adjustments and known limits.
+
+## Extension components and series
+
+Root components of an extension (`bmap`, echarts-gl's `globe`) are accepted unchecked, and an extension series is an unknown variant (a warning). Describe them to have them checked:
+
+```ts
+import { s } from '@chartguard/config-core';
+import { withExtensions } from '@chartguard/config-echarts';
+
+const validate = withExtensions([
+	{ id: 'bmap', options: { 'echarts.options': { bmap: s.object({ zoom: s.number(), roam: s.boolean() }) } } },
+	{ id: 'wordcloud', variants: { echarts: { 'series.wordCloud': s.object({ gridSize: s.number(), data: s.array(s.any()) }) } } }
+]);
+```
+
+A variant schema is the whole series: options every series shares (`id`, `z`, …) are not inherited, so declare them or open the object (`s.object({...}, { additional: 'allow' })`). Built-ins cannot be replaced and a name has one owner; either throws `ExtensionError`. With a `registries` context, an extension series must be registered like any other.

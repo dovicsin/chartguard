@@ -1,5 +1,7 @@
 import type { Coverage } from '@chartguard/core';
 
+import type { ResolvedExtensions } from './extensions.js';
+
 export type SchemaKind = 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null' | 'function' | 'union' | 'any';
 export type EnumValue = string | number | boolean;
 /** 'warn' is correct while the schema is incomplete or extensible. */
@@ -69,6 +71,11 @@ export interface NodeSchema {
 	readonly required?: readonly string[];
 	readonly enum?: readonly EnumValue[];
 	readonly additionalProperties?: AdditionalProperties;
+	/**
+	 * Object: a point where plugins add named options (`chartjs.plugins`). Union: its registry id,
+	 * when plugins may add variants to it (`echarts`). See `withExtensions`.
+	 */
+	readonly extensionPoint?: string;
 	/** Object: a `null` optional property counts as absent (the runtime reads options with `pick()`, Highcharts). */
 	readonly nullAsAbsent?: boolean;
 	/** Object: schema for keys not listed in `properties` (a record of caller-chosen keys). */
@@ -102,6 +109,8 @@ export interface SchemaManifest {
 	readonly coverage: Coverage;
 	readonly root: NodeSchema;
 	readonly source: string;
+	/** Plugin options and variants the schema was extended with (`withExtensions`). */
+	readonly extensions?: ResolvedExtensions;
 }
 
 export interface ObjectOptions {

@@ -64,7 +64,8 @@ export class ConfigWalker {
 		if (cursor.depth === 0) this.root = value;
 		if (this.stops(cursor) || this.unhandled(schema, cursor.path)) return;
 		if (schema.kind === 'union') {
-			this.walkUnion(value, selectVariant(value, schema, { registries: this.registries, root: this.root }), cursor);
+			const context = { registries: this.registries, root: this.root, extensions: this.manifest.extensions };
+			this.walkUnion(value, selectVariant(value, schema, context), cursor);
 			return;
 		}
 		if (schema.kind === 'any' || !this.matchesShape(value, schema, cursor.path)) return;
@@ -197,7 +198,7 @@ export class ConfigWalker {
 		}
 		if (entry.value === undefined || this.isUnset(entry.value, key, schema)) return;
 		const known = schema.properties ?? {};
-		const field = Object.hasOwn(known, key) ? known[key] : schema.values;
+		const field = Object.hasOwn(known, key) ? known[key] : (this.extensionOption(schema, key) ?? schema.values);
 		if (field === undefined) {
 			const unknown = unknownKeyFinding(key, schema, this.manifest.coverage, cursor.path);
 			if (unknown !== undefined) this.diagnostics.push(unknown);
@@ -206,6 +207,11 @@ export class ConfigWalker {
 		if (field.deprecated !== undefined)
 			this.diagnostics.push(deprecationFinding(object, key, cursor.path, field.deprecated));
 		this.walk(entry.value, field, cursor);
+	}
+
+	/** The schema a plugin extension gives `key` at this object's extension point, if any. */
+	private extensionOption({ extensionPoint }: NodeSchema, key: string): NodeSchema | undefined {
+		return extensionPoint === undefined ? undefined : this.manifest.extensions?.options.get(extensionPoint)?.get(key);
 	}
 
 	/** `null` on an optional property of an object whose runtime reads options with `pick()`. */

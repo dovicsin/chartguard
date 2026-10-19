@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { validate as validateChartjs } from '@chartguard/config-chartjs';
+import { validate as validateChartjs, withExtensions as withChartjsExtensions } from '@chartguard/config-chartjs';
+import { s } from '@chartguard/config-core';
 import { validate as validateEcharts } from '@chartguard/config-echarts';
 
 import { KNOWN_VALID as CHARTJS_VALID } from '../../../packages/config/chartjs/tests/fixtures/known-valid.mjs';
@@ -104,6 +105,21 @@ test('the runners never change the config they are given; the runtimes write int
 	runEcharts(echarts);
 	assert.equal(snapshot(chartjs), beforeChartjs);
 	assert.equal(snapshot(echarts), beforeEcharts);
+});
+
+test('an inline Chart.js plugin receives options.plugins.<id>, which the chartjs.plugins extension checks (CG-02-05)', () => {
+	const received = [];
+	const plugin = { id: 'labels', afterInit: (_chart, _args, options) => received.push(options.size) };
+	const config = (size) => ({ type: 'bar', data: { labels: ['a'], datasets: [{ data: [1] }] }, plugins: [plugin], options: { plugins: { labels: { size } } } });
+	const findings = (validate, value) => validate(value).diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`);
+	const validate = withChartjsExtensions([{ id: 'labels', options: { 'chartjs.plugins': { labels: s.object({ size: s.number() }) } } }]);
+	assert.equal(verdictOf(runChartjs(config(4))), 'accepted');
+	assert.deepEqual(findings(validate, config(4)), []);
+	// The runtime hands the plugin whatever is there: the type is the plugin's contract, which the extension states.
+	assert.equal(verdictOf(runChartjs(config('big'))), 'accepted');
+	assert.deepEqual(received, [4, 'big']);
+	assert.deepEqual(findings(validate, config('big')), ['error CFG_TYPE $.options.plugins.labels.size']);
+	assert.deepEqual(findings(validateChartjs, config('big')), []);
 });
 
 test('a tree-shaken Chart.js run restores every built-in afterwards, even when the body throws', () => {

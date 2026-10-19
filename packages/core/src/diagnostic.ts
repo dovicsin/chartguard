@@ -64,6 +64,8 @@ export interface ValidationResult {
 	schemaVersion: string;
 	/** The exact schema artifact that produced this result (`sha256-…`), when it is generated. */
 	schemaDigest?: string;
+	/** The plugin extensions the schema was extended with (CG-02-05), by id. */
+	extensions?: string[];
 	coverage: Coverage;
 	diagnostics: Diagnostic[];
 }

@@ -76,5 +76,7 @@ export function validateConfig(
 	const versionDiffers = libraryVersion !== undefined && compatibility(manifest.version, libraryVersion) !== 'exact';
 	const coverage = options.incomplete === true || versionDiffers ? 'partial' : manifest.coverage;
 	const checked = result(manifest.library, manifest.version, coverage, diagnostics);
-	return manifest.digest === undefined ? checked : { ...checked, schemaDigest: manifest.digest };
+	const ids = manifest.extensions?.list.map(({ id }) => id);
+	const digest = manifest.digest === undefined ? {} : { schemaDigest: manifest.digest };
+	return { ...checked, ...digest, ...(ids === undefined ? {} : { extensions: ids }) };
 }

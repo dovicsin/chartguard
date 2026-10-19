@@ -91,7 +91,8 @@ class Lowerer {
 			...(node.defaultWhen === undefined ? {} : { defaultWhen: node.defaultWhen }),
 			...(node.defaultFrom === undefined ? {} : { defaultFrom: node.defaultFrom }),
 			...(node.extensible === undefined ? {} : { extensible: node.extensible }),
-			...(node.registry === undefined ? {} : { registry: node.registry })
+			...(node.registry === undefined ? {} : { registry: node.registry }),
+			...(node.extensionPoint === undefined ? {} : { extensionPoint: node.extensionPoint })
 		};
 	}
 
@@ -113,7 +114,15 @@ class Lowerer {
 		);
 		const required = entries.filter(([, property]) => property.required === true).map(([key]) => key);
 		const nullAsAbsent = node.nullAsAbsent === true ? { nullAsAbsent: true } : {};
-		return { kind: 'object', properties, required, additionalProperties: this.additionalOf(node), ...nullAsAbsent };
+		const point = node.extensionPoint === undefined ? {} : { extensionPoint: node.extensionPoint };
+		return {
+			kind: 'object',
+			properties,
+			required,
+			additionalProperties: this.additionalOf(node),
+			...nullAsAbsent,
+			...point
+		};
 	}
 
 	private additionalOf(node: ObjectNode): AdditionalProperties {

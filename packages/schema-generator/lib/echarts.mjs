@@ -59,6 +59,8 @@ function contractAdjustments(root, lookups, checker, aliases) {
 	if (list === undefined) throw changed('series is no longer `SeriesOption | SeriesOption[]`');
 	const registered = {
 		registry: { id: 'echarts', prefix: 'series.', enforced: true },
+		// Extension series (`series.wordCloud`) are added through `withExtensions` (CG-02-05).
+		extensionPoint: 'echarts',
 		provenance: runtimeProvenance(root, { sourceId: SOURCE_ID, packageName: 'echarts' }, SERIES_LOOKUP)
 	};
 	return {
@@ -76,5 +78,7 @@ export function generateEcharts(root, pin) {
 	resolveComponentSubtypes(root, emitter.definitions, emitter.definitions[optionRef.ref]);
 	addComponentHandlers(root, emitter.definitions[optionRef.ref]);
 	const definitions = withRuntimeFacts(root, withDeprecatedAliases(root, emitter.definitions, optionRef.ref));
+	// `EChartsOption` is open: extension components (`bmap`, echarts-gl's `globe`) are root options (CG-02-05).
+	definitions[optionRef.ref] = { ...definitions[optionRef.ref], extensionPoint: 'echarts.options' };
 	return artifactOf({ library: 'echarts', sourceId: SOURCE_ID, pin, definitions, root: optionRef });
 }
