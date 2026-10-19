@@ -45,7 +45,7 @@ npm run check
 | `npm run schema:check`          | Fail if a committed schema artifact is stale        |
 | `npm run check`                 | everything above, then tests with coverage          |
 
-Git hooks (husky): **pre-commit** runs the fixers and the full test suite, and **pre-push** runs every check.
+Git hooks (husky) only check, they never change files: **pre-commit** runs `npm run check`, and **pre-push** runs every check. Run `npm run fix-lint` and `npm run fix-format` yourself and review the diff.
 
 ## Usage
 
@@ -53,7 +53,10 @@ Git hooks (husky): **pre-commit** runs the fixers and the full test suite, and *
 node packages/cli/bin/chartguard.mjs validate --library chartjs --file examples/chartjs-invalid.json
 node packages/cli/bin/chartguard.mjs quality --library chartjs --file examples/chartjs-quality.json --json
 node packages/cli/bin/chartguard.mjs analyze --library chartjs --file examples/chartjs-source.ts
+node packages/cli/bin/chartguard.mjs validate --library chartjs --file my-chart.json --library-version auto
 ```
+
+`--library-version <version|auto>` tells the validator which version you run (`auto` reads it from `node_modules`, upward from the file). The schemas describe one exact upstream version (Chart.js 4.5.1, ECharts 6.1.0); for another minor or patch, confirmed errors are reported as warnings, and another major is not validated.
 
 Exit codes: `0` no confirmed errors, `1` confirmed errors, `2` bad arguments or unusable input, `3` internal failure.
 

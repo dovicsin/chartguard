@@ -10,3 +10,5 @@ export type {
 } from './schema.js';
 export { s } from './schema.js';
 export { validateConfig } from './validate.js';
+export type { Compatibility, Version } from './version.js';
+export { compatibility, parseVersion } from './version.js';

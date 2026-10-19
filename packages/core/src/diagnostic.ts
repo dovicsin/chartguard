@@ -23,6 +23,11 @@ export interface ValidationOptions {
 	 * missing required key is unresolved rather than confirmed missing, and coverage is partial.
 	 */
 	readonly incomplete?: boolean;
+	/**
+	 * The exact upstream version the caller runs (`4.4.1`). Another minor or patch than the
+	 * schema's turns confirmed errors into warnings; another major is not validated (CG-01-07).
+	 */
+	readonly libraryVersion?: string;
 }
 
 export interface ValidationResult {

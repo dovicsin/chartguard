@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -136,4 +139,55 @@ test('importing the bin from a non-path argv runs nothing and does not throw', (
 	const script = `await import(${JSON.stringify(new URL('../bin/chartguard.mjs', import.meta.url).href)});`;
 	const child = spawnSync(process.execPath, ['--input-type=module', '-e', script, 'not-a-path'], { encoding: 'utf8' });
 	assert.deepEqual([child.status, child.stdout, child.stderr], [0, '', '']);
+});
+
+test('--library-version: another minor downgrades confirmed errors, another major is not validated', async () => {
+	const file = example('chartjs-invalid.json');
+	const minor = await run(['validate', '--library', 'chartjs', '--file', file, '--library-version', '4.4.1', '--json']);
+	assert.equal(minor.code, 0);
+	const downgraded = JSON.parse(minor.out);
+	assert.equal(downgraded.status, 'partial');
+	assert.deepEqual(
+		downgraded.diagnostics.map((d) => `${d.severity} ${d.code}`),
+		['warning CFG_VERSION_MISMATCH', 'warning CFG_UNKNOWN_KEY', 'warning CFG_TYPE']
+	);
+	const major = await run(['validate', '--library', 'chartjs', '--file', file, '--library-version', '3.9.1']);
+	assert.equal(major.code, 0);
+	assert.match(major.out, /CFG_UNSUPPORTED_VERSION \$: 3\.9\.1 is not supported/);
+	const exact = await run(['validate', '--library', 'chartjs', '--file', file, '--library-version', '4.5.1']);
+	assert.equal(exact.code, 1);
+	assert.equal((await run(['quality', '--library', 'chartjs', '--file', file, '--library-version', '4.5.1'])).code, 2);
+});
+
+test('--library-version auto finds the installed package upward from the file', async (t) => {
+	const project = mkdtempSync(join(tmpdir(), 'chartguard-project-'));
+	t.after(() => rmSync(project, { recursive: true, force: true }));
+	mkdirSync(join(project, 'node_modules', 'chart.js'), { recursive: true });
+	mkdirSync(join(project, 'src', 'charts'), { recursive: true });
+	writeFileSync(
+		join(project, 'node_modules', 'chart.js', 'package.json'),
+		JSON.stringify({ name: 'chart.js', version: '4.4.0' })
+	);
+	const file = join(project, 'src', 'charts', 'bar.json');
+	writeFileSync(file, JSON.stringify({ type: 'bar', data: { datasets: [] }, options: { responsive: 'yes' } }));
+	const found = await run(['validate', '--library', 'chartjs', '--file', file, '--library-version', 'auto', '--json']);
+	assert.equal(found.code, 0);
+	assert.match(JSON.parse(found.out).diagnostics[0].message, /4\.4\.0 may accept or reject/);
+	const missing = await run(['validate', '--library', 'echarts', '--file', file, '--library-version', 'auto']);
+	assert.equal(missing.code, 2);
+	assert.match(missing.err, /echarts is not installed for .*charts; pass --library-version/);
+});
+
+test('analyze passes the version on to every extracted config', async () => {
+	const { out } = await run([
+		'analyze',
+		'--library',
+		'chartjs',
+		'--file',
+		example('chartjs-source.ts'),
+		'--library-version',
+		'3.0.0'
+	]);
+	assert.match(out, /^config @ line 2: partial$/m);
+	assert.match(out, /warning: \$ 3\.0\.0 is not supported: this schema describes chartjs 4\.5\.1\. Not validated\./);
 });

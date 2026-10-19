@@ -1,5 +1,5 @@
 import type { SourceObject } from '@chartguard/analysis-typescript';
-import type { ConfigValidator, Diagnostic, ValidationResult } from '@chartguard/core';
+import type { ConfigValidator, Diagnostic, ValidationOptions, ValidationResult } from '@chartguard/core';
 
 import type { Io } from './io.js';
 
@@ -23,9 +23,13 @@ export function selectConfigs(objects: readonly SourceObject[], name: string | u
 }
 
 /** A partially extracted object is validated as incomplete input; the engine then treats missing keys as unresolved. */
-export function analyzeEntry(object: SourceObject, validate: ConfigValidator): AnalyzedEntry {
+export function analyzeEntry(
+	object: SourceObject,
+	validate: ConfigValidator,
+	options: ValidationOptions = {}
+): AnalyzedEntry {
 	const { name, line, complete, binding, diagnostics: notes } = object;
-	const result = binding === 'const' ? validate(object.value, { incomplete: !complete }) : undefined;
+	const result = binding === 'const' ? validate(object.value, { ...options, incomplete: !complete }) : undefined;
 	return { name, line, complete, notes, result };
 }
 

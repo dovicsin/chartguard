@@ -10,6 +10,8 @@ export interface Invocation {
 	readonly library: Library;
 	readonly file: string;
 	readonly name: string | undefined;
+	/** An exact version, `auto` (the installed package), or undefined: no claim about the user's install. */
+	readonly libraryVersion: string | undefined;
 	readonly json: boolean;
 }
 
@@ -17,6 +19,7 @@ const OPTIONS = {
 	library: { type: 'string' },
 	file: { type: 'string' },
 	name: { type: 'string' },
+	'library-version': { type: 'string' },
 	json: { type: 'boolean', default: false }
 } as const;
 
@@ -31,15 +34,20 @@ export function isHelpRequest(argv: readonly string[]): boolean {
 	return first === undefined || HELP_WORDS.has(first);
 }
 
-/** Returns undefined for any malformed invocation; `--name` belongs to `analyze` only. */
+/** `--name` belongs to `analyze`; `--library-version` to the config checks, not to `quality`. */
+function misplaced(command: Command, name: string | undefined, libraryVersion: string | undefined): boolean {
+	return (name !== undefined && command !== 'analyze') || (libraryVersion !== undefined && command === 'quality');
+}
+
+/** Returns undefined for any malformed invocation. */
 export function parseInvocation(argv: readonly string[]): Invocation | undefined {
 	try {
 		const { positionals, values } = parseArgs({ args: [...argv], options: OPTIONS, allowPositionals: true });
 		const [command, ...rest] = positionals;
-		const { library, file, name, json } = values;
+		const { library, file, name, json, 'library-version': libraryVersion } = values;
 		if (!isCommand(command) || rest.length > 0 || library === undefined || file === undefined) return undefined;
-		if (!isLibrary(library) || (name !== undefined && command !== 'analyze')) return undefined;
-		return { command, library, file, name, json };
+		if (!isLibrary(library) || misplaced(command, name, libraryVersion)) return undefined;
+		return { command, library, file, name, libraryVersion, json };
 	} catch {
 		return undefined;
 	}

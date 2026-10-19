@@ -1,10 +1,11 @@
 import { readFile } from 'node:fs/promises';
 
-import type { Diagnostic } from '@chartguard/core';
+import type { Diagnostic, ValidationOptions } from '@chartguard/core';
 
 import { analyzeEntry, printEntries, selectConfigs } from './analyze.js';
 import { InputError } from './errors.js';
 import { EXIT_INVALID, EXIT_OK } from './exit-codes.js';
+import { installedVersion } from './installed.js';
 import type { Command, Invocation } from './invocation.js';
 import type { Io } from './io.js';
 import { loadConfigAdapter, loadQualityAdapter } from './libraries.js';
@@ -41,10 +42,17 @@ function describeSyntax(file: string, diagnostics: readonly Diagnostic[]): strin
 	return `${file} has syntax errors; nothing read from it is reliable.${lines.join('')}`;
 }
 
-const validateCommand: CommandHandler = async ({ library, file, json }, io) => {
+/** `--library-version auto` reads the installed package; an explicit version is passed as given. */
+async function versionOptions({ library, file, libraryVersion }: Invocation): Promise<ValidationOptions> {
+	if (libraryVersion === undefined) return {};
+	return { libraryVersion: libraryVersion === 'auto' ? await installedVersion(library, file) : libraryVersion };
+}
+
+const validateCommand: CommandHandler = async (invocation, io) => {
+	const { library, file, json } = invocation;
 	const config = await readJson(file);
 	const { validate } = await loadConfigAdapter(library);
-	return reportResult(validate(config), json, io);
+	return reportResult(validate(config, await versionOptions(invocation)), json, io);
 };
 
 const qualityCommand: CommandHandler = async ({ library, file, json }, io) => {
@@ -53,7 +61,8 @@ const qualityCommand: CommandHandler = async ({ library, file, json }, io) => {
 	return reportQuality(analyze(config), json, io);
 };
 
-const analyzeCommand: CommandHandler = async ({ library, file, name, json }, io) => {
+const analyzeCommand: CommandHandler = async (invocation, io) => {
+	const { library, file, name, json } = invocation;
 	const text = await readText(file);
 	const { extractStaticConfigs } = await import('@chartguard/analysis-typescript');
 	const source = extractStaticConfigs(text, file);
@@ -61,7 +70,8 @@ const analyzeCommand: CommandHandler = async ({ library, file, name, json }, io)
 	const configs = selectConfigs(source.objects, name);
 	if (configs.length === 0) throw new InputError('No suitable static object found. Specify --name <variable>.');
 	const { validate } = await loadConfigAdapter(library);
-	const entries = configs.map((object) => analyzeEntry(object, validate));
+	const options = await versionOptions(invocation);
+	const entries = configs.map((object) => analyzeEntry(object, validate, options));
 	if (json) printJson({ mode: 'analyze', library, entries }, io);
 	else printEntries(entries, io);
 	return entries.some((entry) => entry.result?.valid === false) ? EXIT_INVALID : EXIT_OK;
