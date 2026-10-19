@@ -1,5 +1,5 @@
-import { s, type SchemaManifest, validateConfig } from '@chartguard/config-core';
-import type { ValidationOptions, ValidationResult } from '@chartguard/core';
+import { manifestFromArtifact, s, type SchemaManifest, validateConfig } from '@chartguard/config-core';
+import type { ConfigValidator, ValidationOptions, ValidationResult } from '@chartguard/core';
 
 const toggle = s.object({ enabled: s.boolean() });
 const text = s.object({ text: s.string() });
@@ -42,4 +42,18 @@ export const manifest: SchemaManifest = {
 
 export function validate(input: unknown, options?: ValidationOptions): ValidationResult {
 	return validateConfig(input, manifest, options);
+}
+
+/**
+ * A validator for a schema artifact generated from the caller's own installed `highcharts`
+ * (`node tools/schema-generator/generate.mjs write highcharts`, written to
+ * `node_modules/.cache/chartguard/`). This package never ships a Highcharts-derived schema: the
+ * Highcharts license does not clear redistributing it (CG-01-05). Throws for a malformed artifact
+ * or one generated for another library.
+ */
+export function createValidator(artifact: unknown): ConfigValidator {
+	const generated = manifestFromArtifact(artifact);
+	if (generated.library !== 'highcharts')
+		throw new Error(`Expected a highcharts schema artifact, got one for ${generated.library}.`);
+	return (input, options) => validateConfig(input, generated, options);
 }

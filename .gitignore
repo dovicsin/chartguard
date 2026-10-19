@@ -52,6 +52,8 @@
 
 # Never tracked, even below an allowlisted path
 node_modules/
+# Highcharts-derived schemas may not be redistributed (CG-01-05); they are generated locally.
+/packages/config/highcharts/src/generated/
 dist/
 coverage/
 .husky/_/

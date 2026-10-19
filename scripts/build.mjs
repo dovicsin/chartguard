@@ -26,6 +26,13 @@ function compactGeneratedArtifacts(directory) {
 
 compactGeneratedArtifacts('packages');
 
+// Schema artifacts that may not be committed (Highcharts) are generated locally from the installed
+// package on every build, so tests and the CLI find them in this checkout.
+const local = spawnSync(process.execPath, ['tools/schema-generator/generate.mjs', 'write', 'highcharts'], {
+	stdio: 'inherit'
+});
+if (local.status !== 0) process.exit(local.status ?? 1);
+
 // The playground bundle needs the compiled packages above.
 const playground = spawnSync(process.execPath, ['apps/playground/scripts/build.mjs'], { stdio: 'inherit' });
 if (playground.status !== 0) process.exit(playground.status ?? 1);

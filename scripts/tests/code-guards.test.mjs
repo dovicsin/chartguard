@@ -5,6 +5,8 @@ import { join, relative, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { isRedistributable } from '../../tools/schema-generator/generate.mjs';
+
 /**
  * Mechanical guards for defect classes this codebase has already shipped once.
  * Each test names the rule in docs/process/review-checklist.md it enforces.
@@ -104,6 +106,56 @@ test('R10 runtime facts are read from the pinned package through one helper that
 test('R11 a value handed to another process is checked structurally, not by a JSON round trip that drops functions (E20)', () => {
 	const code = [...sources('tools'), ...sources('apps'), ...sources('packages')];
 	assert.deepEqual(offenders(code, /JSON\.stringify\(\s*JSON\.parse\(/), []);
+});
+
+/** Schema artifacts (`irVersion` + `library`) among JSON files, with whether their upstream license allows shipping them. */
+function artifactsIn(paths) {
+	const upstream = JSON.parse(readFileSync(join(ROOT, 'tools/schema-generator/upstream-sources.json'), 'utf8'));
+	const pins = new Map(upstream.libraries.map((pin) => [pin.library, pin]));
+	return paths
+		.filter((path) => path.endsWith('.json'))
+		.flatMap((path) => {
+			const text = readFileSync(join(ROOT, path), 'utf8');
+			if (!text.includes('"irVersion"')) return [];
+			const { library } = JSON.parse(text);
+			const pin = pins.get(library);
+			return [{ path, allowed: pin !== undefined && isRedistributable(pin) }];
+		});
+}
+
+test('R12 no schema artifact whose upstream license does not allow it is tracked by git (CG-01-05)', () => {
+	const tracked = spawnSync('git', ['ls-files', '-z', '--', '*.json'], { cwd: ROOT, encoding: 'utf8' });
+	assert.equal(tracked.status, 0, tracked.stderr);
+	const found = artifactsIn(tracked.stdout.split('\0').filter(Boolean));
+	assert.ok(found.length >= 2, 'the committed Chart.js and ECharts artifacts are found');
+	assert.deepEqual(
+		found.filter(({ allowed }) => !allowed).map(({ path }) => path),
+		[]
+	);
+});
+
+/** `npm <args> --json` in the repository root, parsed. */
+function npmJson(args) {
+	const result = spawnSync('npm', [...args, '--json'], {
+		cwd: ROOT,
+		encoding: 'utf8',
+		shell: process.platform === 'win32'
+	});
+	assert.equal(result.status, 0, result.stderr);
+	return JSON.parse(result.stdout);
+}
+
+test('R12 no package publishes a schema artifact whose upstream license does not allow it (CG-01-05)', () => {
+	const locations = new Map(npmJson(['query', '.workspace']).map(({ name, location }) => [name, location]));
+	const packed = npmJson(['pack', '--dry-run', '--workspaces']).flatMap(({ name, files: entries }) =>
+		entries.map(({ path }) => join(locations.get(name), path))
+	);
+	const found = artifactsIn(packed);
+	assert.ok(found.length >= 2, 'the published Chart.js and ECharts artifacts are found');
+	assert.deepEqual(
+		found.filter(({ allowed }) => !allowed).map(({ path }) => path),
+		[]
+	);
 });
 
 test('R8 entry points: process.argv[1] is resolved only by the guarded helpers, never at import time unguarded', () => {

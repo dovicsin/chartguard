@@ -6,27 +6,45 @@ import { runAsEntryPoint } from '../shared/entry.mjs';
 import { generateChartjs } from './lib/chartjs.mjs';
 import { serialize,withDigest } from './lib/digest.mjs';
 import { generateEcharts } from './lib/echarts.mjs';
+import { generateHighcharts } from './lib/highcharts.mjs';
 import { verifiedUpstream } from './lib/lock.mjs';
 
 const GENERATORS = {
 	chartjs: { package: 'packages/config/chartjs', generate: generateChartjs },
-	echarts: { package: 'packages/config/echarts', generate: generateEcharts }
+	echarts: { package: 'packages/config/echarts', generate: generateEcharts },
+	highcharts: { package: 'packages/config/highcharts', generate: generateHighcharts }
 };
+
+/** Upstream licenses under which a derived artifact may be committed and published. */
+const REDISTRIBUTABLE = new Set(['allowed-with-attribution', 'allowed-with-license-and-notice']);
+
+/**
+ * Where artifacts are written that may not be redistributed (Highcharts: its license does not
+ * clear re-publishing derived option metadata). Under node_modules, so never tracked by git and
+ * never inside a package's `files`; every checkout generates its own from its own install.
+ */
+export const LOCAL_ARTIFACTS = 'node_modules/.cache/chartguard';
+
+export function isRedistributable(pin) {
+	return REDISTRIBUTABLE.has(pin.license.redistribution);
+}
 /** The repository root, independent of the directory the command is run from. */
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const MODES = new Set(['write', 'check']);
 const EXIT_STALE = 1;
 const EXIT_USAGE = 2;
 
-export function artifactPath(root, library, version) {
-	return join(root, GENERATORS[library].package, 'src/generated', `${library}-${version}.json`);
+/** Committed next to the adapter when the license allows it; otherwise local to this checkout. */
+export function artifactPath(root, pin, library) {
+	const file = `${library}-${pin.version}.json`;
+	return isRedistributable(pin) ? join(root, GENERATORS[library].package, 'src/generated', file) : join(root, LOCAL_ARTIFACTS, file);
 }
 
 /** Deterministic artifact text for one library, carrying the digest of its own content. */
 export function generate(root, library) {
 	const pin = verifiedUpstream(root, library);
 	const artifact = withDigest(GENERATORS[library].generate(root, pin));
-	return { path: artifactPath(root, library, pin.version), text: serialize(artifact) };
+	return { path: artifactPath(root, pin, library), text: serialize(artifact) };
 }
 
 export const LIBRARIES = Object.keys(GENERATORS);

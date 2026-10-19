@@ -94,7 +94,7 @@
 				}
 			],
 			"openIssues": [
-				"Do not commit or publish generated Highcharts artifacts until redistribution is cleared.",
+				"Generated artifacts are never committed or published: the generator writes them to node_modules/.cache/chartguard from the local install (CG-01-05); code guard R12 checks git and npm pack.",
 				"Hand-curated config-highcharts subset (13.x) leaves union-typed fields open until CG-02-01."
 			]
 		}

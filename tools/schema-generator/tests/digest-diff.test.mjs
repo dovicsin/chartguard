@@ -10,10 +10,11 @@ import { checkArtifact } from '@chartguard/config-core';
 import { artifactPath, LIBRARIES } from '../generate.mjs';
 import { canonicalPaths, diffArtifacts, formatDiff } from '../lib/diff.mjs';
 import { digestOf, omit, serialize, withDigest } from '../lib/digest.mjs';
+import { verifiedUpstream } from '../lib/lock.mjs';
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url));
-const VERSIONS = { chartjs: '4.5.1', echarts: '6.1.0' };
-const committed = (library) => readFileSync(artifactPath(ROOT, library, VERSIONS[library]), 'utf8');
+/** The artifact on disk: committed, or generated locally by the build (Highcharts). */
+const committed = (library) => readFileSync(artifactPath(ROOT, verifiedUpstream(ROOT, library), library), 'utf8');
 
 test('every committed artifact carries the digest of its own content', () => {
 	for (const library of LIBRARIES) {
@@ -164,5 +165,22 @@ test('an included definition gets a path only when nothing else reaches it, and 
 	assert.deepEqual(
 		diffArtifacts(before, after).map(({ kind, path }) => `${kind} ${path}`),
 		['includes-changed $<type=line>.options', 'definition-added $<type=line>.options<includes>']
+	);
+});
+
+test('option names are data, never IR fields: options named includes, provenance, docs or kind are diffed like any other (D17)', () => {
+	const before = sample();
+	for (const name of ['includes', 'provenance', 'docs', 'kind', 'ref'])
+		before.definitions.Options.properties[name] = prop({ kind: 'number' });
+	const after = structuredClone(before);
+	for (const name of ['includes', 'provenance', 'docs', 'kind', 'ref'])
+		after.definitions.Options.properties[name] = prop({ kind: 'string' });
+	assert.deepEqual(
+		diffArtifacts(before, before),
+		[]
+	);
+	assert.deepEqual(
+		diffArtifacts(before, after).map(({ kind, path }) => `${kind} ${path}`),
+		['docs', 'includes', 'kind', 'provenance', 'ref'].map((name) => `property-changed $<type=line>.options.${name}`)
 	);
 });

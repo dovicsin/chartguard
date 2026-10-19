@@ -74,17 +74,28 @@ export function canonicalPaths(artifact) {
 	return paths;
 }
 
-/** A node with references replaced by canonical paths and provenance dropped: what it validates. */
+const NOT_VALIDATED = new Set(['provenance', 'docs']);
+
+/**
+ * A node with references replaced by canonical paths and provenance dropped: what it validates.
+ * The keys of `properties` are option names chosen upstream (Highcharts has an option called
+ * `includes`), so they are mapped as data and never read as IR fields.
+ */
 function signature(node, paths) {
 	if (Array.isArray(node)) return node.map((entry) => signature(entry, paths));
 	if (node === null || typeof node !== 'object') return node;
 	if (node.kind === 'ref') return { ref: paths.get(node.ref) ?? `?${node.ref}` };
-	const refer = (name) => paths.get(name) ?? `?${name}`;
 	return Object.fromEntries(
 		Object.entries(node)
-			.filter(([key]) => key !== 'provenance' && key !== 'docs')
-			.map(([key, value]) => [key, key === 'includes' ? value.map(refer) : signature(value, paths)])
+			.filter(([key]) => !NOT_VALIDATED.has(key))
+			.map(([key, value]) => [key, fieldSignature(key, value, paths)])
 	);
+}
+
+function fieldSignature(key, value, paths) {
+	if (key === 'includes') return value.map((name) => paths.get(name) ?? `?${name}`);
+	if (key !== 'properties') return signature(value, paths);
+	return Object.fromEntries(Object.entries(value).map(([name, property]) => [name, signature(property, paths)]));
 }
 
 const UNION_FIELDS = ['discriminator', 'defaultVariant', 'defaultWhen', 'extensible', 'registry'];
