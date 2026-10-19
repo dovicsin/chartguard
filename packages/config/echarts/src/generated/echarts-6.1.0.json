@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-07e8e56d7e4ce794b8353fa4b1e25313a836649edf240e979b4c44367fac4706",
+	"digest": "sha256-545a1f66a41db6c21e9a0fa0395f3db110b6b94f8e69a9bc8b1f0e8c5a914202",
 	"sources": {
 		"echarts": {
 			"kind": "npm-package",
@@ -65247,8 +65247,16 @@
 					"node": {
 						"kind": "array",
 						"items": {
-							"kind": "ref",
-							"ref": "MatrixDimensionCellOption"
+							"kind": "union",
+							"anyOf": [
+								{
+									"kind": "string"
+								},
+								{
+									"kind": "ref",
+									"ref": "MatrixDimensionCellOption"
+								}
+							]
 						}
 					},
 					"provenance": {
@@ -65257,6 +65265,10 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:10416"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/coord/matrix/MatrixDim.js:161"
 							}
 						]
 					}

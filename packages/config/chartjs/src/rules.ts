@@ -1,4 +1,4 @@
-import { type ConfigRule, itemsOf, type Read, readOwn, type RuleContext } from '@chartguard/config-core';
+import { type ConfigRule, itemsOf, keySegment, type Read, readOwn, type RuleContext } from '@chartguard/config-core';
 import type { Diagnostic } from '@chartguard/core';
 
 /** Whether Filler is not enabled: not registered, or switched off with `options.plugins.filler: false`; undefined when unknown. */
@@ -30,7 +30,7 @@ function fillScopes(config: unknown, dataset: unknown, path: string): Found[] {
 	const scopes: Found[] = [{ path: `${path}.fill`, read: readOwn(dataset, 'fill') }];
 	if (typeof type === 'string')
 		scopes.push({
-			path: `$.options.datasets.${type}.fill`,
+			path: `$.options.datasets${keySegment(type)}.fill`,
 			read: readOwn(config, 'options', 'datasets', type, 'fill')
 		});
 	else scopes.push({ path: '', read: { known: false } });

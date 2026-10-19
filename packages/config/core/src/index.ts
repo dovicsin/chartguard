@@ -1,4 +1,5 @@
 export * from './ir/index.js';
+export { keySegment } from './paths.js';
 export type { ConfigRule, Item, Read, RuleContext } from './rules.js';
 export { itemsOf, readOwn } from './rules.js';
 export type {

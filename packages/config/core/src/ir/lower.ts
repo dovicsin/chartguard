@@ -41,7 +41,8 @@ function enumOf(members: readonly IrNode[]): NodeSchema | undefined {
 /** Lowers IR to engine schemas. Unsupported constructs become `any` and are recorded as lossy, never guessed. */
 class Lowerer {
 	readonly lossy: string[] = [];
-	private readonly resolving = new Set<string>();
+	/** Definitions whose node is registered but not filled yet: reached again, they are recursive. */
+	private readonly incomplete = new Set<NodeSchema>();
 	private readonly lowered = new Map<string, NodeSchema>();
 
 	constructor(private readonly definitions: Readonly<Record<string, IrNode>>) {}
@@ -108,18 +109,7 @@ class Lowerer {
 	private lowerObject(node: ObjectNode, path: string): NodeSchema {
 		const entries = this.propertiesOf(node);
 		const properties = Object.fromEntries(
-			entries.map(([key, property]) => {
-				const lowered = this.lower(property.node, `${path}.${key}`);
-				const { handledBy, deprecated } = property;
-				return [
-					key,
-					{
-						...lowered,
-						...(handledBy === undefined ? {} : { handledBy }),
-						...(deprecated === undefined ? {} : { deprecated })
-					}
-				];
-			})
+			entries.map(([key, property]) => [key, this.withMetadata(this.lower(property.node, `${path}.${key}`), property)])
 		);
 		const required = entries.filter(([, property]) => property.required === true).map(([key]) => key);
 		const nullAsAbsent = node.nullAsAbsent === true ? { nullAsAbsent: true } : {};
@@ -132,19 +122,37 @@ class Lowerer {
 		return node.additional === 'closed' && authoritative ? 'deny' : 'warn';
 	}
 
+	/**
+	 * A definition is lowered once, into a node registered before its contents, so a definition
+	 * that refers to itself (a tree's `children`) gets a cyclic schema checked at every depth: the
+	 * walk is bounded by the value it walks, never by the schema.
+	 */
 	private lowerRef(ref: string, path: string): NodeSchema {
-		const cached = this.lowered.get(ref);
-		if (cached !== undefined) return cached;
+		const known = this.lowered.get(ref);
+		if (known !== undefined) return known;
 		const target = this.definitions[ref];
-		if (target === undefined || this.resolving.has(ref)) return this.approximate(path);
-		this.resolving.add(ref);
-		try {
-			const schema = this.lower(target, path);
-			this.lowered.set(ref, schema);
-			return schema;
-		} finally {
-			this.resolving.delete(ref);
-		}
+		if (target === undefined) return this.approximate(path);
+		const node: Record<string, unknown> = {};
+		const schema = node as unknown as NodeSchema;
+		this.lowered.set(ref, schema);
+		this.incomplete.add(schema);
+		Object.assign(node, this.lower(target, path));
+		this.incomplete.delete(schema);
+		return schema;
+	}
+
+	/**
+	 * A property's value with its metadata. Metadata is copied onto the value, except onto a
+	 * definition still being lowered (a recursive reference): copying it now would copy an empty
+	 * node, so the value is wrapped in a one-member union, which accepts exactly what its member does.
+	 */
+	private withMetadata(value: NodeSchema, { handledBy, deprecated }: PropertyNode): NodeSchema {
+		if (handledBy === undefined && deprecated === undefined) return value;
+		const metadata = {
+			...(handledBy === undefined ? {} : { handledBy }),
+			...(deprecated === undefined ? {} : { deprecated })
+		};
+		return this.incomplete.has(value) ? { kind: 'union', anyOf: [value], ...metadata } : { ...value, ...metadata };
 	}
 }
 

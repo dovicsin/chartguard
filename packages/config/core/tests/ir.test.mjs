@@ -36,7 +36,7 @@ test('closed objects without authoritative provenance only warn', () => {
 	assert.equal(result.diagnostics[0].severity, 'warning');
 });
 
-test('unions, scriptables, records, null and open objects lower exactly; only recursion stays lossy', () => {
+test('unions, scriptables, records, null, open objects and recursion lower exactly', () => {
 	const root = {
 		kind: 'object',
 		additional: 'closed',
@@ -56,8 +56,9 @@ test('unions, scriptables, records, null and open objects lower exactly; only re
 		Tree: { kind: 'object', additional: 'unknown', properties: { child: prop({ kind: 'ref', ref: 'Tree' }) } }
 	};
 	const { manifest, lossy } = lowerArtifact(artifact(root, { definitions }));
-	assert.deepEqual(lossy, ['$.tree.child']);
-	assert.equal(manifest.coverage, 'partial');
+	// Recursion lowers to a cyclic schema since CG-02-03: nothing here is approximated.
+	assert.deepEqual(lossy, []);
+	assert.equal(manifest.coverage, 'full');
 	const config = {
 		size: '50%',
 		color: () => 'red',
@@ -67,7 +68,7 @@ test('unions, scriptables, records, null and open objects lower exactly; only re
 	};
 	const result = validateConfig(config, manifest);
 	assert.equal(result.valid, true);
-	assert.equal(result.status, 'partial');
+	assert.equal(result.status, 'valid');
 	assert.deepEqual(result.diagnostics, []);
 	const wrong = validateConfig({ size: true, color: 1, scales: { y1: { min: 'x' } } }, manifest);
 	assert.deepEqual(

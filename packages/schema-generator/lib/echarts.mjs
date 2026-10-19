@@ -1,6 +1,7 @@
 import { resolveComponentSubtypes } from './echarts-components.mjs';
 import { withDeprecatedAliases } from './echarts-deprecations.mjs';
 import { addComponentHandlers } from './echarts-handlers.mjs';
+import { withRuntimeFacts } from './echarts-runtime.mjs';
 import { TypeEmitter } from './emitter.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
 import { runtimeProvenance } from './runtime.mjs';
@@ -74,6 +75,6 @@ export function generateEcharts(root, pin) {
 	const optionRef = emitter.reference(aliases.get('Option'));
 	resolveComponentSubtypes(root, emitter.definitions, emitter.definitions[optionRef.ref]);
 	addComponentHandlers(root, emitter.definitions[optionRef.ref]);
-	const definitions = withDeprecatedAliases(root, emitter.definitions, optionRef.ref);
+	const definitions = withRuntimeFacts(root, withDeprecatedAliases(root, emitter.definitions, optionRef.ref));
 	return artifactOf({ library: 'echarts', sourceId: SOURCE_ID, pin, definitions, root: optionRef });
 }

@@ -51,8 +51,9 @@ export const EXPECTATIONS = [
 		]
 	},
 	{
-		why: "Type contract: a value outside the declared type that the runtime renders silently, coerces or ignores (an axis title `\"\"`, label text `0`, `halo: 0`, `useHTML: \"true\"`, `verticalAlign: \"center\"`, `overflow: \"none\"`, a percentage `marker.width`).",
+		why: "Type contract: a value outside the declared type that the runtime renders silently, coerces or ignores (an axis title `\"\"`, also in a responsive rule's `chartOptions`, label text `0`, `halo: 0`, `useHTML: \"true\"`, `verticalAlign: \"center\"`, `overflow: \"none\"`, a percentage `marker.width`).",
 		paths: [
+			"accessible-line/demo.js",
 			"bar-force/demo.js",
 			"livedata-columns/demo.js",
 			"line-race/demo.js",
@@ -65,7 +66,6 @@ export const EXPECTATIONS = [
 	{
 		why: "Unresolved: user data the runtime keeps but the declarations do not list (`custom`, `website`, `region`, `hc-a2`, `date`, `dial`, `longDescription`, a top-level `countries`, annotation label `id`, `chart.skipClone`).",
 		paths: [
-			"accessible-line/demo.js",
 			"accessible-pie/demo.js",
 			"area-race-chart/demo.js",
 			"gauge-clock/demo.js",

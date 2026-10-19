@@ -53,3 +53,12 @@ test('a fill set above the datasets is reported once, however many datasets inhe
 	const config = { type: 'line', data: { datasets: [{ data: [1] }, { data: [2] }] }, options: { fill: true } };
 	assert.deepEqual(ruled(config, withoutFiller), ['warning certain $.options.fill']);
 });
+
+test('a fill set for a dataset type that is not an identifier is reported at an unambiguous path', () => {
+	const config = {
+		type: 'my-line',
+		data: { datasets: [{ data: [1] }] },
+		options: { datasets: { 'my-line': { fill: true } } }
+	};
+	assert.deepEqual(ruled(config, withoutFiller), ['warning certain $.options.datasets["my-line"].fill']);
+});

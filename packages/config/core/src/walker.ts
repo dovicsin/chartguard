@@ -1,14 +1,18 @@
-import { type Diagnostic, isContainer, ownDataProperty, suggestion, type ValidationOptions } from '@chartguard/core';
+import { type Diagnostic, isContainer, ownDataProperty, type ValidationOptions } from '@chartguard/core';
 
 import { deprecationFinding } from './deprecation.js';
 import { confirmed, inconclusive, unresolved } from './diagnostics.js';
+import { registrationFinding, unhandledFinding, unknownKeyFinding, variantFinding } from './findings.js';
 import { isListLike, kindOf } from './kind.js';
+import { keySegment } from './paths.js';
 import { isHandled, type Registries } from './registry.js';
-import type { Handler, NodeSchema, SchemaManifest } from './schema.js';
+import type { NodeSchema, SchemaManifest } from './schema.js';
 import { type Selection, selectVariant } from './union.js';
 
 const MAX_DEPTH = 40;
 const MAX_ENTRIES = 20_000;
+/** Values one validation visits at most, whatever their shape: a bound on the whole walk, not only per container. */
+const MAX_VISITS = 1_000_000;
 
 interface Cursor {
 	readonly path: string;
@@ -48,6 +52,7 @@ export class ConfigWalker {
 	private readonly ancestors = new WeakSet();
 	/** The whole config, for defaults the runtime reads from elsewhere in it (`chart.type`). */
 	private root: unknown;
+	private visits = 0;
 
 	constructor(
 		private readonly manifest: SchemaManifest,
@@ -57,11 +62,7 @@ export class ConfigWalker {
 
 	walk(value: unknown, schema: NodeSchema, cursor: Cursor = { path: '$', depth: 0 }): void {
 		if (cursor.depth === 0) this.root = value;
-		if (cursor.depth > MAX_DEPTH) {
-			this.diagnostics.push(unresolved('CFG_DEPTH', cursor.path, 'Maximum validation depth reached.'));
-			return;
-		}
-		if (schema.handledBy !== undefined && this.reportUnhandled(schema.handledBy, cursor.path)) return;
+		if (this.stops(cursor) || this.unhandled(schema, cursor.path)) return;
 		if (schema.kind === 'union') {
 			this.walkUnion(value, selectVariant(value, schema, { registries: this.registries, root: this.root }), cursor);
 			return;
@@ -88,81 +89,32 @@ export class ConfigWalker {
 				return;
 			case 'unknown-variant':
 			case 'invalid-variant':
-				this.reportVariant(selection, `${path}.${selection.key}`);
+				this.diagnostics.push(variantFinding(selection, path));
 				return;
 			case 'registered':
 			case 'unregistered':
-				this.reportRegistration(selection, path);
+				this.diagnostics.push(registrationFinding(selection, path));
 		}
 	}
 
-	/** An option for a component or plugin the runtime does not have: its contents do not matter. */
-	private reportUnhandled(handler: Handler, path: string): boolean {
-		if (isHandled(this.registries, handler) !== false) return false;
-		const { name } = handler;
-		this.diagnostics.push(
-			handler.enforced
-				? {
-						...confirmed(
-							'CFG_UNREGISTERED',
-							path,
-							`"${name}" is not registered with the runtime, which rejects this option.`
-						),
-						suggestion: `Register ${name}.`
-					}
-				: {
-						code: 'CFG_INEFFECTIVE',
-						severity: 'warning',
-						confidence: 'certain',
-						path,
-						message: `"${name}" is not registered, so the runtime ignores this option.`,
-						suggestion: `Register ${name}, or remove the option.`
-					}
-		);
+	/** Past the work budget (reported once) or the depth limit, the walk stops here. */
+	private stops({ path, depth }: Cursor): boolean {
+		this.visits += 1;
+		if (this.visits === MAX_VISITS + 1)
+			this.diagnostics.push(
+				unresolved('CFG_TRUNCATED', path, 'Validation work limit reached; the rest of the config is not checked.')
+			);
+		if (this.visits > MAX_VISITS) return true;
+		if (depth <= MAX_DEPTH) return false;
+		this.diagnostics.push(unresolved('CFG_DEPTH', path, 'Maximum validation depth reached.'));
 		return true;
 	}
 
-	private reportRegistration(
-		selection: Extract<Selection, { kind: 'registered' | 'unregistered' }>,
-		path: string
-	): void {
-		const { key, value } = selection;
-		if (selection.kind === 'registered') {
-			const message = `"${value}" is registered by an extension; its options are not checked.`;
-			this.diagnostics.push(inconclusive('CFG_REGISTERED_VARIANT', `${path}.${key}`, message));
-			return;
-		}
-		const { name, siblings } = selection.registration;
-		// The registry name, when it differs from the value (`dataZoom.slider` for `slider`).
-		const as = name === value ? '' : ` (${name})`;
-		const message = selection.defaulted
-			? `No ${key} given: the runtime picks "${value}"${as}, which is not registered, so it rejects it.`
-			: `"${value}" is not registered with the runtime${as}, which rejects it.`;
-		const hint =
-			siblings.length === 0
-				? `Register ${name}.`
-				: `Register ${name}, or use a registered one: ${siblings.join(', ')}.`;
-		this.diagnostics.push({
-			...confirmed('CFG_UNREGISTERED', selection.defaulted ? path : `${path}.${key}`, message),
-			suggestion: hint
-		});
-	}
-
-	private reportVariant(
-		selection: Extract<Selection, { kind: 'unknown-variant' | 'invalid-variant' }>,
-		path: string
-	): void {
-		const known = selection.known.map(String);
-		if (selection.kind === 'invalid-variant') {
-			this.diagnostics.push(confirmed('CFG_ENUM', path, `Value must be one of: ${known.join(', ')}.`));
-			return;
-		}
-		const value = typeof selection.value === 'string' ? selection.value : kindOf(selection.value);
-		const match = typeof selection.value === 'string' ? suggestion(selection.value, known) : undefined;
-		this.diagnostics.push({
-			...unresolved('CFG_UNKNOWN_VARIANT', path, `"${value}" is not a built-in variant; it may come from a plugin.`),
-			...(match === undefined ? {} : { suggestion: `Did you mean "${match}"?` })
-		});
+	/** An option whose component or plugin the runtime does not have: reported; its contents do not matter. */
+	private unhandled({ handledBy }: NodeSchema, path: string): boolean {
+		if (handledBy === undefined || isHandled(this.registries, handledBy) !== false) return false;
+		this.diagnostics.push(unhandledFinding(handledBy, path));
+		return true;
 	}
 
 	private matchesShape(value: unknown, schema: NodeSchema, path: string): boolean {
@@ -216,7 +168,8 @@ export class ConfigWalker {
 		const keys = Object.keys(object);
 		if (keys.length > MAX_ENTRIES)
 			this.diagnostics.push(unresolved('CFG_TRUNCATED', cursor.path, 'Object inspection limit reached.'));
-		for (const key of keys.slice(0, MAX_ENTRIES)) this.walkProperty(object, key, schema, descend(cursor, `.${key}`));
+		for (const key of keys.slice(0, MAX_ENTRIES))
+			this.walkProperty(object, key, schema, descend(cursor, keySegment(key)));
 	}
 
 	/**
@@ -230,7 +183,7 @@ export class ConfigWalker {
 			const entry = ownDataProperty(object, key);
 			const present = Object.hasOwn(object, key) && !(entry.found && entry.value === undefined);
 			if (!present)
-				this.diagnostics.push(report('CFG_REQUIRED', `${path}.${key}`, `Missing required property ${key}.`));
+				this.diagnostics.push(report('CFG_REQUIRED', `${path}${keySegment(key)}`, `Missing required property ${key}.`));
 		}
 	}
 
@@ -246,7 +199,8 @@ export class ConfigWalker {
 		const known = schema.properties ?? {};
 		const field = Object.hasOwn(known, key) ? known[key] : schema.values;
 		if (field === undefined) {
-			this.reportUnknownKey(key, Object.keys(known), schema, cursor.path);
+			const unknown = unknownKeyFinding(key, schema, this.manifest.coverage, cursor.path);
+			if (unknown !== undefined) this.diagnostics.push(unknown);
 			return;
 		}
 		if (field.deprecated !== undefined)
@@ -257,20 +211,5 @@ export class ConfigWalker {
 	/** `null` on an optional property of an object whose runtime reads options with `pick()`. */
 	private isUnset(value: unknown, key: string, schema: NodeSchema): boolean {
 		return value === null && schema.nullAsAbsent === true && !(schema.required ?? []).includes(key);
-	}
-
-	private reportUnknownKey(key: string, knownKeys: readonly string[], schema: NodeSchema, path: string): void {
-		if (schema.additionalProperties === 'allow') return;
-		const { coverage } = this.manifest;
-		const certain = schema.additionalProperties === 'deny' && coverage === 'full';
-		const match = suggestion(key, knownKeys);
-		this.diagnostics.push({
-			code: 'CFG_UNKNOWN_KEY',
-			severity: certain ? 'error' : 'warning',
-			path,
-			message: `Unknown property "${key}" for this ${coverage} schema.`,
-			confidence: certain ? 'certain' : 'unknown',
-			...(match === undefined ? {} : { suggestion: `Did you mean "${match}"?` })
-		});
 	}
 }

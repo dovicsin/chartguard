@@ -27,6 +27,10 @@ test('path segments: keys, indices and hole ranges', () => {
 	assert.deepEqual(pathSegments('$.a[0].b'), ['a', 0, 'b']);
 	assert.deepEqual(pathSegments('$.series[3..9]'), ['series', 3]);
 	assert.deepEqual(pathSegments('$'), []);
+	// Keys that are not identifiers arrive JSON-quoted (config-core keySegment): one path, one place.
+	assert.deepEqual(pathSegments('$.title["te.xt"]["a b"][""]["say \\"hi\\""].$ok_1'), ['title', 'te.xt', 'a b', '', 'say "hi"', '$ok_1']);
+	const { root } = parseJson('{"title": {"te.xt": 1, "te": {"xt": 2}}}');
+	assert.equal(locate(root, '$.title["te.xt"]').exact, true);
 });
 
 test('syntax errors are reported with the offset where reading stopped', () => {

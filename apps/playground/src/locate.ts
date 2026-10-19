@@ -116,11 +116,16 @@ export function parseJson(text: string): Parsed {
 	}
 }
 
-/** `$.a[0].b` → `['a', 0, 'b']`; a hole range `[3..9]` becomes its first index. */
+/**
+ * `$.a[0].b["c.d"]` → `['a', 0, 'b', 'c.d']`: identifiers after a dot, indices in brackets (a hole
+ * range `[3..9]` becomes its first index), any other key JSON-quoted in brackets.
+ */
 export function pathSegments(path: string): (string | number)[] {
 	const segments: (string | number)[] = [];
-	for (const [, key, index] of path.slice(1).matchAll(/\.([^.[]+)|\[(\d+)(?:\.\.\d+)?\]/g))
-		segments.push(index === undefined ? (key ?? '') : Number(index));
+	for (const [, key, index, quoted] of path.slice(1).matchAll(/\.([A-Za-z_$][\w$]*)|\[(\d+)(?:\.\.\d+)?\]|\[("(?:[^"\\]|\\.)*")\]/g)) {
+		if (index !== undefined) segments.push(Number(index));
+		else segments.push(quoted === undefined ? (key ?? '') : (JSON.parse(quoted) as string));
+	}
 	return segments;
 }
 

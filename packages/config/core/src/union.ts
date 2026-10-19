@@ -37,17 +37,29 @@ function variant(schema: NodeSchema): Selection {
 const isUnion = (schema: NodeSchema): boolean => schema.kind === 'union';
 
 /**
+ * The unions nested in a union that have not been visited yet. Unions may refer to one another
+ * through definitions (`A = number | B`, `B = string | A`), so every walk over nested unions visits
+ * each one once.
+ */
+function nestedUnions(union: NodeSchema, seen: Set<NodeSchema>): NodeSchema[] {
+	seen.add(union);
+	return (union.anyOf ?? []).filter((member) => isUnion(member) && !seen.has(member));
+}
+
+/**
  * Members of nested unions take part directly: a union is a set of alternatives, never a
  * runtime kind of its own, so `A | (B | C)` must accept exactly what `A | B | C` accepts.
  */
-function flatMembers(union: NodeSchema): NodeSchema[] {
-	return (union.anyOf ?? []).flatMap((member) => (isUnion(member) ? flatMembers(member) : [member]));
+function flatMembers(union: NodeSchema, seen = new Set<NodeSchema>()): NodeSchema[] {
+	if (seen.has(union)) return [];
+	seen.add(union);
+	return (union.anyOf ?? []).flatMap((member) => (isUnion(member) ? flatMembers(member, seen) : [member]));
 }
 
 /** The discriminator of the union itself, or the one every nested union agrees on. */
-function discriminatorOf(union: NodeSchema): string | undefined {
+function discriminatorOf(union: NodeSchema, seen = new Set<NodeSchema>()): string | undefined {
 	if (union.discriminator !== undefined) return union.discriminator;
-	const nested = (union.anyOf ?? []).filter(isUnion).map(discriminatorOf);
+	const nested = nestedUnions(union, seen).map((member) => discriminatorOf(member, seen));
 	const [first] = nested;
 	return nested.length > 0 && nested.every((key) => key === first) ? first : undefined;
 }
@@ -92,7 +104,12 @@ function inheritedDefault(union: NodeSchema, root: unknown): Selection | undefin
  * declares. Ambiguous as soon as a rule cannot be decided before one passes: guessing would check
  * the value against the wrong variant.
  */
-function defaultOf(union: NodeSchema, value: object, root: unknown): Selection | undefined {
+function defaultOf(
+	union: NodeSchema,
+	value: object,
+	root: unknown,
+	seen = new Set<NodeSchema>()
+): Selection | undefined {
 	for (const rule of union.defaultWhen ?? []) {
 		const decision = decide(rule, value);
 		if (decision === undefined) return AMBIGUOUS;
@@ -101,8 +118,8 @@ function defaultOf(union: NodeSchema, value: object, root: unknown): Selection |
 	const inherited = inheritedDefault(union, root);
 	if (inherited !== undefined) return inherited;
 	if (union.defaultVariant !== undefined) return memberAt(union, union.defaultVariant);
-	for (const member of (union.anyOf ?? []).filter(isUnion)) {
-		const fallback = defaultOf(member, value, root);
+	for (const member of nestedUnions(union, seen)) {
+		const fallback = defaultOf(member, value, root, seen);
 		if (fallback !== undefined) return fallback;
 	}
 	return undefined;
@@ -117,9 +134,9 @@ const sameRegistry = (left: RegistryRef, right: RegistryRef): boolean =>
 	left.id === right.id && left.prefix === right.prefix && left.enforced === right.enforced;
 
 /** The registry of the union itself, or the one every nested union that names one agrees on. */
-function registryOf(union: NodeSchema): RegistryRef | undefined {
+function registryOf(union: NodeSchema, seen = new Set<NodeSchema>()): RegistryRef | undefined {
 	if (union.registry !== undefined) return union.registry;
-	const nested = (union.anyOf ?? []).filter(isUnion).flatMap((member) => registryOf(member) ?? []);
+	const nested = nestedUnions(union, seen).flatMap((member) => registryOf(member, seen) ?? []);
 	const [first] = nested;
 	return first !== undefined && nested.every((ref) => sameRegistry(ref, first)) ? first : undefined;
 }
@@ -152,8 +169,8 @@ function checkDefault(
 }
 
 /** A union is extensible when it or any nested union that carries the discriminator says so. */
-function isExtensible(union: NodeSchema): boolean {
-	return union.extensible === true || (union.anyOf ?? []).filter(isUnion).some(isExtensible);
+function isExtensible(union: NodeSchema, seen = new Set<NodeSchema>()): boolean {
+	return union.extensible === true || nestedUnions(union, seen).some((member) => isExtensible(member, seen));
 }
 
 /** Same-kind primitives: any unrestricted member widens to the whole kind, otherwise enums merge. */
