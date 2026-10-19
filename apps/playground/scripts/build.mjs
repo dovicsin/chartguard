@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { build } from 'esbuild';
 
-import { isEntryPoint } from '../../../tools/shared/entry.mjs';
+import { runAsEntryPoint } from '../../../tools/shared/entry.mjs';
 import { isJsonSafe } from '../dist/examples.js';
 
 const APP = fileURLToPath(new URL('..', import.meta.url));
@@ -81,4 +81,6 @@ export async function buildPlayground(outdir = OUT) {
 	return metafile;
 }
 
-if (isEntryPoint(import.meta.url)) await buildPlayground();
+await runAsEntryPoint(import.meta.url, async () => {
+	await buildPlayground();
+});

@@ -66,6 +66,11 @@ export interface ObjectNode extends NodeBase {
 	readonly kind: 'object';
 	readonly properties: Readonly<Record<string, PropertyNode>>;
 	readonly additional: Openness;
+	/**
+	 * Object definitions whose properties this object also accepts (one level; own properties win).
+	 * Lets many objects share a large property set, e.g. Chart.js element options at every scope.
+	 */
+	readonly includes?: readonly string[];
 }
 
 /** Map with caller-chosen keys, e.g. Chart.js `scales`. */

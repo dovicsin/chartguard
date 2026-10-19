@@ -8,9 +8,10 @@ import * as chartjsHelpers from 'chart.js/helpers';
 import * as echarts from 'echarts';
 import ts from 'typescript';
 
-import { isEntryPoint } from '../../shared/entry.mjs';
+import { runAsEntryPoint } from '../../shared/entry.mjs';
 import { verdictOf } from '../lib/capture.mjs';
 import { runChartjs } from '../lib/chartjs.mjs';
+import { copyPlain } from '../lib/copy.mjs';
 import { runEcharts } from '../lib/echarts.mjs';
 import { createUtils } from './chartjs-utils.mjs';
 
@@ -33,35 +34,6 @@ const SILENT_CONSOLE = { log() {}, info() {}, warn() {}, error() {}, debug() {} 
 function inert() {
 	const target = function () {};
 	return new Proxy(target, { get: (_, key) => (key === Symbol.toPrimitive ? () => '' : inert()), apply: () => inert() });
-}
-
-/** A plain object of any realm: its prototype is null or that realm's `Object.prototype`. */
-function isPlainObject(value) {
-	if (value === null || typeof value !== 'object') return false;
-	const prototype = Object.getPrototypeOf(value);
-	return prototype === null || Object.getPrototypeOf(prototype) === null;
-}
-
-/**
- * Objects built inside the `vm` context belong to another realm, and runtimes test
- * `value.constructor === Object` (Chart.js `needsSubResolver`) to decide whether to merge
- * defaults. Plain objects and arrays are therefore rebuilt in this realm before validation and
- * rendering; functions, class instances, dates and typed arrays are kept as they are.
- */
-export function toHostRealm(value, copies = new Map()) {
-	if (copies.has(value)) return copies.get(value);
-	if (Array.isArray(value)) {
-		const copy = [];
-		copies.set(value, copy);
-		for (let index = 0; index < value.length; index++) if (index in value) copy[index] = toHostRealm(value[index], copies);
-		copy.length = value.length;
-		return copy;
-	}
-	if (!isPlainObject(value)) return value;
-	const copy = {};
-	copies.set(value, copy);
-	for (const [key, entry] of Object.entries(value)) copy[key] = toHostRealm(entry, copies);
-	return copy;
 }
 
 function evaluate(code, globals) {
@@ -104,7 +76,8 @@ export function outcomeOf(library, { path, code }) {
 		return { path, status: 'example-threw', error: error instanceof Error ? error.message : String(error) };
 	}
 	if (config === null || typeof config !== 'object') return { path, status: 'no-config' };
-	config = toHostRealm(config);
+	// vm objects belong to another realm; runtimes test `value.constructor === Object` (Chart.js `needsSubResolver`).
+	config = copyPlain(config);
 	const findings = library.validate(config).diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`);
 	const observed = library.render(config);
 	const messages = observed.messages.map(({ text }) => text);
@@ -117,4 +90,4 @@ function main([libraryName, corpusPath]) {
 	process.stdout.write(JSON.stringify(corpus.files.map((file) => outcomeOf(library, file))));
 }
 
-if (isEntryPoint(import.meta.url)) main(process.argv.slice(2));
+await runAsEntryPoint(import.meta.url, main);

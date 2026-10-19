@@ -1,6 +1,7 @@
 import { _adapters, Chart, registerables } from 'chart.js';
 
 import { observe } from './capture.mjs';
+import { copyPlain } from './copy.mjs';
 
 Chart.register(...registerables);
 
@@ -53,6 +54,7 @@ export function runChartjs(config) {
 		const canvas = { width: 400, height: 300, style: {}, addEventListener() {}, removeEventListener() {} };
 		const context = fakeContext(canvas);
 		canvas.getContext = () => context;
-		new Chart(canvas, config).destroy();
+		// Chart.js writes its default scales into the config it receives; the caller's stays untouched.
+		new Chart(canvas, copyPlain(config)).destroy();
 	});
 }

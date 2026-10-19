@@ -30,6 +30,13 @@ export function makeOptionsScriptable(definitions, configRefs) {
 		return target.kind === 'union' && target.anyOf.some((member) => acceptsFunction(member, seen));
 	};
 
+	/** Nodes below `target`: included definitions, then members, items, values; a literal's `value` is not a node. */
+	const childrenOf = (target) => {
+		const included = Array.isArray(target.includes) ? target.includes.map((ref) => ({ kind: 'ref', ref })) : [];
+		const nested = [...(target.anyOf ?? []), target.items, target.values, target.value];
+		return [...included, ...nested.filter((candidate) => typeof candidate?.kind === 'string')];
+	};
+
 	const visited = new Set();
 	const visit = (node) => {
 		if (node.kind === 'ref') {
@@ -37,13 +44,11 @@ export function makeOptionsScriptable(definitions, configRefs) {
 			visited.add(node.ref);
 		}
 		const target = resolve(node);
-		if (target.kind === 'object')
-			for (const [name, property] of Object.entries(target.properties)) {
-				visit(property.node);
-				if (!discriminators.has(name) && !acceptsFunction(property.node))
-					property.node = { kind: 'scriptable', value: property.node };
-			}
-		for (const child of [...(target.anyOf ?? []), target.items, target.values, target.value].filter(Boolean)) visit(child);
+		for (const [name, property] of target.kind === 'object' ? Object.entries(target.properties) : []) {
+			visit(property.node);
+			if (!discriminators.has(name) && !acceptsFunction(property.node)) property.node = { kind: 'scriptable', value: property.node };
+		}
+		for (const child of childrenOf(target)) visit(child);
 	};
 	for (const ref of configRefs) visit(definitions[ref].properties.options.node);
 }

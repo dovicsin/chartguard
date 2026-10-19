@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { isEntryPoint } from '../../shared/entry.mjs';
+import { runAsEntryPoint } from '../../shared/entry.mjs';
 import { SOURCES } from './sources.mjs';
 
 /**
@@ -61,5 +61,4 @@ async function main([library, retrieved = new Date().toISOString().slice(0, 10)]
 	process.stdout.write(`${String(corpus.files.length)} examples -> ${target}\n`);
 }
 
-if (isEntryPoint(import.meta.url))
-	await main(process.argv.slice(2));
+await runAsEntryPoint(import.meta.url, main);

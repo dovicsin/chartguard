@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { isEntryPoint } from '../shared/entry.mjs';
+import { runAsEntryPoint } from '../shared/entry.mjs';
 import { generateChartjs } from './lib/chartjs.mjs';
 import { serialize,withDigest } from './lib/digest.mjs';
 import { generateEcharts } from './lib/echarts.mjs';
@@ -74,5 +74,4 @@ function main(argv) {
 	return stale.length > 0 ? EXIT_STALE : 0;
 }
 
-if (isEntryPoint(import.meta.url))
-	process.exitCode = main(process.argv.slice(2));
+await runAsEntryPoint(import.meta.url, main);

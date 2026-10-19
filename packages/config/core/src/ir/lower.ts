@@ -1,5 +1,5 @@
 import type { AdditionalProperties, EnumValue, NodeSchema, SchemaKind, SchemaManifest } from '../schema.js';
-import type { IrNode, LiteralNode, ObjectNode, SchemaArtifact, UnionNode } from './types.js';
+import type { IrNode, LiteralNode, ObjectNode, PropertyNode, SchemaArtifact, UnionNode } from './types.js';
 
 export interface LoweredSchema {
 	readonly manifest: SchemaManifest;
@@ -92,8 +92,19 @@ class Lowerer {
 		};
 	}
 
+	/** Own properties, then those of included definitions that the object does not declare itself. */
+	private propertiesOf(node: ObjectNode): [string, PropertyNode][] {
+		const merged = new Map(Object.entries(node.properties));
+		for (const name of node.includes ?? []) {
+			const target = this.definitions[name];
+			if (target?.kind !== 'object') continue;
+			for (const [key, property] of Object.entries(target.properties)) if (!merged.has(key)) merged.set(key, property);
+		}
+		return [...merged];
+	}
+
 	private lowerObject(node: ObjectNode, path: string): NodeSchema {
-		const entries = Object.entries(node.properties);
+		const entries = this.propertiesOf(node);
 		const properties = Object.fromEntries(
 			entries.map(([key, property]) => [key, this.lower(property.node, `${path}.${key}`)])
 		);

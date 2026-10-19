@@ -149,3 +149,16 @@ test('added and removed definitions, and a definition that changes kind, are rep
 test('the committed artifact text is what serialize produces', () => {
 	for (const library of LIBRARIES) assert.equal(serialize(JSON.parse(committed(library))), committed(library));
 });
+
+test('an included definition gets a path only when nothing else reaches it, and changes to includes are reported', () => {
+	const before = sample();
+	const after = structuredClone(before);
+	after.definitions.Shared = object({ radius: prop({ kind: 'number' }) });
+	after.definitions.Options.includes = ['Shared'];
+	assert.equal(canonicalPaths(after).get('Shared'), '$<type=line>.options<includes>');
+	assert.equal(canonicalPaths(after).get('Options'), canonicalPaths(before).get('Options'));
+	assert.deepEqual(
+		diffArtifacts(before, after).map(({ kind, path }) => `${kind} ${path}`),
+		['includes-changed $<type=line>.options', 'definition-added $<type=line>.options<includes>']
+	);
+});

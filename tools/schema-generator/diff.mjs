@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { isEntryPoint } from '../shared/entry.mjs';
+import { runAsEntryPoint } from '../shared/entry.mjs';
 import { generate, LIBRARIES } from './generate.mjs';
 import { diffArtifacts, formatDiff } from './lib/diff.mjs';
 
@@ -56,5 +56,4 @@ function main(argv) {
 	return 0;
 }
 
-if (isEntryPoint(import.meta.url))
-	process.exitCode = main(process.argv.slice(2));
+await runAsEntryPoint(import.meta.url, main);

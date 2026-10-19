@@ -1,6 +1,7 @@
 import * as echarts from 'echarts';
 
 import { observe } from './capture.mjs';
+import { copyPlain } from './copy.mjs';
 
 /**
  * Renders an option with the pinned echarts runtime in server-side mode (SVG string, no DOM).
@@ -10,7 +11,7 @@ export function runEcharts(option) {
 	return observe(() => {
 		const chart = echarts.init(null, null, { renderer: 'svg', ssr: true, width: 400, height: 300 });
 		try {
-			chart.setOption(option);
+			chart.setOption(copyPlain(option));
 			chart.renderToSVGString();
 		} finally {
 			chart.dispose();

@@ -1,3 +1,4 @@
+import { ELEMENT_SCOPE, planOptionScopes } from './chartjs-scopes.mjs';
 import { TypeEmitter } from './emitter.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
 import { makeOptionsScriptable } from './scriptable.mjs';
@@ -97,6 +98,12 @@ export function generateChartjs(root, pin) {
 	const emitter = new TypeEmitter({ program, checker, sourceId: SOURCE_ID, packageName: pin.package, wrappers: WRAPPERS, ...adjustments });
 	emitter.overrides = datasetUnions(emitter, datasetVariants);
 	const configs = chartTypes.map((chartType) => emitter.reference(aliases.get(`Config_${chartType}`)));
+	// Element options in every scope the runtime reads them from; open per-property animations.
+	const scopes = planOptionScopes(root, emitter.definitions, configs.map(({ ref }) => ref));
+	emitter.definitions[ELEMENT_SCOPE] = scopes.scope;
+	for (const name of scopes.includedBy) emitter.definitions[name].includes = [ELEMENT_SCOPE];
+	for (const name of scopes.openAnimations)
+		emitter.definitions[name] = { ...emitter.definitions[name], additional: 'open', provenance: scopes.animationProvenance };
 	makeOptionsScriptable(
 		emitter.definitions,
 		configs.map(({ ref }) => ref)

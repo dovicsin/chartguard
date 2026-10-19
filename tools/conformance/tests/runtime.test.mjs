@@ -53,3 +53,14 @@ test('the explanation rule covers every combination', () => {
 	for (const [findings, runtime, expected] of cases)
 		assert.equal(requiredExplanation({ findings, runtime }), expected, JSON.stringify({ findings, runtime }));
 });
+
+test('the runners never change the config they are given; the runtimes write into what they receive', () => {
+	const chartjs = { type: 'line', data: { labels: ['a'], datasets: [{ data: [1] }] }, options: { plugins: { tooltip: { callbacks: { label: () => 'x' } } } } };
+	const echarts = { xAxis: { type: 'category', data: ['a'] }, yAxis: { type: 'value' }, series: [{ type: 'line', data: [1] }] };
+	const snapshot = (value) => JSON.stringify(value);
+	const [beforeChartjs, beforeEcharts] = [snapshot(chartjs), snapshot(echarts)];
+	runChartjs(chartjs);
+	runEcharts(echarts);
+	assert.equal(snapshot(chartjs), beforeChartjs);
+	assert.equal(snapshot(echarts), beforeEcharts);
+});

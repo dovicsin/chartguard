@@ -132,3 +132,13 @@ test('conditional defaults must name a property and index anyOf', () => {
 			'$.root: defaultWhen must be a list of { truthy: <property>, variant: <anyOf index> }'
 		]);
 });
+
+test('includes must name object definitions', () => {
+	const object = (includes) => ({ kind: 'object', additional: 'closed', properties: {}, includes });
+	const definitions = { Shared: { kind: 'object', additional: 'unknown', properties: {} }, Number: { kind: 'number' } };
+	assert.deepEqual(problems(artifact(object(['Shared']), { definitions })), []);
+	for (const bad of [['Missing'], ['Number'], 'Shared', [1]])
+		assert.deepEqual(problems(artifact(object(bad), { definitions })), [
+			'$.root: includes must name object definitions'
+		]);
+});

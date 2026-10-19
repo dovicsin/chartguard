@@ -6,6 +6,7 @@
  * `False negative (CG-XX-YY):`); see the ECharts table for the definitions.
  */
 const bar = (extra = {}) => ({ type: 'bar', data: { labels: ['a'], datasets: [{ data: [1], ...extra }] } });
+const line = (extra = {}) => ({ type: 'line', data: { labels: ['a', 'b'], datasets: [{ data: [1, 2], ...extra }] } });
 
 export const RUNTIME_CONTRACT = [
 	{
@@ -109,6 +110,41 @@ export const RUNTIME_CONTRACT = [
 		},
 		findings: [],
 		runtime: 'accepted'
+	},
+	{
+		name: 'element options at the options root (scope chain ends at the root)',
+		config: {
+			...line(),
+			options: { radius: 0, hoverRadius: 6, pointBackgroundColor: 'red', fill: true, tension: 0.3 }
+		},
+		findings: [],
+		runtime: 'accepted'
+	},
+	{
+		name: 'element options on a dataset',
+		config: line({ radius: 0, hoverRadius: 4 }),
+		findings: [],
+		runtime: 'accepted'
+	},
+	{
+		name: 'element option at the root with a wrong type',
+		config: { ...line(), options: { radius: 'big' } },
+		findings: ['error CFG_TYPE $.options.radius'],
+		runtime: 'accepted',
+		why: 'Type contract: the point radius is declared `number`; the runtime renders it without an error or warning.'
+	},
+	{
+		name: 'per-property animation under animation (animations falls back to animation)',
+		config: { ...line(), options: { animation: { x: { duration: 10, from: 0 }, y: { easing: 'linear' } } } },
+		findings: [],
+		runtime: 'accepted'
+	},
+	{
+		name: 'stacked is not an element option',
+		config: { ...line(), options: { stacked: false } },
+		findings: ['warning CFG_UNKNOWN_KEY $.options.stacked'],
+		runtime: 'accepted',
+		why: 'Unresolved: `stacked` is a scale option; at the options root the runtime ignores it (official line/multi-axis sample).'
 	},
 	{
 		name: 'third-party plugin options',

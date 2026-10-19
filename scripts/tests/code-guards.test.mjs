@@ -88,6 +88,13 @@ test('R7 shipped files are tracked: every non-build entry in a package `files` l
 	assert.equal(ignored.stdout.trim(), '');
 });
 
+test('R9 tool entry points go through runAsEntryPoint, which tolerates a closed stdout pipe', () => {
+	const entries = [...sources('tools'), ...sources('apps')].filter(
+		({ path }) => path !== join('tools', 'shared', 'entry.mjs') && !path.split(sep).includes('tests')
+	);
+	assert.deepEqual(offenders(entries, /\bisEntryPoint\(/), []);
+});
+
 test('R8 entry points: process.argv[1] is resolved only by the guarded helpers, never at import time unguarded', () => {
 	const allowed = new Set([join('tools', 'shared', 'entry.mjs'), join('packages', 'cli', 'bin', 'chartguard.mjs')]);
 	const entries = [...sources('tools'), ...sources('scripts'), ...sources('packages')].filter(

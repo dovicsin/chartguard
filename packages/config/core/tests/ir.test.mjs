@@ -180,3 +180,24 @@ test('an artifact with only open extension points and no unknowns lowers to full
 	assert.equal(manifest.coverage, 'full');
 	assert.equal(validateConfig({ plugins: { anything: { nested: true } } }, manifest).status, 'valid');
 });
+
+test('included definitions add their properties; own properties win', () => {
+	const shared = {
+		kind: 'object',
+		additional: 'unknown',
+		properties: { radius: prop({ kind: 'number' }), label: prop({ kind: 'number' }) }
+	};
+	const root = {
+		kind: 'object',
+		additional: 'closed',
+		provenance: typed('Options'),
+		properties: { label: prop({ kind: 'string' }) },
+		includes: ['Shared']
+	};
+	const { manifest, lossy } = lowerArtifact(artifact(root, { definitions: { Shared: shared } }));
+	assert.deepEqual(lossy, []);
+	const codes = (config) => validateConfig(config, manifest).diagnostics.map((d) => `${d.code} ${d.path}`);
+	assert.deepEqual(codes({ radius: 2, label: 'a' }), []);
+	assert.deepEqual(codes({ radius: 'x', label: 1 }), ['CFG_TYPE $.radius', 'CFG_TYPE $.label']);
+	assert.deepEqual(codes({ radios: 1 }), ['CFG_UNKNOWN_KEY $.radios']);
+});

@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-23174280b4eeb8b36b54307aab032306e7b8aa543e3f9a1bf26f8c3b2b13c105",
+	"digest": "sha256-b6b424d411eafb478cc22bdb5630d622bd998a56d2148e4aded62d4c1a95a293",
 	"sources": {
 		"chartjs": {
 			"kind": "npm-package",
@@ -849,7 +849,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<HTMLImageElement>": {
 			"kind": "object",
@@ -1365,13 +1368,13 @@
 		},
 		"_DeepPartialObject<AnimationSpec<\"bar\"> & { onProgress?: ((this: Chart<keyof Cha…#0f9ee2ae88": {
 			"kind": "object",
-			"additional": "closed",
+			"additional": "open",
 			"provenance": {
 				"confidence": "authoritative",
 				"sources": [
 					{
 						"source": "chartjs",
-						"pointer": "chart.js/dist/types/utils.d.ts:15"
+						"pointer": "chart.js/dist/chunks/helpers.dataset.js:807"
 					}
 				]
 			},
@@ -2649,7 +2652,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"false | \"line\" | \"circle\" | \"cross\" | \"crossRot\" | \"dash\" | \"rect\" | \"rectRounde…#d26e6b6be3": {
 			"kind": "union",
@@ -3645,7 +3651,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"\"bevel\" | \"miter\" | \"round\" | ((ctx: ScriptableContext<\"doughnut\">, options: Any…#80915c5a8f": {
 			"kind": "union",
@@ -5463,7 +5472,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"false | \"line\" | \"circle\" | \"cross\" | \"crossRot\" | \"dash\" | \"rect\" | \"rectRounde…#5490f647ba": {
 			"kind": "union",
@@ -6174,13 +6186,13 @@
 		},
 		"_DeepPartialObject<AnimationSpec<\"line\"> & { onProgress?: ((this: Chart<keyof Ch…#746c7825b5": {
 			"kind": "object",
-			"additional": "closed",
+			"additional": "open",
 			"provenance": {
 				"confidence": "authoritative",
 				"sources": [
 					{
 						"source": "chartjs",
-						"pointer": "chart.js/dist/types/utils.d.ts:15"
+						"pointer": "chart.js/dist/chunks/helpers.dataset.js:807"
 					}
 				]
 			},
@@ -7585,7 +7597,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<TooltipDatasetOptions<\"pie\">>": {
 			"kind": "object",
@@ -8490,7 +8505,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<TooltipDatasetOptions<\"polarArea\">>": {
 			"kind": "object",
@@ -9768,7 +9786,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"\"round\" | \"butt\" | \"square\" | ((ctx: ScriptableContext<\"radar\">, options: AnyObj…#8d0d6be260": {
 			"kind": "union",
@@ -10006,13 +10027,13 @@
 		},
 		"_DeepPartialObject<AnimationSpec<\"radar\"> & { onProgress?: ((this: Chart<keyof C…#51a6330877": {
 			"kind": "object",
-			"additional": "closed",
+			"additional": "open",
 			"provenance": {
 				"confidence": "authoritative",
 				"sources": [
 					{
 						"source": "chartjs",
-						"pointer": "chart.js/dist/types/utils.d.ts:15"
+						"pointer": "chart.js/dist/chunks/helpers.dataset.js:807"
 					}
 				]
 			},
@@ -11718,7 +11739,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<TooltipDatasetOptions<\"scatter\">>": {
 			"kind": "object",
@@ -12460,7 +12484,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<{ bar: BarControllerDatasetOptions; line: LineControllerDatas…#cdc1b91e99": {
 			"kind": "object",
@@ -31611,7 +31638,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"Dataset_bar": {
 			"kind": "object",
@@ -32233,7 +32263,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<CoreChartOptions<\"bubble\"> & ElementChartOptions<\"bubble\"> & …#d86f2a34d0": {
 			"kind": "object",
@@ -32829,7 +32862,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"bubble\">>; }>>": {
 			"kind": "object",
@@ -32838,13 +32874,13 @@
 		},
 		"_DeepPartialObject<AnimationSpec<\"bubble\"> & { onProgress?: ((this: Chart<keyof …#25a82e1b3c": {
 			"kind": "object",
-			"additional": "closed",
+			"additional": "open",
 			"provenance": {
 				"confidence": "authoritative",
 				"sources": [
 					{
 						"source": "chartjs",
-						"pointer": "chart.js/dist/types/utils.d.ts:15"
+						"pointer": "chart.js/dist/chunks/helpers.dataset.js:807"
 					}
 				]
 			},
@@ -38108,7 +38144,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<CoreChartOptions<\"doughnut\"> & ElementChartOptions<\"doughnut\"…#6f1a43e436": {
 			"kind": "object",
@@ -38833,7 +38872,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"doughnut\">>; }>>": {
 			"kind": "object",
@@ -38842,13 +38884,13 @@
 		},
 		"_DeepPartialObject<AnimationSpec<\"doughnut\"> & { onProgress?: ((this: Chart<keyo…#31605d607e": {
 			"kind": "object",
-			"additional": "closed",
+			"additional": "open",
 			"provenance": {
 				"confidence": "authoritative",
 				"sources": [
 					{
 						"source": "chartjs",
-						"pointer": "chart.js/dist/types/utils.d.ts:15"
+						"pointer": "chart.js/dist/chunks/helpers.dataset.js:807"
 					}
 				]
 			},
@@ -43868,7 +43910,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<CoreChartOptions<\"line\"> & ElementChartOptions<\"line\"> & Plug…#36382b28c5": {
 			"kind": "object",
@@ -44506,7 +44551,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"line\">>; }>>": {
 			"kind": "object",
@@ -49172,7 +49220,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<CoreChartOptions<\"pie\"> & ElementChartOptions<\"pie\"> & Plugin…#00d3aaccc8": {
 			"kind": "object",
@@ -49897,7 +49948,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"pie\">>; }>>": {
 			"kind": "object",
@@ -49906,13 +49960,13 @@
 		},
 		"_DeepPartialObject<AnimationSpec<\"pie\"> & { onProgress?: ((this: Chart<keyof Cha…#1868e2ed0b": {
 			"kind": "object",
-			"additional": "closed",
+			"additional": "open",
 			"provenance": {
 				"confidence": "authoritative",
 				"sources": [
 					{
 						"source": "chartjs",
-						"pointer": "chart.js/dist/types/utils.d.ts:15"
+						"pointer": "chart.js/dist/chunks/helpers.dataset.js:807"
 					}
 				]
 			},
@@ -55066,7 +55120,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<CoreChartOptions<\"polarArea\"> & ElementChartOptions<\"polarAre…#6887e83697": {
 			"kind": "object",
@@ -55679,7 +55736,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"polarArea\">>; }>>": {
 			"kind": "object",
@@ -55688,13 +55748,13 @@
 		},
 		"_DeepPartialObject<AnimationSpec<\"polarArea\"> & { onProgress?: ((this: Chart<key…#1f2bd09a48": {
 			"kind": "object",
-			"additional": "closed",
+			"additional": "open",
 			"provenance": {
 				"confidence": "authoritative",
 				"sources": [
 					{
 						"source": "chartjs",
-						"pointer": "chart.js/dist/types/utils.d.ts:15"
+						"pointer": "chart.js/dist/chunks/helpers.dataset.js:807"
 					}
 				]
 			},
@@ -62646,7 +62706,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<CoreChartOptions<\"radar\"> & ElementChartOptions<\"radar\"> & Pl…#237f10221f": {
 			"kind": "object",
@@ -63284,7 +63347,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"radar\">>; }>>": {
 			"kind": "object",
@@ -68182,7 +68248,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<CoreChartOptions<\"scatter\"> & ElementChartOptions<\"scatter\"> …#995a134880": {
 			"kind": "object",
@@ -68820,7 +68889,10 @@
 						]
 					}
 				}
-			}
+			},
+			"includes": [
+				"ElementOptionsInScope"
+			]
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"scatter\">>; }>>": {
 			"kind": "object",
@@ -68829,13 +68901,13 @@
 		},
 		"_DeepPartialObject<AnimationSpec<\"scatter\"> & { onProgress?: ((this: Chart<keyof…#70e048d8c3": {
 			"kind": "object",
-			"additional": "closed",
+			"additional": "open",
 			"provenance": {
 				"confidence": "authoritative",
 				"sources": [
 					{
 						"source": "chartjs",
-						"pointer": "chart.js/dist/types/utils.d.ts:15"
+						"pointer": "chart.js/dist/chunks/helpers.dataset.js:807"
 					}
 				]
 			},
@@ -72967,6 +73039,3345 @@
 			"values": {
 				"kind": "ref",
 				"ref": "_DeepPartialObject<{ type: \"linear\"; } & CartesianScaleOptions & { beginAtZero: …#fa7b6204e0"
+			}
+		},
+		"ElementOptionsInScope": {
+			"kind": "object",
+			"additional": "unknown",
+			"properties": {
+				"arcBackgroundColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1828"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcBorderAlign": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "center"
+							},
+							{
+								"kind": "literal",
+								"value": "inner"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "literal",
+											"value": "center"
+										},
+										{
+											"kind": "literal",
+											"value": "inner"
+										}
+									]
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1860"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcBorderColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1827"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcBorderDash": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "array",
+									"items": {
+										"kind": "number"
+									}
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1865"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcBorderDashOffset": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1870"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcBorderJoinStyle": {
+					"node": {
+						"kind": "ref",
+						"ref": "\"bevel\" | \"miter\" | \"round\" | readonly (\"bevel\" | \"miter\" | \"round\" | undefined)…#e014f50ac5"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1874"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcBorderRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<ArcBorderRadius>"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "number"
+										},
+										{
+											"kind": "ref",
+											"ref": "_DeepPartialObject<ArcBorderRadius>"
+										}
+									]
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1880"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcBorderWidth": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1826"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcCircular": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "boolean"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1891"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcHoverBackgroundColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1834"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcHoverBorderColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1833"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcHoverBorderDash": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "array",
+									"items": {
+										"kind": "number"
+									}
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1900"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcHoverBorderDashOffset": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1901"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcHoverBorderWidth": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1832"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcHoverOffset": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1902"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcOffset": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1885"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcSelfJoin": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "boolean"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1855"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"arcSpacing": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1896"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"backgroundColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1828"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"barBackgroundColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1828"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"barBase": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2107"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"barBorderColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1827"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"barBorderRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<BorderRadius>"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "number"
+										},
+										{
+											"kind": "ref",
+											"ref": "_DeepPartialObject<BorderRadius>"
+										}
+									]
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2119"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"barBorderSkipped": {
+					"node": {
+						"kind": "ref",
+						"ref": "boolean | \"start\" | \"end\" | \"top\" | \"left\" | \"right\" | \"bottom\" | \"middle\" | ((c…#739e52d328"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2113"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"barBorderWidth": {
+					"node": {
+						"kind": "ref",
+						"ref": "number | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => number | { top?…#6197a1daab"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2132"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"barHoverBackgroundColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1834"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"barHoverBorderColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1833"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"barHoverBorderRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<BorderRadius>"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "number"
+										},
+										{
+											"kind": "ref",
+											"ref": "_DeepPartialObject<BorderRadius>"
+										}
+									]
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2143"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"barHoverBorderWidth": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1832"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"barInflateAmount": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "literal",
+								"value": "auto"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "number"
+										},
+										{
+											"kind": "literal",
+											"value": "auto"
+										}
+									]
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2126"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"base": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2107"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"borderAlign": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "center"
+							},
+							{
+								"kind": "literal",
+								"value": "inner"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "literal",
+											"value": "center"
+										},
+										{
+											"kind": "literal",
+											"value": "inner"
+										}
+									]
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1860"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"borderCapStyle": {
+					"node": {
+						"kind": "ref",
+						"ref": "\"round\" | \"butt\" | \"square\" | readonly (\"round\" | \"butt\" | \"square\" | undefined)…#24182c1b45"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1914"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"borderColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1827"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"borderDash": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "array",
+									"items": {
+										"kind": "number"
+									}
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1919"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"borderDashOffset": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1924"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"borderJoinStyle": {
+					"node": {
+						"kind": "ref",
+						"ref": "\"bevel\" | \"miter\" | \"round\" | readonly (\"bevel\" | \"miter\" | \"round\" | undefined)…#e014f50ac5"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1929"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"borderRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "union",
+								"anyOf": [
+									{
+										"kind": "number"
+									},
+									{
+										"kind": "function"
+									},
+									{
+										"kind": "ref",
+										"ref": "_DeepPartialObject<BorderRadius>"
+									},
+									{
+										"kind": "array",
+										"items": {
+											"kind": "union",
+											"anyOf": [
+												{
+													"kind": "number"
+												},
+												{
+													"kind": "ref",
+													"ref": "_DeepPartialObject<BorderRadius>"
+												}
+											]
+										}
+									}
+								]
+							},
+							{
+								"kind": "union",
+								"anyOf": [
+									{
+										"kind": "number"
+									},
+									{
+										"kind": "ref",
+										"ref": "_DeepPartialObject<ArcBorderRadius>"
+									},
+									{
+										"kind": "array",
+										"items": {
+											"kind": "union",
+											"anyOf": [
+												{
+													"kind": "number"
+												},
+												{
+													"kind": "ref",
+													"ref": "_DeepPartialObject<ArcBorderRadius>"
+												}
+											]
+										}
+									},
+									{
+										"kind": "function"
+									}
+								]
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2119"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"borderSkipped": {
+					"node": {
+						"kind": "ref",
+						"ref": "boolean | \"start\" | \"end\" | \"top\" | \"left\" | \"right\" | \"bottom\" | \"middle\" | ((c…#739e52d328"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2113"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"borderWidth": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "union",
+								"anyOf": [
+									{
+										"kind": "number"
+									},
+									{
+										"kind": "function"
+									},
+									{
+										"kind": "array",
+										"items": {
+											"kind": "number"
+										}
+									}
+								]
+							},
+							{
+								"kind": "ref",
+								"ref": "number | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => number | { top?…#6197a1daab"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1826"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"capBezierPoints": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "boolean"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1934"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"circular": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "boolean"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1891"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"cubicInterpolationMode": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "default"
+							},
+							{
+								"kind": "literal",
+								"value": "monotone"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "literal",
+											"value": "default"
+										},
+										{
+											"kind": "literal",
+											"value": "monotone"
+										}
+									]
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1939"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"drawActiveElementsOnTop": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "boolean"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2035"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"fill": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | number | boolean | _DeepPartialObject<{ value: number; }> | _DeepPartia…#4b8f2926b7"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1953"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"hitRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2020"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"hoverBackgroundColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1834"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"hoverBorderCapStyle": {
+					"node": {
+						"kind": "ref",
+						"ref": "\"round\" | \"butt\" | \"square\" | readonly (\"round\" | \"butt\" | \"square\" | undefined)…#24182c1b45"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1971"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"hoverBorderColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1833"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"hoverBorderDash": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "array",
+									"items": {
+										"kind": "number"
+									}
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1972"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"hoverBorderDashOffset": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1973"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"hoverBorderJoinStyle": {
+					"node": {
+						"kind": "ref",
+						"ref": "\"bevel\" | \"miter\" | \"round\" | readonly (\"bevel\" | \"miter\" | \"round\" | undefined)…#e014f50ac5"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1974"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"hoverBorderRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<BorderRadius>"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "number"
+										},
+										{
+											"kind": "ref",
+											"ref": "_DeepPartialObject<BorderRadius>"
+										}
+									]
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2143"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"hoverBorderWidth": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1832"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"hoverOffset": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1902"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"hoverRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2043"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"inflateAmount": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "literal",
+								"value": "auto"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "number"
+										},
+										{
+											"kind": "literal",
+											"value": "auto"
+										}
+									]
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2126"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineBackgroundColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1828"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineBorderCapStyle": {
+					"node": {
+						"kind": "ref",
+						"ref": "\"round\" | \"butt\" | \"square\" | readonly (\"round\" | \"butt\" | \"square\" | undefined)…#24182c1b45"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1914"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineBorderColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1827"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineBorderDash": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "array",
+									"items": {
+										"kind": "number"
+									}
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1919"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineBorderDashOffset": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1924"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineBorderJoinStyle": {
+					"node": {
+						"kind": "ref",
+						"ref": "\"bevel\" | \"miter\" | \"round\" | readonly (\"bevel\" | \"miter\" | \"round\" | undefined)…#e014f50ac5"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1929"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineBorderWidth": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1826"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineCapBezierPoints": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "boolean"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1934"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineCubicInterpolationMode": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "default"
+							},
+							{
+								"kind": "literal",
+								"value": "monotone"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "literal",
+											"value": "default"
+										},
+										{
+											"kind": "literal",
+											"value": "monotone"
+										}
+									]
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1939"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineFill": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | number | boolean | _DeepPartialObject<{ value: number; }> | _DeepPartia…#4b8f2926b7"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1953"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineHoverBackgroundColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1834"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineHoverBorderCapStyle": {
+					"node": {
+						"kind": "ref",
+						"ref": "\"round\" | \"butt\" | \"square\" | readonly (\"round\" | \"butt\" | \"square\" | undefined)…#24182c1b45"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1971"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineHoverBorderColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1833"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineHoverBorderDash": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "array",
+									"items": {
+										"kind": "number"
+									}
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1972"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineHoverBorderDashOffset": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1973"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineHoverBorderJoinStyle": {
+					"node": {
+						"kind": "ref",
+						"ref": "\"bevel\" | \"miter\" | \"round\" | readonly (\"bevel\" | \"miter\" | \"round\" | undefined)…#e014f50ac5"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1974"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineHoverBorderWidth": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1832"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineSegment": {
+					"node": {
+						"kind": "ref",
+						"ref": "_DeepPartialObject<{ backgroundColor: Scriptable<Color | undefined, ScriptableLi…#a68d155f20"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1959"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineSpanGaps": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "boolean"
+										},
+										{
+											"kind": "number"
+										}
+									]
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1957"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineStepped": {
+					"node": {
+						"kind": "ref",
+						"ref": "boolean | \"after\" | \"before\" | \"middle\" | readonly (boolean | \"after\" | \"before\"…#9942390d9e"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1949"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"lineTension": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1944"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"offset": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1885"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointBackgroundColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1828"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointBorderColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1827"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointBorderWidth": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1826"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointDrawActiveElementsOnTop": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "boolean"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2035"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointHitRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2020"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointHoverBackgroundColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1834"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointHoverBorderColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1833"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointHoverBorderWidth": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1832"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointHoverRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2043"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointPointStyle": {
+					"node": {
+						"kind": "ref",
+						"ref": "false | \"line\" | \"circle\" | \"cross\" | \"crossRot\" | \"dash\" | \"rect\" | \"rectRounde…#5490f647ba"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2025"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2015"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointRotation": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2030"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"pointStyle": {
+					"node": {
+						"kind": "ref",
+						"ref": "false | \"line\" | \"circle\" | \"cross\" | \"crossRot\" | \"dash\" | \"rect\" | \"rectRounde…#5490f647ba"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2025"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"radius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2015"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"rotation": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:2030"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"segment": {
+					"node": {
+						"kind": "ref",
+						"ref": "_DeepPartialObject<{ backgroundColor: Scriptable<Color | undefined, ScriptableLi…#a68d155f20"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1959"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"selfJoin": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "boolean"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1855"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"spacing": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1896"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"spanGaps": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "boolean"
+										},
+										{
+											"kind": "number"
+										}
+									]
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1957"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"stepped": {
+					"node": {
+						"kind": "ref",
+						"ref": "boolean | \"after\" | \"before\" | \"middle\" | readonly (boolean | \"after\" | \"before\"…#9942390d9e"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1949"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				},
+				"tension": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1944"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5436"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:959"
+							}
+						]
+					}
+				}
 			}
 		}
 	},

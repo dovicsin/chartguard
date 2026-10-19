@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { copyPlain } from '../lib/copy.mjs';
 import { allowedExplanations, isClean } from '../lib/corpus.mjs';
 import { createUtils } from '../sandbox/chartjs-utils.mjs';
-import { toHostRealm } from '../sandbox/child.mjs';
 
 const ran = (findings, runtime) => ({ status: 'ran', findings, runtime, messages: [] });
 
@@ -29,7 +29,7 @@ test('sandbox objects are rebuilt in this realm; functions, dates, typed arrays 
 	delete list[1];
 	const source = Object.assign(Object.create(null), { list, nested: { ...kept } });
 	source.self = source;
-	const copy = toHostRealm(source);
+	const copy = copyPlain(source);
 	assert.equal(Object.getPrototypeOf(copy), Object.prototype);
 	assert.equal(copy.nested.constructor, Object);
 	assert.equal(copy.self, copy);

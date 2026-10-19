@@ -62,6 +62,7 @@ const CHILD_CHECKS: Partial<Record<string, ChildCheck>> = {
 		checker.checkProperties(node['properties'], `${path}.properties`, depth);
 		if (!OPENNESS_SET.has(node['additional']))
 			checker.report(path, 'expected additional to be "closed", "open" or "unknown"');
+		checker.checkIncludes(node['includes'], path);
 	},
 	record: (checker, node, path, depth) => {
 		checker.checkNode(node['values'], `${path}.values`, depth + 1);
@@ -136,6 +137,17 @@ class NodeChecker {
 	checkRef(ref: unknown, path: string): void {
 		if (typeof ref !== 'string' || !Object.hasOwn(this.definitions, ref))
 			this.report(path, `unresolved ref ${quote(ref)}`);
+	}
+
+	checkIncludes(includes: unknown, path: string): void {
+		if (includes === undefined) return;
+		const isObjectDefinition = (name: unknown): boolean => {
+			const target =
+				typeof name === 'string' && Object.hasOwn(this.definitions, name) ? this.definitions[name] : undefined;
+			return isRecord(target) && target['kind'] === 'object';
+		};
+		if (!Array.isArray(includes) || !includes.every(isObjectDefinition))
+			this.report(path, 'includes must name object definitions');
 	}
 
 	/** Object members of a discriminated union (inline or by ref) must carry a literal discriminator. */

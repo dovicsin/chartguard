@@ -5,16 +5,8 @@
  */
 export const EXPECTATIONS = [
 	{
-		why: "Unresolved: element options (`radius`, `fill`, `hoverRadius`, …) set at the options root or on a dataset, and per-property `animation` keys, reach the runtime through its resolver scope chain, which the declarations do not describe (CG-02-04).",
-		paths: [
-			"advanced/data-decimation.md",
-			"animations/loop.md",
-			"animations/progressive-line-easing.md",
-			"animations/progressive-line.md",
-			"area/line-drawtime.md",
-			"line/multi-axis.md",
-			"line/segments.md"
-		]
+		why: "Unresolved: `stacked` at the options root is a scale option the runtime ignores there.",
+		paths: ["line/multi-axis.md"]
 	},
 	{
 		why: "Unresolved: the sample registers its own scale or controller in a separate file the docs load next to it; the bare runtime does not know the type.",

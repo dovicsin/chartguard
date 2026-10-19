@@ -167,3 +167,17 @@ test('generation refuses an installed package that differs from the pin', (t) =>
 	assert.throws(() => verifiedUpstream(fakeRoot(t, { integrity: 'sha512-other' }), 'chartjs'), /integrity differs/);
 	assert.throws(() => verifiedUpstream(fakeRoot(t), 'd3'), /No upstream pin for d3/);
 });
+
+test('element options are accepted in every scope the runtime reads them from, citing the resolver', () => {
+	const scope = artifact.definitions.ElementOptionsInScope;
+	for (const name of ['radius', 'pointRadius', 'hoverRadius', 'pointHoverRadius', 'fill', 'tension', 'backgroundColor', 'arcBorderWidth'])
+		assert.ok(Object.hasOwn(scope.properties, name), name);
+	const pointers = scope.properties.radius.provenance.sources.map(({ pointer }) => pointer);
+	assert.ok(pointers.some((pointer) => /^chart\.js\/dist\/chart\.js:\d+$/.test(pointer)));
+	const options = resolve(artifact.definitions.Config_line.properties.options.node);
+	assert.deepEqual(options.includes, ['ElementOptionsInScope']);
+	const dataset = resolve(resolve(resolve(artifact.definitions.Config_line.properties.data.node).properties.datasets.node).items);
+	for (const member of dataset.anyOf) assert.deepEqual(artifact.definitions[member.ref].includes, ['ElementOptionsInScope']);
+	const animation = resolve(options.properties.animation.node).anyOf.map(resolve).filter((member) => member.kind === 'object');
+	assert.ok(animation.length > 0 && animation.every((member) => member.additional === 'open'));
+});
