@@ -17,12 +17,16 @@ export function runtimePointer(root, packageName, fact) {
 	return locate(root, packageName, fact).pointer;
 }
 
-/** The lines after the one matching `pattern`, up to (not including) the first that starts with `end`. */
+/**
+ * The lines after the one matching `pattern`, up to (not including) the first that starts with
+ * `end`, and `pointerAt(i)` citing the i-th of them.
+ */
 export function runtimeSection(root, packageName, { end, ...fact }) {
 	const { lines, index, pointer } = locate(root, packageName, fact);
 	const length = lines.slice(index + 1).findIndex((line) => line.trimStart().startsWith(end));
 	if (length === -1) throw new Error(`${packageName} runtime changed: no "${end}" after ${pointer}`);
-	return { pointer, lines: lines.slice(index + 1, index + 1 + length) };
+	const pointerAt = (offset) => `${packageName}/${fact.file}:${String(index + 2 + offset)}`;
+	return { pointer, lines: lines.slice(index + 1, index + 1 + length), pointerAt };
 }
 
 /** An authoritative provenance record citing one runtime line of the pinned package. */

@@ -64,13 +64,18 @@ test('the root is Options with the options of every series type and module', () 
 		assert.ok(Object.hasOwn(option.properties, key), key);
 });
 
-test('series are discriminated by type in the runtime series registry; a series without type stays inconclusive', () => {
+test('series are discriminated by type in the runtime series registry; a series without type takes chart.type', () => {
 	const series = resolve(resolve(option.properties.series.node).items);
 	assert.equal(series.kind, 'union');
 	assert.deepEqual([series.discriminator, series.extensible, series.defaultVariant], ['type', true, undefined]);
+	assert.deepEqual(series.defaultFrom, { path: ['chart', 'type'], fallback: 'line' });
+	// The registry lookup, the `options.type || chart.type` read and the ChartDefaults `type: 'line'` line.
+	assert.equal(series.provenance.sources.length, 3);
 	assert.deepEqual(series.registry, { id: 'highcharts.series', prefix: '', enforced: true });
 	assert.match(series.provenance.sources[0].pointer, /^highcharts\/highcharts\.src\.js:\d+$/);
 	const types = series.anyOf.map((member) => resolve(member).properties.type.node.value);
 	assert.equal(new Set(types).size, types.length);
+	// Declared required, but the runtime takes chart.type, as the declarations' UnknownSeriesOptions says.
+	assert.deepEqual(series.anyOf.filter((member) => resolve(member).properties.type.required !== undefined), []);
 	for (const type of ['line', 'bar', 'pie', 'sankey', 'candlestick', 'map']) assert.ok(types.includes(type), type);
 });

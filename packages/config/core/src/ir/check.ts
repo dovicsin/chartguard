@@ -40,6 +40,19 @@ function checkDefaultWhen(checker: NodeChecker, rules: unknown, path: string, si
 
 const isNonEmpty = (value: unknown): boolean => typeof value === 'string' && value !== '';
 
+/** A path from the root and a literal fallback; it names a variant, so the union needs a discriminator. */
+function checkDefaultFrom(checker: NodeChecker, node: Node, path: string): void {
+	const from = node['defaultFrom'];
+	if (from === undefined) return;
+	const steps = isRecord(from) ? from['path'] : undefined;
+	const fallback = isRecord(from) ? from['fallback'] : undefined;
+	const wellFormed =
+		Array.isArray(steps) && steps.length > 0 && steps.every(isNonEmpty) && LITERAL_TYPES.has(typeof fallback);
+	if (!wellFormed)
+		checker.report(path, 'defaultFrom must be { path: <non-empty property names>, fallback: <literal> }');
+	else if (typeof node['discriminator'] !== 'string') checker.report(path, 'defaultFrom needs a discriminator');
+}
+
 function isHandler(value: unknown): boolean {
 	return (
 		isRecord(value) && isNonEmpty(value['id']) && isNonEmpty(value['name']) && typeof value['enforced'] === 'boolean'
@@ -67,6 +80,7 @@ function checkUnionOptions(checker: NodeChecker, node: Node, path: string, size:
 	if (defaultVariant !== undefined && !isIndexBelow(defaultVariant, size))
 		checker.report(path, 'defaultVariant must index anyOf');
 	checkDefaultWhen(checker, node['defaultWhen'], path, size);
+	checkDefaultFrom(checker, node, path);
 	if (extensible !== undefined && typeof extensible !== 'boolean') checker.report(path, 'extensible must be a boolean');
 	checkRegistry(checker, node, path);
 	if (discriminator !== undefined && typeof discriminator !== 'string')

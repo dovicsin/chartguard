@@ -98,7 +98,7 @@ function fieldSignature(key, value, paths) {
 	return Object.fromEntries(Object.entries(value).map(([name, property]) => [name, signature(property, paths)]));
 }
 
-const UNION_FIELDS = ['discriminator', 'defaultVariant', 'defaultWhen', 'extensible', 'registry'];
+const UNION_FIELDS = ['discriminator', 'defaultVariant', 'defaultWhen', 'defaultFrom', 'extensible', 'registry'];
 
 /** Property fields that change what the engine accepts; provenance and docs do not. */
 const PROPERTY_FIELDS = ['deprecated', 'handledBy'];

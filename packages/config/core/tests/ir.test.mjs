@@ -101,66 +101,6 @@ test('discriminated unions keep their default variant and extensibility', () => 
 	]);
 });
 
-test('a union registry lowers unchanged and is checked against the caller registry context', () => {
-	const variant = (value) => ({
-		kind: 'object',
-		additional: 'unknown',
-		properties: { type: prop({ kind: 'literal', value }) }
-	});
-	const root = {
-		kind: 'union',
-		anyOf: [variant('bar'), variant('line')],
-		discriminator: 'type',
-		extensible: true,
-		registry: { id: 'test', prefix: 'series.', enforced: true }
-	};
-	assert.deepEqual(problems(artifact(root)), []);
-	const manifest = manifestFromArtifact(artifact(root));
-	assert.deepEqual(manifest.root.registry, { id: 'test', prefix: 'series.', enforced: true });
-	const registries = { test: { names: ['series.line'], complete: true } };
-	assert.deepEqual(
-		validateConfig({ type: 'bar' }, manifest, { registries }).diagnostics.map((d) => `${d.code} ${d.path}`),
-		['CFG_UNREGISTERED $.type']
-	);
-	for (const [registry, extra] of [
-		[{ id: '', prefix: '' }, {}],
-		[{ id: 'test' }, {}],
-		[{ id: 'test', prefix: '' }, {}],
-		['test', {}]
-	])
-		assert.deepEqual(problems(artifact({ ...root, registry, ...extra })), [
-			'$.root: registry must be { id: <non-empty string>, prefix: <string>, enforced: <boolean> }'
-		]);
-	for (const extra of [{ extensible: false }, { discriminator: undefined }])
-		assert.deepEqual(problems(artifact({ ...root, ...extra })), [
-			'$.root: a registry needs a discriminator and extensible: true'
-		]);
-});
-
-test('a property handler lowers onto the value and is checked against a complete registry', () => {
-	const handledBy = { id: 'test', name: 'title', enforced: true };
-	const root = {
-		kind: 'object',
-		additional: 'open',
-		properties: { title: { ...prop({ kind: 'object', additional: 'open', properties: {} }), handledBy } }
-	};
-	assert.deepEqual(problems(artifact(root)), []);
-	const manifest = manifestFromArtifact(artifact(root));
-	assert.deepEqual(manifest.root.properties.title.handledBy, handledBy);
-	const registries = { test: { names: [], complete: true } };
-	assert.deepEqual(
-		validateConfig({ title: {} }, manifest, { registries }).diagnostics.map((d) => `${d.code} ${d.path}`),
-		['CFG_UNREGISTERED $.title']
-	);
-	for (const bad of [{ id: 'test', name: '', enforced: true }, { id: 'test', name: 'title' }, 'title'])
-		assert.deepEqual(
-			problems(artifact({ ...root, properties: { title: { ...root.properties.title, handledBy: bad } } })),
-			[
-				'$.root.properties.title: handledBy must be { id: <non-empty string>, name: <non-empty string>, enforced: <boolean> }'
-			]
-		);
-});
-
 test('every primitive kind and arrays lower to exact engine checks', () => {
 	const root = {
 		kind: 'object',

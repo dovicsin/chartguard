@@ -1,6 +1,6 @@
 import type { Coverage } from '@chartguard/core';
 
-import type { DefaultChoice, Handler, RegistryRef } from '../schema.js';
+import type { DefaultChoice, DefaultFrom, Handler, RegistryRef } from '../schema.js';
 
 export const SCHEMA_IR_VERSION = 1;
 
@@ -100,6 +100,8 @@ export interface UnionNode extends NodeBase {
 	 * property passes its test selects `variant` (ECharts axes: `data` truthy → category).
 	 */
 	readonly defaultWhen?: readonly DefaultRule[];
+	/** When no `defaultWhen` rule passes, the variant named by a value elsewhere in the config (`chart.type`). */
+	readonly defaultFrom?: DefaultFrom;
 	/** The variant registry can be extended (e.g. by plugins), so unknown variants are not errors. */
 	readonly extensible?: boolean;
 	/** The runtime registry the discriminator values live in (`echarts`, prefix `series.`); requires `extensible`. */

@@ -45,6 +45,8 @@ function rangeSegment({ first, last }: HoleRun): string {
 export class ConfigWalker {
 	readonly diagnostics: Diagnostic[] = [];
 	private readonly ancestors = new WeakSet();
+	/** The whole config, for defaults the runtime reads from elsewhere in it (`chart.type`). */
+	private root: unknown;
 
 	constructor(
 		private readonly manifest: SchemaManifest,
@@ -53,13 +55,14 @@ export class ConfigWalker {
 	) {}
 
 	walk(value: unknown, schema: NodeSchema, cursor: Cursor = { path: '$', depth: 0 }): void {
+		if (cursor.depth === 0) this.root = value;
 		if (cursor.depth > MAX_DEPTH) {
 			this.diagnostics.push(unresolved('CFG_DEPTH', cursor.path, 'Maximum validation depth reached.'));
 			return;
 		}
 		if (schema.handledBy !== undefined && this.reportUnhandled(schema.handledBy, cursor.path)) return;
 		if (schema.kind === 'union') {
-			this.walkUnion(value, selectVariant(value, schema, this.registries), cursor);
+			this.walkUnion(value, selectVariant(value, schema, { registries: this.registries, root: this.root }), cursor);
 			return;
 		}
 		if (schema.kind === 'any' || !this.matchesShape(value, schema, cursor.path)) return;

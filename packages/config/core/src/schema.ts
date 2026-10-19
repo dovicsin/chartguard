@@ -41,6 +41,15 @@ export interface Handler {
 	readonly enforced: boolean;
 }
 
+/**
+ * A default variant named elsewhere in the config: the value at `path` from the root (Highcharts
+ * series take `chart.type`), or `fallback` when it is missing (the runtime's own default).
+ */
+export interface DefaultFrom {
+	readonly path: readonly string[];
+	readonly fallback: EnumValue;
+}
+
 export interface NodeSchema {
 	readonly kind: SchemaKind;
 	readonly properties?: Readonly<Record<string, NodeSchema>>;
@@ -58,6 +67,8 @@ export interface NodeSchema {
 	readonly defaultVariant?: number;
 	/** Union: conditional defaults for an absent discriminator; the first rule that passes wins. */
 	readonly defaultWhen?: readonly DefaultChoice[];
+	/** Union: when no `defaultWhen` rule passes, the variant a value elsewhere in the config names. */
+	readonly defaultFrom?: DefaultFrom;
 	/** Union: unknown discriminator values may be registered by plugins, so they are not errors. */
 	readonly extensible?: boolean;
 	/** Union: where the runtime looks the discriminator value up; checked against the caller's registry context. */
@@ -86,6 +97,7 @@ export interface UnionOptions {
 	readonly discriminator?: string;
 	readonly defaultVariant?: number;
 	readonly defaultWhen?: readonly DefaultChoice[];
+	readonly defaultFrom?: DefaultFrom;
 	readonly extensible?: boolean;
 	readonly registry?: RegistryRef;
 }

@@ -58,9 +58,16 @@ export const RUNTIME_CONTRACT = [
 	},
 	{
 		name: 'series without type takes the chart type',
-		config: { chart: { type: 'column' }, series: [{ data: [1, 2] }] },
-		findings: ['info CFG_AMBIGUOUS $.series[0]'],
+		config: { chart: { type: 'column' }, series: [{ data: [1, 2], pointPadding: 0.2 }] },
+		findings: [],
 		runtime: 'accepted'
+	},
+	{
+		name: 'series without type is checked as the chart type',
+		config: { chart: { type: 'pie' }, series: [{ data: [1, 2], innerSize: true }] },
+		findings: ['error CFG_TYPE $.series[0].innerSize'],
+		runtime: 'accepted',
+		why: 'Type contract: declared `number | string` on pie series; the runtime renders it without an error or warning.'
 	},
 	{
 		name: 'pie with inner size',

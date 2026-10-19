@@ -1,5 +1,6 @@
 import { isContainer, ownDataProperty } from '@chartguard/core';
 
+import { inheritedValue } from './inherited.js';
 import { isListLike, kindOf } from './kind.js';
 import { type Registration, registration, type Registries } from './registry.js';
 import type { DefaultChoice, DefaultTest, EnumValue, NodeSchema, RegistryRef } from './schema.js';
@@ -73,20 +74,35 @@ function decide(rule: DefaultChoice, value: object): Decision {
 	return entry.accessor ? undefined : TESTS[rule.test](undefined);
 }
 
+/** The member a `defaultFrom` names; ambiguous when the value cannot be read or names no member. */
+function inheritedDefault(union: NodeSchema, root: unknown): Selection | undefined {
+	if (union.defaultFrom === undefined) return undefined;
+	const inherited = inheritedValue(union.defaultFrom, root);
+	const key = discriminatorOf(union);
+	if (inherited === undefined || key === undefined) return AMBIGUOUS;
+	const named = flatMembers(union).find((member) =>
+		discriminatorValues(member, key).some((known) => known === inherited.value)
+	);
+	return named === undefined ? AMBIGUOUS : variant(named);
+}
+
 /**
- * The union's own default for this value: the first `defaultWhen` rule that passes, else
- * `defaultVariant`, else the first default a nested union declares. Ambiguous as soon as a rule
- * cannot be decided before one passes: guessing would check the value against the wrong variant.
+ * The union's own default for this value: the first `defaultWhen` rule that passes, else the
+ * variant `defaultFrom` names, else `defaultVariant`, else the first default a nested union
+ * declares. Ambiguous as soon as a rule cannot be decided before one passes: guessing would check
+ * the value against the wrong variant.
  */
-function defaultOf(union: NodeSchema, value: object): Selection | undefined {
+function defaultOf(union: NodeSchema, value: object, root: unknown): Selection | undefined {
 	for (const rule of union.defaultWhen ?? []) {
 		const decision = decide(rule, value);
 		if (decision === undefined) return AMBIGUOUS;
 		if (decision) return memberAt(union, rule.variant);
 	}
+	const inherited = inheritedDefault(union, root);
+	if (inherited !== undefined) return inherited;
 	if (union.defaultVariant !== undefined) return memberAt(union, union.defaultVariant);
 	for (const member of (union.anyOf ?? []).filter(isUnion)) {
-		const fallback = defaultOf(member, value);
+		const fallback = defaultOf(member, value, root);
 		if (fallback !== undefined) return fallback;
 	}
 	return undefined;
@@ -178,11 +194,17 @@ function selectExplicit(value: unknown, { union, members, key }: Discriminated, 
 	return { kind: isExtensible(union) ? 'unknown-variant' : 'invalid-variant', key, value, known };
 }
 
+/** What a selection may consult besides the value: the caller's registries and the whole config. */
+export interface SelectionContext {
+	readonly registries: Registries;
+	readonly root: unknown;
+}
+
 function selectByDiscriminator(
 	value: object,
 	union: NodeSchema,
 	members: readonly NodeSchema[],
-	registries: Registries
+	{ registries, root }: SelectionContext
 ): Selection {
 	const key = discriminatorOf(union);
 	// A member without literal values for the key can never be told apart: do not guess.
@@ -190,12 +212,16 @@ function selectByDiscriminator(
 	const entry = ownDataProperty(value, key);
 	if (!entry.found && entry.accessor) return AMBIGUOUS;
 	if (!entry.found || entry.value === undefined)
-		return checkDefault(defaultOf(union, value) ?? AMBIGUOUS, key, registryOf(union), registries);
+		return checkDefault(defaultOf(union, value, root) ?? AMBIGUOUS, key, registryOf(union), registries);
 	return selectExplicit(entry.value, { union, members, key }, registries);
 }
 
 /** Chooses the union member that applies to a value, without guessing between look-alike objects. */
-export function selectVariant(value: unknown, union: NodeSchema, registries: Registries = new Map()): Selection {
+export function selectVariant(
+	value: unknown,
+	union: NodeSchema,
+	context: SelectionContext = { registries: new Map(), root: undefined }
+): Selection {
 	const members = flatMembers(union);
 	if (members.some((member) => member.kind === 'any')) return ACCEPTED;
 	const actual = kindOf(value);
@@ -209,6 +235,6 @@ export function selectVariant(value: unknown, union: NodeSchema, registries: Reg
 	if (isContainer(value))
 		return discriminatorOf(union) === undefined && matching.length === 1
 			? variant(only)
-			: selectByDiscriminator(value, union, matching, registries);
+			: selectByDiscriminator(value, union, matching, context);
 	return matching.length === 1 ? variant(only) : variant(mergePrimitives(matching));
 }

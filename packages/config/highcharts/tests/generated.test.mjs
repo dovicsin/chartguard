@@ -60,13 +60,17 @@ test('type contract: an axis title disabled with null is outside the declared ty
 	assert.deepEqual(findings({ yAxis: { title: { text: null } } }), ['error CFG_TYPE $.yAxis.title.text']);
 });
 
-test('unknown: a series without type takes the chart type, which lives elsewhere; it is inconclusive, never guessed', () => {
-	const result = validate({ chart: { type: 'pie' }, series: [{ data: [1], innerSize: 'x' }] });
-	assert.equal(result.valid, true);
-	assert.deepEqual(
-		result.diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`),
-		['info CFG_AMBIGUOUS $.series[0]']
-	);
+test('a series without type is checked as the chart type, or as line when the chart names none', () => {
+	assert.deepEqual(findings({ chart: { type: 'pie' }, series: [{ data: [1], innerSize: true }] }), [
+		'error CFG_TYPE $.series[0].innerSize'
+	]);
+	assert.deepEqual(findings({ series: [{ data: [1], step: 'sideways' }] }), ['error CFG_ENUM $.series[0].step']);
+});
+
+test('unknown: a chart type the schema does not know leaves its untyped series inconclusive', () => {
+	assert.deepEqual(findings({ chart: { type: 'flame3d' }, series: [{ data: [1] }] }), [
+		'info CFG_AMBIGUOUS $.series[0]'
+	]);
 });
 
 test('unknown: a series type no built-in declares may come from a plugin and is unresolved, with a suggestion', () => {

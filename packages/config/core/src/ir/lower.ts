@@ -88,6 +88,7 @@ class Lowerer {
 			...(node.discriminator === undefined ? {} : { discriminator: node.discriminator }),
 			...(node.defaultVariant === undefined ? {} : { defaultVariant: node.defaultVariant }),
 			...(node.defaultWhen === undefined ? {} : { defaultWhen: node.defaultWhen }),
+			...(node.defaultFrom === undefined ? {} : { defaultFrom: node.defaultFrom }),
 			...(node.extensible === undefined ? {} : { extensible: node.extensible }),
 			...(node.registry === undefined ? {} : { registry: node.registry })
 		};

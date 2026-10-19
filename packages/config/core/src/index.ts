@@ -2,6 +2,7 @@ export * from './ir/index.js';
 export type {
 	AdditionalProperties,
 	DefaultChoice,
+	DefaultFrom,
 	DefaultTest,
 	EnumValue,
 	Handler,
