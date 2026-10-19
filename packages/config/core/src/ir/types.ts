@@ -1,6 +1,6 @@
 import type { Coverage } from '@chartguard/core';
 
-import type { DefaultChoice, RegistryRef } from '../schema.js';
+import type { DefaultChoice, Handler, RegistryRef } from '../schema.js';
 
 export const SCHEMA_IR_VERSION = 1;
 
@@ -62,6 +62,8 @@ export interface PropertyNode {
 	readonly required?: boolean;
 	readonly deprecated?: Deprecation;
 	readonly docs?: string;
+	/** The runtime handles this option only when a component or plugin is registered. */
+	readonly handledBy?: Handler;
 }
 
 export interface ObjectNode extends NodeBase {

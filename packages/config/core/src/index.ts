@@ -4,6 +4,7 @@ export type {
 	DefaultChoice,
 	DefaultTest,
 	EnumValue,
+	Handler,
 	NodeSchema,
 	ObjectOptions,
 	RegistryRef,

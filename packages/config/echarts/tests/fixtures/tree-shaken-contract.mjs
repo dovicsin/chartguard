@@ -36,5 +36,19 @@ export const TREE_SHAKEN_CONTRACT = [
 		config: { ...axes, dataZoom: { type: 'inside', start: 0 }, series: lineSeries },
 		findings: [],
 		runtime: 'accepted'
+	},
+	{
+		name: 'component not imported',
+		modules: LINE_ONLY,
+		config: { ...axes, title: { text: 'a' }, series: lineSeries },
+		findings: ['error CFG_UNREGISTERED $.title'],
+		runtime: 'rejected'
+	},
+	{
+		name: 'imported component',
+		modules: [...LINE_ONLY, 'TitleComponent'],
+		config: { ...axes, title: { text: 'a' }, series: lineSeries },
+		findings: [],
+		runtime: 'accepted'
 	}
 ];

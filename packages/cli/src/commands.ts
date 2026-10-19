@@ -48,11 +48,23 @@ async function versionOptions({ library, file, libraryVersion }: Invocation): Pr
 	return { libraryVersion: libraryVersion === 'auto' ? await installedVersion(library, file) : libraryVersion };
 }
 
+/**
+ * The validation context the invocation gives. The registry file must be readable JSON (input
+ * error otherwise); its shape is the validator's to judge, so a malformed context is a finding.
+ */
+async function validationOptions(invocation: Invocation): Promise<ValidationOptions> {
+	const version = await versionOptions(invocation);
+	if (invocation.registries === undefined) return version;
+	// Untrusted JSON: the validator reads it structurally and reports a malformed context.
+	const registries = (await readJson(invocation.registries)) as NonNullable<ValidationOptions['registries']>;
+	return { ...version, registries };
+}
+
 const validateCommand: CommandHandler = async (invocation, io) => {
 	const { library, file, json } = invocation;
 	const config = await readJson(file);
 	const { validate } = await loadConfigAdapter(library);
-	return reportResult(validate(config, await versionOptions(invocation)), json, io);
+	return reportResult(validate(config, await validationOptions(invocation)), json, io);
 };
 
 const qualityCommand: CommandHandler = async ({ library, file, json }, io) => {
@@ -70,7 +82,7 @@ const analyzeCommand: CommandHandler = async (invocation, io) => {
 	const configs = selectConfigs(source.objects, name);
 	if (configs.length === 0) throw new InputError('No suitable static object found. Specify --name <variable>.');
 	const { validate } = await loadConfigAdapter(library);
-	const options = await versionOptions(invocation);
+	const options = await validationOptions(invocation);
 	const entries = configs.map((object) => analyzeEntry(object, validate, options));
 	if (json) printJson({ mode: 'analyze', library, entries }, io);
 	else printEntries(entries, io);

@@ -42,5 +42,20 @@ export const TREE_SHAKEN_CONTRACT = [
 		config: { ...line(), options: { scales: { y: { type: 'logarithmic' } } } },
 		findings: ['error CFG_UNREGISTERED $.options.scales.y.type'],
 		runtime: 'rejected'
+	},
+	{
+		name: 'plugin options without the plugin',
+		modules: LINE_ONLY,
+		config: { ...line(), options: { plugins: { legend: { position: 'left' } } } },
+		findings: ['warning CFG_INEFFECTIVE $.options.plugins.legend'],
+		runtime: 'accepted',
+		why: 'No effect: the Legend plugin is not registered, so Chart.js never reads these options.'
+	},
+	{
+		name: 'plugin options with the plugin',
+		modules: [...LINE_ONLY, 'Legend'],
+		config: { ...line(), options: { plugins: { legend: { position: 'left' } } } },
+		findings: [],
+		runtime: 'accepted'
 	}
 ];

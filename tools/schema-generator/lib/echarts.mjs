@@ -1,4 +1,5 @@
 import { resolveComponentSubtypes } from './echarts-components.mjs';
+import { addComponentHandlers } from './echarts-handlers.mjs';
 import { TypeEmitter } from './emitter.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
 import { runtimeProvenance } from './runtime.mjs';
@@ -65,6 +66,7 @@ export function generateEcharts(root, pin) {
 	const emitter = new TypeEmitter({ program, checker, sourceId: SOURCE_ID, packageName: pin.package, ...adjustments });
 	const optionRef = emitter.reference(aliases.get('Option'));
 	resolveComponentSubtypes(root, emitter.definitions, emitter.definitions[optionRef.ref]);
+	addComponentHandlers(root, emitter.definitions[optionRef.ref]);
 	return artifactOf({
 		library: 'echarts',
 		sourceId: SOURCE_ID,

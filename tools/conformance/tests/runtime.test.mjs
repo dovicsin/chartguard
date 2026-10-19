@@ -74,6 +74,8 @@ test('the explanation rule covers every combination', () => {
 		[['error CFG_TYPE $.a'], 'complained', undefined],
 		[['error CFG_TYPE $.a'], 'accepted', 'Type contract:'],
 		[['warning CFG_UNKNOWN_KEY $.a'], 'accepted', 'Unresolved:'],
+		[['warning CFG_INEFFECTIVE $.a'], 'accepted', 'No effect:'],
+		[['warning CFG_INEFFECTIVE $.a', 'warning CFG_UNKNOWN_KEY $.b'], 'accepted', 'Unresolved:'],
 		[['warning CFG_UNKNOWN_VARIANT $.a'], 'rejected', 'Unresolved:'],
 		[['info CFG_AMBIGUOUS $.a'], 'accepted', undefined],
 		[['info CFG_AMBIGUOUS $.a'], 'rejected', 'False negative (CG-'],

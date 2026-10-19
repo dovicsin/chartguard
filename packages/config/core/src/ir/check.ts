@@ -38,6 +38,14 @@ function checkDefaultWhen(checker: NodeChecker, rules: unknown, path: string, si
 		);
 }
 
+const isNonEmpty = (value: unknown): boolean => typeof value === 'string' && value !== '';
+
+function isHandler(value: unknown): boolean {
+	return (
+		isRecord(value) && isNonEmpty(value['id']) && isNonEmpty(value['name']) && typeof value['enforced'] === 'boolean'
+	);
+}
+
 /** A registry names where the runtime looks the discriminator up, so the union needs both, and must be extensible. */
 function checkRegistry(checker: NodeChecker, node: Node, path: string): void {
 	const { registry } = node;
@@ -144,16 +152,21 @@ class NodeChecker {
 			this.report(path, 'expected an object');
 			return;
 		}
-		for (const [key, property] of Object.entries(value)) {
-			const propertyPath = `${path}.${key}`;
-			if (!isRecord(property)) this.report(propertyPath, 'expected an object');
-			else {
-				this.checkProvenance(property['provenance'], `${propertyPath}.provenance`);
-				if (property['required'] !== undefined && typeof property['required'] !== 'boolean')
-					this.report(propertyPath, 'required must be a boolean');
-				this.checkNode(property['node'], `${propertyPath}.node`, depth + 1);
-			}
+		for (const [key, property] of Object.entries(value)) this.checkProperty(property, `${path}.${key}`, depth);
+	}
+
+	private checkProperty(property: unknown, path: string, depth: number): void {
+		if (!isRecord(property)) {
+			this.report(path, 'expected an object');
+			return;
 		}
+		this.checkProvenance(property['provenance'], `${path}.provenance`);
+		if (property['required'] !== undefined && typeof property['required'] !== 'boolean')
+			this.report(path, 'required must be a boolean');
+		const { handledBy } = property;
+		if (handledBy !== undefined && !isHandler(handledBy))
+			this.report(path, 'handledBy must be { id: <non-empty string>, name: <non-empty string>, enforced: <boolean> }');
+		this.checkNode(property['node'], `${path}.node`, depth + 1);
 	}
 
 	checkRef(ref: unknown, path: string): void {

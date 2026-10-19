@@ -62,12 +62,13 @@ export function runChartjs(config) {
 
 const EVERY_REGISTERABLE = registerables.flatMap((group) => (Array.isArray(group) ? group : Object.values(group)));
 
-/** What the runtime has registered, as the validator's registry context (`chartjs.controllers`, `chartjs.scales`). */
+/** What the runtime has registered, as the validator's registry context (controllers, scales, plugins). */
 function registeredNow() {
 	const names = (typed) => Object.keys(typed.items).sort();
 	return {
 		'chartjs.controllers': { names: names(registry.controllers), complete: true },
-		'chartjs.scales': { names: names(registry.scales), complete: true }
+		'chartjs.scales': { names: names(registry.scales), complete: true },
+		'chartjs.plugins': { names: names(registry.plugins), complete: true }
 	};
 }
 

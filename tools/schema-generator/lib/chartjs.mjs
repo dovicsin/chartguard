@@ -1,3 +1,4 @@
+import { planPluginHandlers } from './chartjs-plugins.mjs';
 import { ELEMENT_SCOPE, planOptionScopes } from './chartjs-scopes.mjs';
 import { TypeEmitter } from './emitter.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
@@ -113,6 +114,29 @@ function datasetUnions(emitter, datasetVariants, { registry, provenance }) {
 	);
 }
 
+/**
+ * What the declarations leave out, read from the runtime: element options in every scope the
+ * runtime reads them from, open per-property animations, built-in plugin options that take effect
+ * only when the plugin is registered; then every option value becomes scriptable.
+ */
+function withRuntimeFacts(root, definitions, configNames) {
+	const scopes = planOptionScopes(root, definitions, configNames);
+	const next = { ...definitions, [ELEMENT_SCOPE]: scopes.scope };
+	for (const name of scopes.includedBy) next[name] = { ...next[name], includes: [ELEMENT_SCOPE] };
+	for (const name of scopes.openAnimations)
+		next[name] = { ...next[name], additional: 'open', provenance: scopes.animationProvenance };
+	for (const { definition, property, handledBy, sources } of planPluginHandlers(root, definitions, configNames)) {
+		const target = next[definition].properties[property];
+		const provenance = { ...target.provenance, sources: [...target.provenance.sources, ...sources] };
+		next[definition] = {
+			...next[definition],
+			properties: { ...next[definition].properties, [property]: { ...target, handledBy, provenance } }
+		};
+	}
+	makeOptionsScriptable(next, configNames);
+	return next;
+}
+
 export function generateChartjs(root, pin) {
 	const { program: registryProgram, chartTypes } = registeredChartTypes(root);
 	const { program, checker, entry } = createEntryProgram(root, entryText(chartTypes), registryProgram);
@@ -122,21 +146,12 @@ export function generateChartjs(root, pin) {
 	const emitter = new TypeEmitter({ program, checker, sourceId: SOURCE_ID, packageName: pin.package, wrappers: WRAPPERS, ...adjustments });
 	emitter.overrides = datasetUnions(emitter, datasetVariants, facts.dataset);
 	const configs = chartTypes.map((chartType) => emitter.reference(aliases.get(`Config_${chartType}`)));
-	// Element options in every scope the runtime reads them from; open per-property animations.
-	const scopes = planOptionScopes(root, emitter.definitions, configs.map(({ ref }) => ref));
-	emitter.definitions[ELEMENT_SCOPE] = scopes.scope;
-	for (const name of scopes.includedBy) emitter.definitions[name].includes = [ELEMENT_SCOPE];
-	for (const name of scopes.openAnimations)
-		emitter.definitions[name] = { ...emitter.definitions[name], additional: 'open', provenance: scopes.animationProvenance };
-	makeOptionsScriptable(
-		emitter.definitions,
-		configs.map(({ ref }) => ref)
-	);
+	const definitions = withRuntimeFacts(root, emitter.definitions, configs.map(({ ref }) => ref));
 	return artifactOf({
 		library: 'chartjs',
 		sourceId: SOURCE_ID,
 		pin,
-		definitions: emitter.definitions,
+		definitions,
 		root: { kind: 'union', anyOf: configs, discriminator: 'type', extensible: true, ...facts.chartType }
 	});
 }

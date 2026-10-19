@@ -89,12 +89,18 @@ function signature(node, paths) {
 
 const UNION_FIELDS = ['discriminator', 'defaultVariant', 'defaultWhen', 'extensible', 'registry'];
 
+/** Property fields that change what the engine accepts; provenance and docs do not. */
+const PROPERTY_FIELDS = ['deprecated', 'handledBy'];
+
 function compareProperty(at, old, next, changes) {
 	if (old === undefined) changes.push({ kind: 'property-added', path: at, after: next.node });
 	else if (next === undefined) changes.push({ kind: 'property-removed', path: at, before: old.node });
 	else {
 		if ((old.required === true) !== (next.required === true))
 			changes.push({ kind: 'required-changed', path: at, before: old.required === true, after: next.required === true });
+		for (const field of PROPERTY_FIELDS)
+			if (JSON.stringify(old[field]) !== JSON.stringify(next[field]))
+				changes.push({ kind: `${field}-changed`, path: at, before: old[field], after: next[field] });
 		if (JSON.stringify(old.node) !== JSON.stringify(next.node))
 			changes.push({ kind: 'property-changed', path: at, before: old.node, after: next.node });
 	}

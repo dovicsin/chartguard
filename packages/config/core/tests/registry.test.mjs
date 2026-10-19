@@ -143,3 +143,54 @@ test('a registry that is not enforced recognises extensions but leaves a missing
 	assert.deepEqual(codes(chart, { type: 'matrix' }, complete('matrix')), ['CFG_REGISTERED_VARIANT info $.type']);
 	assert.deepEqual(codes(chart, { type: 'matrx' }, complete('matrix')), ['CFG_UNKNOWN_VARIANT warning $.type']);
 });
+
+// A property the runtime handles only when a component or plugin is registered (`title` needs
+// ECharts' TitleComponent; `plugins.legend` needs Chart.js' Legend plugin).
+const withHandlers = s.object({
+	title: { ...s.object({ text: s.string() }), handledBy: { id: 'runtime', name: 'title', enforced: true } },
+	legend: { ...s.object({ display: s.boolean() }), handledBy: { id: 'runtime', name: 'legend', enforced: false } },
+	dataZoom: { ...dataZoom, handledBy: { id: 'runtime', name: 'dataZoom', enforced: true } }
+});
+
+test('an option whose handler is not registered: rejected when enforced, ignored (no effect) otherwise', () => {
+	const result = run(withHandlers, { title: { text: 1 }, legend: { display: 'x' } }, treeShaken());
+	assert.deepEqual(
+		result.diagnostics.map((d) => [d.code, d.severity, d.confidence, d.path, d.suggestion]),
+		[
+			['CFG_UNREGISTERED', 'error', 'certain', '$.title', 'Register title.'],
+			['CFG_INEFFECTIVE', 'warning', 'certain', '$.legend', 'Register legend, or remove the option.']
+		]
+	);
+	assert.equal(result.status, 'invalid');
+	// An option without effect is worth a warning, but the runtime does not reject it.
+	assert.equal(run(withHandlers, { legend: {} }, treeShaken()).valid, true);
+});
+
+test('a handler counts as registered by its own name or by any of its subtypes', () => {
+	assert.deepEqual(codes(withHandlers, { title: { text: 1 } }, treeShaken('title')), ['CFG_TYPE error $.title.text']);
+	assert.deepEqual(codes(withHandlers, { dataZoom: { type: 'inside' } }, treeShaken('dataZoom.inside')), []);
+	assert.deepEqual(codes(withHandlers, { dataZoom: { type: 'slider' } }, treeShaken('dataZoom.inside')), [
+		'CFG_UNREGISTERED error $.dataZoom.type'
+	]);
+	assert.deepEqual(codes(withHandlers, { dataZoom: {} }, treeShaken('dataZoomer')), [
+		'CFG_UNREGISTERED error $.dataZoom'
+	]);
+});
+
+test('handlers are checked only against a complete registry; otherwise the option is validated as usual', () => {
+	for (const registries of [undefined, extensions()])
+		assert.deepEqual(codes(withHandlers, { title: { text: 1 } }, registries), ['CFG_TYPE error $.title.text']);
+});
+
+test('the message names the registry entry only where it differs from the value', () => {
+	const chart = s.union([s.object({ type: s.string(['bar']) })], {
+		discriminator: 'type',
+		extensible: true,
+		registry: { id: 'controllers', prefix: '', enforced: true }
+	});
+	const [finding] = run(chart, { type: 'bar' }, { controllers: { names: [], complete: true } }).diagnostics;
+	assert.deepEqual(
+		[finding.message, finding.suggestion],
+		['"bar" is not registered with the runtime, which rejects it.', 'Register bar.']
+	);
+});

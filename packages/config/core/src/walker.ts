@@ -2,8 +2,8 @@ import { type Diagnostic, isContainer, ownDataProperty, suggestion, type Validat
 
 import { confirmed, inconclusive, unresolved } from './diagnostics.js';
 import { isListLike, kindOf } from './kind.js';
-import type { Registries } from './registry.js';
-import type { NodeSchema, SchemaManifest } from './schema.js';
+import { isHandled, type Registries } from './registry.js';
+import type { Handler, NodeSchema, SchemaManifest } from './schema.js';
 import { type Selection, selectVariant } from './union.js';
 
 const MAX_DEPTH = 40;
@@ -57,6 +57,7 @@ export class ConfigWalker {
 			this.diagnostics.push(unresolved('CFG_DEPTH', cursor.path, 'Maximum validation depth reached.'));
 			return;
 		}
+		if (schema.handledBy !== undefined && this.reportUnhandled(schema.handledBy, cursor.path)) return;
 		if (schema.kind === 'union') {
 			this.walkUnion(value, selectVariant(value, schema, this.registries), cursor);
 			return;
@@ -91,6 +92,32 @@ export class ConfigWalker {
 		}
 	}
 
+	/** An option for a component or plugin the runtime does not have: its contents do not matter. */
+	private reportUnhandled(handler: Handler, path: string): boolean {
+		if (isHandled(this.registries, handler) !== false) return false;
+		const { name } = handler;
+		this.diagnostics.push(
+			handler.enforced
+				? {
+						...confirmed(
+							'CFG_UNREGISTERED',
+							path,
+							`"${name}" is not registered with the runtime, which rejects this option.`
+						),
+						suggestion: `Register ${name}.`
+					}
+				: {
+						code: 'CFG_INEFFECTIVE',
+						severity: 'warning',
+						confidence: 'certain',
+						path,
+						message: `"${name}" is not registered, so the runtime ignores this option.`,
+						suggestion: `Register ${name}, or remove the option.`
+					}
+		);
+		return true;
+	}
+
 	private reportRegistration(
 		selection: Extract<Selection, { kind: 'registered' | 'unregistered' }>,
 		path: string
@@ -102,9 +129,11 @@ export class ConfigWalker {
 			return;
 		}
 		const { name, siblings } = selection.registration;
+		// The registry name, when it differs from the value (`dataZoom.slider` for `slider`).
+		const as = name === value ? '' : ` (${name})`;
 		const message = selection.defaulted
-			? `No ${key} given: the runtime picks "${value}" (${name}), which is not registered, so it rejects it.`
-			: `"${value}" is not registered with the runtime (${name}), which rejects it.`;
+			? `No ${key} given: the runtime picks "${value}"${as}, which is not registered, so it rejects it.`
+			: `"${value}" is not registered with the runtime${as}, which rejects it.`;
 		const hint =
 			siblings.length === 0
 				? `Register ${name}.`

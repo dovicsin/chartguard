@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-a33e1a39bd3245f5328c94e96da3982deab175ff37d4d55450c8351da67df2b0",
+	"digest": "sha256-4db0bb7219fb823803f4aef0e065c1fff2ab40c5b41064c3273e29cb7a3d3661",
 	"sources": {
 		"echarts": {
 			"kind": "npm-package",
@@ -95,8 +95,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12569"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "title",
+						"enforced": true
 					}
 				},
 				"grid": {
@@ -122,8 +135,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12570"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "grid",
+						"enforced": true
 					}
 				},
 				"radar": {
@@ -176,8 +202,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12572"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "polar",
+						"enforced": true
 					}
 				},
 				"geo": {
@@ -203,8 +242,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12573"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "geo",
+						"enforced": true
 					}
 				},
 				"angleAxis": {
@@ -218,8 +270,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12574"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "angleAxis",
+						"enforced": true
 					}
 				},
 				"radiusAxis": {
@@ -233,8 +298,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12575"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "radiusAxis",
+						"enforced": true
 					}
 				},
 				"xAxis": {
@@ -248,8 +326,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12576"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "xAxis",
+						"enforced": true
 					}
 				},
 				"yAxis": {
@@ -263,8 +354,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12577"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "yAxis",
+						"enforced": true
 					}
 				},
 				"singleAxis": {
@@ -278,8 +382,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12578"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "singleAxis",
+						"enforced": true
 					}
 				},
 				"parallel": {
@@ -305,8 +422,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12579"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "parallel",
+						"enforced": true
 					}
 				},
 				"parallelAxis": {
@@ -347,8 +477,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12581"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "calendar",
+						"enforced": true
 					}
 				},
 				"matrix": {
@@ -374,8 +517,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12582"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "matrix",
+						"enforced": true
 					}
 				},
 				"toolbox": {
@@ -401,8 +557,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12583"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "toolbox",
+						"enforced": true
 					}
 				},
 				"tooltip": {
@@ -428,8 +597,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12584"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "tooltip",
+						"enforced": true
 					}
 				},
 				"axisPointer": {
@@ -455,8 +637,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12585"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "axisPointer",
+						"enforced": true
 					}
 				},
 				"brush": {
@@ -482,8 +677,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12586"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "brush",
+						"enforced": true
 					}
 				},
 				"timeline": {
@@ -527,8 +735,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12587"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "timeline",
+						"enforced": true
 					}
 				},
 				"legend": {
@@ -609,8 +830,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12588"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "legend",
+						"enforced": true
 					}
 				},
 				"dataZoom": {
@@ -691,8 +925,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12589"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "dataZoom",
+						"enforced": true
 					}
 				},
 				"visualMap": {
@@ -827,8 +1074,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12590"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "visualMap",
+						"enforced": true
 					}
 				},
 				"thumbnail": {
@@ -869,8 +1129,21 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12592"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:76"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/model/Global.js:136"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "echarts",
+						"name": "graphic",
+						"enforced": true
 					}
 				},
 				"series": {

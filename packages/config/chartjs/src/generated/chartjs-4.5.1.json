@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-57312aa7340e61d85ce0d1061c261c5a3feac4f1639100291869dcbc80c473ae",
+	"digest": "sha256-eba4a5c2a7a3ed73cd05f9999b7a0dd6394f7215f08c0740bd16354f95025fcb",
 	"sources": {
 		"chartjs": {
 			"kind": "npm-package",
@@ -21004,8 +21004,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2985"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7416"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "colors",
+						"enforced": false
 					}
 				},
 				"decimation": {
@@ -21039,8 +21052,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2986"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7570"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "decimation",
+						"enforced": false
 					}
 				},
 				"filler": {
@@ -21065,8 +21091,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2987"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8219"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "filler",
+						"enforced": false
 					}
 				},
 				"legend": {
@@ -21091,8 +21130,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2988"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8742"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "legend",
+						"enforced": false
 					}
 				},
 				"subtitle": {
@@ -21117,8 +21169,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2989"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8981"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "subtitle",
+						"enforced": false
 					}
 				},
 				"title": {
@@ -21143,8 +21208,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2990"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8943"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "title",
+						"enforced": false
 					}
 				},
 				"tooltip": {
@@ -21169,8 +21247,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2991"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:9878"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "tooltip",
+						"enforced": false
 					}
 				}
 			}
@@ -35280,8 +35371,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2985"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7416"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "colors",
+						"enforced": false
 					}
 				},
 				"decimation": {
@@ -35315,8 +35419,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2986"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7570"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "decimation",
+						"enforced": false
 					}
 				},
 				"filler": {
@@ -35341,8 +35458,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2987"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8219"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "filler",
+						"enforced": false
 					}
 				},
 				"legend": {
@@ -35367,8 +35497,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2988"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8742"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "legend",
+						"enforced": false
 					}
 				},
 				"subtitle": {
@@ -35393,8 +35536,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2989"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8981"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "subtitle",
+						"enforced": false
 					}
 				},
 				"title": {
@@ -35419,8 +35575,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2990"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8943"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "title",
+						"enforced": false
 					}
 				},
 				"tooltip": {
@@ -35445,8 +35614,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2991"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:9878"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "tooltip",
+						"enforced": false
 					}
 				}
 			}
@@ -40780,8 +40962,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2985"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7416"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "colors",
+						"enforced": false
 					}
 				},
 				"decimation": {
@@ -40815,8 +41010,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2986"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7570"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "decimation",
+						"enforced": false
 					}
 				},
 				"filler": {
@@ -40841,8 +41049,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2987"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8219"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "filler",
+						"enforced": false
 					}
 				},
 				"legend": {
@@ -40867,8 +41088,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2988"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8742"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "legend",
+						"enforced": false
 					}
 				},
 				"subtitle": {
@@ -40893,8 +41127,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2989"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8981"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "subtitle",
+						"enforced": false
 					}
 				},
 				"title": {
@@ -40919,8 +41166,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2990"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8943"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "title",
+						"enforced": false
 					}
 				},
 				"tooltip": {
@@ -40945,8 +41205,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2991"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:9878"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "tooltip",
+						"enforced": false
 					}
 				}
 			}
@@ -46384,8 +46657,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2985"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7416"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "colors",
+						"enforced": false
 					}
 				},
 				"decimation": {
@@ -46419,8 +46705,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2986"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7570"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "decimation",
+						"enforced": false
 					}
 				},
 				"filler": {
@@ -46445,8 +46744,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2987"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8219"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "filler",
+						"enforced": false
 					}
 				},
 				"legend": {
@@ -46471,8 +46783,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2988"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8742"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "legend",
+						"enforced": false
 					}
 				},
 				"subtitle": {
@@ -46497,8 +46822,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2989"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8981"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "subtitle",
+						"enforced": false
 					}
 				},
 				"title": {
@@ -46523,8 +46861,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2990"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8943"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "title",
+						"enforced": false
 					}
 				},
 				"tooltip": {
@@ -46549,8 +46900,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2991"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:9878"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "tooltip",
+						"enforced": false
 					}
 				}
 			}
@@ -52284,8 +52648,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2985"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7416"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "colors",
+						"enforced": false
 					}
 				},
 				"decimation": {
@@ -52319,8 +52696,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2986"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7570"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "decimation",
+						"enforced": false
 					}
 				},
 				"filler": {
@@ -52345,8 +52735,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2987"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8219"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "filler",
+						"enforced": false
 					}
 				},
 				"legend": {
@@ -52371,8 +52774,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2988"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8742"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "legend",
+						"enforced": false
 					}
 				},
 				"subtitle": {
@@ -52397,8 +52813,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2989"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8981"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "subtitle",
+						"enforced": false
 					}
 				},
 				"title": {
@@ -52423,8 +52852,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2990"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8943"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "title",
+						"enforced": false
 					}
 				},
 				"tooltip": {
@@ -52449,8 +52891,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2991"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:9878"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "tooltip",
+						"enforced": false
 					}
 				}
 			}
@@ -58086,8 +58541,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2985"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7416"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "colors",
+						"enforced": false
 					}
 				},
 				"decimation": {
@@ -58121,8 +58589,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2986"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7570"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "decimation",
+						"enforced": false
 					}
 				},
 				"filler": {
@@ -58147,8 +58628,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2987"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8219"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "filler",
+						"enforced": false
 					}
 				},
 				"legend": {
@@ -58173,8 +58667,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2988"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8742"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "legend",
+						"enforced": false
 					}
 				},
 				"subtitle": {
@@ -58199,8 +58706,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2989"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8981"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "subtitle",
+						"enforced": false
 					}
 				},
 				"title": {
@@ -58225,8 +58745,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2990"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8943"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "title",
+						"enforced": false
 					}
 				},
 				"tooltip": {
@@ -58251,8 +58784,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2991"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:9878"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "tooltip",
+						"enforced": false
 					}
 				}
 			}
@@ -65153,8 +65699,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2985"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7416"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "colors",
+						"enforced": false
 					}
 				},
 				"decimation": {
@@ -65188,8 +65747,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2986"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7570"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "decimation",
+						"enforced": false
 					}
 				},
 				"filler": {
@@ -65214,8 +65786,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2987"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8219"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "filler",
+						"enforced": false
 					}
 				},
 				"legend": {
@@ -65240,8 +65825,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2988"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8742"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "legend",
+						"enforced": false
 					}
 				},
 				"subtitle": {
@@ -65266,8 +65864,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2989"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8981"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "subtitle",
+						"enforced": false
 					}
 				},
 				"title": {
@@ -65292,8 +65903,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2990"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8943"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "title",
+						"enforced": false
 					}
 				},
 				"tooltip": {
@@ -65318,8 +65942,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2991"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:9878"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "tooltip",
+						"enforced": false
 					}
 				}
 			}
@@ -71233,8 +71870,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2985"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7416"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "colors",
+						"enforced": false
 					}
 				},
 				"decimation": {
@@ -71268,8 +71918,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2986"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:7570"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "decimation",
+						"enforced": false
 					}
 				},
 				"filler": {
@@ -71294,8 +71957,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2987"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8219"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "filler",
+						"enforced": false
 					}
 				},
 				"legend": {
@@ -71320,8 +71996,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2988"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8742"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "legend",
+						"enforced": false
 					}
 				},
 				"subtitle": {
@@ -71346,8 +72035,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2989"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8981"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "subtitle",
+						"enforced": false
 					}
 				},
 				"title": {
@@ -71372,8 +72074,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2990"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:8943"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "title",
+						"enforced": false
 					}
 				},
 				"tooltip": {
@@ -71398,8 +72113,21 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:2991"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5202"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:9878"
 							}
 						]
+					},
+					"handledBy": {
+						"id": "chartjs.plugins",
+						"name": "tooltip",
+						"enforced": false
 					}
 				}
 			}

@@ -111,11 +111,15 @@ test('every change kind is reported once, at its canonical path', () => {
 	options.properties.title = prop({ kind: 'scriptable', value: { kind: 'string' } });
 	options.additional = 'open';
 	after.definitions.Bar.properties.type.required = true;
+	after.definitions.Bar.properties.type.handledBy = { id: 'demo', name: 'bar', enforced: true };
+	after.definitions.Bar.properties.type.deprecated = { since: '1.0.0' };
 	after.root.extensible = true;
 	assert.deepEqual(
 		diffArtifacts(before, after).map(({ kind, path }) => `${kind} ${path}`),
 		[
 			'extensible-changed $',
+			'deprecated-changed $<type=bar>.type',
+			'handledBy-changed $<type=bar>.type',
 			'required-changed $<type=bar>.type',
 			'openness-changed $<type=line>.options',
 			'property-added $<type=line>.options.height',

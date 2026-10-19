@@ -31,6 +31,16 @@ export interface RegistryRef {
 	readonly enforced: boolean;
 }
 
+/**
+ * The runtime handles an option only when `name` (or a subtype, `name.<sub>`) is registered in
+ * registry `id`. `enforced`: otherwise it rejects the option; else it ignores it (no effect).
+ */
+export interface Handler {
+	readonly id: string;
+	readonly name: string;
+	readonly enforced: boolean;
+}
+
 export interface NodeSchema {
 	readonly kind: SchemaKind;
 	readonly properties?: Readonly<Record<string, NodeSchema>>;
@@ -52,6 +62,8 @@ export interface NodeSchema {
 	readonly extensible?: boolean;
 	/** Union: where the runtime looks the discriminator value up; checked against the caller's registry context. */
 	readonly registry?: RegistryRef;
+	/** The value of an option the runtime handles only when this component or plugin is registered. */
+	readonly handledBy?: Handler;
 	readonly doc?: string;
 }
 

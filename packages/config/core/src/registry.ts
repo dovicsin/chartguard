@@ -1,7 +1,7 @@
 import { type Diagnostic, isContainer, ownDataProperty, suggestion } from '@chartguard/core';
 
 import { unresolved } from './diagnostics.js';
-import type { NodeSchema, RegistryRef } from './schema.js';
+import type { Handler, NodeSchema, RegistryRef } from './schema.js';
 
 /** One registry of the caller's runtime, as the engine reads it. */
 interface Registry {
@@ -36,12 +36,24 @@ export function registration(registries: Registries, ref: RegistryRef, value: st
 	};
 }
 
+/**
+ * Whether the component or plugin handling an option is registered, by its own name or a subtype
+ * (`dataZoom.inside` registers `dataZoom`); `undefined` unless the caller gave a complete registry.
+ */
+export function isHandled(registries: Registries, handler: Handler): boolean | undefined {
+	const registry = registries.get(handler.id);
+	if (registry?.complete !== true) return undefined;
+	const subtype = `${handler.name}.`;
+	return [...registry.names].some((name) => name === handler.name || name.startsWith(subtype));
+}
+
 const ids = new WeakMap<NodeSchema, ReadonlySet<string>>();
 
 function collectIds(schema: NodeSchema, into: Set<string>, seen: Set<NodeSchema>): void {
 	if (seen.has(schema)) return;
 	seen.add(schema);
 	if (schema.registry !== undefined) into.add(schema.registry.id);
+	if (schema.handledBy !== undefined) into.add(schema.handledBy.id);
 	const children = [...(schema.anyOf ?? []), ...Object.values(schema.properties ?? {})];
 	if (schema.element !== undefined) children.push(schema.element);
 	if (schema.values !== undefined) children.push(schema.values);

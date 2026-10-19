@@ -107,7 +107,10 @@ class Lowerer {
 	private lowerObject(node: ObjectNode, path: string): NodeSchema {
 		const entries = this.propertiesOf(node);
 		const properties = Object.fromEntries(
-			entries.map(([key, property]) => [key, this.lower(property.node, `${path}.${key}`)])
+			entries.map(([key, property]) => {
+				const lowered = this.lower(property.node, `${path}.${key}`);
+				return [key, property.handledBy === undefined ? lowered : { ...lowered, handledBy: property.handledBy }];
+			})
 		);
 		const required = entries.filter(([, property]) => property.required === true).map(([key]) => key);
 		return { kind: 'object', properties, required, additionalProperties: this.additionalOf(node) };
