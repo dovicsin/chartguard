@@ -5,9 +5,17 @@ export type EnumValue = string | number | boolean;
 /** 'warn' is correct while the schema is incomplete or extensible. */
 export type AdditionalProperties = 'allow' | 'warn' | 'deny';
 
-/** `variant` (an `anyOf` index) applies when the `truthy` property holds a truthy value. */
+/**
+ * How a `defaultWhen` rule reads its property, mirroring the runtime expression: `truthy` (`p ? …`),
+ * `nonEmpty` (`p.length > 0` on a list) and `positive` (`p > 0` on a number).
+ */
+export const DEFAULT_TESTS = ['truthy', 'nonEmpty', 'positive'] as const;
+export type DefaultTest = (typeof DEFAULT_TESTS)[number];
+
+/** `variant` (an `anyOf` index) applies when `property` passes `test`. */
 export interface DefaultChoice {
-	readonly truthy: string;
+	readonly test: DefaultTest;
+	readonly property: string;
 	readonly variant: number;
 }
 
@@ -26,7 +34,7 @@ export interface NodeSchema {
 	readonly discriminator?: string;
 	/** Union: index into `anyOf` used when the discriminator is absent and no `defaultWhen` rule applies. */
 	readonly defaultVariant?: number;
-	/** Union: conditional defaults for an absent discriminator; the first rule whose property is truthy wins. */
+	/** Union: conditional defaults for an absent discriminator; the first rule that passes wins. */
 	readonly defaultWhen?: readonly DefaultChoice[];
 	/** Union: unknown discriminator values may be registered by plugins, so they are not errors. */
 	readonly extensible?: boolean;

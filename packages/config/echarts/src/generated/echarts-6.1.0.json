@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-66fb54835973ef71ccd96caa5da31a3b47e6afde4b46818a2a26d4674334344a",
+	"digest": "sha256-0cb3e9875d838ec48fbaf9d6e88e84b027e66a60ed30f1c28ab245dfa82f016b",
 	"sources": {
 		"echarts": {
 			"kind": "npm-package",
@@ -675,10 +675,88 @@
 											"kind": "ref",
 											"ref": "PiecewiseVisualMapOption"
 										}
-									]
+									],
+									"discriminator": "type",
+									"defaultVariant": 0,
+									"defaultWhen": [
+										{
+											"test": "truthy",
+											"property": "categories",
+											"variant": 1
+										},
+										{
+											"test": "truthy",
+											"property": "calculable",
+											"variant": 0
+										},
+										{
+											"test": "nonEmpty",
+											"property": "pieces",
+											"variant": 1
+										},
+										{
+											"test": "truthy",
+											"property": "pieces",
+											"variant": 0
+										},
+										{
+											"test": "positive",
+											"property": "splitNumber",
+											"variant": 1
+										}
+									],
+									"extensible": true,
+									"provenance": {
+										"confidence": "authoritative",
+										"sources": [
+											{
+												"source": "echarts",
+												"pointer": "echarts/lib/component/visualMap/installCommon.js:56"
+											}
+										]
+									}
 								}
 							}
-						]
+						],
+						"discriminator": "type",
+						"defaultVariant": 0,
+						"defaultWhen": [
+							{
+								"test": "truthy",
+								"property": "categories",
+								"variant": 1
+							},
+							{
+								"test": "truthy",
+								"property": "calculable",
+								"variant": 0
+							},
+							{
+								"test": "nonEmpty",
+								"property": "pieces",
+								"variant": 1
+							},
+							{
+								"test": "truthy",
+								"property": "pieces",
+								"variant": 0
+							},
+							{
+								"test": "positive",
+								"property": "splitNumber",
+								"variant": 1
+							}
+						],
+						"extensible": true,
+						"provenance": {
+							"confidence": "authoritative",
+							"sources": [
+								{
+									"source": "echarts",
+									"pointer": "echarts/lib/component/visualMap/installCommon.js:56"
+								}
+							]
+						}
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -38825,7 +38903,8 @@
 			"discriminator": "type",
 			"defaultWhen": [
 				{
-					"truthy": "data",
+					"test": "truthy",
+					"property": "data",
 					"variant": 2
 				}
 			],
@@ -38870,7 +38949,8 @@
 			"discriminator": "type",
 			"defaultWhen": [
 				{
-					"truthy": "data",
+					"test": "truthy",
+					"property": "data",
 					"variant": 2
 				}
 			],
@@ -42743,7 +42823,8 @@
 			"discriminator": "type",
 			"defaultWhen": [
 				{
-					"truthy": "data",
+					"test": "truthy",
+					"property": "data",
 					"variant": 2
 				}
 			],
@@ -42788,7 +42869,8 @@
 			"discriminator": "type",
 			"defaultWhen": [
 				{
-					"truthy": "data",
+					"test": "truthy",
+					"property": "data",
 					"variant": 2
 				}
 			],
@@ -46938,7 +47020,8 @@
 			"discriminator": "type",
 			"defaultWhen": [
 				{
-					"truthy": "data",
+					"test": "truthy",
+					"property": "data",
 					"variant": 2
 				}
 			],
@@ -46983,7 +47066,8 @@
 			"discriminator": "type",
 			"defaultWhen": [
 				{
-					"truthy": "data",
+					"test": "truthy",
+					"property": "data",
 					"variant": 2
 				}
 			],
@@ -51100,7 +51184,8 @@
 			"discriminator": "type",
 			"defaultWhen": [
 				{
-					"truthy": "data",
+					"test": "truthy",
+					"property": "data",
 					"variant": 2
 				}
 			],
@@ -51145,7 +51230,8 @@
 			"discriminator": "type",
 			"defaultWhen": [
 				{
-					"truthy": "data",
+					"test": "truthy",
+					"property": "data",
 					"variant": 2
 				}
 			],
@@ -55946,7 +56032,8 @@
 			"discriminator": "type",
 			"defaultWhen": [
 				{
-					"truthy": "data",
+					"test": "truthy",
+					"property": "data",
 					"variant": 2
 				}
 			],
@@ -55991,7 +56078,8 @@
 			"discriminator": "type",
 			"defaultWhen": [
 				{
-					"truthy": "data",
+					"test": "truthy",
+					"property": "data",
 					"variant": 2
 				}
 			],
@@ -60701,7 +60789,8 @@
 			"discriminator": "type",
 			"defaultWhen": [
 				{
-					"truthy": "data",
+					"test": "truthy",
+					"property": "data",
 					"variant": 2
 				}
 			],
@@ -60746,7 +60835,8 @@
 			"discriminator": "type",
 			"defaultWhen": [
 				{
-					"truthy": "data",
+					"test": "truthy",
+					"property": "data",
 					"variant": 2
 				}
 			],
@@ -89267,14 +89357,15 @@
 				},
 				"type": {
 					"node": {
-						"kind": "string"
+						"kind": "literal",
+						"value": "continuous"
 					},
 					"provenance": {
 						"confidence": "authoritative",
 						"sources": [
 							{
 								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:8225"
+								"pointer": "echarts/lib/component/visualMap/ContinuousModel.js:203"
 							}
 						]
 					}
@@ -90876,14 +90967,15 @@
 				},
 				"type": {
 					"node": {
-						"kind": "string"
+						"kind": "literal",
+						"value": "piecewise"
 					},
 					"provenance": {
 						"confidence": "authoritative",
 						"sources": [
 							{
 								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:8225"
+								"pointer": "echarts/lib/component/visualMap/PiecewiseModel.js:292"
 							}
 						]
 					}

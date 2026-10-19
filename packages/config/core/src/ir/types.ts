@@ -1,5 +1,7 @@
 import type { Coverage } from '@chartguard/core';
 
+import type { DefaultChoice } from '../schema.js';
+
 export const SCHEMA_IR_VERSION = 1;
 
 export const CONFIDENCE_TIERS = ['authoritative', 'derived', 'manual', 'unknown'] as const;
@@ -93,17 +95,14 @@ export interface UnionNode extends NodeBase {
 	readonly defaultVariant?: number;
 	/**
 	 * Conditional defaults for an absent discriminator, tried in order: the first rule whose
-	 * `truthy` property holds a truthy value selects `variant` (ECharts axes: `data` → category).
+	 * property passes its test selects `variant` (ECharts axes: `data` truthy → category).
 	 */
 	readonly defaultWhen?: readonly DefaultRule[];
 	/** The variant registry can be extended (e.g. by plugins), so unknown variants are not errors. */
 	readonly extensible?: boolean;
 }
 
-export interface DefaultRule {
-	readonly truthy: string;
-	readonly variant: number;
-}
+export type DefaultRule = DefaultChoice;
 
 export interface RefNode extends NodeBase {
 	readonly kind: 'ref';

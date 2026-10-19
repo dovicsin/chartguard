@@ -108,5 +108,15 @@ test('component subtypes and axis defaults come from the runtime, each citing th
 		assert.equal(resolve(union.anyOf[union.defaultVariant]).properties.type.node.value, 'value', axis);
 		assert.match(union.provenance.sources[0].pointer, /^echarts\/lib\/coord\/axisModelCreator\.js:\d+$/);
 	}
-	assert.equal(resolve(option.properties.visualMap.node).discriminator, undefined);
+});
+
+test('the visualMap subtype follows the runtime expression rule by rule, citing it', () => {
+	const visualMap = resolve(option.properties.visualMap.node);
+	const subtype = (index) => resolve(visualMap.anyOf[index]).properties.type.node.value;
+	assert.equal(subtype(visualMap.defaultVariant), 'continuous');
+	assert.deepEqual(
+		visualMap.defaultWhen.map((rule) => `${rule.test} ${rule.property} ${subtype(rule.variant)}`),
+		['truthy categories piecewise', 'truthy calculable continuous', 'nonEmpty pieces piecewise', 'truthy pieces continuous', 'positive splitNumber piecewise']
+	);
+	assert.match(visualMap.provenance.sources[0].pointer, /^echarts\/lib\/component\/visualMap\/installCommon\.js:\d+$/);
 });

@@ -126,10 +126,18 @@ test('conditional defaults must name a property and index anyOf', () => {
 		anyOf: [literal('a'), literal('b')],
 		defaultWhen
 	});
-	assert.deepEqual(problems(artifact(union([{ truthy: 'data', variant: 1 }]))), []);
-	for (const bad of [[{ truthy: '', variant: 0 }], [{ truthy: 'data', variant: 2 }], [{ variant: 0 }], 'data'])
+	for (const kind of ['truthy', 'nonEmpty', 'positive'])
+		assert.deepEqual(problems(artifact(union([{ test: kind, property: 'data', variant: 1 }]))), []);
+	for (const bad of [
+		[{ test: 'truthy', property: '', variant: 0 }],
+		[{ test: 'truthy', property: 'data', variant: 2 }],
+		[{ test: 'longer', property: 'data', variant: 0 }],
+		[{ truthy: 'data', variant: 0 }],
+		[{ property: 'data', variant: 0 }],
+		'data'
+	])
 		assert.deepEqual(problems(artifact(union(bad))), [
-			'$.root: defaultWhen must be a list of { truthy: <property>, variant: <anyOf index> }'
+			'$.root: defaultWhen must be a list of { test: truthy | nonEmpty | positive, property: <name>, variant: <anyOf index> }'
 		]);
 });
 

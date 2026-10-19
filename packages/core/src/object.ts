@@ -1,6 +1,9 @@
-export type OwnProperty = { readonly found: true; readonly value: unknown } | { readonly found: false };
+/** `accessor`: the key exists but holds a getter/setter, whose value cannot be known without running it. */
+export type OwnProperty =
+	{ readonly found: true; readonly value: unknown } | { readonly found: false; readonly accessor: boolean };
 
-const MISSING: OwnProperty = { found: false };
+const MISSING: OwnProperty = { found: false, accessor: false };
+const ACCESSOR: OwnProperty = { found: false, accessor: true };
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -16,6 +19,7 @@ export function isContainer(value: unknown): value is object {
  */
 export function ownDataProperty(target: object, key: string): OwnProperty {
 	const descriptor = Object.getOwnPropertyDescriptor(target, key);
-	if (descriptor === undefined || !('value' in descriptor)) return MISSING;
+	if (descriptor === undefined) return MISSING;
+	if (!('value' in descriptor)) return ACCESSOR;
 	return { found: true, value: descriptor.value as unknown };
 }

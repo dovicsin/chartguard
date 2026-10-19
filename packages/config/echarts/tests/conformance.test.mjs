@@ -63,7 +63,7 @@ test('unknown: extension components at the root are accepted, the root is an ope
 	assert.deepEqual(result.diagnostics, []);
 });
 
-test('context: subtypes the runtime picks by default or from data are resolved; visualMap stays inconclusive', () => {
+test('context: subtypes the runtime picks by default or from the option values are resolved', () => {
 	const codes = (option) => validate(option).diagnostics.map((d) => `${d.code} ${d.severity} ${d.path}`);
 	assert.deepEqual(codes({ dataZoom: [{ type: 'inside' }, { start: 0 }], legend: {}, timeline: { data: [] } }), []);
 	assert.deepEqual(codes({ xAxis: { data: ['a'], boundaryGap: true }, yAxis: { boundaryGap: [0, '5%'] } }), []);
@@ -72,7 +72,13 @@ test('context: subtypes the runtime picks by default or from data are resolved; 
 		codes({ legend: { type: 'scroll', orient: 'vertical' }, dataZoom: { type: 'slider', show: false } }),
 		[]
 	);
-	assert.deepEqual(codes({ visualMap: { min: 0, max: 10 } }), ['CFG_AMBIGUOUS info $.visualMap']);
+	assert.deepEqual(codes({ visualMap: [{ min: 0, max: 10 }, { categories: ['a'] }, { pieces: [{ min: 1 }] }] }), []);
+	// A truthy `calculable` wins over `splitNumber > 0`: continuous, which has no `splitNumber`.
+	assert.deepEqual(codes({ visualMap: { splitNumber: 3, calculable: 'x' } }), [
+		'CFG_UNKNOWN_KEY warning $.visualMap.splitNumber',
+		'CFG_TYPE error $.visualMap.calculable'
+	]);
+	assert.deepEqual(codes({ visualMap: { splitNumber: '3' } }), ['CFG_AMBIGUOUS info $.visualMap']);
 });
 
 test('the manifest is generated for the exact pinned version and stays partial', () => {

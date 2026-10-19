@@ -1,11 +1,13 @@
 import { isRecord } from '@chartguard/core';
 
+import { DEFAULT_TESTS } from '../schema.js';
 import { checkHeader, checkSources, quote, type Report } from './header.js';
 import { CONFIDENCE_TIERS, NODE_KINDS, OPENNESS, type SchemaArtifact } from './types.js';
 
 const MAX_DEPTH = 200;
 const CONFIDENCE_SET: ReadonlySet<unknown> = new Set(CONFIDENCE_TIERS);
 const OPENNESS_SET: ReadonlySet<unknown> = new Set(OPENNESS);
+const TEST_SET: ReadonlySet<unknown> = new Set(DEFAULT_TESTS);
 const LITERAL_TYPES: ReadonlySet<string> = new Set(['string', 'number', 'boolean']);
 
 export interface ArtifactCheck {
@@ -22,15 +24,18 @@ function isIndexBelow(value: unknown, size: number): boolean {
 }
 
 function isDefaultRule(rule: unknown, size: number): boolean {
-	return (
-		isRecord(rule) && typeof rule['truthy'] === 'string' && rule['truthy'] !== '' && isIndexBelow(rule['variant'], size)
-	);
+	if (!isRecord(rule)) return false;
+	const { test, property, variant } = rule;
+	return TEST_SET.has(test) && typeof property === 'string' && property !== '' && isIndexBelow(variant, size);
 }
 
 function checkDefaultWhen(checker: NodeChecker, rules: unknown, path: string, size: number): void {
 	if (rules === undefined) return;
 	if (!Array.isArray(rules) || !rules.every((rule) => isDefaultRule(rule, size)))
-		checker.report(path, 'defaultWhen must be a list of { truthy: <property>, variant: <anyOf index> }');
+		checker.report(
+			path,
+			`defaultWhen must be a list of { test: ${DEFAULT_TESTS.join(' | ')}, property: <name>, variant: <anyOf index> }`
+		);
 }
 
 function checkUnionOptions(checker: NodeChecker, node: Node, path: string, size: number): void {

@@ -1,7 +1,7 @@
 import { isContainer, ownDataProperty } from '@chartguard/core';
 
-import { kindOf } from './kind.js';
-import type { EnumValue, NodeSchema } from './schema.js';
+import { isListLike, kindOf } from './kind.js';
+import type { DefaultChoice, DefaultTest, EnumValue, NodeSchema } from './schema.js';
 
 export type Selection =
 	| { readonly kind: 'variant'; readonly schema: NodeSchema }
@@ -40,23 +40,50 @@ function discriminatorOf(union: NodeSchema): string | undefined {
 	return nested.length > 0 && nested.every((key) => key === first) ? first : undefined;
 }
 
-/** The first `defaultWhen` rule whose property holds a truthy own data value (ECharts `option.data ? … : …`). */
-function conditionalDefault(union: NodeSchema, value: object): number | undefined {
-	return union.defaultWhen?.find(({ truthy }) => {
-		const entry = ownDataProperty(value, truthy);
-		return entry.found && Boolean(entry.value);
-	})?.variant;
+/** `undefined`: the runtime decides this value only by coercion (`'3' > 0`), which is never run here. */
+type Decision = boolean | undefined;
+
+function nonEmpty(value: unknown): Decision {
+	if (isListLike(value)) return value.length > 0;
+	return Boolean(value) ? undefined : false;
 }
 
-/** The union's own default for this value (conditional rules first), or the first one a nested union declares. */
-function defaultOf(union: NodeSchema, value: object): NodeSchema | undefined {
-	const index = conditionalDefault(union, value) ?? union.defaultVariant;
-	if (index !== undefined) return union.anyOf?.[index];
+function positive(value: unknown): Decision {
+	if (typeof value === 'number') return value > 0;
+	return Boolean(value) ? undefined : false;
+}
+
+const TESTS: Readonly<Record<DefaultTest, (value: unknown) => Decision>> = { truthy: Boolean, nonEmpty, positive };
+
+/** An absent property is `undefined`, as the runtime reads it; a getter never runs, so it decides nothing. */
+function decide(rule: DefaultChoice, value: object): Decision {
+	const entry = ownDataProperty(value, rule.property);
+	if (entry.found) return TESTS[rule.test](entry.value);
+	return entry.accessor ? undefined : TESTS[rule.test](undefined);
+}
+
+/**
+ * The union's own default for this value: the first `defaultWhen` rule that passes, else
+ * `defaultVariant`, else the first default a nested union declares. Ambiguous as soon as a rule
+ * cannot be decided before one passes: guessing would check the value against the wrong variant.
+ */
+function defaultOf(union: NodeSchema, value: object): Selection | undefined {
+	for (const rule of union.defaultWhen ?? []) {
+		const decision = decide(rule, value);
+		if (decision === undefined) return AMBIGUOUS;
+		if (decision) return memberAt(union, rule.variant);
+	}
+	if (union.defaultVariant !== undefined) return memberAt(union, union.defaultVariant);
 	for (const member of (union.anyOf ?? []).filter(isUnion)) {
 		const fallback = defaultOf(member, value);
 		if (fallback !== undefined) return fallback;
 	}
 	return undefined;
+}
+
+function memberAt(union: NodeSchema, index: number): Selection | undefined {
+	const member = union.anyOf?.[index];
+	return member === undefined ? undefined : variant(member);
 }
 
 /** A union is extensible when it or any nested union that carries the discriminator says so. */
@@ -87,10 +114,8 @@ function selectByDiscriminator(value: object, union: NodeSchema, members: readon
 	// A member without literal values for the key can never be told apart: do not guess.
 	if (key === undefined || members.some((member) => discriminatorValues(member, key).length === 0)) return AMBIGUOUS;
 	const entry = ownDataProperty(value, key);
-	if (!entry.found || entry.value === undefined) {
-		const fallback = defaultOf(union, value);
-		return fallback === undefined ? AMBIGUOUS : variant(fallback);
-	}
+	if (!entry.found && entry.accessor) return AMBIGUOUS;
+	if (!entry.found || entry.value === undefined) return defaultOf(union, value) ?? AMBIGUOUS;
 	const selected = members.find((member) => discriminatorValues(member, key).some((known) => known === entry.value));
 	if (selected !== undefined) return variant(selected);
 	const known = members.flatMap((member) => discriminatorValues(member, key));

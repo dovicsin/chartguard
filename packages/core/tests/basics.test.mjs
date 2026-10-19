@@ -70,8 +70,9 @@ test('own data reads never run getters', () => {
 			return 1;
 		}
 	});
-	assert.deepEqual(ownDataProperty(target, 'x'), { found: false });
+	assert.deepEqual(ownDataProperty(target, 'x'), { found: false, accessor: true });
 	assert.deepEqual(ownDataProperty({ x: 1 }, 'x'), { found: true, value: 1 });
+	assert.deepEqual(ownDataProperty({}, 'x'), { found: false, accessor: false });
 	assert.equal(called, false);
 });
 

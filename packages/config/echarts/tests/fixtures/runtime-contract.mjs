@@ -183,6 +183,32 @@ export const RUNTIME_CONTRACT = [
 		runtime: 'accepted'
 	},
 	{
+		name: 'visualMap default subtype',
+		config: { visualMap: { min: 0, max: 10, calculable: 'yes' } },
+		findings: ['error CFG_TYPE $.visualMap.calculable'],
+		runtime: 'accepted',
+		why: 'Type contract: the continuous subtype (the runtime default) declares `calculable` as `boolean`; the runtime renders it without an error or warning.'
+	},
+	{
+		name: 'visualMap piecewise from split number',
+		config: { visualMap: { min: 0, max: 10, splitNumber: 5, showLabel: true, itemGap: 'wide' } },
+		findings: ['error CFG_TYPE $.visualMap.itemGap'],
+		runtime: 'accepted',
+		why: 'Type contract: `splitNumber > 0` selects the piecewise subtype, which declares `itemGap` as `number`; the runtime renders it without an error or warning.'
+	},
+	{
+		name: 'visualMap pieces',
+		config: { visualMap: [{ pieces: [{ min: 0, max: 5 }, { min: 5 }], showLabel: true }] },
+		findings: [],
+		runtime: 'accepted'
+	},
+	{
+		name: 'visualMap split number as text',
+		config: { visualMap: { min: 0, max: 10, splitNumber: '5' } },
+		findings: ['info CFG_AMBIGUOUS $.visualMap'],
+		runtime: 'accepted'
+	},
+	{
 		name: 'series without type',
 		config: { series: [{ data: [1] }] },
 		findings: ['info CFG_AMBIGUOUS $.series[0]'],

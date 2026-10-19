@@ -30,6 +30,25 @@ const COMPONENTS = {
 			SliderTimelineOption: { literal: 'slider', file: 'lib/component/timeline/SliderTimelineModel.js', pattern: "SliderTimelineModel.type = 'timeline.slider'" }
 		},
 		default: { literal: 'slider', file: 'lib/component/timeline/install.js', pattern: "registerSubTypeDefaulter('timeline'" }
+	},
+	visualMap: {
+		variants: {
+			ContinuousVisualMapOption: { literal: 'continuous', file: 'lib/component/visualMap/ContinuousModel.js', pattern: "ContinuousModel.type = 'visualMap.continuous'" },
+			PiecewiseVisualMapOption: { literal: 'piecewise', file: 'lib/component/visualMap/PiecewiseModel.js', pattern: "PiecewiseModel.type = 'visualMap.piecewise'" }
+		},
+		// The whole expression is the pattern: a change to it fails generation instead of going stale.
+		default: {
+			literal: 'continuous',
+			file: 'lib/component/visualMap/installCommon.js',
+			pattern: "return !option.categories && (!(option.pieces ? option.pieces.length > 0 : option.splitNumber > 0) || option.calculable) ? 'continuous' : 'piecewise';"
+		},
+		when: [
+			{ test: 'truthy', property: 'categories', literal: 'piecewise' },
+			{ test: 'truthy', property: 'calculable', literal: 'continuous' },
+			{ test: 'nonEmpty', property: 'pieces', literal: 'piecewise' },
+			{ test: 'truthy', property: 'pieces', literal: 'continuous' },
+			{ test: 'positive', property: 'splitNumber', literal: 'piecewise' }
+		]
 	}
 };
 
@@ -69,8 +88,15 @@ function subtypeComponent(root, definitions, union, component) {
 		typed.node = { kind: 'literal', value: variant.literal };
 		typed.provenance = provenance(root, variant);
 	}
-	const defaultIndex = union.anyOf.findIndex((member) => component.variants[memberName(member)]?.literal === component.default.literal);
-	Object.assign(union, { discriminator: 'type', defaultVariant: defaultIndex, extensible: true, provenance: provenance(root, component.default) });
+	const indexOf = (literal) => union.anyOf.findIndex((member) => component.variants[memberName(member)]?.literal === literal);
+	const defaultWhen = (component.when ?? []).map(({ literal, ...rule }) => ({ ...rule, variant: indexOf(literal) }));
+	Object.assign(union, {
+		discriminator: 'type',
+		defaultVariant: indexOf(component.default.literal),
+		...(defaultWhen.length === 0 ? {} : { defaultWhen }),
+		extensible: true,
+		provenance: provenance(root, component.default)
+	});
 }
 
 function axisDefaults(root, definitions, union) {
@@ -78,7 +104,7 @@ function axisDefaults(root, definitions, union) {
 		union.anyOf.findIndex((member) => member.kind === 'ref' && definitions[member.ref].properties.type?.node.value === literal);
 	const [category, value] = [indexOf('category'), indexOf('value')];
 	if (category === -1 || value === -1) throw changed('axis variants');
-	Object.assign(union, { defaultWhen: [{ truthy: 'data', variant: category }], defaultVariant: value, provenance: provenance(root, AXIS_TYPE) });
+	Object.assign(union, { defaultWhen: [{ test: 'truthy', property: 'data', variant: category }], defaultVariant: value, provenance: provenance(root, AXIS_TYPE) });
 }
 
 /** Rewrites, in place, the component and axis unions under the root `EChartsOption` definition. */
