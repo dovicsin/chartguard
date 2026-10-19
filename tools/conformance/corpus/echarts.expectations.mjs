@@ -118,8 +118,10 @@ export const EXPECTATIONS = [
 		]
 	},
 	{
-		why: "Unresolved: options not declared in 6.1.0 (`sankey.layout`, label `textStyle` and `formatter` nesting from ECharts 3); the runtime ignores them or warns that they are deprecated.",
+		why: "Unresolved: options not declared in 6.1.0 (`sankey.layout`, `show` or layout keys on an inside dataZoom, label `textStyle` and `formatter` nesting from ECharts 3); the runtime ignores them or warns that they are deprecated.",
 		paths: [
+			"candlestick-touch.ts",
+			"line-function.ts",
 			"matrix-periodic-table.ts",
 			"sankey-simple.ts"
 		]
@@ -128,7 +130,6 @@ export const EXPECTATIONS = [
 		why: "False negative (CG-02-08): `legend.data` names a series that does not exist; the runtime warns, the validator does not compare the two yet.",
 		paths: [
 			"candlestick-sh-2015.ts",
-			"candlestick-touch.ts",
 			"custom-cartesian-polygon.ts",
 			"custom-error-scatter.ts",
 			"line-graphic.ts",

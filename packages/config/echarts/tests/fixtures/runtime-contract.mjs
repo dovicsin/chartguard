@@ -113,13 +113,64 @@ export const RUNTIME_CONTRACT = [
 	{
 		name: 'dataZoom default subtype',
 		config: { ...axes, dataZoom: [{ start: 0, end: 50 }], series: [{ type: 'line', data: [1] }] },
-		findings: ['info CFG_AMBIGUOUS $.dataZoom[0]'],
+		findings: [],
 		runtime: 'accepted'
 	},
 	{
 		name: 'axis default subtype',
 		config: { xAxis: { data: ['a'] }, yAxis: {}, series: [{ type: 'bar', data: [1] }] },
-		findings: ['info CFG_AMBIGUOUS $.xAxis', 'info CFG_AMBIGUOUS $.yAxis'],
+		findings: [],
+		runtime: 'accepted'
+	},
+	{
+		name: 'dataZoom without type is a slider (registerSubTypeDefaulter)',
+		config: { ...axes, dataZoom: [{ start: 'x' }], series: [{ type: 'line', data: [1] }] },
+		findings: ['error CFG_TYPE $.dataZoom[0].start'],
+		runtime: 'accepted',
+		why: 'Type contract: declared `number`; the runtime renders it without an error or warning.'
+	},
+	{
+		name: 'inside dataZoom options',
+		config: { ...axes, dataZoom: [{ type: 'inside', zoomOnMouseWheel: 'yes' }], series: [{ type: 'line', data: [1] }] },
+		findings: ['error CFG_ENUM $.dataZoom[0].zoomOnMouseWheel'],
+		runtime: 'accepted',
+		why: "Type contract: declared `boolean | 'shift' | 'ctrl' | 'alt'`; the runtime renders it without an error or warning."
+	},
+	{
+		name: 'inside dataZoom has no show option',
+		config: { ...axes, dataZoom: [{ type: 'inside', show: true }], series: [{ type: 'line', data: [1] }] },
+		findings: ['warning CFG_UNKNOWN_KEY $.dataZoom[0].show'],
+		runtime: 'accepted',
+		why: 'Unresolved: only the slider declares `show`; the inside subtype ignores it (official line-function example).'
+	},
+	{
+		name: 'dataZoom subtype outside the declarations',
+		config: { ...axes, dataZoom: { type: 'select' }, series: [{ type: 'line', data: [1] }] },
+		findings: ['warning CFG_UNKNOWN_VARIANT $.dataZoom.type'],
+		runtime: 'accepted',
+		why: 'Unresolved: subtypes are a registry; `dataZoom.select` is registered by the full bundle (toolbox) but not declared.'
+	},
+	{
+		name: 'scroll legend options',
+		config: {
+			legend: { type: 'scroll', pageButtonPosition: 1 },
+			series: [{ type: 'pie', data: [{ name: 'a', value: 1 }] }]
+		},
+		findings: ['error CFG_TYPE $.legend.pageButtonPosition'],
+		runtime: 'accepted',
+		why: "Type contract: declared `'start' | 'end'`; the runtime renders it without an error or warning."
+	},
+	{
+		name: 'axis with data is a category axis (getAxisType)',
+		config: { xAxis: { data: ['a'], boundaryGap: 'x' }, yAxis: {}, series: [{ type: 'bar', data: [1] }] },
+		findings: ['error CFG_TYPE $.xAxis.boundaryGap'],
+		runtime: 'accepted',
+		why: 'Type contract: a category axis declares `boolean`; the runtime renders it without an error or warning.'
+	},
+	{
+		name: 'axis without data is a value axis (getAxisType)',
+		config: { xAxis: { min: 'dataMin' }, yAxis: { type: 'value' }, series: [{ type: 'scatter', data: [[1, 2]] }] },
+		findings: [],
 		runtime: 'accepted'
 	},
 	{

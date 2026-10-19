@@ -113,3 +113,22 @@ test('required must be a boolean and discriminated members must carry a literal 
 		'$.root.anyOf[1]: discriminator "type" must be a literal property of every object member'
 	]);
 });
+
+test('conditional defaults must name a property and index anyOf', () => {
+	const literal = (value) => ({
+		kind: 'object',
+		additional: 'closed',
+		properties: { type: prop({ kind: 'literal', value }) }
+	});
+	const union = (defaultWhen) => ({
+		kind: 'union',
+		discriminator: 'type',
+		anyOf: [literal('a'), literal('b')],
+		defaultWhen
+	});
+	assert.deepEqual(problems(artifact(union([{ truthy: 'data', variant: 1 }]))), []);
+	for (const bad of [[{ truthy: '', variant: 0 }], [{ truthy: 'data', variant: 2 }], [{ variant: 0 }], 'data'])
+		assert.deepEqual(problems(artifact(union(bad))), [
+			'$.root: defaultWhen must be a list of { truthy: <property>, variant: <anyOf index> }'
+		]);
+});

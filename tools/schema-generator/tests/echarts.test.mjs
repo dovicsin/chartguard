@@ -39,13 +39,13 @@ function provenances(node) {
 	return [...own, ...Object.values(node).flatMap(provenances)];
 }
 
-test('every fact is authoritative and points at a declaration inside the echarts package', () => {
+test('every fact is authoritative and points into the pinned echarts package (declarations or runtime)', () => {
 	const all = provenances(definitions);
 	assert.ok(all.length > 5000);
 	for (const { confidence, sources } of all) {
 		assert.equal(confidence, 'authoritative');
 		assert.equal(sources[0].source, 'echarts');
-		assert.match(sources[0].pointer, /^echarts\/types\/dist\/shared\.d\.ts:\d+$/);
+		assert.match(sources[0].pointer, /^echarts\/(types\/dist\/shared\.d\.ts|lib\/[\w/-]+\.js):\d+$/);
 	}
 	assert.equal(first.text.includes(ROOT), false);
 });
@@ -90,4 +90,23 @@ test('large unions are stored once and referenced instead of copied under every 
 		[...counts.values()].filter((count) => count > 1),
 		[]
 	);
+});
+
+test('component subtypes and axis defaults come from the runtime, each citing the line it is read from', () => {
+	const dataZoom = resolve(option.properties.dataZoom.node);
+	assert.deepEqual([dataZoom.discriminator, dataZoom.extensible], ['type', true]);
+	assert.equal(resolve(dataZoom.anyOf[dataZoom.defaultVariant]).properties.type.node.value, 'slider');
+	assert.match(dataZoom.provenance.sources[0].pointer, /^echarts\/lib\/component\/dataZoom\/installCommon\.js:\d+$/);
+	const slider = resolve(dataZoom.anyOf[dataZoom.defaultVariant]).properties.type;
+	assert.match(slider.provenance.sources[0].pointer, /^echarts\/lib\/component\/dataZoom\/SliderZoomModel\.js:\d+$/);
+	const legend = resolve(option.properties.legend.node);
+	assert.equal(resolve(legend.anyOf[legend.defaultVariant]).properties.type.node.value, 'plain');
+	for (const axis of ['xAxis', 'yAxis', 'angleAxis', 'radiusAxis', 'singleAxis', 'parallelAxis']) {
+		const union = resolve(option.properties[axis].node);
+		const [rule] = union.defaultWhen;
+		assert.equal(resolve(union.anyOf[rule.variant]).properties.type.node.value, 'category', axis);
+		assert.equal(resolve(union.anyOf[union.defaultVariant]).properties.type.node.value, 'value', axis);
+		assert.match(union.provenance.sources[0].pointer, /^echarts\/lib\/coord\/axisModelCreator\.js:\d+$/);
+	}
+	assert.equal(resolve(option.properties.visualMap.node).discriminator, undefined);
 });

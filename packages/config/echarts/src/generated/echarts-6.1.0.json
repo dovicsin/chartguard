@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-143822816bf5116bb0fe07417973c71bd8c293b310e4d457777a7151a363a9ca",
+	"digest": "sha256-66fb54835973ef71ccd96caa5da31a3b47e6afde4b46818a2a26d4674334344a",
 	"sources": {
 		"echarts": {
 			"kind": "npm-package",
@@ -498,7 +498,19 @@
 								"kind": "ref",
 								"ref": "SliderTimelineOption"
 							}
-						]
+						],
+						"discriminator": "type",
+						"defaultVariant": 0,
+						"extensible": true,
+						"provenance": {
+							"confidence": "authoritative",
+							"sources": [
+								{
+									"source": "echarts",
+									"pointer": "echarts/lib/component/timeline/install.js:33"
+								}
+							]
+						}
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -535,10 +547,34 @@
 											"kind": "ref",
 											"ref": "ScrollableLegendOption"
 										}
-									]
+									],
+									"discriminator": "type",
+									"defaultVariant": 0,
+									"extensible": true,
+									"provenance": {
+										"confidence": "authoritative",
+										"sources": [
+											{
+												"source": "echarts",
+												"pointer": "echarts/lib/component/legend/installLegendPlain.js:52"
+											}
+										]
+									}
 								}
 							}
-						]
+						],
+						"discriminator": "type",
+						"defaultVariant": 0,
+						"extensible": true,
+						"provenance": {
+							"confidence": "authoritative",
+							"sources": [
+								{
+									"source": "echarts",
+									"pointer": "echarts/lib/component/legend/installLegendPlain.js:52"
+								}
+							]
+						}
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -575,10 +611,34 @@
 											"kind": "ref",
 											"ref": "InsideDataZoomOption"
 										}
-									]
+									],
+									"discriminator": "type",
+									"defaultVariant": 0,
+									"extensible": true,
+									"provenance": {
+										"confidence": "authoritative",
+										"sources": [
+											{
+												"source": "echarts",
+												"pointer": "echarts/lib/component/dataZoom/installCommon.js:52"
+											}
+										]
+									}
 								}
 							}
-						]
+						],
+						"discriminator": "type",
+						"defaultVariant": 0,
+						"extensible": true,
+						"provenance": {
+							"confidence": "authoritative",
+							"sources": [
+								{
+									"source": "echarts",
+									"pointer": "echarts/lib/component/dataZoom/installCommon.js:52"
+								}
+							]
+						}
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -38762,7 +38822,23 @@
 					"ref": "TimeAxisBaseOption & { mainType?: \"angleAxis\" | undefined; polarIndex?: number |…#91f7c39638"
 				}
 			],
-			"discriminator": "type"
+			"discriminator": "type",
+			"defaultWhen": [
+				{
+					"truthy": "data",
+					"variant": 2
+				}
+			],
+			"defaultVariant": 0,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/coord/axisModelCreator.js:118"
+					}
+				]
+			}
 		},
 		"AngleAxisOption | AngleAxisOption[]": {
 			"kind": "union",
@@ -38791,7 +38867,23 @@
 					}
 				}
 			],
-			"discriminator": "type"
+			"discriminator": "type",
+			"defaultWhen": [
+				{
+					"truthy": "data",
+					"variant": 2
+				}
+			],
+			"defaultVariant": 0,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/coord/axisModelCreator.js:118"
+					}
+				]
+			}
 		},
 		"ValueAxisBaseOption & { mainType?: \"radiusAxis\" | undefined; polarIndex?: number…#d791fd7c0d": {
 			"kind": "object",
@@ -42648,7 +42740,23 @@
 					"ref": "TimeAxisBaseOption & { mainType?: \"radiusAxis\" | undefined; polarIndex?: number …#64c5486a99"
 				}
 			],
-			"discriminator": "type"
+			"discriminator": "type",
+			"defaultWhen": [
+				{
+					"truthy": "data",
+					"variant": 2
+				}
+			],
+			"defaultVariant": 0,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/coord/axisModelCreator.js:118"
+					}
+				]
+			}
 		},
 		"RadiusAxisOption | RadiusAxisOption[]": {
 			"kind": "union",
@@ -42677,7 +42785,23 @@
 					}
 				}
 			],
-			"discriminator": "type"
+			"discriminator": "type",
+			"defaultWhen": [
+				{
+					"truthy": "data",
+					"variant": 2
+				}
+			],
+			"defaultVariant": 0,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/coord/axisModelCreator.js:118"
+					}
+				]
+			}
 		},
 		"ValueAxisBaseOption & { gridIndex?: number | undefined; gridId?: string | undefi…#a66d032890": {
 			"kind": "object",
@@ -46811,7 +46935,23 @@
 					"ref": "TimeAxisBaseOption & { gridIndex?: number | undefined; gridId?: string | undefin…#da916d7728"
 				}
 			],
-			"discriminator": "type"
+			"discriminator": "type",
+			"defaultWhen": [
+				{
+					"truthy": "data",
+					"variant": 2
+				}
+			],
+			"defaultVariant": 0,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/coord/axisModelCreator.js:118"
+					}
+				]
+			}
 		},
 		"XAXisOption | XAXisOption[]": {
 			"kind": "union",
@@ -46840,7 +46980,23 @@
 					}
 				}
 			],
-			"discriminator": "type"
+			"discriminator": "type",
+			"defaultWhen": [
+				{
+					"truthy": "data",
+					"variant": 2
+				}
+			],
+			"defaultVariant": 0,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/coord/axisModelCreator.js:118"
+					}
+				]
+			}
 		},
 		"ValueAxisBaseOption & { gridIndex?: number | undefined; gridId?: string | undefi…#0c823561e8": {
 			"kind": "object",
@@ -50941,7 +51097,23 @@
 					"ref": "TimeAxisBaseOption & { gridIndex?: number | undefined; gridId?: string | undefin…#5d2435cf11"
 				}
 			],
-			"discriminator": "type"
+			"discriminator": "type",
+			"defaultWhen": [
+				{
+					"truthy": "data",
+					"variant": 2
+				}
+			],
+			"defaultVariant": 0,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/coord/axisModelCreator.js:118"
+					}
+				]
+			}
 		},
 		"YAXisOption | YAXisOption[]": {
 			"kind": "union",
@@ -50970,7 +51142,23 @@
 					}
 				}
 			],
-			"discriminator": "type"
+			"discriminator": "type",
+			"defaultWhen": [
+				{
+					"truthy": "data",
+					"variant": 2
+				}
+			],
+			"defaultVariant": 0,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/coord/axisModelCreator.js:118"
+					}
+				]
+			}
 		},
 		"ValueAxisBaseOption & BoxLayoutOptionMixin & { mainType?: \"singleAxis\" | undefin…#4e09012591": {
 			"kind": "object",
@@ -55755,7 +55943,23 @@
 					"ref": "TimeAxisBaseOption & BoxLayoutOptionMixin & { mainType?: \"singleAxis\" | undefine…#3058ed0163"
 				}
 			],
-			"discriminator": "type"
+			"discriminator": "type",
+			"defaultWhen": [
+				{
+					"truthy": "data",
+					"variant": 2
+				}
+			],
+			"defaultVariant": 0,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/coord/axisModelCreator.js:118"
+					}
+				]
+			}
 		},
 		"SingleAxisOption | SingleAxisOption[]": {
 			"kind": "union",
@@ -55784,7 +55988,23 @@
 					}
 				}
 			],
-			"discriminator": "type"
+			"discriminator": "type",
+			"defaultWhen": [
+				{
+					"truthy": "data",
+					"variant": 2
+				}
+			],
+			"defaultVariant": 0,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/coord/axisModelCreator.js:118"
+					}
+				]
+			}
 		},
 		"ParallelCoordinateSystemOption": {
 			"kind": "object",
@@ -60478,7 +60698,23 @@
 					"ref": "TimeAxisBaseOption & { dim?: number | number[] | undefined; parallelIndex?: numb…#1261838095"
 				}
 			],
-			"discriminator": "type"
+			"discriminator": "type",
+			"defaultWhen": [
+				{
+					"truthy": "data",
+					"variant": 2
+				}
+			],
+			"defaultVariant": 0,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/coord/axisModelCreator.js:118"
+					}
+				]
+			}
 		},
 		"ParallelAxisOption | ParallelAxisOption[]": {
 			"kind": "union",
@@ -60507,7 +60743,23 @@
 					}
 				}
 			],
-			"discriminator": "type"
+			"discriminator": "type",
+			"defaultWhen": [
+				{
+					"truthy": "data",
+					"variant": 2
+				}
+			],
+			"defaultVariant": 0,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/coord/axisModelCreator.js:118"
+					}
+				]
+			}
 		},
 		"CalendarOption": {
 			"kind": "object",
@@ -76889,14 +77141,15 @@
 				},
 				"type": {
 					"node": {
-						"kind": "string"
+						"kind": "literal",
+						"value": "slider"
 					},
 					"provenance": {
 						"confidence": "authoritative",
 						"sources": [
 							{
 								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:8225"
+								"pointer": "echarts/lib/component/timeline/SliderTimelineModel.js:57"
 							}
 						]
 					}
@@ -81104,14 +81357,15 @@
 				},
 				"type": {
 					"node": {
-						"kind": "string"
+						"kind": "literal",
+						"value": "slider"
 					},
 					"provenance": {
 						"confidence": "authoritative",
 						"sources": [
 							{
 								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:8225"
+								"pointer": "echarts/lib/component/timeline/SliderTimelineModel.js:57"
 							}
 						]
 					}
@@ -81974,14 +82228,15 @@
 				},
 				"type": {
 					"node": {
-						"kind": "string"
+						"kind": "literal",
+						"value": "plain"
 					},
 					"provenance": {
 						"confidence": "authoritative",
 						"sources": [
 							{
 								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:8225"
+								"pointer": "echarts/lib/component/legend/LegendModel.js:240"
 							}
 						]
 					}
@@ -84822,14 +85077,15 @@
 				},
 				"type": {
 					"node": {
-						"kind": "string"
+						"kind": "literal",
+						"value": "scroll"
 					},
 					"provenance": {
 						"confidence": "authoritative",
 						"sources": [
 							{
 								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:8225"
+								"pointer": "echarts/lib/component/legend/ScrollableLegendModel.js:74"
 							}
 						]
 					}
@@ -86685,14 +86941,15 @@
 				},
 				"type": {
 					"node": {
-						"kind": "string"
+						"kind": "literal",
+						"value": "slider"
 					},
 					"provenance": {
 						"confidence": "authoritative",
 						"sources": [
 							{
 								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:8225"
+								"pointer": "echarts/lib/component/dataZoom/SliderZoomModel.js:55"
 							}
 						]
 					}
@@ -88064,14 +88321,15 @@
 				},
 				"type": {
 					"node": {
-						"kind": "string"
+						"kind": "literal",
+						"value": "inside"
 					},
 					"provenance": {
 						"confidence": "authoritative",
 						"sources": [
 							{
 								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:8225"
+								"pointer": "echarts/lib/component/dataZoom/InsideZoomModel.js:54"
 							}
 						]
 					}

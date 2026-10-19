@@ -84,10 +84,20 @@ export interface UnionNode extends NodeBase {
 	readonly anyOf: readonly IrNode[];
 	/** Property whose literal value selects among object members. */
 	readonly discriminator?: string;
-	/** Index into `anyOf` used when the discriminator is absent. */
+	/** Index into `anyOf` used when the discriminator is absent and no `defaultWhen` rule applies. */
 	readonly defaultVariant?: number;
+	/**
+	 * Conditional defaults for an absent discriminator, tried in order: the first rule whose
+	 * `truthy` property holds a truthy value selects `variant` (ECharts axes: `data` → category).
+	 */
+	readonly defaultWhen?: readonly DefaultRule[];
 	/** The variant registry can be extended (e.g. by plugins), so unknown variants are not errors. */
 	readonly extensible?: boolean;
+}
+
+export interface DefaultRule {
+	readonly truthy: string;
+	readonly variant: number;
 }
 
 export interface RefNode extends NodeBase {

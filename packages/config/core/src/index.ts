@@ -1,6 +1,7 @@
 export * from './ir/index.js';
 export type {
 	AdditionalProperties,
+	DefaultChoice,
 	EnumValue,
 	NodeSchema,
 	ObjectOptions,

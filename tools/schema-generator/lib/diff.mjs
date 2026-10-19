@@ -77,7 +77,7 @@ function signature(node, paths) {
 	);
 }
 
-const UNION_FIELDS = ['discriminator', 'defaultVariant', 'extensible'];
+const UNION_FIELDS = ['discriminator', 'defaultVariant', 'defaultWhen', 'extensible'];
 
 function compareObjects(path, before, after, changes) {
 	const keys = new Set([...Object.keys(before.properties), ...Object.keys(after.properties)]);
@@ -107,7 +107,7 @@ function compareDefinitions(path, before, after, changes) {
 	}
 	if (before.kind === 'union' && after.kind === 'union') {
 		for (const field of UNION_FIELDS)
-			if (before[field] !== after[field])
+			if (JSON.stringify(before[field]) !== JSON.stringify(after[field]))
 				changes.push({ kind: `${field}-changed`, path, before: before[field], after: after[field] });
 		if (JSON.stringify(withoutUnionFields(before)) === JSON.stringify(withoutUnionFields(after))) return;
 	}

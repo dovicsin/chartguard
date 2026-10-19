@@ -87,6 +87,7 @@ class Lowerer {
 			anyOf: node.anyOf.map((member) => this.lower(member, path)),
 			...(node.discriminator === undefined ? {} : { discriminator: node.discriminator }),
 			...(node.defaultVariant === undefined ? {} : { defaultVariant: node.defaultVariant }),
+			...(node.defaultWhen === undefined ? {} : { defaultWhen: node.defaultWhen }),
 			...(node.extensible === undefined ? {} : { extensible: node.extensible })
 		};
 	}

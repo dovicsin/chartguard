@@ -63,13 +63,15 @@ test('unknown: extension components at the root are accepted, the root is an ope
 	assert.deepEqual(result.diagnostics, []);
 });
 
-test('unknown: components whose runtime subtype is chosen by default or by content are inconclusive, not guessed', () => {
+test('context: subtypes the runtime picks by default or from data are resolved; visualMap stays inconclusive', () => {
 	const codes = (option) => validate(option).diagnostics.map((d) => `${d.code} ${d.severity} ${d.path}`);
-	assert.deepEqual(codes({ xAxis: { min: 'x' } }), ['CFG_AMBIGUOUS info $.xAxis']);
-	assert.deepEqual(codes({ dataZoom: [{ type: 'inside' }, { start: 0 }] }), [
-		'CFG_AMBIGUOUS info $.dataZoom[0]',
-		'CFG_AMBIGUOUS info $.dataZoom[1]'
-	]);
+	assert.deepEqual(codes({ dataZoom: [{ type: 'inside' }, { start: 0 }], legend: {}, timeline: { data: [] } }), []);
+	assert.deepEqual(codes({ xAxis: { data: ['a'], boundaryGap: true }, yAxis: { boundaryGap: [0, '5%'] } }), []);
+	assert.deepEqual(codes({ xAxis: { data: [], boundaryGap: [0, 0] } }), ['CFG_TYPE error $.xAxis.boundaryGap']);
+	assert.deepEqual(
+		codes({ legend: { type: 'scroll', orient: 'vertical' }, dataZoom: { type: 'slider', show: false } }),
+		[]
+	);
 	assert.deepEqual(codes({ visualMap: { min: 0, max: 10 } }), ['CFG_AMBIGUOUS info $.visualMap']);
 });
 

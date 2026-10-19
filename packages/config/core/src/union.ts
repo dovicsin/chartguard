@@ -40,11 +40,20 @@ function discriminatorOf(union: NodeSchema): string | undefined {
 	return nested.length > 0 && nested.every((key) => key === first) ? first : undefined;
 }
 
-/** The union's own default variant, or the first one a nested union declares. */
-function defaultOf(union: NodeSchema): NodeSchema | undefined {
-	if (union.defaultVariant !== undefined) return union.anyOf?.[union.defaultVariant];
+/** The first `defaultWhen` rule whose property holds a truthy own data value (ECharts `option.data ? … : …`). */
+function conditionalDefault(union: NodeSchema, value: object): number | undefined {
+	return union.defaultWhen?.find(({ truthy }) => {
+		const entry = ownDataProperty(value, truthy);
+		return entry.found && Boolean(entry.value);
+	})?.variant;
+}
+
+/** The union's own default for this value (conditional rules first), or the first one a nested union declares. */
+function defaultOf(union: NodeSchema, value: object): NodeSchema | undefined {
+	const index = conditionalDefault(union, value) ?? union.defaultVariant;
+	if (index !== undefined) return union.anyOf?.[index];
 	for (const member of (union.anyOf ?? []).filter(isUnion)) {
-		const fallback = defaultOf(member);
+		const fallback = defaultOf(member, value);
 		if (fallback !== undefined) return fallback;
 	}
 	return undefined;
@@ -79,7 +88,7 @@ function selectByDiscriminator(value: object, union: NodeSchema, members: readon
 	if (key === undefined || members.some((member) => discriminatorValues(member, key).length === 0)) return AMBIGUOUS;
 	const entry = ownDataProperty(value, key);
 	if (!entry.found || entry.value === undefined) {
-		const fallback = defaultOf(union);
+		const fallback = defaultOf(union, value);
 		return fallback === undefined ? AMBIGUOUS : variant(fallback);
 	}
 	const selected = members.find((member) => discriminatorValues(member, key).some((known) => known === entry.value));

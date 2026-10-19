@@ -21,10 +21,23 @@ function isIndexBelow(value: unknown, size: number): boolean {
 	return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < size;
 }
 
+function isDefaultRule(rule: unknown, size: number): boolean {
+	return (
+		isRecord(rule) && typeof rule['truthy'] === 'string' && rule['truthy'] !== '' && isIndexBelow(rule['variant'], size)
+	);
+}
+
+function checkDefaultWhen(checker: NodeChecker, rules: unknown, path: string, size: number): void {
+	if (rules === undefined) return;
+	if (!Array.isArray(rules) || !rules.every((rule) => isDefaultRule(rule, size)))
+		checker.report(path, 'defaultWhen must be a list of { truthy: <property>, variant: <anyOf index> }');
+}
+
 function checkUnionOptions(checker: NodeChecker, node: Node, path: string, size: number): void {
 	const { defaultVariant, extensible, discriminator } = node;
 	if (defaultVariant !== undefined && !isIndexBelow(defaultVariant, size))
 		checker.report(path, 'defaultVariant must index anyOf');
+	checkDefaultWhen(checker, node['defaultWhen'], path, size);
 	if (extensible !== undefined && typeof extensible !== 'boolean') checker.report(path, 'extensible must be a boolean');
 	if (discriminator !== undefined && typeof discriminator !== 'string')
 		checker.report(path, 'discriminator must be a string');

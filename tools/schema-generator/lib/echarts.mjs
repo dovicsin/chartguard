@@ -1,3 +1,4 @@
+import { resolveComponentSubtypes } from './echarts-components.mjs';
 import { TypeEmitter } from './emitter.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
 import { artifactOf, typeLookups, unionMembers } from './types.mjs';
@@ -58,11 +59,13 @@ export function generateEcharts(root, pin) {
 	const aliases = exportedAliasTypes(checker, entry);
 	const adjustments = contractAdjustments(typeLookups(checker, 'echarts'), checker, aliases);
 	const emitter = new TypeEmitter({ program, checker, sourceId: SOURCE_ID, packageName: pin.package, ...adjustments });
+	const optionRef = emitter.reference(aliases.get('Option'));
+	resolveComponentSubtypes(root, emitter.definitions, emitter.definitions[optionRef.ref]);
 	return artifactOf({
 		library: 'echarts',
 		sourceId: SOURCE_ID,
 		pin,
 		definitions: emitter.definitions,
-		root: emitter.reference(aliases.get('Option'))
+		root: optionRef
 	});
 }

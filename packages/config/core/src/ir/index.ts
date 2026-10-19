@@ -6,6 +6,7 @@ export { lowerArtifact } from './lower.js';
 export type {
 	ArrayNode,
 	ConfidenceTier,
+	DefaultRule,
 	Deprecation,
 	IrNode,
 	LiteralNode,

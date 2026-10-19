@@ -172,3 +172,29 @@ test('an undefined array element is "not provided", exactly as an undefined prop
 	assert.deepEqual(codes(rows, { data: [[1, undefined, 3]], dimensions: [undefined, 'y'] }), []);
 	assert.deepEqual(codes(rows, { data: [[1, null]] }), ['CFG_TYPE error $.data[0][1]']);
 });
+
+test('conditional defaults: the first rule whose property is truthy picks the variant, else the default variant', () => {
+	const category = s.object({ type: s.string(['category']), boundaryGap: s.boolean() });
+	const value = s.object({ type: s.string(['value']), min: s.number(), data: s.any() });
+	const axis = s.union([value, category], {
+		discriminator: 'type',
+		defaultVariant: 0,
+		defaultWhen: [{ truthy: 'data', variant: 1 }]
+	});
+	const withData = s.object({ type: s.string(['category']), data: s.array(s.string()), boundaryGap: s.boolean() });
+	const axisWithData = s.union([value, withData], {
+		discriminator: 'type',
+		defaultVariant: 0,
+		defaultWhen: [{ truthy: 'data', variant: 1 }]
+	});
+	assert.deepEqual(codes(axisWithData, { data: [], boundaryGap: 'x' }), ['CFG_TYPE error $.boundaryGap']);
+	assert.deepEqual(codes(axis, { min: 'x' }), ['CFG_TYPE error $.min']);
+	for (const falsy of [0, '', null, false])
+		assert.deepEqual(codes(axis, { data: falsy, min: 'x' }), ['CFG_TYPE error $.min']);
+	assert.deepEqual(codes(s.union([axisWithData, s.func()]), { data: ['a'], boundaryGap: 'x' }), [
+		'CFG_TYPE error $.boundaryGap'
+	]);
+	const getterOnly = Object.defineProperty({ min: 'x' }, 'data', { enumerable: true, get: () => ['a'] });
+	// A getter never runs, so it cannot pick the category variant: the value variant applies.
+	assert.deepEqual(codes(axis, getterOnly), ['CFG_TYPE error $.min', 'CFG_DYNAMIC warning $.data']);
+});

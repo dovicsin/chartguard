@@ -5,6 +5,12 @@ export type EnumValue = string | number | boolean;
 /** 'warn' is correct while the schema is incomplete or extensible. */
 export type AdditionalProperties = 'allow' | 'warn' | 'deny';
 
+/** `variant` (an `anyOf` index) applies when the `truthy` property holds a truthy value. */
+export interface DefaultChoice {
+	readonly truthy: string;
+	readonly variant: number;
+}
+
 export interface NodeSchema {
 	readonly kind: SchemaKind;
 	readonly properties?: Readonly<Record<string, NodeSchema>>;
@@ -18,8 +24,10 @@ export interface NodeSchema {
 	readonly anyOf?: readonly NodeSchema[];
 	/** Union: property whose literal value selects among object members. */
 	readonly discriminator?: string;
-	/** Union: index into `anyOf` used when the discriminator is absent. */
+	/** Union: index into `anyOf` used when the discriminator is absent and no `defaultWhen` rule applies. */
 	readonly defaultVariant?: number;
+	/** Union: conditional defaults for an absent discriminator; the first rule whose property is truthy wins. */
+	readonly defaultWhen?: readonly DefaultChoice[];
 	/** Union: unknown discriminator values may be registered by plugins, so they are not errors. */
 	readonly extensible?: boolean;
 	readonly doc?: string;
@@ -43,6 +51,7 @@ export interface ObjectOptions {
 export interface UnionOptions {
 	readonly discriminator?: string;
 	readonly defaultVariant?: number;
+	readonly defaultWhen?: readonly DefaultChoice[];
 	readonly extensible?: boolean;
 }
 
