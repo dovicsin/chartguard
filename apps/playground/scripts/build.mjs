@@ -33,8 +33,9 @@ async function examplesOf({ library, contract: withContract, directory }) {
 	const { RUNTIME_CONTRACT = [] } = withContract ? await fixtureModule(directory, 'runtime-contract.mjs') : {};
 	// The rules over several options at once have their own table (CG-02-08).
 	const { RULES_CONTRACT = [] } = withContract ? await fixtureModule(directory, 'rules-contract.mjs') : {};
+	const { DEPRECATIONS_CONTRACT = [] } = withContract ? await fixtureModule(directory, 'deprecations-contract.mjs') : {};
 	const valid = Object.entries(KNOWN_VALID).map(([title, config]) => ({ title, group: 'valid', config }));
-	const contract = [...RUNTIME_CONTRACT, ...RULES_CONTRACT].map(({ name, config, findings, runtime, why }) => ({
+	const contract = [...RUNTIME_CONTRACT, ...RULES_CONTRACT, ...DEPRECATIONS_CONTRACT].map(({ name, config, findings, runtime, why }) => ({
 		title: name,
 		group: 'contract',
 		config,

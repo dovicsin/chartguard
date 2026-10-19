@@ -2,6 +2,8 @@ export type {
 	Confidence,
 	Coverage,
 	Diagnostic,
+	Fix,
+	KeyRename,
 	QualityReport,
 	RegistryContext,
 	Severity,

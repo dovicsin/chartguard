@@ -168,10 +168,12 @@ class NodeChecker {
 			this.report(path, 'expected an object');
 			return;
 		}
-		for (const [key, property] of Object.entries(value)) this.checkProperty(property, `${path}.${key}`, depth);
+		const siblings = new Set(Object.keys(value));
+		for (const [key, property] of Object.entries(value))
+			this.checkProperty(property, `${path}.${key}`, depth, siblings);
 	}
 
-	private checkProperty(property: unknown, path: string, depth: number): void {
+	private checkProperty(property: unknown, path: string, depth: number, siblings: ReadonlySet<string>): void {
 		if (!isRecord(property)) {
 			this.report(path, 'expected an object');
 			return;
@@ -182,7 +184,20 @@ class NodeChecker {
 		const { handledBy } = property;
 		if (handledBy !== undefined && !isHandler(handledBy))
 			this.report(path, 'handledBy must be { id: <non-empty string>, name: <non-empty string>, enforced: <boolean> }');
+		this.checkDeprecation(property['deprecated'], path, siblings);
 		this.checkNode(property['node'], `${path}.node`, depth + 1);
+	}
+
+	/** A deprecation is strings only; a rename target must be a sibling the same object declares. */
+	private checkDeprecation(deprecated: unknown, path: string, siblings: ReadonlySet<string>): void {
+		if (deprecated === undefined) return;
+		if (!isRecord(deprecated) || !Object.values(deprecated).every((field) => typeof field === 'string')) {
+			this.report(path, 'deprecated must be { since?, replacement?, message?, renameTo? } of strings');
+			return;
+		}
+		const { renameTo } = deprecated;
+		if (typeof renameTo === 'string' && !siblings.has(renameTo))
+			this.report(path, `deprecated renameTo ${quote(renameTo)} is not a sibling property`);
 	}
 
 	checkRef(ref: unknown, path: string): void {

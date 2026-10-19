@@ -99,3 +99,11 @@ test('runtime facts the demos rely on are applied, each citing its runtime line'
 	assert.ok(point.some((member) => member.kind === 'array' && member.items.kind === 'unknown'));
 	assert.deepEqual(definitions.XAxisLabelsOptions.properties.rotation.node.anyOf.at(-1), { kind: 'literal', value: 'auto' });
 });
+
+test('deprecations come from the declarations only: a notice, never a rename (Highcharts does not rename at runtime)', () => {
+	const deprecations = Object.values(definitions).flatMap((node) =>
+		node.kind === 'object' ? Object.values(node.properties).flatMap((property) => property.deprecated ?? []) : []
+	);
+	assert.ok(deprecations.length > 50, String(deprecations.length));
+	assert.deepEqual(deprecations.filter((deprecation) => deprecation.renameTo !== undefined), []);
+});

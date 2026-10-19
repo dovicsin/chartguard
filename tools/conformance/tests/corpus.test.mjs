@@ -7,7 +7,7 @@ import { browserSkipReason } from '../../shared/chrome.mjs';
 import { EXPECTATIONS as CHARTJS } from '../corpus/chartjs.expectations.mjs';
 import { EXPECTATIONS as ECHARTS } from '../corpus/echarts.expectations.mjs';
 import { EXPECTATIONS as HIGHCHARTS } from '../corpus/highcharts.expectations.mjs';
-import { allowedExplanations, corpusFile, isClean } from '../lib/corpus.mjs';
+import { allowedExplanations, corpusFile, isClean, isQuiet } from '../lib/corpus.mjs';
 import { runHighchartsCorpus } from '../lib/highcharts-corpus.mjs';
 import { runCorpus } from '../lib/sandbox.mjs';
 
@@ -26,7 +26,7 @@ const CORPORA = [
 		expectations: CHARTJS,
 		prefix: 'docs/samples/',
 		license: /The MIT License/,
-		minimumClean: 60,
+		minimumQuiet: 60,
 		run: (path) => runCorpus('chartjs', path) ?? NO_PERMISSION_MODEL
 	},
 	{
@@ -34,7 +34,7 @@ const CORPORA = [
 		expectations: ECHARTS,
 		prefix: 'public/examples/ts/',
 		license: /Apache License\s+Version 2\.0/,
-		minimumClean: 170,
+		minimumQuiet: 170,
 		run: (path) => runCorpus('echarts', path) ?? NO_PERMISSION_MODEL
 	},
 	{
@@ -42,14 +42,14 @@ const CORPORA = [
 		expectations: HIGHCHARTS,
 		prefix: 'samples/highcharts/demo/',
 		license: /shop\.highcharts\.com/,
-		minimumClean: 90,
+		minimumQuiet: 90,
 		run: (path) => localSkipReason('highcharts') ?? runHighchartsCorpus(path)
 	}
 ];
 
 const sha256 = (text) => createHash('sha256').update(text).digest('hex');
 
-for (const { library, expectations, prefix, license, minimumClean, run } of CORPORA) {
+for (const { library, expectations, prefix, license, minimumQuiet, run } of CORPORA) {
 	const file = corpusFile(library);
 	const ran = existsSync(file) ? await run(file) : localSkipReason(library);
 	const outcomes = typeof ran === 'string' ? undefined : ran;
@@ -93,6 +93,7 @@ for (const { library, expectations, prefix, license, minimumClean, run } of CORP
 		assert.deepEqual(unexplained, []);
 		const known = new Set(outcomes.map(({ path }) => path));
 		assert.deepEqual([...listed.keys()].filter((path) => !known.has(path)), []);
-		assert.ok(outcomes.filter(isClean).length >= minimumClean);
+		// The floor counts quiet examples: an explained, certain deprecation is not noise.
+		assert.ok(outcomes.filter(isQuiet).length >= minimumQuiet);
 	});
 }

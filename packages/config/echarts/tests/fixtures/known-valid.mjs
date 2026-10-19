@@ -80,7 +80,6 @@ export const KNOWN_VALID = {
 				[89.3, 58212, 'Matcha Latte']
 			]
 		},
-		grid: { containLabel: true },
 		xAxis: { name: 'amount' },
 		yAxis: { type: 'category' },
 		series: [{ type: 'bar', encode: { x: 'amount', y: 'product' } }]

@@ -1,5 +1,6 @@
 import { type Diagnostic, isContainer, ownDataProperty, suggestion, type ValidationOptions } from '@chartguard/core';
 
+import { deprecationFinding } from './deprecation.js';
 import { confirmed, inconclusive, unresolved } from './diagnostics.js';
 import { isListLike, kindOf } from './kind.js';
 import { isHandled, type Registries } from './registry.js';
@@ -244,8 +245,13 @@ export class ConfigWalker {
 		if (entry.value === undefined || this.isUnset(entry.value, key, schema)) return;
 		const known = schema.properties ?? {};
 		const field = Object.hasOwn(known, key) ? known[key] : schema.values;
-		if (field === undefined) this.reportUnknownKey(key, Object.keys(known), schema, cursor.path);
-		else this.walk(entry.value, field, cursor);
+		if (field === undefined) {
+			this.reportUnknownKey(key, Object.keys(known), schema, cursor.path);
+			return;
+		}
+		if (field.deprecated !== undefined)
+			this.diagnostics.push(deprecationFinding(object, key, cursor.path, field.deprecated));
+		this.walk(entry.value, field, cursor);
 	}
 
 	/** `null` on an optional property of an object whose runtime reads options with `pick()`. */

@@ -6,6 +6,7 @@ export type {
 	DefaultChoice,
 	DefaultFrom,
 	DefaultTest,
+	Deprecation,
 	EnumValue,
 	Handler,
 	NodeSchema,

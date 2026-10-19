@@ -3,6 +3,17 @@ export type ValidationStatus = 'valid' | 'invalid' | 'partial';
 export type Confidence = 'certain' | 'inferred' | 'unknown';
 export type Coverage = 'partial' | 'full';
 
+/**
+ * A behaviour-preserving edit a tool may apply to the reported key: the runtime already reads the
+ * key under its new name (a rename it performs itself), and the new name is not set yet.
+ */
+export interface KeyRename {
+	readonly kind: 'rename-key';
+	readonly to: string;
+}
+
+export type Fix = KeyRename;
+
 export interface Diagnostic {
 	code: string;
 	severity: Severity;
@@ -11,6 +22,8 @@ export interface Diagnostic {
 	ruleId?: string;
 	suggestion?: string;
 	documentationUrl?: string;
+	/** Present only when applying it cannot change what the runtime does. */
+	fix?: Fix;
 	confidence: Confidence;
 	file?: string;
 	line?: number;

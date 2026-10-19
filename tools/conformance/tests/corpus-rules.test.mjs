@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { copyPlain } from '../lib/copy.mjs';
-import { allowedExplanations, isClean } from '../lib/corpus.mjs';
+import { allowedExplanations, isClean, isQuiet } from '../lib/corpus.mjs';
 import { createUtils } from '../sandbox/chartjs-utils.mjs';
 
 const ran = (findings, runtime) => ({ status: 'ran', findings, runtime, messages: [] });
@@ -59,4 +59,14 @@ test('the docs Utils stand-in keeps the documented shapes', () => {
 	assert.deepEqual(first.labels({ min: 0, max: 2, count: 2, prefix: 'v' }), ['v0', 'v1']);
 	assert.equal(first.color(10), first.color(1));
 	assert.equal(first.namedColor(7), first.namedColor(0));
+});
+
+test('quiet: rendered silently with no error and no warning but a certain advisory; noise never is', () => {
+	const outcome = (findings, runtime = 'accepted') => ({ status: 'ran', runtime, findings });
+	assert.equal(isQuiet(outcome([])), true);
+	assert.equal(isQuiet(outcome(['info CFG_AMBIGUOUS $.a', 'warning CFG_DEPRECATED $.b', 'warning CFG_INEFFECTIVE $.c'])), true);
+	assert.equal(isQuiet(outcome(['warning CFG_UNKNOWN_KEY $.a'])), false);
+	assert.equal(isQuiet(outcome(['error CFG_TYPE $.a'])), false);
+	assert.equal(isQuiet(outcome(['warning CFG_DEPRECATED $.a'], 'complained')), false);
+	assert.equal(isQuiet({ status: 'not-run', reason: 'x' }), false);
 });

@@ -32,6 +32,18 @@ export interface RegistryRef {
 }
 
 /**
+ * An option the upstream deprecates. `replacement` names what to use instead; `renameTo` is set
+ * only when the runtime itself copies the option into that sibling key, so renaming it there
+ * cannot change what the runtime does.
+ */
+export interface Deprecation {
+	readonly since?: string;
+	readonly replacement?: string;
+	readonly message?: string;
+	readonly renameTo?: string;
+}
+
+/**
  * The runtime handles an option only when `name` (or a subtype, `name.<sub>`) is registered in
  * registry `id`. `enforced`: otherwise it rejects the option; else it ignores it (no effect).
  */
@@ -77,6 +89,8 @@ export interface NodeSchema {
 	readonly registry?: RegistryRef;
 	/** The value of an option the runtime handles only when this component or plugin is registered. */
 	readonly handledBy?: Handler;
+	/** The value of an option the upstream deprecates. */
+	readonly deprecated?: Deprecation;
 	readonly doc?: string;
 }
 

@@ -1,6 +1,11 @@
 const signalled = (runtime) => runtime !== 'accepted';
 const severityOf = (finding) => finding.split(' ')[0];
 const codeOf = (finding) => finding.split(' ')[1];
+/** Certain warnings about options the runtime accepts: each kind has its own explanation. */
+const ADVISORY = new Map([
+	['CFG_INEFFECTIVE', 'No effect:'],
+	['CFG_DEPRECATED', 'Deprecated:']
+]);
 
 /**
  * Which explanation a validator/runtime pair needs, or undefined when they agree.
@@ -12,7 +17,9 @@ const codeOf = (finding) => finding.split(' ')[1];
  * - A warning the runtime also warns about is agreement. A warning on a config the runtime renders
  *   silently needs a reason too: the runtime
  *   ignores the key, or the value is undeclared. When every warning is `CFG_INEFFECTIVE`, the
- *   validator knows the runtime ignores the option (its plugin is not registered): `No effect:`.
+ *   validator knows the runtime ignores the option (its plugin is not registered): `No effect:`;
+ *   when every warning is `CFG_DEPRECATED`, the upstream deprecates an option it still accepts:
+ *   `Deprecated:`.
  */
 export function requiredExplanation({ findings, runtime }) {
 	const severities = new Set(findings.map(severityOf));
@@ -20,6 +27,6 @@ export function requiredExplanation({ findings, runtime }) {
 	const warnings = findings.filter((finding) => severityOf(finding) === 'warning');
 	// A warning the runtime echoes with its own warning is agreement, as an error it rejects is.
 	if (warnings.length > 0 && runtime === 'complained') return undefined;
-	if (warnings.length > 0) return warnings.every((finding) => codeOf(finding) === 'CFG_INEFFECTIVE') ? 'No effect:' : 'Unresolved:';
+	if (warnings.length > 0) return ADVISORY.get(new Set(warnings.map(codeOf)).size === 1 ? codeOf(warnings[0]) : '') ?? 'Unresolved:';
 	return signalled(runtime) ? 'False negative (CG-' : undefined;
 }

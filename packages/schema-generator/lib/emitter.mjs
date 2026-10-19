@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 
 import ts from 'typescript';
 
+import { deprecationOf } from './deprecation.mjs';
 import { Provenance } from './provenance.mjs';
 
 const MAX_DEFINITIONS = 50_000;
@@ -302,6 +303,12 @@ export class TypeEmitter {
 		const node = extra === undefined ? declared : { kind: 'union', anyOf: [declared, ...extra] };
 		const optional = (symbol.flags & ts.SymbolFlags.Optional) !== 0 || this.runtimeOptional.has(symbol);
 		const provenance = this.provenance.of(symbol.declarations?.[0] === undefined ? owner : symbol);
-		return { node, provenance, ...(optional ? {} : { required: true }) };
+		const deprecated = deprecationOf(symbol);
+		return {
+			node,
+			provenance,
+			...(optional ? {} : { required: true }),
+			...(deprecated === undefined ? {} : { deprecated })
+		};
 	}
 }

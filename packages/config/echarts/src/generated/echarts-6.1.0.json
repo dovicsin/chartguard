@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-52226cd86f90c6507f7a8409c90a9365c59ebe1ed58d293b3c184d25ea1565e8",
+	"digest": "sha256-07e8e56d7e4ce794b8353fa4b1e25313a836649edf240e979b4c44367fac4706",
 	"sources": {
 		"echarts": {
 			"kind": "npm-package",
@@ -3392,6 +3392,10 @@
 								"pointer": "echarts/types/dist/shared.d.ts:10530"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "Use textVerticalAlign instead",
+						"replacement": "textVerticalAlign"
 					}
 				},
 				"backgroundColor": {
@@ -6609,6 +6613,10 @@
 								"pointer": "echarts/types/dist/shared.d.ts:2945"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "Use `grid.outerBounds` instead.",
+						"replacement": "grid.outerBounds"
 					}
 				},
 				"outerBoundsMode": {
@@ -14835,6 +14843,10 @@
 								"pointer": "echarts/types/dist/shared.d.ts:10101"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "Use `name` instead.",
+						"replacement": "name"
 					}
 				},
 				"min": {
@@ -73223,6 +73235,9 @@
 								"pointer": "echarts/types/dist/shared.d.ts:6826"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "use appendTo: 'body' instead"
 					}
 				},
 				"appendTo": {
@@ -82959,7 +82974,8 @@
 								"pointer": "echarts/types/dist/shared.d.ts:4314"
 							}
 						]
-					}
+					},
+					"deprecated": {}
 				},
 				"width": {
 					"node": {
@@ -83628,7 +83644,8 @@
 								"pointer": "echarts/types/dist/shared.d.ts:4314"
 							}
 						]
-					}
+					},
+					"deprecated": {}
 				}
 			}
 		},
@@ -85808,7 +85825,8 @@
 								"pointer": "echarts/types/dist/shared.d.ts:4314"
 							}
 						]
-					}
+					},
+					"deprecated": {}
 				},
 				"width": {
 					"node": {
@@ -86434,6 +86452,10 @@
 								"pointer": "echarts/types/dist/shared.d.ts:10806"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "Use handleStyle instead",
+						"replacement": "handleStyle"
 					}
 				},
 				"handleLabel": {
@@ -89621,6 +89643,9 @@
 								"pointer": "echarts/types/dist/shared.d.ts:5846"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "Option from version 2"
 					}
 				},
 				"formatter": {
@@ -91245,6 +91270,9 @@
 								"pointer": "echarts/types/dist/shared.d.ts:5846"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "Option from version 2"
 					}
 				},
 				"formatter": {
@@ -132587,6 +132615,9 @@
 								"pointer": "echarts/types/dist/shared.d.ts:11115"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "This option has been deprecated since v6.0.1."
 					}
 				},
 				"triggerEvent": {
@@ -133838,6 +133869,25 @@
 								"pointer": "echarts/types/dist/shared.d.ts:12501"
 							}
 						]
+					}
+				},
+				"clipOverflow": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/preprocessor/backwardCompat.js:157"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "clipOverflow is deprecated; use clip instead.",
+						"replacement": "clip",
+						"renameTo": "clip"
 					}
 				}
 			}
@@ -145071,7 +145121,7 @@
 				"itemStyle": {
 					"node": {
 						"kind": "ref",
-						"ref": "BarItemStyleOption<CallbackDataParams>"
+						"ref": "BarSeriesOption$1.itemStyle<compat>"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -152056,6 +152106,25 @@
 							}
 						]
 					}
+				},
+				"clockWise": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/preprocessor/backwardCompat.js:164"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "clockWise is deprecated; use clockwise instead.",
+						"replacement": "clockwise",
+						"renameTo": "clockwise"
+					}
 				}
 			}
 		},
@@ -152785,6 +152854,10 @@
 								"pointer": "echarts/types/dist/shared.d.ts:11230"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "Use `edgeDistance` instead",
+						"replacement": "edgeDistance"
 					}
 				},
 				"bleedMargin": {
@@ -158659,6 +158732,25 @@
 							}
 						]
 					}
+				},
+				"mapType": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/preprocessor/backwardCompat.js:218"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "mapType is deprecated; use map instead.",
+						"replacement": "map",
+						"renameTo": "map"
+					}
 				}
 			}
 		},
@@ -163917,6 +164009,10 @@
 								"pointer": "echarts/types/dist/shared.d.ts:11386"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "Use colorBy instead",
+						"replacement": "colorBy"
 					}
 				},
 				"visualMin": {
@@ -164865,6 +164961,10 @@
 								"pointer": "echarts/types/dist/shared.d.ts:11386"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "Use colorBy instead",
+						"replacement": "colorBy"
 					}
 				},
 				"visualMin": {
@@ -166844,6 +166944,10 @@
 								"pointer": "echarts/types/dist/shared.d.ts:11386"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "Use colorBy instead",
+						"replacement": "colorBy"
 					}
 				},
 				"visualMin": {
@@ -167980,7 +168084,8 @@
 								"pointer": "echarts/types/dist/shared.d.ts:11529"
 							}
 						]
-					}
+					},
+					"deprecated": {}
 				},
 				"draggable": {
 					"node": {
@@ -177829,6 +177934,25 @@
 								"pointer": "echarts/types/dist/shared.d.ts:12501"
 							}
 						]
+					}
+				},
+				"clockWise": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/preprocessor/backwardCompat.js:164"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "clockWise is deprecated; use clockwise instead.",
+						"replacement": "clockwise",
+						"renameTo": "clockwise"
 					}
 				}
 			}
@@ -187948,7 +188072,8 @@
 								"pointer": "echarts/types/dist/shared.d.ts:11899"
 							}
 						]
-					}
+					},
+					"deprecated": {}
 				},
 				"layoutIterations": {
 					"node": {
@@ -211417,6 +211542,10 @@
 								"pointer": "echarts/types/dist/shared.d.ts:12258"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "use radius instead",
+						"replacement": "radius"
 					}
 				},
 				"r0": {
@@ -211439,6 +211568,10 @@
 								"pointer": "echarts/types/dist/shared.d.ts:12262"
 							}
 						]
+					},
+					"deprecated": {
+						"message": "use radius instead",
+						"replacement": "radius"
 					}
 				},
 				"highlight": {
@@ -212012,7 +212145,8 @@
 								"pointer": "echarts/types/dist/shared.d.ts:3268"
 							}
 						]
-					}
+					},
+					"deprecated": {}
 				},
 				"label": {
 					"node": {
@@ -212027,7 +212161,8 @@
 								"pointer": "echarts/types/dist/shared.d.ts:3272"
 							}
 						]
-					}
+					},
+					"deprecated": {}
 				},
 				"emphasis": {
 					"node": {
@@ -212042,7 +212177,8 @@
 								"pointer": "echarts/types/dist/shared.d.ts:3276"
 							}
 						]
-					}
+					},
+					"deprecated": {}
 				},
 				"clip": {
 					"node": {
@@ -213194,7 +213330,8 @@
 								"pointer": "echarts/types/dist/shared.d.ts:3280"
 							}
 						]
-					}
+					},
+					"deprecated": {}
 				},
 				"label": {
 					"node": {
@@ -213209,7 +213346,8 @@
 								"pointer": "echarts/types/dist/shared.d.ts:3284"
 							}
 						]
-					}
+					},
+					"deprecated": {}
 				}
 			}
 		},
@@ -214193,6 +214331,459 @@
 			"kind": "object",
 			"additional": "open",
 			"properties": {}
+		},
+		"BarSeriesOption$1.itemStyle<compat>": {
+			"kind": "object",
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/types/dist/shared.d.ts:11169"
+					}
+				]
+			},
+			"properties": {
+				"borderRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "string"
+										},
+										{
+											"kind": "number"
+										}
+									]
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:11170"
+							}
+						]
+					}
+				},
+				"color": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "ref",
+								"ref": "LinearGradientObject"
+							},
+							{
+								"kind": "ref",
+								"ref": "RadialGradientObject"
+							},
+							{
+								"kind": "ref",
+								"ref": "ImagePatternObject"
+							},
+							{
+								"kind": "ref",
+								"ref": "SVGPatternObject"
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7768"
+							}
+						]
+					}
+				},
+				"opacity": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7769"
+							}
+						]
+					}
+				},
+				"decal": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "ref",
+								"ref": "DecalObject"
+							},
+							{
+								"kind": "literal",
+								"value": "none"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7770"
+							}
+						]
+					}
+				},
+				"shadowBlur": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7623"
+							}
+						]
+					}
+				},
+				"shadowColor": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7624"
+							}
+						]
+					}
+				},
+				"shadowOffsetX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7625"
+							}
+						]
+					}
+				},
+				"shadowOffsetY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7626"
+							}
+						]
+					}
+				},
+				"borderColor": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "ref",
+								"ref": "LinearGradientObject"
+							},
+							{
+								"kind": "ref",
+								"ref": "RadialGradientObject"
+							},
+							{
+								"kind": "ref",
+								"ref": "ImagePatternObject"
+							},
+							{
+								"kind": "ref",
+								"ref": "SVGPatternObject"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7629"
+							}
+						]
+					}
+				},
+				"borderWidth": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7630"
+							}
+						]
+					}
+				},
+				"borderType": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							},
+							{
+								"kind": "literal",
+								"value": "solid"
+							},
+							{
+								"kind": "literal",
+								"value": "dotted"
+							},
+							{
+								"kind": "literal",
+								"value": "dashed"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7631"
+							}
+						]
+					}
+				},
+				"borderCap": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "butt"
+							},
+							{
+								"kind": "literal",
+								"value": "round"
+							},
+							{
+								"kind": "literal",
+								"value": "square"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7632"
+							}
+						]
+					}
+				},
+				"borderJoin": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "round"
+							},
+							{
+								"kind": "literal",
+								"value": "bevel"
+							},
+							{
+								"kind": "literal",
+								"value": "miter"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7633"
+							}
+						]
+					}
+				},
+				"borderDashOffset": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7634"
+							}
+						]
+					}
+				},
+				"borderMiterLimit": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7635"
+							}
+						]
+					}
+				},
+				"barBorderRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "union",
+									"anyOf": [
+										{
+											"kind": "string"
+										},
+										{
+											"kind": "number"
+										}
+									]
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/preprocessor/backwardCompat.js:84"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "barBorderRadius is deprecated; use borderRadius instead.",
+						"replacement": "borderRadius",
+						"renameTo": "borderRadius"
+					}
+				},
+				"barBorderColor": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "ref",
+								"ref": "LinearGradientObject"
+							},
+							{
+								"kind": "ref",
+								"ref": "RadialGradientObject"
+							},
+							{
+								"kind": "ref",
+								"ref": "ImagePatternObject"
+							},
+							{
+								"kind": "ref",
+								"ref": "SVGPatternObject"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/preprocessor/backwardCompat.js:84"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "barBorderColor is deprecated; use borderColor instead.",
+						"replacement": "borderColor",
+						"renameTo": "borderColor"
+					}
+				},
+				"barBorderWidth": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/preprocessor/backwardCompat.js:84"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "barBorderWidth is deprecated; use borderWidth instead.",
+						"replacement": "borderWidth",
+						"renameTo": "borderWidth"
+					}
+				}
+			}
 		}
 	},
 	"root": {

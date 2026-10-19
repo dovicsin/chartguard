@@ -109,5 +109,21 @@ export const EXPECTATIONS = [
 		paths: [
 			"flame/demo.js"
 		]
+	},
+	{
+		why: "Deprecated: options the Highcharts declarations deprecate (`title.enabled`, `dataLabels.color`, `maxZoom`, `time.useUTC`, `tooltip.crosshairs`); Highcharts still reads them and does not warn.",
+		paths: [
+			"3d-column-interactive/demo.js",
+			"arc-diagram/demo.js",
+			"area-stacked-percent/demo.js",
+			"dependency-wheel/demo.js",
+			"dynamic-click-to-add/demo.js",
+			"dynamic-update/demo.js",
+			"fan-chart/demo.js",
+			"gauge-speedometer/demo.js",
+			"pie-donut/demo.js",
+			"polygon/demo.js",
+			"spline-inverted/demo.js"
+		]
 	}
 ];

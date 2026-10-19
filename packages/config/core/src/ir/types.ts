@@ -1,6 +1,6 @@
 import type { Coverage } from '@chartguard/core';
 
-import type { DefaultChoice, DefaultFrom, Handler, RegistryRef } from '../schema.js';
+import type { DefaultChoice, DefaultFrom, Deprecation, Handler, RegistryRef } from '../schema.js';
 
 export const SCHEMA_IR_VERSION = 1;
 
@@ -50,11 +50,7 @@ export interface LiteralNode extends NodeBase {
 	readonly value: string | number | boolean | null;
 }
 
-export interface Deprecation {
-	readonly since?: string;
-	readonly replacement?: string;
-	readonly message?: string;
-}
+export type { Deprecation } from '../schema.js';
 
 export interface PropertyNode {
 	readonly node: IrNode;

@@ -138,3 +138,22 @@ test('series and component subtypes name the runtime class registry (`series.bar
 test('the global Function type is a function, never an open object (D18)', () => {
 	assert.equal(JSON.parse(first.text).definitions.Function, undefined);
 });
+
+test('deprecations: the declarations state some, the runtime renames others; only a runtime rename is a safe fix', () => {
+	const seriesItems = resolve(resolve(option.properties.series.node).anyOf.find((member) => resolve(member).kind === 'array').items);
+	const variant = (type) => resolve(seriesItems.anyOf.find((member) => resolve(member).properties.type.node.value === type));
+	const pie = variant('pie');
+	assert.deepEqual(pie.properties.clockWise.deprecated, {
+		message: 'clockWise is deprecated; use clockwise instead.',
+		replacement: 'clockwise',
+		renameTo: 'clockwise'
+	});
+	assert.deepEqual(pie.properties.clockWise.node, pie.properties.clockwise.node);
+	assert.match(pie.properties.clockWise.provenance.sources[0].pointer, /^echarts\/lib\/preprocessor\/backwardCompat\.js:\d+$/);
+	const margin = resolve(pie.properties.label.node).properties.margin.deprecated;
+	assert.deepEqual(margin, { message: 'Use `edgeDistance` instead', replacement: 'edgeDistance' });
+	// The bar series owns a copy of its item style with the legacy names; other series do not gain them.
+	const barStyle = resolve(variant('bar').properties.itemStyle.node);
+	assert.equal(barStyle.properties.barBorderRadius.deprecated.renameTo, 'borderRadius');
+	assert.equal(resolve(variant('line').properties.itemStyle.node).properties.barBorderRadius, undefined);
+});

@@ -11,6 +11,9 @@ const CORE_CHILD = fileURLToPath(new URL('echarts-core-child.mjs', import.meta.u
 /**
  * Renders an option with the pinned echarts runtime in server-side mode (SVG string, no DOM).
  * The full bundle registers every built-in component and series, matching the generated schema.
+ * echarts logs each deprecation message once per process (`deprecateLog`), so in one run only the
+ * first case using a deprecated option shows the runtime's warning; cases are written with distinct
+ * deprecations, and corpus explanations say so where it matters.
  */
 export function runEcharts(option) {
 	return renderWith(echarts, option);

@@ -110,7 +110,15 @@ class Lowerer {
 		const properties = Object.fromEntries(
 			entries.map(([key, property]) => {
 				const lowered = this.lower(property.node, `${path}.${key}`);
-				return [key, property.handledBy === undefined ? lowered : { ...lowered, handledBy: property.handledBy }];
+				const { handledBy, deprecated } = property;
+				return [
+					key,
+					{
+						...lowered,
+						...(handledBy === undefined ? {} : { handledBy }),
+						...(deprecated === undefined ? {} : { deprecated })
+					}
+				];
 			})
 		);
 		const required = entries.filter(([, property]) => property.required === true).map(([key]) => key);

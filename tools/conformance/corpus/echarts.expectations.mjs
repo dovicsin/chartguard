@@ -138,16 +138,46 @@ export const EXPECTATIONS = [
 		]
 	},
 	{
-		why: "False negative (CG-02-06): a deprecated option (`label.margin`, `radar.indicator.text`); the runtime warns, deprecations are not modelled yet.",
+		why: "Agreement: a deprecated option (`label.margin` with `alignTo: 'edge'`, `radar.indicator.text`); the validator reports `CFG_DEPRECATED` and the runtime logs the same deprecation.",
 		paths: [
 			"pie-alignTo.ts",
 			"radar-custom.ts"
 		]
 	},
 	{
-		why: "Out of scope: the deprecation is a call inside a `renderItem` callback (`api.style`), which static validation never runs.",
+		why: "Deprecated: a custom series' `itemStyle` and `label`, which the declarations deprecate in favour of styles set in `renderItem`; the runtime still reads them. (custom-bar-trend: its runtime warning is about `api.style`, a call inside `renderItem` that static validation never runs.)",
 		paths: [
-			"custom-bar-trend.ts"
+			"custom-bar-trend.ts",
+			"custom-error-bar.ts",
+			"custom-profit.ts"
+		]
+	},
+	{
+		why: "Deprecated: `grid.containLabel`, which the declarations deprecate in favour of `grid.outerBounds`; the runtime still reads it and does not warn.",
+		paths: [
+			"bar-tick-align.ts",
+			"bar-waterfall.ts",
+			"bar-waterfall2.ts",
+			"bump-chart.ts",
+			"dataset-encode0.ts",
+			"line-log.ts",
+			"line-pen.ts",
+			"line-stack.ts",
+			"line-step.ts",
+			"line-y-category.ts",
+			"pictorialBar-bar-transition.ts",
+			"pictorialBar-vehicle.ts",
+			"scatter-punchCard.ts",
+			"scatter-weight.ts"
+		]
+	},
+	{
+		why: "Deprecated: an option the declarations deprecate (`radar.indicator.text`: use `name`; `title.textBaseline`; sunburst `levels[].r`/`r0`: use `radius`). The runtime logs each deprecation once per process, and the corpus runs every example in one process, so only the first example using `indicator.text` (radar-custom) shows the runtime warning.",
+		paths: [
+			"radar-multiple.ts",
+			"radar2.ts",
+			"scatter-single-axis.ts",
+			"sunburst-drink.ts"
 		]
 	}
 ];
