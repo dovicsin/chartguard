@@ -255,3 +255,21 @@ test('--project belongs to analyze only', async () => {
 		);
 	assert.equal((await run(['schema', 'build', '--library', 'highcharts', '--project', 'tsconfig.json'])).code, 2);
 });
+
+test('analyze validates values imported from other project files', async (t) => {
+	const root = sourceProject(t, {
+		'tsconfig.json': '{}',
+		'src/options.ts': 'export const options = { responsive: "yes" };',
+		'src/index.ts': 'export { options as sharedOptions } from "./options";',
+		'src/chart.ts':
+			'import { sharedOptions } from ".";\nexport const config = { type: "bar", data: { datasets: [] }, options: sharedOptions };'
+	});
+	const { code, out } = await run(['analyze', '--library', 'chartjs', '--file', join(root, 'src/chart.ts'), '--json']);
+	assert.equal(code, 1);
+	const [entry] = JSON.parse(out).entries;
+	assert.equal(entry.complete, true);
+	assert.deepEqual(
+		entry.result.diagnostics.filter((d) => d.severity === 'error').map((d) => `${d.code} ${d.path}`),
+		['CFG_TYPE $.options.responsive']
+	);
+});

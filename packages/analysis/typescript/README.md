@@ -1,6 +1,6 @@
 # @chartguard/analysis-typescript
 
-Reads chart configuration objects from JavaScript and TypeScript source **without running any of it**: the file is parsed into a TypeScript Program and names are resolved through its TypeChecker. Partial by design: only top-level `const` objects are read; anything that depends on code (calls, imports, `let`, a `with` body, a function with direct `eval`) is left out and the object is marked incomplete.
+Reads chart configuration objects from JavaScript and TypeScript source **without running any of it**: the file is parsed into a TypeScript Program and names are resolved through its TypeChecker. Partial by design: only top-level `const` values are read, also through imports and re-exports of the project's own files (`analyzeProject`; never `node_modules`, declaration files or files with syntax errors); anything that depends on code (calls, `let`, object properties other than namespace members, a `with` body, a function with direct `eval`) is left out and the object is marked incomplete.
 
 ```ts
 import { extractStaticConfigs } from "@chartguard/analysis-typescript";

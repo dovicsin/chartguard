@@ -1,6 +1,7 @@
 import { type Diagnostic, isRecord } from '@chartguard/core';
 import ts from 'typescript';
 
+import { Bindings } from './bindings.js';
 import { StaticDecoder } from './decoder.js';
 import { inMemoryProgram, type ReadOnlyProgram } from './program.js';
 import { type Binding, bindingOf } from './scope.js';
@@ -107,7 +108,7 @@ class Collector {
 /** The objects of the analysed file, read through its Program's checker. */
 export function extract(read: ReadOnlyProgram, fileName: string): AnalysisOutput {
 	const diagnostics = syntaxDiagnostics(read, fileName);
-	const decoder = new StaticDecoder(read.program.getTypeChecker(), read.file);
+	const decoder = new StaticDecoder(new Bindings(read.program, read.file));
 	const collector = new Collector(read.file, decoder, { fileName, parses: diagnostics.length === 0 });
 	collector.visit(read.file);
 	return { objects: collector.objects, diagnostics };
