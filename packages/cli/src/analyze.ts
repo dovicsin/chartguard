@@ -1,4 +1,4 @@
-import type { SourceObject } from '@chartguard/analysis-typescript';
+import type { ChartUse, SourceObject } from '@chartguard/analysis-typescript';
 import type { ConfigValidator, Diagnostic, ValidationOptions, ValidationResult } from '@chartguard/core';
 
 import type { Io } from './io.js';
@@ -7,7 +7,10 @@ import type { Io } from './io.js';
 const DEFAULT_CONFIG_NAMES: ReadonlySet<string> = new Set(['config', 'chartConfig']);
 
 export interface AnalyzedEntry {
+	/** The variable, or the binding passed to a chart use (`config`); an inline config is named by its pattern. */
 	readonly name: string;
+	/** The chart use this entry was found at (`chartjs.new-chart`), when it was found by its use (CG-03-06). */
+	readonly pattern?: string;
 	readonly line: number;
 	readonly complete: boolean;
 	/** Why the object could not be taken at face value; validation ran only when this is empty or dynamic. */
@@ -33,9 +36,17 @@ export function analyzeEntry(
 	return { name, line, complete, notes, result };
 }
 
-function describeEntry({ name, line, complete, result }: AnalyzedEntry): string {
+/** A config handed to the chart library, validated as incomplete input when it is not fully read. */
+export function analyzeUse(use: ChartUse, validate: ConfigValidator, options: ValidationOptions = {}): AnalyzedEntry {
+	const { source, pattern, line, complete, diagnostics: notes, value } = use;
+	const result = validate(value, { ...options, incomplete: !complete });
+	return { name: source ?? 'inline config', pattern, line, complete, notes, result };
+}
+
+function describeEntry({ name, pattern, line, complete, result }: AnalyzedEntry): string {
 	const status = result === undefined ? 'not validated' : result.status;
-	return `${name} @ line ${String(line)}: ${status}${complete ? '' : ' (dynamic / partial)'}`;
+	const via = pattern === undefined ? '' : ` (${pattern})`;
+	return `${name}${via} @ line ${String(line)}: ${status}${complete ? '' : ' (dynamic / partial)'}`;
 }
 
 function describeDiagnostic({ severity, path, message, suggestion }: Diagnostic): string {

@@ -1,7 +1,8 @@
 import ts from 'typescript';
 
 import { bindingOf, isDynamicScope } from './scope.js';
-import { type Chain, type Write, writeSites } from './writes.js';
+import { type ChainTarget, WriteIndex } from './write-index.js';
+import type { Call, Chain, Write } from './writes.js';
 
 /** What a name is bound to, when a static reader may take it as a value: `undefined`, or an expression to decode. */
 export type Target =
@@ -30,14 +31,19 @@ function isTopLevelConstant(node: ts.Node): node is Constant {
 export class Bindings {
 	private readonly checker: ts.TypeChecker;
 	private readonly readable = new Map<ts.SourceFile, boolean>();
-	/** Writes by the declaration they change, from every readable file; built on first use. */
-	private writes: Map<ts.Node, Write[]> | undefined;
+	private readonly writeIndex: WriteIndex;
 
 	constructor(
 		private readonly program: ts.Program,
-		private readonly file: ts.SourceFile
+		private readonly file: ts.SourceFile,
+		exempt: (call: Call) => boolean
 	) {
 		this.checker = program.getTypeChecker();
+		this.writeIndex = new WriteIndex(
+			() => program.getSourceFiles().filter((source) => this.isReadable(source)),
+			(chain) => this.writtenConstant(chain),
+			exempt
+		);
 	}
 
 	ofIdentifier(node: ts.Identifier): Target | undefined {
@@ -58,25 +64,11 @@ export class Bindings {
 
 	/** Every place readable code may change the constant `declaration` declares (CG-03-05). */
 	writesTo(declaration: ts.Node): readonly Write[] {
-		this.writes ??= this.collectWrites();
-		return this.writes.get(declaration) ?? [];
-	}
-
-	private collectWrites(): Map<ts.Node, Write[]> {
-		const writes = new Map<ts.Node, Write[]>();
-		for (const file of this.program.getSourceFiles().filter((source) => this.isReadable(source)))
-			for (const { chain, node } of writeSites(file)) {
-				const written = this.writtenConstant(chain);
-				if (written === undefined) continue;
-				const list = writes.get(written.declaration) ?? [];
-				list.push({ path: written.path, node });
-				writes.set(written.declaration, list);
-			}
-		return writes;
+		return this.writeIndex.writesTo(declaration);
 	}
 
 	/** The declaration a written chain starts at (through imports and namespace members), and the path within it. */
-	private writtenConstant({ root, accesses }: Chain): { declaration: ts.Node; path: Write['path'] } | undefined {
+	private writtenConstant({ root, accesses }: Chain): ChainTarget | undefined {
 		const symbol = this.followed(this.checker.getSymbolAtLocation(root));
 		const [first, ...rest] = accesses;
 		const declarations = symbol?.declarations ?? [];

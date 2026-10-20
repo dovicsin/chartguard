@@ -73,8 +73,8 @@ test('a write to a key that did not exist, or in code that may never run, still 
 	);
 });
 
-test('reads are not writes: passing, spreading or reading a property leaves the value complete', () => {
-	const source = `${BASE}render(config);\nconst copy = { ...config };\nconst t = config.type;\nnew Chart(ctx, config);`;
+test('reads are not writes: a chart use, a spread or a property read leaves the value complete', () => {
+	const source = `import { Chart } from "chart.js";\n${BASE}const copy = { ...config };\nconst t = config.type;\nnew Chart(ctx, config);`;
 	assert.equal(read(source).complete, true);
 });
 
@@ -116,4 +116,56 @@ test('writes in other files are found through imports and namespace members', (t
 	const chart = 'import { theme, other } from "./theme";\nimport "./dark";\nexport const config = { theme, other };';
 	const [config] = analyzeProject(chart, join(root, 'src/chart.ts')).objects;
 	assert.deepEqual([config.complete, json(config.value)], [false, { theme: { size: 2 }, other: { b: 2 } }]);
+});
+
+test('a write through a const alias or an embedding reaches the object it shares', () => {
+	assert.deepEqual(
+		read(`${BASE}const opts = config.options;\nopts.color = "white";`),
+		partial({ type: 'bar', options: { size: 2 }, data: { datasets: [{ a: 1 }, { a: 2 }] } })
+	);
+	assert.deepEqual(
+		read(`${BASE}const outer = { inner: { opts: config.options } };\nouter.inner.opts.size = 3;`),
+		partial({ type: 'bar', options: { color: 'red' }, data: { datasets: [{ a: 1 }, { a: 2 }] } })
+	);
+	assert.deepEqual(
+		read(`${BASE}const sets = config.data.datasets;\nsets.push({});`),
+		partial({ type: 'bar', options: { color: 'red', size: 2 }, data: {} })
+	);
+	// Replacing the alias's own property changes the alias, not the object it shared.
+	assert.equal(read(`${BASE}const outer = { opts: config.options };\nouter.opts = {};`).complete, true);
+});
+
+test('passing an object to a call that is not a chart use may change it; known pure globals do not', () => {
+	assert.deepEqual(read(`${BASE}applyTheme(config);`), partial({}));
+	assert.deepEqual(
+		read(`${BASE}apply(config.options);`),
+		partial({ type: 'bar', data: { datasets: [{ a: 1 }, { a: 2 }] } })
+	);
+	assert.deepEqual(read(`${BASE}apply({ o: config.options, list: [config.data] });`), partial({ type: 'bar' }));
+	assert.deepEqual(read(`${BASE}new Builder(config.options);`).value.options, undefined);
+	const pure = `${BASE}console.log(config);\nJSON.stringify(config.options);\nObject.keys(config);\nstructuredClone(config);`;
+	assert.equal(read(pure).complete, true);
+	assert.equal(read(`const console = { log() {} };\n${BASE}console.log(config);`).complete, false);
+	assert.equal(read(`import { Chart } from "chart.js";\n${BASE}new Chart(ctx, config);`).complete, true);
+});
+
+test('a write through an alias reaches every object the aliased place may come from', () => {
+	const two = 'const a = { opts: { color: "red", size: 2 } };\nconst b = { opts: { color: "blue", size: 3 } };\n';
+	const value = (source, name) => read(source, name).value;
+	// A later spread may override the explicit property; an earlier one may not.
+	const later = `${two}const outer = { opts: a.opts, ...b };\nouter.opts.color = "x";`;
+	assert.deepEqual([value(later, 'a'), value(later, 'b')], [{ opts: { size: 2 } }, { opts: { size: 3 } }]);
+	const earlier = `${two}const outer = { ...b, opts: a.opts };\nouter.opts.color = "x";`;
+	assert.deepEqual(
+		[value(earlier, 'a'), value(earlier, 'b')],
+		[{ opts: { size: 2 } }, { opts: { color: 'blue', size: 3 } }]
+	);
+	// After a spread, an index may name any element.
+	const list = `${two}const items = [...more, a.opts, b.opts];\nitems[1].color = "x";`;
+	assert.deepEqual([value(list, 'a'), value(list, 'b')], [{ opts: { size: 2 } }, { opts: { size: 3 } }]);
+	const exact = `${two}const items = [a.opts, b.opts];\nitems[1].color = "x";`;
+	assert.deepEqual(
+		[value(exact, 'a'), value(exact, 'b')],
+		[{ opts: { color: 'red', size: 2 } }, { opts: { size: 3 } }]
+	);
 });

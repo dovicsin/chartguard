@@ -2,7 +2,7 @@ import { dirname, resolve } from 'node:path';
 
 import ts from 'typescript';
 
-import { type AnalysisOutput, extract } from './extract.js';
+import { type AnalysisOutput, extract, type ExtractOptions } from './extract.js';
 import { READ_ONLY, type ReadOnlyProgram, rootNameOf, sourceFileOf } from './program.js';
 
 /** A tsconfig that cannot be used; every problem is listed. The caller's input, never ChartGuard's defect. */
@@ -66,7 +66,7 @@ function projectProgram(source: string, fileName: string, tsconfig: string | und
 	return { program: ts.createProgram({ rootNames: [rootName], options, host }), file };
 }
 
-export interface ProjectOptions {
+export interface ProjectOptions extends ExtractOptions {
 	/** A tsconfig path, `true` for the nearest `tsconfig.json` upward from the file (default), or `false` for none. */
 	readonly tsconfig?: TsconfigChoice;
 }
@@ -84,8 +84,8 @@ export interface ProjectAnalysis extends AnalysisOutput {
 export function analyzeProject(
 	source: string,
 	fileName: string,
-	{ tsconfig = true }: ProjectOptions = {}
+	{ tsconfig = true, ...options }: ProjectOptions = {}
 ): ProjectAnalysis {
 	const located = locateTsconfig(fileName, tsconfig);
-	return { ...extract(projectProgram(source, fileName, located), fileName), tsconfig: located };
+	return { ...extract(projectProgram(source, fileName, located), fileName, options), tsconfig: located };
 }

@@ -6,16 +6,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { main } from '../bin/chartguard.mjs';
-
-const example = (name) => fileURLToPath(new URL(`../../../examples/${name}`, import.meta.url));
-
-async function run(argv) {
-	const out = [];
-	const err = [];
-	const code = await main(argv, { out: (line) => out.push(line), err: (line) => err.push(line) });
-	return { code, out: out.join('\n'), err: err.join('\n') };
-}
+import { example, run } from './helpers.mjs';
 
 test('wrong arguments have usage error status', async () => assert.equal((await run(['validate'])).code, 2));
 
@@ -89,7 +80,7 @@ test('analyze without a matching variable fails with an explanation', async () =
 	const argv = ['analyze', '--library', 'chartjs', '--file', example('chartjs-source.ts'), '--name', 'missing'];
 	const { code, err } = await run(argv);
 	assert.equal(code, 2);
-	assert.match(err, /No suitable static object found/);
+	assert.match(err, /No chartjs chart use and no suitable static object found/);
 });
 
 test('unreadable files are input failures', async () => {
@@ -190,86 +181,4 @@ test('analyze passes the version on to every extracted config', async () => {
 	]);
 	assert.match(out, /^config @ line 2: partial$/m);
 	assert.match(out, /warning: \$ 3\.0\.0 is not supported: this schema describes chartjs 4\.5\.1\. Not validated\./);
-});
-
-/** A project directory with a tsconfig and a chart source; removed after the test. */
-function sourceProject(t, files) {
-	const root = mkdtempSync(join(tmpdir(), 'chartguard-cli-project-'));
-	t.after(() => rmSync(root, { recursive: true, force: true }));
-	for (const [name, text] of Object.entries(files)) {
-		mkdirSync(join(root, name, '..'), { recursive: true });
-		writeFileSync(join(root, name), text);
-	}
-	return root;
-}
-const CHART =
-	'const size = 2;\nexport const config = { type: "bar", data: { datasets: [] }, options: { responsive: size } };';
-
-test('analyze reads the file with the nearest tsconfig and says which; --project names another', async (t) => {
-	const root = sourceProject(t, { 'tsconfig.json': '{}', 'other/tsconfig.json': '{}', 'src/chart.ts': CHART });
-	const file = join(root, 'src/chart.ts');
-	const found = await run(['analyze', '--library', 'chartjs', '--file', file]);
-	assert.match(found.out, new RegExp(`^Read with ${join(root, 'tsconfig.json').replaceAll('\\', '\\\\')}\\.$`, 'm'));
-	assert.equal(found.code, 1);
-	assert.match(found.out, /error: \$\.options\.responsive/);
-	const named = await run([
-		'analyze',
-		'--library',
-		'chartjs',
-		'--file',
-		file,
-		'--project',
-		join(root, 'other/tsconfig.json'),
-		'--json'
-	]);
-	assert.deepEqual(JSON.parse(named.out).project, { tsconfig: join(root, 'other/tsconfig.json') });
-});
-
-test('an unusable tsconfig is an input error (exit 2) naming the file and the problem', async (t) => {
-	const root = sourceProject(t, {
-		'tsconfig.json': '{ "compilerOptions": { "target": "es1999" } }',
-		'chart.ts': CHART
-	});
-	const { code, err } = await run(['analyze', '--library', 'chartjs', '--file', join(root, 'chart.ts')]);
-	assert.equal(code, 2);
-	assert.match(err, /Cannot use .*tsconfig\.json/);
-	assert.match(err, /target/);
-	const missing = await run([
-		'analyze',
-		'--library',
-		'chartjs',
-		'--file',
-		join(root, 'chart.ts'),
-		'--project',
-		join(root, 'nope.json')
-	]);
-	assert.equal(missing.code, 2);
-});
-
-test('--project belongs to analyze only', async () => {
-	for (const command of ['validate', 'quality'])
-		assert.equal(
-			(await run([command, '--library', 'chartjs', '--file', 'x.json', '--project', 'tsconfig.json'])).code,
-			2,
-			command
-		);
-	assert.equal((await run(['schema', 'build', '--library', 'highcharts', '--project', 'tsconfig.json'])).code, 2);
-});
-
-test('analyze validates values imported from other project files', async (t) => {
-	const root = sourceProject(t, {
-		'tsconfig.json': '{}',
-		'src/options.ts': 'export const options = { responsive: "yes" };',
-		'src/index.ts': 'export { options as sharedOptions } from "./options";',
-		'src/chart.ts':
-			'import { sharedOptions } from ".";\nexport const config = { type: "bar", data: { datasets: [] }, options: sharedOptions };'
-	});
-	const { code, out } = await run(['analyze', '--library', 'chartjs', '--file', join(root, 'src/chart.ts'), '--json']);
-	assert.equal(code, 1);
-	const [entry] = JSON.parse(out).entries;
-	assert.equal(entry.complete, true);
-	assert.deepEqual(
-		entry.result.diagnostics.filter((d) => d.severity === 'error').map((d) => `${d.code} ${d.path}`),
-		['CFG_TYPE $.options.responsive']
-	);
 });

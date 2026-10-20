@@ -21,3 +21,16 @@ analysis.tsconfig; // the tsconfig used, if any
 Build: `npm run build -w @chartguard/analysis-typescript` (except CLI which is native ESM). Test: `npm run test -w @chartguard/analysis-typescript`.
 
 Public API is declared in `src/index.ts` and exported via package `package.json`.
+
+## Chart uses
+
+`objects` lists the file's object constants; `uses` lists where the file hands a config to a chart library, recognized by where the callee comes from: `new Chart` (chart.js), `setOption` on `echarts.init(…)`, `Highcharts.chart` / `stockChart` / `mapChart` / `ganttChart`, the React wrappers react-chartjs-2, echarts-for-react and highcharts-react-official, and ChartGuard's `validateBeforeCreate`. Your own wrappers are added as patterns:
+
+```ts
+extractStaticConfigs(source, "chart.tsx", {
+  patterns: [{ id: "acme.render", library: "echarts", module: "@acme/charts", export: "render", argument: 1 }]
+});
+```
+
+A pattern names a package (`module`) or a project file (`file`, absolute), a dotted `export`, and the config's `argument` index or JSX `prop`; malformed patterns throw `PatternError`. Passing an object to any other function counts as a possible change, except a few globals that only read (`console.*`, `JSON.stringify`, `structuredClone`, `Object.keys`, …).
+
