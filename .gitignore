@@ -22,14 +22,29 @@
 !/prettier.config.js
 !/knip.json
 !/scripts/**/*.mjs
+!/scripts/labels.json
 !/tools/schema-generator/**/*.mjs
 !/tools/conformance/**/*.mjs
 !/tools/conformance/corpus/*.json
 !/tools/shared/**/*.mjs
+!/tools/api/**/*.mjs
+!/tools/api/surfaces/*.api.md
+!/tools/docs/**/*.mjs
+!/.changeset/config.json
+
+# Public governance (CG-00-05); issue and PR templates and the contributor guide in docs/ stay local
+!/CONTRIBUTING.md
+!/SECURITY.md
+!/.github/CODEOWNERS
 
 # Fixtures
 !/examples/*.json
 !/examples/*.ts
+# The M3 gate sample app (code only; its README stays local)
+!/examples/sample-app/tsconfig.json
+!/examples/sample-app/src/**/*.ts
+!/examples/sample-app/src/**/*.tsx
+!/examples/sample-app/src/**/*.js
 
 # Packages
 !/packages/**/package.json

@@ -1,0 +1,27 @@
+[
+	{ "name": "needs-triage", "color": "ededed", "description": "New, not yet sorted" },
+	{
+		"name": "needs-repro",
+		"color": "fbca04",
+		"description": "Needs the config, the library version and what the library does"
+	},
+	{ "name": "bug", "color": "d73a4a", "description": "ChartGuard does something wrong" },
+	{ "name": "false-positive", "color": "b60205", "description": "A finding the chart library does not share" },
+	{
+		"name": "false-negative",
+		"color": "e99695",
+		"description": "The library rejects or ignores it, ChartGuard says nothing"
+	},
+	{ "name": "enhancement", "color": "a2eeef", "description": "New capability" },
+	{ "name": "upstream", "color": "c5def5", "description": "Behaviour of the chart library itself" },
+	{ "name": "blocked", "color": "000000", "description": "Waits on a decision or another change" },
+	{ "name": "area:config", "color": "1d76db", "description": "Config validation engine and adapters" },
+	{ "name": "area:schema", "color": "1d76db", "description": "Schema generation and conformance" },
+	{ "name": "area:analysis", "color": "1d76db", "description": "Static JavaScript/TypeScript analysis" },
+	{ "name": "area:quality", "color": "1d76db", "description": "Chart quality advisories" },
+	{ "name": "area:cli", "color": "1d76db", "description": "Command line" },
+	{ "name": "area:runtime", "color": "1d76db", "description": "Runtime integrations" },
+	{ "name": "lib:chartjs", "color": "ff6384", "description": "Chart.js" },
+	{ "name": "lib:echarts", "color": "aa344d", "description": "Apache ECharts" },
+	{ "name": "lib:highcharts", "color": "2caffe", "description": "Highcharts" }
+]

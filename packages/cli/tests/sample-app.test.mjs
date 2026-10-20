@@ -29,7 +29,7 @@ test('sample app, Chart.js: a builder through new Chart and a react-chartjs-2 co
 			['src/components/Revenue.tsx', 'chartjs.react-chartjs-2', false]
 		]
 	);
-	assert.deepEqual(errors(report.entries[1]), ['CFG_ENUM $.options.animation src/components/Revenue.tsx:6']);
+	assert.deepEqual(errors(report.entries[1]), ['CFG_ENUM $.options.animation src/components/Revenue.tsx:7']);
 });
 
 test('sample app, ECharts: a JavaScript module whose instance comes from echarts.init', async () => {
