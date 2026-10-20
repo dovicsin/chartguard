@@ -64,29 +64,68 @@ function arraySources(node: ts.ArrayLiteralExpression, step: Step): Source[] {
 
 type Shared = { chain: Chain; rest: Step[] }[];
 
+/** What a call's result may share with constants; `fresh` when a builder returns a new literal. */
+export interface CallResult {
+	readonly fresh: boolean;
+	readonly shares: readonly Chain[];
+}
+
+/** How a write reaches an initializer: whether it replaces the place, and what a call's result may share. */
+interface Reach {
+	readonly replaces: boolean;
+	readonly sharesOfCall: (call: ts.CallExpression) => CallResult;
+}
+
 /** What a spread source shares: an object spread copies `step` itself; an array spread some element, so its contents. */
-function sharedBySpread(literal: ts.Expression, source: Source, path: readonly Step[]): Shared {
-	if (!ts.isArrayLiteralExpression(literal)) return sharedBelow(source.expression, path, false);
+function sharedBySpread(literal: ts.Expression, source: Source, path: readonly Step[], reach: Reach): Shared {
+	if (!ts.isArrayLiteralExpression(literal)) return sharedBelow(source.expression, path, { ...reach, replaces: false });
 	const chain = chainOf(unwrap(source.expression));
 	return chain === undefined ? [] : [{ chain, rest: [] }];
+}
+
+/** Either side of a choice may be the value: `a ? b : c`, `a ?? b`, `a || b`, `a && b`. */
+function alternatives(node: ts.Expression): ts.Expression[] | undefined {
+	if (ts.isConditionalExpression(node)) return [node.whenTrue, node.whenFalse];
+	if (!ts.isBinaryExpression(node)) return undefined;
+	const kind = node.operatorToken.kind;
+	const choice =
+		kind === ts.SyntaxKind.QuestionQuestionToken ||
+		kind === ts.SyntaxKind.BarBarToken ||
+		kind === ts.SyntaxKind.AmpersandAmpersandToken;
+	return choice ? [node.left, node.right] : undefined;
+}
+
+/** A write inside a call's result may change whatever the result shares: their contents become unknown. */
+function sharedByCall(call: ts.CallExpression, path: readonly Step[], reach: Reach): Shared {
+	const { fresh, shares } = reach.sharesOfCall(call);
+	// Replacing the result itself, or a property of a new literal it returns, changes nothing shared.
+	if (reach.replaces && (path.length === 0 || (path.length === 1 && fresh))) return [];
+	return shares.map((chain) => ({ chain, rest: [] }));
+}
+
+/** An initializer that is another constant's chain shares it, below the aliased place unless the write replaces it. */
+function sharedByChain(node: ts.Expression, path: readonly Step[], reach: Reach): Shared {
+	const chain = chainOf(node);
+	return chain !== undefined && (path.length > 0 || !reach.replaces) ? [{ chain, rest: [...path] }] : [];
 }
 
 /**
  * The chains of other constants that an initializer shares at `path`, with the rest of the path
  * below them. A spread copies one level: replacing the copy's own property shares nothing.
  */
-function sharedBelow(initializer: ts.Expression, path: readonly Step[], replaces: boolean): Shared {
+function sharedBelow(initializer: ts.Expression, path: readonly Step[], reach: Reach): Shared {
 	const node = unwrap(initializer);
+	const choices = alternatives(node);
+	if (choices !== undefined) return choices.flatMap((choice) => sharedBelow(choice, path, reach));
+	if (ts.isCallExpression(node)) return sharedByCall(node, path, reach);
 	const [step, ...below] = path;
-	if (step === undefined || !(ts.isObjectLiteralExpression(node) || ts.isArrayLiteralExpression(node))) {
-		const chain = chainOf(node);
-		return chain !== undefined && (path.length > 0 || !replaces) ? [{ chain, rest: [...path] }] : [];
-	}
+	if (step === undefined || !(ts.isObjectLiteralExpression(node) || ts.isArrayLiteralExpression(node)))
+		return sharedByChain(node, path, reach);
 	const sources = ts.isObjectLiteralExpression(node) ? objectSources(node, step.key) : arraySources(node, step);
-	const reachesCopy = below.length > 0 || !replaces;
+	const reachesCopy = below.length > 0 || !reach.replaces;
 	return sources.flatMap((source) => {
-		if (source.kind === 'value') return sharedBelow(source.expression, below, replaces);
-		return reachesCopy ? sharedBySpread(node, source, path) : [];
+		if (source.kind === 'value') return sharedBelow(source.expression, below, reach);
+		return reachesCopy ? sharedBySpread(node, source, path, reach) : [];
 	});
 }
 
@@ -102,7 +141,8 @@ export class WriteIndex {
 		private readonly sources: () => readonly ts.SourceFile[],
 		private readonly resolve: (chain: Chain) => ChainTarget | undefined,
 		/** Calls that do not change their arguments: chart uses and pure globals. */
-		private readonly exempt: (call: Call) => boolean
+		private readonly exempt: (call: Call) => boolean,
+		private readonly sharesOfCall: (call: ts.CallExpression) => CallResult
 	) {}
 
 	writesTo(declaration: ts.Node): readonly Write[] {
@@ -131,7 +171,8 @@ export class WriteIndex {
 		writes.set(declaration, list);
 		if (depth >= MAX_ALIAS_DEPTH || !ts.isVariableDeclaration(declaration) || declaration.initializer === undefined)
 			return;
-		for (const { chain, rest } of sharedBelow(declaration.initializer, path, site.replaces)) {
+		const reach = { replaces: site.replaces, sharesOfCall: this.sharesOfCall };
+		for (const { chain, rest } of sharedBelow(declaration.initializer, path, reach)) {
 			const shared = this.resolve(chain);
 			if (shared !== undefined)
 				this.record(writes, { declaration: shared.declaration, path: [...shared.path, ...rest] }, site, depth + 1);

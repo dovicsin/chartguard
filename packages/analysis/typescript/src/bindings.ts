@@ -1,8 +1,9 @@
 import ts from 'typescript';
 
+import { type Builder, builderOf } from './builders.js';
 import { bindingOf, isDynamicScope } from './scope.js';
-import { type ChainTarget, WriteIndex } from './write-index.js';
-import type { Call, Chain, Write } from './writes.js';
+import { type CallResult, type ChainTarget, WriteIndex } from './write-index.js';
+import { type Call, type Chain, passedChains, type Write } from './writes.js';
 
 /** What a name is bound to, when a static reader may take it as a value: `undefined`, or an expression to decode. */
 export type Target =
@@ -42,7 +43,8 @@ export class Bindings {
 		this.writeIndex = new WriteIndex(
 			() => program.getSourceFiles().filter((source) => this.isReadable(source)),
 			(chain) => this.writtenConstant(chain),
-			exempt
+			exempt,
+			(call) => this.sharesOfCall(call)
 		);
 	}
 
@@ -54,12 +56,17 @@ export class Bindings {
 		return this.valueOf(this.followed(symbol));
 	}
 
+	/** The value of a namespace member (`memberSymbol`). */
+	ofMember(node: ts.PropertyAccessExpression): Target | undefined {
+		return this.valueOf(this.memberSymbol(node));
+	}
+
 	/** `ns.name` for a namespace import of a source module; any other object's property may be reassigned. */
-	ofMember({ expression, name }: ts.PropertyAccessExpression): Target | undefined {
+	private memberSymbol({ expression, name }: ts.PropertyAccessExpression): ts.Symbol | undefined {
 		if (!ts.isIdentifier(expression) || isDynamicScope(expression)) return undefined;
 		const declarations = this.followed(this.checker.getSymbolAtLocation(expression))?.declarations ?? [];
 		if (declarations.length === 0 || !declarations.every(ts.isSourceFile)) return undefined;
-		return this.valueOf(this.followed(this.checker.getSymbolAtLocation(name)));
+		return this.followed(this.checker.getSymbolAtLocation(name));
 	}
 
 	/** Every place readable code may change the constant `declaration` declares (CG-03-05). */
@@ -86,6 +93,52 @@ export class Bindings {
 		if (declaration === undefined || !(ts.isVariableDeclaration(declaration) || ts.isExportAssignment(declaration)))
 			return undefined;
 		return { declaration, path: accesses.map(({ step }) => step) };
+	}
+
+	/** The declaration a name is bound to in its own scope, before following imports; none in a dynamic scope. */
+	declarationAt(node: ts.Identifier): ts.Node | undefined {
+		return isDynamicScope(node) ? undefined : this.symbolOf(node)?.valueDeclaration;
+	}
+
+	/** The builder a callee names (CG-03-05): a plain function or a `const` function in a readable file. */
+	builderAt(callee: ts.Expression): Builder | undefined {
+		const declaration = this.calleeSymbol(callee)?.valueDeclaration;
+		if (declaration === undefined || !this.isReadable(declaration.getSourceFile())) return undefined;
+		if (ts.isFunctionDeclaration(declaration)) return builderOf(declaration);
+		const isConstFunction =
+			ts.isVariableDeclaration(declaration) &&
+			bindingOf(declaration) === 'const' &&
+			declaration.initializer !== undefined;
+		return isConstFunction ? builderOf(declaration.initializer) : undefined;
+	}
+
+	/** A callee's symbol: a name outside a dynamic scope, or a namespace member. */
+	private calleeSymbol(callee: ts.Expression): ts.Symbol | undefined {
+		if (ts.isPropertyAccessExpression(callee)) return this.memberSymbol(callee);
+		if (!ts.isIdentifier(callee) || isDynamicScope(callee)) return undefined;
+		return this.followed(this.checker.getSymbolAtLocation(callee));
+	}
+
+	/**
+	 * What a call's result may share with constants: what it is given, and every constant a builder's
+	 * body reads. A write inside the result may change them.
+	 */
+	sharesOfCall(call: ts.CallExpression): CallResult {
+		const given = call.arguments.flatMap(passedChains);
+		const builder = this.builderAt(call.expression);
+		if (builder === undefined) return { fresh: false, shares: given };
+		const read: Chain[] = [];
+		const visit = (node: ts.Node): void => {
+			if (ts.isIdentifier(node) && this.valueOf(this.followed(this.checker.getSymbolAtLocation(node))) !== undefined)
+				read.push({ root: node, accesses: [] });
+			ts.forEachChild(node, visit);
+		};
+		visit(builder.declaration);
+		let result = builder.result;
+		while (ts.isParenthesizedExpression(result) || ts.isAsExpression(result) || ts.isSatisfiesExpression(result))
+			result = result.expression;
+		const fresh = ts.isObjectLiteralExpression(result) || ts.isArrayLiteralExpression(result);
+		return { fresh, shares: [...given, ...read] };
 	}
 
 	/** `{ min }` names the property; the value it reads is the binding `min`. */

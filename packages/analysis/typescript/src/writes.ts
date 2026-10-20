@@ -95,7 +95,7 @@ function writtenByCall(node: ts.Node): ts.Expression | undefined {
 export type Call = ts.CallExpression | ts.NewExpression;
 
 /** The chains an argument hands over: itself, or what the literals it builds hold (spreads share nested objects). */
-function passedChains(argument: ts.Expression): Chain[] {
+export function passedChains(argument: ts.Expression): Chain[] {
 	let node = argument;
 	while (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isSatisfiesExpression(node))
 		node = node.expression;
