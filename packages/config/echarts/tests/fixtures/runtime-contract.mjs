@@ -213,7 +213,7 @@ export const RUNTIME_CONTRACT = [
 		config: { series: [{ data: [1] }] },
 		findings: ['info CFG_AMBIGUOUS $.series[0]'],
 		runtime: 'rejected',
-		why: 'False negative (CG-02-04): a fresh option needs `type`, but a setOption merge update or a timeline `options` entry legitimately omits it; telling the two apart is context.'
+		why: 'False negative (CG-04-03): a fresh option needs `type`, but a setOption merge update or a timeline `options` entry legitimately omits it. Which one a call is depends on the instance it reaches at run time, which the safe setOption path knows (CG-04-03); source cannot tell.'
 	},
 	{
 		name: 'heatmap without visualMap',

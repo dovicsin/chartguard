@@ -4,6 +4,11 @@
 	"description": "Dependency-light schema interpretation and validation",
 	"type": "module",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dovicsin/chartguard.git",
+		"directory": "packages/config/core"
+	},
 	"sideEffects": false,
 	"engines": {
 		"node": ">=20.19"
@@ -26,5 +31,8 @@
 	},
 	"dependencies": {
 		"@chartguard/core": "0.1.0"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

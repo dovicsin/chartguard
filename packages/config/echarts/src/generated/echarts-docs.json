@@ -1,0 +1,32 @@
+{
+	"source": "https://echarts.apache.org/en/documents/option-parts/option-outline.json",
+	"page": "https://echarts.apache.org/en/option.html",
+	"retrieved": "2026-10-20",
+	"sha256": "c7589d3e8cbb1dc1bea869d4c2eb5eab35040189a9f3f9d59f0ca243f65a4224",
+	"license": "Apache-2.0",
+	"anchors": [
+		"dataZoom-slider.handleIcon",
+		"dataZoom-slider.handleStyle",
+		"grid.containLabel",
+		"grid.outerBounds",
+		"radar.indicator.name",
+		"series-bar.itemStyle.borderColor",
+		"series-bar.itemStyle.borderRadius",
+		"series-bar.itemStyle.borderWidth",
+		"series-custom.itemStyle",
+		"series-gauge.clockwise",
+		"series-line.clip",
+		"series-line.triggerLineEvent",
+		"series-map.map",
+		"series-pie.clockwise",
+		"series-pie.label.edgeDistance",
+		"series-sunburst.levels.radius",
+		"series-treemap.colorMappingBy",
+		"series-treemap.data.colorMappingBy",
+		"series-treemap.levels.colorMappingBy",
+		"title.textVerticalAlign",
+		"tooltip.appendToBody",
+		"visualMap-continuous.color",
+		"visualMap-piecewise.color"
+	]
+}

@@ -26,6 +26,10 @@
 		"schema:generate": "node tools/schema-generator/generate.mjs write",
 		"schema:check": "node tools/schema-generator/generate.mjs check",
 		"schema:diff": "node tools/schema-generator/diff.mjs",
+		"api:check": "node tools/api/api.mjs check",
+		"api:write": "node tools/api/api.mjs write",
+		"changeset": "changeset",
+		"version-packages": "changeset version",
 		"conformance:import": "node tools/conformance/corpus/import.mjs",
 		"playground": "node apps/playground/scripts/serve.mjs",
 		"typecheck": "tsc -b tsconfig.json",
@@ -44,6 +48,7 @@
 		"demo:source": "node packages/cli/bin/chartguard.mjs analyze --library chartjs --file examples/chartjs-source.ts"
 	},
 	"devDependencies": {
+		"@changesets/cli": "^2.31.1",
 		"@eslint/js": "^9.39.5",
 		"@types/node": "^22.20.5",
 		"c8": "^10.1.3",

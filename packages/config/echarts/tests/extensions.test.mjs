@@ -55,3 +55,21 @@ test('built-in components and series cannot be replaced', () => {
 		}
 	);
 });
+
+test('a component subtype from an extension is checked like an extension series, also inheriting a built-in', () => {
+	const validator = withExtensions([
+		{
+			id: 'zoom',
+			variants: {
+				echarts: { 'dataZoom.wheel': { extends: 'dataZoom.inside', schema: s.object({ sensitivity: s.number() }) } }
+			}
+		}
+	]);
+	assert.deepEqual(findings(validator, { dataZoom: [{ type: 'wheel', sensitivity: 'high', start: 'x' }] }), [
+		'error CFG_TYPE $.dataZoom[0].sensitivity',
+		'error CFG_TYPE $.dataZoom[0].start'
+	]);
+	assert.deepEqual(findings(validate, { dataZoom: [{ type: 'wheel' }] }), [
+		'warning CFG_UNKNOWN_VARIANT $.dataZoom[0].type'
+	]);
+});

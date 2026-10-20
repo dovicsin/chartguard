@@ -6,7 +6,7 @@ import { registrationFinding, unhandledFinding, unknownKeyFinding, variantFindin
 import { isListLike, kindOf } from './kind.js';
 import { keySegment } from './paths.js';
 import { isHandled, type Registries } from './registry.js';
-import type { NodeSchema, SchemaManifest } from './schema.js';
+import type { Deprecation, NodeSchema, SchemaManifest } from './schema.js';
 import { type Selection, selectVariant } from './union.js';
 
 const MAX_DEPTH = 40;
@@ -223,8 +223,17 @@ export class ConfigWalker {
 			return;
 		}
 		if (field.deprecated !== undefined)
-			this.report(at(cursor, field), deprecationFinding(object, key, cursor.path, field.deprecated));
+			this.report(
+				at(cursor, field),
+				this.documented(deprecationFinding(object, key, cursor.path, field.deprecated), field.deprecated)
+			);
 		this.walk(entry.value, field, cursor);
+	}
+
+	/** A deprecation with the adapter's page for its migration, when there is one (CG-02-06). */
+	private documented(finding: Diagnostic, deprecation: Deprecation): Diagnostic {
+		const url = this.manifest.documentation?.(finding.path, this.root, deprecation);
+		return url === undefined ? finding : { ...finding, documentationUrl: url };
 	}
 
 	/** The schema a plugin extension gives `key` at this object's extension point, if any. */

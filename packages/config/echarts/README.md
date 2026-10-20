@@ -28,3 +28,8 @@ const validate = withExtensions([
 ```
 
 A variant schema is the whole series: options every series shares (`id`, `z`, …) are not inherited, so declare them or open the object (`s.object({...}, { additional: 'allow' })`). Built-ins cannot be replaced and a name has one owner; either throws `ExtensionError`. With a `registries` context, an extension series must be registered like any other. A schema marked `inferred: true` reports likely problems (warnings), never errors.
+
+A variant may extend a built-in one instead of restating its options (`{ 'series.wordCloud': { extends: 'series.scatter', schema: s.object({ gridSize: s.number() }) } }`), and component subtypes are open the same way (`'dataZoom.wheel': { extends: 'dataZoom.inside' }`).
+
+A deprecated option's finding links to where its migration is documented (`documentationUrl`, e.g. `…/option.html#series-pie.label.edgeDistance` for `label.margin`), only when the pinned documentation outline has that anchor.
+

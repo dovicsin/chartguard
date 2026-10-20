@@ -120,3 +120,21 @@ test('a plugin series is checked through createValidator extensions; it is unkno
 		/"line" is a built-in variant of highcharts.series/
 	);
 });
+
+test('a plugin series extending a built-in inherits its options, and chart.type names it as the default', async () => {
+	const { s } = await import('@chartguard/config-core');
+	const flame = {
+		id: 'flame',
+		variants: { 'highcharts.series': { flame: { extends: 'line', schema: s.object({ depth: s.number() }) } } }
+	};
+	const extended = createValidator(artifact, { extensions: [flame] });
+	const errors = (config) =>
+		extended(config)
+			.diagnostics.filter((d) => d.severity === 'error')
+			.map((d) => `${d.code} ${d.path}`);
+	assert.deepEqual(errors({ series: [{ type: 'flame', depth: 'x', data: [1, 2], lineWidth: 'wide' }] }), [
+		'CFG_TYPE $.series[0].depth',
+		'CFG_TYPE $.series[0].lineWidth'
+	]);
+	assert.deepEqual(errors({ chart: { type: 'flame' }, series: [{ depth: 'x' }] }), ['CFG_TYPE $.series[0].depth']);
+});

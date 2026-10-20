@@ -4,6 +4,11 @@
 	"description": "Generates ChartGuard schema artifacts from a chart library's own declarations and runtime, in your project",
 	"type": "module",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dovicsin/chartguard.git",
+		"directory": "packages/schema-generator"
+	},
 	"sideEffects": false,
 	"engines": {
 		"node": ">=20.19"
@@ -34,5 +39,8 @@
 	"dependencies": {
 		"@chartguard/config-core": "0.1.0",
 		"typescript": "^5.8.3"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

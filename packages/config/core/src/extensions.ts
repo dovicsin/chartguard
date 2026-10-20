@@ -1,14 +1,24 @@
+import {
+	catalogVariantPoint,
+	isSchema,
+	resolveVariant,
+	type VariantSpec,
+	type VariantUnion
+} from './extension-variants.js';
 import type { NodeSchema, SchemaManifest } from './schema.js';
+
+export type { VariantSpec } from './extension-variants.js';
 
 /**
  * A plugin's options and variants, supplied by its author or user (CG-02-05). `options` adds named
  * options at an extension point (`chartjs.plugins`: `options.plugins.<name>`); `variants` adds
- * discriminated variants to a registry, under their registered names (`echarts`: `series.wordCloud`).
+ * discriminated variants at a variant point, under their registered names (`echarts`:
+ * `series.wordCloud`), as a schema or as a built-in they extend.
  */
 export interface Extension {
 	readonly id: string;
 	readonly options?: Readonly<Record<string, Readonly<Record<string, NodeSchema>>>>;
-	readonly variants?: Readonly<Record<string, Readonly<Record<string, NodeSchema>>>>;
+	readonly variants?: Readonly<Record<string, Readonly<Record<string, VariantSpec>>>>;
 }
 
 /** Extensions resolved against a schema: what the walk consults where a built-in has no answer. */
@@ -17,7 +27,7 @@ export interface ResolvedExtensions {
 	readonly list: readonly Extension[];
 	/** Extension point → option name → schema. */
 	readonly options: ReadonlyMap<string, ReadonlyMap<string, NodeSchema>>;
-	/** Registry id → registered name (`series.wordCloud`) → schema, its discriminator literal included. */
+	/** Variant point → registered name (`series.wordCloud`) → schema, its discriminator literal included. */
 	readonly variants: ReadonlyMap<string, ReadonlyMap<string, NodeSchema>>;
 }
 
@@ -29,23 +39,10 @@ export class ExtensionError extends Error {
 	}
 }
 
-interface RegistryUnion {
-	readonly prefix: string;
-	readonly discriminator: string;
-	readonly builtIn: ReadonlySet<string>;
-}
-
-/** What a schema offers extensions: its points with their built-in names, its registries with theirs. */
+/** What a schema offers extensions: its option points with their built-in names, its variant points with their unions. */
 interface Catalog {
 	readonly points: Map<string, Set<string>>;
-	readonly registries: Map<string, RegistryUnion[]>;
-}
-
-function literalsOf(member: NodeSchema, key: string, seen: Set<NodeSchema>): string[] {
-	if (seen.has(member)) return [];
-	seen.add(member);
-	if (member.kind === 'union') return (member.anyOf ?? []).flatMap((nested) => literalsOf(nested, key, seen));
-	return (member.properties?.[key]?.enum ?? []).map(String);
+	readonly registries: Map<string, VariantUnion[]>;
 }
 
 function catalogNode(node: NodeSchema, catalog: Catalog): void {
@@ -55,13 +52,7 @@ function catalogNode(node: NodeSchema, catalog: Catalog): void {
 		for (const name of Object.keys(node.properties ?? {})) names.add(name);
 		catalog.points.set(node.extensionPoint, names);
 	}
-	const { registry, discriminator } = node;
-	// A union takes variants only where its registry is marked (the IR check keeps the two equal).
-	if (registry?.id !== node.extensionPoint || discriminator === undefined) return;
-	const builtIn = new Set(literalsOf(node, discriminator, new Set()).map((value) => `${registry.prefix}${value}`));
-	const unions = catalog.registries.get(registry.id) ?? [];
-	unions.push({ prefix: registry.prefix, discriminator, builtIn });
-	catalog.registries.set(registry.id, unions);
+	catalogVariantPoint(node, catalog.registries);
 }
 
 function catalogOf(root: NodeSchema): Catalog {
@@ -103,10 +94,6 @@ function known(keys: Iterable<string>): string {
 	return names.length === 0 ? 'none' : names.join(', ');
 }
 
-/** Extensions come from plain JavaScript too: a schema is an object with a `kind`, or it is refused here. */
-const isSchema = (value: unknown): value is NodeSchema =>
-	typeof value === 'object' && value !== null && typeof (value as { kind?: unknown }).kind === 'string';
-
 function addOptions(extension: Extension, catalog: Catalog, owners: Owners, problems: string[]): void {
 	for (const [point, entries] of Object.entries(extension.options ?? {})) {
 		const builtIn = catalog.points.get(point);
@@ -121,31 +108,6 @@ function addOptions(extension: Extension, catalog: Catalog, owners: Owners, prob
 			else own(owners, point, { id: extension.id, name, schema });
 		}
 	}
-}
-
-/** The variant schema with its discriminator literal, or the problem that keeps it out. */
-function variantSchema(name: string, schema: unknown, union: RegistryUnion): NodeSchema | string {
-	if (!isSchema(schema) || schema.kind !== 'object') return `variant "${name}" must be an object schema`;
-	const value = name.slice(union.prefix.length);
-	const declared = schema.properties?.[union.discriminator]?.enum;
-	if (declared !== undefined && (declared.length !== 1 || declared[0] !== value))
-		return `variant "${name}" declares ${union.discriminator} "${declared.map(String).join('", "')}", not "${value}"`;
-	const literal: NodeSchema = { kind: 'string', enum: [value] };
-	return { ...schema, properties: { ...schema.properties, [union.discriminator]: literal } };
-}
-
-/** The schema an extension's variant `name` resolves to in `registry`, or the problem that refuses it. */
-function resolveVariant(
-	registry: string,
-	unions: readonly RegistryUnion[],
-	name: string,
-	schema: unknown
-): NodeSchema | string {
-	const union = unions.find(({ prefix }) => name.startsWith(prefix) && name.length > prefix.length);
-	if (union === undefined)
-		return `"${name}" has none of the prefixes of ${registry} (${unions.map(({ prefix }) => prefix).join(', ')})`;
-	if (union.builtIn.has(name)) return `"${name}" is a built-in variant of ${registry} and cannot be replaced`;
-	return variantSchema(name, schema, union);
 }
 
 function addVariants(extension: Extension, catalog: Catalog, owners: Owners, problems: string[]): void {

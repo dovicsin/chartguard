@@ -201,8 +201,10 @@ test('artifacts carry both kinds of point through lowering; a malformed point is
 	assert.deepEqual(problems(generated({ point: '' })), [
 		'$.root.properties.plugins.node: extensionPoint must be a non-empty string'
 	]);
-	assert.deepEqual(problems(generated({ variantPoint: 'other' })), [
-		'$.root.properties.series.node.items: a union extensionPoint must equal its registry id'
+	// A union's point may differ from its registry id (CG-02-05 part 2), but it needs a registry.
+	assert.deepEqual(problems(generated({ variantPoint: 'other' })), []);
+	assert.deepEqual(problems(generated({ variantPoint: '' })), [
+		'$.root.properties.series.node.items: a union extensionPoint must be a non-empty string on a union with a registry'
 	]);
 });
 

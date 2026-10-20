@@ -117,6 +117,11 @@ export interface SchemaManifest {
 	readonly source: string;
 	/** Plugin options and variants the schema was extended with (`withExtensions`). */
 	readonly extensions?: ResolvedExtensions;
+	/**
+	 * Where a deprecation's migration is documented (CG-02-06): the adapter's page for what replaces the
+	 * option at `path` in `config`, when it can verify the page has it; undefined otherwise.
+	 */
+	readonly documentation?: (path: string, config: unknown, deprecation: Deprecation) => string | undefined;
 }
 
 export interface ObjectOptions {

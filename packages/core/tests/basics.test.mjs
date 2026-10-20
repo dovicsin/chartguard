@@ -89,3 +89,14 @@ test('record and container guards', () => {
 	assert.equal(isContainer([]), true);
 	assert.equal(isContainer('x'), false);
 });
+
+test('a path reads back into the keys and indices keySegment wrote', async () => {
+	const { keySegment, pathSegments } = await import('../dist/index.js');
+	const keys = ['series', 0, 'label', 'a b', 'say "hi"', '0', '$ok'];
+	const path = `$${keys.map((key) => (typeof key === 'number' ? `[${String(key)}]` : keySegment(key))).join('')}`;
+	assert.equal(path, '$.series[0].label["a b"]["say \\"hi\\""]["0"].$ok');
+	assert.deepEqual(pathSegments(path), keys);
+	assert.deepEqual(pathSegments('$'), []);
+	for (const malformed of ['series', '$.', '$[x]', '$.a..b', '$["unterminated]'])
+		assert.equal(pathSegments(malformed), undefined, malformed);
+});

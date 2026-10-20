@@ -4,6 +4,11 @@
 	"description": "Shared diagnostics, statuses and runtime contracts",
 	"type": "module",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dovicsin/chartguard.git",
+		"directory": "packages/core"
+	},
 	"sideEffects": false,
 	"engines": {
 		"node": ">=20.19"
@@ -23,5 +28,8 @@
 	"scripts": {
 		"build": "tsc -b",
 		"test": "node --test tests/*.test.mjs"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

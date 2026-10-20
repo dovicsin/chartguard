@@ -4,6 +4,11 @@
 	"description": "Optional opt-in runtime validation wrapper for chartjs",
 	"type": "module",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dovicsin/chartguard.git",
+		"directory": "packages/integrations/chartjs-runtime"
+	},
 	"sideEffects": false,
 	"engines": {
 		"node": ">=20.19"
@@ -27,5 +32,8 @@
 	"dependencies": {
 		"@chartguard/core": "0.1.0",
 		"@chartguard/config-chartjs": "0.1.0"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

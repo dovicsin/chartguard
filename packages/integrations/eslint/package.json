@@ -4,6 +4,11 @@
 	"description": "ESLint adapter reserved: deliberately not advertised as ready",
 	"type": "module",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dovicsin/chartguard.git",
+		"directory": "packages/integrations/eslint"
+	},
 	"sideEffects": false,
 	"engines": {
 		"node": ">=20.19"
@@ -31,5 +36,8 @@
 		"eslint": {
 			"optional": true
 		}
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

@@ -4,7 +4,14 @@ Copyright the ChartGuard contributors. Licensed under the MIT License.
 dist/generated/echarts-6.1.0.json is derived from the TypeScript declarations of
 Apache ECharts 6.1.0 (npm package echarts@6.1.0, types/dist/shared.d.ts), which
 are licensed under the Apache License, Version 2.0
-(https://www.apache.org/licenses/LICENSE-2.0). The upstream NOTICE reads:
+(https://www.apache.org/licenses/LICENSE-2.0).
+
+dist/generated/echarts-docs.json lists anchors of the Apache ECharts option
+documentation (https://echarts.apache.org/en/option.html), taken from its
+option outline (Apache License, Version 2.0); its file names the retrieval date
+and digest.
+
+The upstream NOTICE reads:
 
   Apache ECharts
   Copyright 2017-2026 The Apache Software Foundation

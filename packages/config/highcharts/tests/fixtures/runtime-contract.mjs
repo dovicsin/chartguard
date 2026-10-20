@@ -46,7 +46,7 @@ export const RUNTIME_CONTRACT = [
 		config: { series: [{ type: 'sankey', data: [] }] },
 		findings: [],
 		runtime: 'rejected',
-		why: 'False negative (CG-03-06): the schema describes every module; which ones are loaded is a registry context (`highcharts.series`), detected from source by CG-03-06.'
+		why: 'False negative (CG-04-05): the schema describes every module; which ones are loaded is a registry context (`highcharts.series`). Source shows the modules a project imports but never that nothing else loads one (a script tag, another bundle), so a complete context needs the live runtime (CG-04-05).'
 	},
 	{
 		name: 'module series with its module',

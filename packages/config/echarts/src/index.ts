@@ -8,6 +8,7 @@ import {
 } from '@chartguard/config-core';
 import type { ConfigValidator, ValidationOptions, ValidationResult } from '@chartguard/core';
 
+import { documentationOf } from './documentation.js';
 import artifact from './generated/echarts-6.1.0.json' with { type: 'json' };
 import { RULES } from './rules/index.js';
 
@@ -21,7 +22,10 @@ let lowered: LoweredSchema | undefined;
  * committed, so importing the package only parses JSON; lowering happens once, on first use.
  */
 export function schema(): LoweredSchema {
-	lowered ??= lowerArtifact(artifact as unknown as SchemaArtifact);
+	if (lowered === undefined) {
+		const { manifest, lossy } = lowerArtifact(artifact as unknown as SchemaArtifact);
+		lowered = { manifest: { ...manifest, documentation: documentationOf }, lossy };
+	}
 	return lowered;
 }
 

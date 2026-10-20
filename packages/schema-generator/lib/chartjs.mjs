@@ -18,8 +18,9 @@ const LOOKUPS = {
 };
 
 /**
- * Scales take plugin variants (`withExtensions`, CG-02-05); controllers do not yet: one controller
- * adds a chart type and a dataset type at once, which a single variant cannot express (part 2).
+ * Scales take plugin variants (`withExtensions`, CG-02-05) at their registry's name; controllers at two
+ * points of one registry, `chartjs.charts` and `chartjs.datasets`, since a controller adds a chart type
+ * and a dataset type at once (part 2, marked where the unions are built).
  */
 function registryFacts(root) {
 	const provenance = (fact) => runtimeProvenance(root, { sourceId: SOURCE_ID, packageName: 'chart.js' }, fact);
@@ -119,6 +120,7 @@ function datasetUnions(emitter, datasetVariants, { registry, provenance }) {
 				defaultVariant: 0,
 				extensible: true,
 				registry,
+				extensionPoint: 'chartjs.datasets',
 				provenance
 			})
 		])
@@ -177,6 +179,14 @@ export function generateChartjs(root, pin) {
 		sourceId: SOURCE_ID,
 		pin,
 		definitions,
-		root: { kind: 'union', anyOf: configs, discriminator: 'type', extensible: true, ...facts.chartType }
+		// A controller adds a chart type and a dataset type: two variant points of one registry (CG-02-05 part 2).
+		root: {
+			kind: 'union',
+			anyOf: configs,
+			discriminator: 'type',
+			extensible: true,
+			...facts.chartType,
+			extensionPoint: 'chartjs.charts'
+		}
 	});
 }

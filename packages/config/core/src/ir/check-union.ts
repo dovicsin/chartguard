@@ -62,12 +62,12 @@ function checkRegistry(checker: Reporter, node: Node, path: string): void {
 		checker.report(path, 'a registry needs a discriminator and extensible: true');
 }
 
-/** A union that takes variant extensions is named by its registry: the extensions are keyed by its id. */
+/** A union that takes variant extensions names its point; it needs a registry, whose registration still applies. */
 function checkVariantPoint(checker: Reporter, node: Node, path: string): void {
 	const { extensionPoint, registry } = node;
 	if (extensionPoint === undefined) return;
-	if (!isRecord(registry) || registry['id'] !== extensionPoint)
-		checker.report(path, 'a union extensionPoint must equal its registry id');
+	if (!isRecord(registry) || typeof extensionPoint !== 'string' || extensionPoint === '')
+		checker.report(path, 'a union extensionPoint must be a non-empty string on a union with a registry');
 }
 
 export function checkUnionOptions(checker: Reporter, node: Node, path: string, size: number): void {

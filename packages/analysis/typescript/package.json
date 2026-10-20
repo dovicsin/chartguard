@@ -4,6 +4,11 @@
 	"description": "Safe, bounded TypeScript compiler AST expression reader",
 	"type": "module",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dovicsin/chartguard.git",
+		"directory": "packages/analysis/typescript"
+	},
 	"sideEffects": false,
 	"engines": {
 		"node": ">=20.19"
@@ -31,5 +36,8 @@
 	"dependencies": {
 		"@chartguard/core": "0.1.0",
 		"typescript": "^5.8.3"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

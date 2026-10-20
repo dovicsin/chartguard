@@ -88,15 +88,22 @@ function decide(rule: DefaultChoice, value: object): Decision {
 }
 
 /** The member a `defaultFrom` names; ambiguous when the value cannot be read or names no member. */
-function inheritedDefault(union: NodeSchema, root: unknown): Selection | undefined {
+function inheritedDefault(union: NodeSchema, { root, extensions }: DefaultContext): Selection | undefined {
 	if (union.defaultFrom === undefined) return undefined;
 	const inherited = inheritedValue(union.defaultFrom, root);
 	const key = discriminatorOf(union);
 	if (inherited === undefined || key === undefined) return AMBIGUOUS;
-	const named = flatMembers(union).find((member) =>
-		discriminatorValues(member, key).some((known) => known === inherited.value)
-	);
+	// A plugin's variant is a member like a built-in one (CG-02-05): `chart.type: 'flame3d'` names it.
+	const named =
+		flatMembers(union).find((member) => discriminatorValues(member, key).some((known) => known === inherited.value)) ??
+		extensionVariant(union, inherited.value, extensions);
 	return named === undefined ? AMBIGUOUS : variant(named);
+}
+
+/** What a default may consult besides the value: the whole config, and the plugins' variants. */
+interface DefaultContext {
+	readonly root: unknown;
+	readonly extensions: ResolvedExtensions | undefined;
 }
 
 /**
@@ -108,7 +115,7 @@ function inheritedDefault(union: NodeSchema, root: unknown): Selection | undefin
 function defaultOf(
 	union: NodeSchema,
 	value: object,
-	root: unknown,
+	context: DefaultContext,
 	seen = new Set<NodeSchema>()
 ): Selection | undefined {
 	for (const rule of union.defaultWhen ?? []) {
@@ -116,11 +123,11 @@ function defaultOf(
 		if (decision === undefined) return AMBIGUOUS;
 		if (decision) return memberAt(union, rule.variant);
 	}
-	const inherited = inheritedDefault(union, root);
+	const inherited = inheritedDefault(union, context);
 	if (inherited !== undefined) return inherited;
 	if (union.defaultVariant !== undefined) return memberAt(union, union.defaultVariant);
 	for (const member of nestedUnions(union, seen)) {
-		const fallback = defaultOf(member, value, root, seen);
+		const fallback = defaultOf(member, value, context, seen);
 		if (fallback !== undefined) return fallback;
 	}
 	return undefined;
@@ -135,14 +142,24 @@ const sameRegistry = (left: RegistryRef, right: RegistryRef): boolean =>
 	left.id === right.id && left.prefix === right.prefix && left.enforced === right.enforced;
 
 /** The registry of the union itself, or the one every nested union that names one agrees on. */
-/** The variant a plugin extension registers under this value in the union's registry, if any. */
+/** The variant point of a union, or the one every nested union that names one agrees on. */
+function pointOf(union: NodeSchema, seen = new Set<NodeSchema>()): string | undefined {
+	if (union.extensionPoint !== undefined) return union.extensionPoint;
+	const nested = nestedUnions(union, seen).flatMap((member) => pointOf(member, seen) ?? []);
+	const [first] = nested;
+	return first !== undefined && nested.every((point) => point === first) ? first : undefined;
+}
+
+/** The variant a plugin extension adds under this value at the union's variant point, if any. */
 function extensionVariant(
-	ref: RegistryRef | undefined,
+	union: NodeSchema,
 	value: unknown,
 	extensions: ResolvedExtensions | undefined
 ): NodeSchema | undefined {
-	if (ref === undefined || typeof value !== 'string') return undefined;
-	return extensions?.variants.get(ref.id)?.get(`${ref.prefix}${value}`);
+	const point = pointOf(union);
+	const ref = registryOf(union);
+	if (point === undefined || ref === undefined || typeof value !== 'string') return undefined;
+	return extensions?.variants.get(point)?.get(`${ref.prefix}${value}`);
 }
 
 function registryOf(union: NodeSchema, seen = new Set<NodeSchema>()): RegistryRef | undefined {
@@ -215,7 +232,7 @@ function selectExplicit(value: unknown, { union, members, key }: Discriminated, 
 	const ref = registryOf(union);
 	const selected =
 		members.find((member) => discriminatorValues(member, key).some((known) => known === value)) ??
-		extensionVariant(ref, value, context.extensions);
+		extensionVariant(union, value, context.extensions);
 	if (ref !== undefined && typeof value === 'string') {
 		const decided = byRegistration(registration(registries, ref, value), selected, key, value);
 		if (decided !== undefined) return decided;
@@ -245,7 +262,7 @@ function selectByDiscriminator(
 	const entry = ownDataProperty(value, key);
 	if (!entry.found && entry.accessor) return AMBIGUOUS;
 	if (!entry.found || entry.value === undefined)
-		return checkDefault(defaultOf(union, value, root) ?? AMBIGUOUS, key, registryOf(union), registries);
+		return checkDefault(defaultOf(union, value, { root, extensions }) ?? AMBIGUOUS, key, registryOf(union), registries);
 	return selectExplicit(entry.value, { union, members, key }, { registries, root, extensions });
 }
 

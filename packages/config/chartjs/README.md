@@ -25,3 +25,12 @@ validate(config).extensions; // ["datalabels", "streaming"]
 ```
 
 An extension may not replace a built-in plugin or scale, and two extensions may not define the same name; either throws `ExtensionError` when the validator is built. A finding against an extension is as certain as the schema you gave it; mark a schema you are not sure of with `inferred: true` (`{ ...s.object({...}), inferred: true }`) and its findings are reported as likely problems (warnings), never as errors. Plugin chart types (controllers) cannot be described yet.
+
+### Controllers
+
+A plugin chart type (`Chart.register(FunnelController)`) is described by the built-in type it builds on; its chart config and its dataset both inherit from it, and an untyped dataset of the new chart type is checked as the new dataset type, as the runtime resolves it:
+
+```ts
+withExtensions([{ id: "funnel", controllers: { funnel: { extends: "bar", dataset: s.object({ shrinkFraction: s.number() }) } } }]);
+```
+

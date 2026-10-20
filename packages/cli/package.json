@@ -4,6 +4,11 @@
 	"description": "Single-library explicit CLI for chart checks",
 	"type": "module",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dovicsin/chartguard.git",
+		"directory": "packages/cli"
+	},
 	"sideEffects": false,
 	"engines": {
 		"node": ">=20.19"
@@ -38,5 +43,8 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
 		}
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

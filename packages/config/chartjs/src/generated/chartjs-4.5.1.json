@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-57e0cad112ba96b9d01f399b63b950cd56580c31e7327dd7b05e05187431dd93",
+	"digest": "sha256-11f5a8d9f7b049af31e07db433a6fee1bd37b4c100a0693b61eb8a47bc0ac502",
 	"sources": {
 		"chartjs": {
 			"kind": "npm-package",
@@ -220,6 +220,7 @@
 								"prefix": "",
 								"enforced": true
 							},
+							"extensionPoint": "chartjs.datasets",
 							"provenance": {
 								"confidence": "authoritative",
 								"sources": [
@@ -31249,6 +31250,7 @@
 								"prefix": "",
 								"enforced": true
 							},
+							"extensionPoint": "chartjs.datasets",
 							"provenance": {
 								"confidence": "authoritative",
 								"sources": [
@@ -37602,6 +37604,7 @@
 								"prefix": "",
 								"enforced": true
 							},
+							"extensionPoint": "chartjs.datasets",
 							"provenance": {
 								"confidence": "authoritative",
 								"sources": [
@@ -43194,6 +43197,7 @@
 								"prefix": "",
 								"enforced": true
 							},
+							"extensionPoint": "chartjs.datasets",
 							"provenance": {
 								"confidence": "authoritative",
 								"sources": [
@@ -48890,6 +48894,7 @@
 								"prefix": "",
 								"enforced": true
 							},
+							"extensionPoint": "chartjs.datasets",
 							"provenance": {
 								"confidence": "authoritative",
 								"sources": [
@@ -54882,6 +54887,7 @@
 								"prefix": "",
 								"enforced": true
 							},
+							"extensionPoint": "chartjs.datasets",
 							"provenance": {
 								"confidence": "authoritative",
 								"sources": [
@@ -62201,6 +62207,7 @@
 								"prefix": "",
 								"enforced": true
 							},
+							"extensionPoint": "chartjs.datasets",
 							"provenance": {
 								"confidence": "authoritative",
 								"sources": [
@@ -67935,6 +67942,7 @@
 								"prefix": "",
 								"enforced": true
 							},
+							"extensionPoint": "chartjs.datasets",
 							"provenance": {
 								"confidence": "authoritative",
 								"sources": [
@@ -77295,6 +77303,7 @@
 					"pointer": "chart.js/dist/chart.js:5891"
 				}
 			]
-		}
+		},
+		"extensionPoint": "chartjs.charts"
 	}
 }

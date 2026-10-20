@@ -142,6 +142,8 @@ function subtypeComponent(root, definitions, union, [mainType, component]) {
 		...(defaultWhen.length === 0 ? {} : { defaultWhen }),
 		extensible: true,
 		registry: { id: 'echarts', prefix: `${mainType}.`, enforced: true },
+		// Extension subtypes (`dataZoom.custom`) are added like extension series (CG-02-05 part 2).
+		extensionPoint: 'echarts',
 		provenance: {
 			confidence: 'authoritative',
 			sources: [component.default, SUBTYPE_LOOKUP].flatMap((fact) => provenance(root, fact).sources)

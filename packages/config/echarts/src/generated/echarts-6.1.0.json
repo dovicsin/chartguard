@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-767c1a24a462c99d709a949197754b03e60aa8a5b4721371b79de11e8b7d5e8f",
+	"digest": "sha256-e0946fde44f355be26bfc11e771b6690ad9886f07536f1d05193fc363721a1d4",
 	"sources": {
 		"echarts": {
 			"kind": "npm-package",
@@ -715,6 +715,7 @@
 							"prefix": "timeline.",
 							"enforced": true
 						},
+						"extensionPoint": "echarts",
 						"provenance": {
 							"confidence": "authoritative",
 							"sources": [
@@ -786,6 +787,7 @@
 										"prefix": "legend.",
 										"enforced": true
 									},
+									"extensionPoint": "echarts",
 									"provenance": {
 										"confidence": "authoritative",
 										"sources": [
@@ -810,6 +812,7 @@
 							"prefix": "legend.",
 							"enforced": true
 						},
+						"extensionPoint": "echarts",
 						"provenance": {
 							"confidence": "authoritative",
 							"sources": [
@@ -881,6 +884,7 @@
 										"prefix": "dataZoom.",
 										"enforced": true
 									},
+									"extensionPoint": "echarts",
 									"provenance": {
 										"confidence": "authoritative",
 										"sources": [
@@ -905,6 +909,7 @@
 							"prefix": "dataZoom.",
 							"enforced": true
 						},
+						"extensionPoint": "echarts",
 						"provenance": {
 							"confidence": "authoritative",
 							"sources": [
@@ -1003,6 +1008,7 @@
 										"prefix": "visualMap.",
 										"enforced": true
 									},
+									"extensionPoint": "echarts",
 									"provenance": {
 										"confidence": "authoritative",
 										"sources": [
@@ -1054,6 +1060,7 @@
 							"prefix": "visualMap.",
 							"enforced": true
 						},
+						"extensionPoint": "echarts",
 						"provenance": {
 							"confidence": "authoritative",
 							"sources": [

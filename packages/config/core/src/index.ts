@@ -1,4 +1,4 @@
-export type { Extension, ResolvedExtensions } from './extensions.js';
+export type { Extension, ResolvedExtensions, VariantSpec } from './extensions.js';
 export { ExtensionError, withExtensions } from './extensions.js';
 export * from './ir/index.js';
 export { keySegment } from './paths.js';

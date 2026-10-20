@@ -73,10 +73,12 @@ export class Origins {
 		if (hops > MAX_HOPS) return undefined;
 		if (ts.isIdentifier(node)) return this.ofSymbol(this.checker.getSymbolAtLocation(node), hops + 1);
 		if (!ts.isPropertyAccessExpression(node) || !ts.isIdentifier(node.name)) return undefined;
-		// Resolved through the checker when the module is loaded; otherwise read from the syntax.
+		// A member of a package is named as the code reaches it: a declaration file may export it under
+		// another local name (`export { init$1 as init }`). Only a project file's member is resolved.
+		const base = this.of(node.expression, hops + 1);
+		if (base?.package !== undefined) return { ...base, path: [...base.path, node.name.text] };
 		const member = this.ofSymbol(this.checker.getSymbolAtLocation(node.name), hops + 1);
 		if (member !== undefined) return member;
-		const base = this.of(node.expression, hops + 1);
 		return base === undefined ? undefined : { ...base, path: [...base.path, node.name.text] };
 	}
 
