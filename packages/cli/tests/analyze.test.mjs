@@ -13,7 +13,7 @@ test('analyze reads the file with the nearest tsconfig and says which; --project
 	const found = await run(['analyze', '--library', 'chartjs', '--file', file]);
 	assert.match(found.out, new RegExp(`^Read with ${join(root, 'tsconfig.json').replaceAll('\\', '\\\\')}\\.$`, 'm'));
 	assert.equal(found.code, 1);
-	assert.match(found.out, /error: \$\.options\.responsive/);
+	assert.match(found.out, /error: \S+chart\.ts:1:14 \$\.options\.responsive/);
 	const named = await run([
 		'analyze',
 		'--library',
@@ -155,4 +155,50 @@ test("--patterns adds the project's own wrappers; a malformed patterns file is a
 		assert.equal(refused.code, 2, patterns);
 	}
 	assert.equal((await run(['validate', '--library', 'echarts', '--file', 'x.json', '--patterns', 'p.json'])).code, 2);
+});
+
+test('each finding carries the exact source range of the value it is about, in the file that wrote it', async (t) => {
+	const root = sourceProject(t, {
+		'tsconfig.json': '{}',
+		'src/options.ts': 'export const options = {\n\tresponsive: "yes"\n};',
+		'src/chart.ts':
+			'import { Chart } from "chart.js";\nimport { options } from "./options";\nnew Chart(a, { type: "bar", data: { datasets: [] }, options });'
+	});
+	const { out } = await run(['analyze', '--library', 'chartjs', '--file', join(root, 'src/chart.ts'), '--json']);
+	const [error] = JSON.parse(out).entries[0].result.diagnostics.filter((d) => d.severity === 'error');
+	assert.deepEqual(
+		[error.path, error.file, error.line, error.column, error.endLine, error.endColumn],
+		['$.options.responsive', join(root, 'src/options.ts'), 2, 14, 2, 19]
+	);
+});
+
+test('several files are read together; without --file, --project reads every file it includes', async (t) => {
+	const root = sourceProject(t, {
+		'tsconfig.json': '{ "include": ["src"] }',
+		'src/theme.ts': 'export const theme = { responsive: true };',
+		'src/dark.ts': 'import { theme } from "./theme";\ntheme.responsive = "no";',
+		'src/chart.ts':
+			'import { Chart } from "chart.js";\nimport { theme } from "./theme";\nnew Chart(a, { type: "bar", data: { datasets: [] }, options: theme });',
+		'src/broken.ts': 'export const config = { a: 1 b: 2 };'
+	});
+	const files = ['--file', join(root, 'src/chart.ts'), '--file', join(root, 'src/dark.ts')];
+	const together = JSON.parse((await run(['analyze', '--library', 'chartjs', ...files, '--json'])).out);
+	assert.deepEqual(
+		together.entries.map((entry) => [entry.file, entry.complete]),
+		[[join(root, 'src/chart.ts'), false]]
+	);
+	const scan = await run(['analyze', '--library', 'chartjs', '--project', join(root, 'tsconfig.json')]);
+	assert.equal(scan.code, 0);
+	assert.match(scan.out, /broken\.ts: not read/);
+	assert.match(scan.out, /^inline config \(chartjs\.new-chart\) @ line 3: partial \(dynamic \/ partial\)$/m);
+	const json = JSON.parse(
+		(await run(['analyze', '--library', 'chartjs', '--project', join(root, 'tsconfig.json'), '--json'])).out
+	);
+	assert.deepEqual(
+		json.unreadable.map((entry) => entry.file),
+		[join(root, 'src/broken.ts')]
+	);
+	// validate and quality read exactly one file; analyze needs a file or a project.
+	assert.equal((await run(['validate', '--library', 'chartjs', '--file', 'a.json', '--file', 'b.json'])).code, 2);
+	assert.equal((await run(['analyze', '--library', 'chartjs'])).code, 2);
 });

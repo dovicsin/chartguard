@@ -1,6 +1,8 @@
 import { isContainer, isRecord, ownDataProperty } from '@chartguard/core';
+import type ts from 'typescript';
 
 import { type Decoded, known, UNRESOLVED } from './decoded.js';
+import type { Trace } from './trace.js';
 
 /** Whether a decoded value is truthy, when that is known: an object is truthy even if incomplete. */
 export function truthiness({ value, complete }: Decoded): boolean | undefined {
@@ -66,11 +68,36 @@ function common(a: unknown, b: unknown): { value: unknown; same: boolean } {
 	return Object.is(a, b) ? { value: a, same: true } : { value: ABSENT, same: false };
 }
 
+const CHOICE = 'choice' as const;
+
+const keysOf = (trace: Trace | undefined): Iterable<string> => trace?.entries?.keys() ?? [];
+const childOf = (trace: Trace | undefined, key: string): Trace | undefined => trace?.entries?.get(key);
+
+/** Keys may vary when either side's keys may. */
+function openOf(left: Trace | undefined, right: Trace | undefined, node: ts.Node): Pick<Trace, 'open'> {
+	return left?.open === undefined && right?.open === undefined ? {} : { open: { node, reason: CHOICE } };
+}
+
+/** The trace of what two sides agree on: a kept part keeps the first side's origin; the rest is unknown, a `choice`. */
+function agreedTrace(merged: unknown, left: Trace | undefined, right: Trace | undefined, node: ts.Node): Trace {
+	if (merged === ABSENT) return { node, unknown: CHOICE };
+	if (!isContainer(merged)) return left ?? { node };
+	const entries = new Map<string, Trace>();
+	for (const key of new Set([...keysOf(left), ...keysOf(right)])) {
+		const entry = ownDataProperty(merged, key);
+		const child = entry.found ? agreedTrace(entry.value, childOf(left, key), childOf(right, key), node) : undefined;
+		entries.set(key, child ?? { node, unknown: CHOICE });
+	}
+	return { node: left?.node ?? node, entries, ...openOf(left, right, node) };
+}
+
 /**
  * Either of two values, when which one is not known: only what both agree on is kept (A3 gaps for
  * the rest), and the result is complete only when both are complete and equal (CG-03-05).
  */
-export function agreement(a: Decoded, b: Decoded): Decoded {
+export function agreement(a: Decoded, b: Decoded, node: ts.Node): Decoded {
 	const { value, same } = common(a.value, b.value);
-	return value === ABSENT ? UNRESOLVED : { value, complete: same && a.complete && b.complete };
+	const trace = agreedTrace(value, a.trace, b.trace, node);
+	if (value === ABSENT) return { ...UNRESOLVED, trace };
+	return { value, complete: same && a.complete && b.complete, trace };
 }

@@ -59,7 +59,10 @@ test('malformed JSON input is an input failure with the file named, not an inter
 test('analyze reports unknown keys as warnings, not errors', async () => {
 	const { code, out } = await run(['analyze', '--library', 'chartjs', '--file', example('chartjs-source.ts')]);
 	assert.equal(code, 0);
-	assert.match(out, /warning: \$\.options\.scales\.y\.beginAtZerro .* Did you mean "beginAtZero"\?/);
+	assert.match(
+		out,
+		/warning: \S+chartjs-source\.ts:5:\d+ \$\.options\.scales\.y\.beginAtZerro .* Did you mean "beginAtZero"\?/
+	);
 });
 
 test('analyze json lists entries', async () => {
@@ -108,7 +111,7 @@ test('analyze never validates a let config: its initializer may be stale, so it 
 test('analyze refuses a file with syntax errors instead of validating a recovered tree', async () => {
 	const { code, err } = await run(['analyze', '--library', 'chartjs', '--file', example('chartjs-syntax-error.ts')]);
 	assert.equal(code, 2);
-	assert.match(err, /has syntax errors; nothing read from it is reliable/);
+	assert.match(err, /cannot be read reliably; nothing read from it is used/);
 	assert.match(err, /1:30 /);
 });
 
@@ -180,5 +183,8 @@ test('analyze passes the version on to every extracted config', async () => {
 		'3.0.0'
 	]);
 	assert.match(out, /^config @ line 2: partial$/m);
-	assert.match(out, /warning: \$ 3\.0\.0 is not supported: this schema describes chartjs 4\.5\.1\. Not validated\./);
+	assert.match(
+		out,
+		/warning: \S+ \$ 3\.0\.0 is not supported: this schema describes chartjs 4\.5\.1\. Not validated\./
+	);
 });

@@ -28,6 +28,9 @@ export interface Diagnostic {
 	file?: string;
 	line?: number;
 	column?: number;
+	/** Where the source range the finding is about ends (exclusive), when it is known (CG-03-07). */
+	endLine?: number;
+	endColumn?: number;
 }
 
 /**

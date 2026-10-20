@@ -4,11 +4,13 @@ import ts from 'typescript';
 import { Bindings } from './bindings.js';
 import { StaticDecoder } from './decoder.js';
 import { UseDetector } from './detector.js';
+import { guarded, inputRefusal, truncation } from './limits.js';
 import { Notes, positionAt } from './notes.js';
 import { Origins } from './origins.js';
 import { type ChartPattern, rulesOf } from './patterns.js';
-import { inMemoryProgram, type ReadOnlyProgram } from './program.js';
+import { inMemoryProgram } from './program.js';
 import { type Binding, bindingOf } from './scope.js';
+import type { PathFact } from './trace.js';
 import { type ChartUse, UseCollector } from './uses.js';
 import { isPureCall, withoutWritten } from './writes.js';
 
@@ -23,19 +25,34 @@ export interface SourceObject {
 	readonly complete: boolean;
 	/** Why this object is incomplete, if it is. Empty when complete. */
 	readonly diagnostics: readonly Diagnostic[];
+	/** Where each path of the value comes from in source, or why it is unknown (CG-03-04). */
+	readonly paths: readonly PathFact[];
 }
 
 export interface AnalysisOutput {
+	/** False when nothing read from the file is reliable: syntax errors, or a file too large or too deep to read. */
+	readonly readable: boolean;
 	readonly objects: readonly SourceObject[];
 	/** Where the file hands a config to a chart library (CG-03-06). */
 	readonly uses: readonly ChartUse[];
-	/** File-level findings: syntax errors. Any syntax error makes every object incomplete. */
+	/** File-level findings: syntax errors, refusals (CG-03-08), the work limit. */
 	readonly diagnostics: readonly Diagnostic[];
 }
 
 export interface ExtractOptions {
 	/** A project's own wrappers, added to the built-in library patterns; malformed ones throw `PatternError`. */
 	readonly patterns?: readonly ChartPattern[];
+}
+
+/** One file of a Program to analyse, and the name the caller knows it by. */
+export interface AnalysedFile {
+	readonly file: ts.SourceFile;
+	readonly fileName: string;
+}
+
+/** The output for a file that is not read at all (CG-03-08). */
+export function refused(diagnostic: Diagnostic): AnalysisOutput {
+	return { readable: false, objects: [], uses: [], diagnostics: [diagnostic] };
 }
 
 type ObjectDeclaration = ts.VariableDeclaration & { readonly name: ts.Identifier; readonly initializer: ts.Expression };
@@ -45,7 +62,7 @@ function isObjectDeclaration(node: ts.Node): node is ObjectDeclaration {
 }
 
 /** TypeScript recovers from syntax errors and still builds a tree; nothing read from such a tree is reliable. */
-function syntaxDiagnostics({ program, file }: ReadOnlyProgram, fileName: string): Diagnostic[] {
+function syntaxDiagnostics(program: ts.Program, { file, fileName }: AnalysedFile): Diagnostic[] {
 	return program.getSyntacticDiagnostics(file).map((problem) => ({
 		code: 'CFG_SYNTAX',
 		severity: 'warning',
@@ -81,7 +98,8 @@ class Collector {
 		const { decoder, bindings, notes } = this.reader;
 		const initial = decoder.decode(node.initializer);
 		const writes = bindings.writesTo(node);
-		const { value } = withoutWritten(initial, writes);
+		const read = withoutWritten(initial, writes);
+		const { value } = read;
 		if (!isRecord(value)) return;
 		const name = node.name.text;
 		const binding = bindingOf(node);
@@ -96,44 +114,69 @@ class Collector {
 				: [note('CFG_DYNAMIC', `Expression for ${name} cannot be completely resolved without executing code.`)]),
 			...writes.map((write) => notes.mutated(name, write))
 		];
-		this.objects.push({ name, ...position, binding, value, complete: diagnostics.length === 0, diagnostics });
+		const complete = diagnostics.length === 0;
+		this.objects.push({ name, ...position, binding, value, complete, diagnostics, paths: notes.factsOf(read) });
 	}
 }
 
-/** The objects and chart uses of the analysed file, read through its Program's checker. */
-export function extract(
-	read: ReadOnlyProgram,
-	fileName: string,
-	{ patterns = [] }: ExtractOptions = {}
-): AnalysisOutput {
-	const rules = rulesOf(patterns);
-	const diagnostics = syntaxDiagnostics(read, fileName);
-	const parses = diagnostics.length === 0;
-	const detector = new UseDetector(new Origins(read.program), rules, read.program.getTypeChecker());
-	// A chart use or a pure global leaves what it is given as it is; any other callee may change it.
-	const exempt = (call: ts.CallExpression | ts.NewExpression): boolean =>
-		detector.matchCall(call) !== undefined || isPureCall(call, read.program);
-	const bindings = new Bindings(read.program, read.file, exempt);
-	const reader = { decoder: new StaticDecoder(bindings), bindings, notes: new Notes(read.file, fileName) };
-	const objects = new Collector(read.file, reader, parses);
-	const uses = new UseCollector(detector, reader, parses);
-	const visit = (node: ts.Node): void => {
-		objects.collect(node);
-		uses.visit(node);
-		ts.forEachChild(node, visit);
-	};
-	visit(read.file);
-	return { objects: objects.objects, uses: uses.uses, diagnostics };
+/**
+ * The reading of one Program: what its files share (patterns, origins, bindings and the writes of
+ * every readable file), so several files of a project are analysed together and see each other's writes.
+ */
+export class Extraction {
+	private readonly detector: UseDetector;
+	private readonly bindings: Bindings;
+
+	constructor(
+		private readonly program: ts.Program,
+		{ patterns = [] }: ExtractOptions = {}
+	) {
+		this.detector = new UseDetector(new Origins(program), rulesOf(patterns), program.getTypeChecker());
+		// A chart use or a pure global leaves what it is given as it is; any other callee may change it.
+		const exempt = (call: ts.CallExpression | ts.NewExpression): boolean =>
+			this.detector.matchCall(call) !== undefined || isPureCall(call, program);
+		this.bindings = new Bindings(program, exempt);
+	}
+
+	/** The objects and chart uses of one analysed file, read through the Program's checker. */
+	read(analysed: AnalysedFile): AnalysisOutput {
+		const { file, fileName } = analysed;
+		const diagnostics = syntaxDiagnostics(this.program, analysed);
+		const readable = diagnostics.length === 0;
+		const decoder = new StaticDecoder(this.bindings);
+		const reader = { decoder, bindings: this.bindings, notes: new Notes(file, fileName) };
+		const objects = new Collector(file, reader, readable);
+		const uses = new UseCollector(this.detector, reader, readable);
+		const visit = (node: ts.Node): void => {
+			objects.collect(node);
+			uses.visit(node);
+			ts.forEachChild(node, visit);
+		};
+		visit(file);
+		const limit = decoder.exhausted ? [truncation(fileName)] : [];
+		return { readable, objects: objects.objects, uses: uses.uses, diagnostics: [...diagnostics, ...limit] };
+	}
 }
 
 /**
  * Partial static extraction of one source text on its own: no lib, no imports, no file system.
- * Never evaluates JS; cannot guarantee complete data-flow analysis.
+ * Never evaluates JS; cannot guarantee complete data-flow analysis. A file too large or nested too
+ * deeply is refused with a note (CG-03-08); malformed patterns throw `PatternError`.
  */
 export function extractStaticConfigs(
 	source: string,
 	filename = 'config.ts',
 	options: ExtractOptions = {}
 ): AnalysisOutput {
-	return extract(inMemoryProgram(source, filename), filename, options);
+	rulesOf(options.patterns);
+	const refusal = inputRefusal(source, filename);
+	if (refusal !== undefined) return refused(refusal);
+	return guarded(
+		filename,
+		() => {
+			const { program, file } = inMemoryProgram(source, filename);
+			return new Extraction(program, options).read({ file, fileName: filename });
+		},
+		refused
+	);
 }

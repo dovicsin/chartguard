@@ -8,6 +8,7 @@ import type { Call, Tag, UseDetector } from './detector.js';
 import { chartjsConfig, type Prop, propsOf } from './jsx.js';
 import { type Notes, type Position, positionAt } from './notes.js';
 import type { ChartLibrary, PropRule, Rule } from './patterns.js';
+import type { PathFact, Trace } from './trace.js';
 
 /** A place where the analysed file hands a config to a chart library (CG-03-06). */
 export interface ChartUse {
@@ -22,12 +23,15 @@ export interface ChartUse {
 	readonly diagnostics: readonly Diagnostic[];
 	/** The binding passed, when the config is passed by name. */
 	readonly source?: string;
+	/** Where each path of the value comes from in source, or why it is unknown (CG-03-04). */
+	readonly paths: readonly PathFact[];
 }
 
 /** A config read at a use, with the notes on why it is incomplete. */
 interface Read {
 	readonly value: unknown;
 	readonly complete: boolean;
+	readonly trace?: Trace | undefined;
 	readonly diagnostics: readonly Diagnostic[];
 	readonly source?: string;
 }
@@ -61,13 +65,15 @@ export class UseCollector {
 	private addTag(tag: Tag, rule: Rule, jsx: PropRule): void {
 		const tagged = propsOf(tag);
 		if ('chartType' in jsx) {
-			const { value, complete } = chartjsConfig(tagged, jsx.chartType, (prop) => this.readValue(prop));
-			this.push(tag, rule, { value, complete, diagnostics: complete ? [] : [this.dynamic(tag)] });
+			const { value, complete, trace } = chartjsConfig(tagged, jsx.chartType, (prop) => this.readValue(prop), tag);
+			this.push(tag, rule, { value, complete, trace, diagnostics: complete ? [] : [this.dynamic(tag)] });
 			return;
 		}
 		const value = tagged.props.get(jsx.prop);
 		const read =
-			value === true || value === undefined ? { value, complete: true, diagnostics: [] } : this.read(value, tag);
+			value === true || value === undefined
+				? { value, complete: true, trace: { node: tag }, diagnostics: [] }
+				: this.read(value, tag);
 		// A spread attribute may supply the prop.
 		this.push(
 			tag,
@@ -85,8 +91,9 @@ export class UseCollector {
 	 * names its writes (`CFG_MUTATED`); what is unresolved apart from them is `CFG_DYNAMIC`.
 	 */
 	private read(expression: ts.Expression, at: Call | Tag): Read {
-		const { value, complete } = this.decoder.decode(expression);
-		if (!ts.isIdentifier(expression)) return { value, complete, diagnostics: complete ? [] : [this.dynamic(at)] };
+		const { value, complete, trace } = this.decoder.decode(expression);
+		if (!ts.isIdentifier(expression))
+			return { value, complete, trace, diagnostics: complete ? [] : [this.dynamic(at)] };
 		const target = this.bindings.ofIdentifier(expression);
 		const passed = target?.kind === 'value' ? target : undefined;
 		const writes = passed === undefined ? [] : this.bindings.writesTo(passed.declaration);
@@ -95,7 +102,7 @@ export class UseCollector {
 			...writes.map((write) => this.notes.mutated(expression.text, write)),
 			...(initial ? [] : [this.dynamic(at)])
 		];
-		return { value, complete, diagnostics, source: expression.text };
+		return { value, complete, trace, diagnostics, source: expression.text };
 	}
 
 	private dynamic(at: Call | Tag): Diagnostic {
@@ -121,8 +128,9 @@ export class UseCollector {
 		const syntax = this.parses
 			? []
 			: [this.notes.note('CFG_SYNTAX', 'Read from a file with syntax errors.', '$', position)];
-		const { value, complete, diagnostics, source } = read;
+		const { value, complete, diagnostics, source, trace } = read;
 		this.uses.push({
+			paths: this.notes.factsOf({ value, complete, ...(trace === undefined ? {} : { trace }) }),
 			library: rule.library,
 			pattern: rule.id,
 			...position,

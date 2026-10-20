@@ -22,6 +22,18 @@ Build: `npm run build -w @chartguard/analysis-typescript` (except CLI which is n
 
 Public API is declared in `src/index.ts` and exported via package `package.json`.
 
+## Paths, several files, limits
+
+Every object and use has `paths`: for each path of its value, the source range that wrote it (in whichever file) or why it is unknown (`call`, `name`, `spread`, `choice`, `mutated`, `cycle`, `limit`, …); `rangeAt(paths, "$.options.responsive")` gives the range a finding is about.
+
+```ts
+import { analyzeFiles, analyzeProjectFiles } from "@chartguard/analysis-typescript/project";
+analyzeFiles([{ fileName, source }, …]);                       // read together: each sees the others' writes
+await analyzeProjectFiles("tsconfig.json", { signal });         // every included file; cancellable
+```
+
+A file longer than `MAX_SOURCE_LENGTH` or nested deeper than `MAX_NESTING` is not read (`readable: false`, with a note); following references is bounded (`MAX_DECODE_STEPS`), values beyond it are `limit`.
+
 ## Chart uses
 
 `objects` lists the file's object constants; `uses` lists where the file hands a config to a chart library, recognized by where the callee comes from: `new Chart` (chart.js), `setOption` on `echarts.init(…)`, `Highcharts.chart` / `stockChart` / `mapChart` / `ganttChart`, the React wrappers react-chartjs-2, echarts-for-react and highcharts-react-official, and ChartGuard's `validateBeforeCreate`. Your own wrappers are added as patterns:

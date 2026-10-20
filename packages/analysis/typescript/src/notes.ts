@@ -1,6 +1,8 @@
 import type { Diagnostic } from '@chartguard/core';
 import type ts from 'typescript';
 
+import type { Decoded } from './decoded.js';
+import { factsOf, type PathFact, type SourceRange } from './trace.js';
 import { pathText, type Write } from './writes.js';
 
 export interface Position {
@@ -23,6 +25,24 @@ export class Notes {
 
 	note(code: string, message: string, path: string, position: Position): Diagnostic {
 		return { code, severity: 'info', message, path, confidence: 'unknown', file: this.fileName, ...position };
+	}
+
+	/** A node's range, in the analysed file under the name the caller gave it. */
+	rangeOf(node: ts.Node): SourceRange {
+		const file = node.getSourceFile();
+		const start = positionAt(file, node.getStart(file));
+		const end = positionAt(file, node.getEnd());
+		return {
+			file: file === this.file ? this.fileName : file.fileName,
+			...start,
+			endLine: end.line,
+			endColumn: end.column
+		};
+	}
+
+	/** The path facts of a decoded value (CG-03-04). */
+	factsOf({ value, trace }: Decoded): PathFact[] {
+		return factsOf(value, trace, (node) => this.rangeOf(node));
 	}
 
 	/** Where code may change the value of `name`: that path is left out (CG-03-05). */

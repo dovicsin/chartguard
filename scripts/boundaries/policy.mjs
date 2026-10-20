@@ -44,8 +44,8 @@ export const POLICY = {
 	[CORE]: rule(),
 	[CONFIG_CORE]: rule({ internal: [CORE] }),
 	[QUALITY_CORE]: rule({ internal: [CORE] }),
-	/** Runs anywhere; only the `./project` entry reads a project from disk (CG-03-02). */
-	[ANALYSIS]: rule({ internal: [CORE], external: ['typescript'], node: ['src/project.ts'] }),
+	/** Runs anywhere; only the `./project` entry (and the tsconfig reading it uses) reads a project from disk (CG-03-02). */
+	[ANALYSIS]: rule({ internal: [CORE], external: ['typescript'], node: ['src/project.ts', 'src/tsconfig.ts'] }),
 	'@chartguard/eslint-plugin': rule({
 		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, ANALYSIS],
 		peer: ['eslint']

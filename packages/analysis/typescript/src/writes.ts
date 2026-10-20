@@ -2,6 +2,7 @@ import { isContainer, isRecord, keySegment, ownDataProperty } from '@chartguard/
 import ts from 'typescript';
 
 import type { Decoded } from './decoded.js';
+import { traceWithout } from './trace.js';
 
 /** One step of a property chain: `.name`, `['name']` or `[0]`. */
 export interface Step {
@@ -181,10 +182,19 @@ function without(value: unknown, path: readonly Step[]): unknown {
 	return value;
 }
 
-/** A decoded constant with every written path left out; any write makes it incomplete (CG-03-05). */
+/** A decoded constant with every written path left out, unknown from the write site; any write makes it incomplete (CG-03-05). */
 export function withoutWritten(decoded: Decoded, writes: readonly Write[]): Decoded {
 	if (writes.length === 0) return decoded;
-	return { value: writes.reduce((value, { path }) => without(value, path), decoded.value), complete: false };
+	let { value, trace } = decoded;
+	for (const { path, node } of writes) {
+		value = without(value, path);
+		trace = traceWithout(
+			trace,
+			path.map(({ key }) => key),
+			node
+		);
+	}
+	return { value, complete: false, ...(trace === undefined ? {} : { trace }) };
 }
 
 /** `.options.color`, `.datasets[0]`: a write's path in the notation of validation paths. */

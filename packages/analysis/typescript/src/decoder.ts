@@ -1,14 +1,21 @@
-import { isRecord } from '@chartguard/core';
 import ts from 'typescript';
 
 import type { Bindings, Target } from './bindings.js';
 import type { Builder } from './builders.js';
 import { agreement, logical, strictEquality, truthiness } from './choices.js';
+import { decodeArray, decodeObject } from './containers.js';
 import { type Decoded, known, UNRESOLVED } from './decoded.js';
-import { decodeLiteral, isTransparentWrapper, staticKey } from './literals.js';
+import { decodeLiteral, isTransparentWrapper } from './literals.js';
+import { reasonOf, type UnknownReason } from './trace.js';
 import { withoutWritten } from './writes.js';
 
 const MAX_DEPTH = 25;
+/**
+ * References one file's reading follows at most (CG-03-08): a name or a builder call may read the
+ * same constant many times (`const a2 = x ? a1 : a1` doubles per level), so following is bounded in
+ * total. Literals are read regardless: their reading is linear in the size of the source.
+ */
+export const MAX_DECODE_STEPS = 100_000;
 
 /** A builder being read (CG-03-05): its parameters' values, inside the frame it was called from. */
 interface Frame {
@@ -41,44 +48,58 @@ function frameOf(frame: Frame | undefined, declaration: ts.Node): Frame | undefi
 	return undefined;
 }
 
+const unknownAt = (node: ts.Node, reason: UnknownReason): Decoded => ({
+	...UNRESOLVED,
+	trace: { node, unknown: reason }
+});
+
 const LOGICAL: ReadonlyMap<ts.SyntaxKind, '??' | '||' | '&&'> = new Map([
 	[ts.SyntaxKind.QuestionQuestionToken, '??'],
 	[ts.SyntaxKind.BarBarToken, '||'],
 	[ts.SyntaxKind.AmpersandAmpersandToken, '&&']
 ]);
 
-/** Defined rather than assigned so keys such as `__proto__` cannot reach the prototype. */
-function defineEntry(target: Record<string, unknown>, key: string, value: unknown): void {
-	Object.defineProperty(target, key, { value, enumerable: true, writable: true, configurable: true });
-}
-
-interface Merged {
-	readonly target: Record<string, unknown>;
-	readonly complete: boolean;
-}
-
-const freshRecord = (): Record<string, unknown> => Object.create(null) as Record<string, unknown>;
-
 /**
- * Bounded static reader for literal expressions. Never evaluates code.
+ * Bounded static reader for expressions. Never evaluates code.
  *
  * Partial results keep what is known and leave an explicit gap for the rest:
  * an unresolved array element is a hole, an unresolved property is omitted and a
  * partially known container is kept, so nothing unknown ever turns into a value.
+ * Every result carries its trace: where each part comes from, or why it is unknown (CG-03-04).
  */
 export class StaticDecoder {
+	private steps = 0;
+
 	constructor(private readonly bindings: Bindings) {}
 
+	/** Whether the work bound was reached: some value of this file was left unknown for it. */
+	get exhausted(): boolean {
+		return this.steps > MAX_DECODE_STEPS;
+	}
+
+	/** Counts one reference followed; false once the bound is passed. */
+	private follow(): boolean {
+		this.steps += 1;
+		return !this.exhausted;
+	}
+
 	decode(node: ts.Expression, scope: Scope = ROOT_SCOPE): Decoded {
-		if (scope.depth > MAX_DEPTH) return UNRESOLVED;
+		if (scope.depth > MAX_DEPTH) return unknownAt(node, 'limit');
+		const decoded = this.decodeNode(node, scope);
+		if (decoded.trace !== undefined) return decoded;
+		return { ...decoded, trace: decoded.complete ? { node } : { node, unknown: reasonOf(node) } };
+	}
+
+	private decodeNode(node: ts.Expression, scope: Scope): Decoded {
 		if (isTransparentWrapper(node)) return this.decode(node.expression, deeper(scope));
 		const literal = decodeLiteral(node);
 		if (literal !== undefined) return literal;
 		if (ts.isIdentifier(node)) return this.decodeIdentifier(node, scope);
-		if (ts.isPropertyAccessExpression(node)) return this.decodeTarget(this.bindings.ofMember(node), scope);
-		if (ts.isArrayLiteralExpression(node)) return this.decodeArray(node, deeper(scope));
-		if (ts.isObjectLiteralExpression(node)) return this.decodeObject(node, deeper(scope));
-		return this.decodeComputed(node, deeper(scope));
+		if (ts.isPropertyAccessExpression(node)) return this.decodeTarget(this.bindings.ofMember(node), node, scope);
+		const inner = deeper(scope);
+		if (ts.isArrayLiteralExpression(node)) return decodeArray(node, (element) => this.decode(element, inner));
+		if (ts.isObjectLiteralExpression(node)) return decodeObject(node, (value) => this.decode(value, inner));
+		return this.decodeComputed(node, inner);
 	}
 
 	/** Choices, comparisons and builder calls, decided without running anything (CG-03-05). */
@@ -86,7 +107,7 @@ export class StaticDecoder {
 		if (ts.isConditionalExpression(node)) {
 			const truthy = truthiness(this.decode(node.condition, scope));
 			if (truthy !== undefined) return this.decode(truthy ? node.whenTrue : node.whenFalse, scope);
-			return agreement(this.decode(node.whenTrue, scope), this.decode(node.whenFalse, scope));
+			return agreement(this.decode(node.whenTrue, scope), this.decode(node.whenFalse, scope), node);
 		}
 		if (ts.isPrefixUnaryExpression(node) && node.operator === ts.SyntaxKind.ExclamationToken) {
 			const truthy = truthiness(this.decode(node.operand, scope));
@@ -106,7 +127,7 @@ export class StaticDecoder {
 		if (operator === undefined) return UNRESOLVED;
 		const left = this.decode(node.left, scope);
 		const right = (): Decoded => this.decode(node.right, scope);
-		return logical(operator, left, right) ?? agreement(left, right());
+		return logical(operator, left, right) ?? agreement(left, right(), node);
 	}
 
 	/**
@@ -114,9 +135,10 @@ export class StaticDecoder {
 	 * (decoded in the frame, so it may read earlier parameters) when the argument is absent or `undefined`.
 	 */
 	private decodeCall(node: ts.CallExpression, scope: Scope): Decoded {
+		if (!this.follow()) return unknownAt(node, 'limit');
 		const builder = this.bindings.builderAt(node.expression);
-		if (builder === undefined || node.arguments.some(ts.isSpreadElement) || scope.seen.has(builder.declaration))
-			return UNRESOLVED;
+		if (builder === undefined || node.arguments.some(ts.isSpreadElement)) return UNRESOLVED;
+		if (scope.seen.has(builder.declaration)) return unknownAt(node, 'cycle');
 		const values = new Map<ts.Node, Decoded>();
 		const frame: Frame = { builder, values, parent: scope.frame };
 		const inner = within(scope, builder.declaration, frame);
@@ -132,76 +154,27 @@ export class StaticDecoder {
 
 	/** A parameter or local constant of a builder being read, else whatever the name is bound to. */
 	private decodeIdentifier(node: ts.Identifier, scope: Scope): Decoded {
+		if (!this.follow()) return unknownAt(node, 'limit');
 		const declaration = this.bindings.declarationAt(node);
 		const frame = declaration === undefined ? undefined : frameOf(scope.frame, declaration);
 		if (declaration === undefined || frame === undefined)
-			return this.decodeTarget(this.bindings.ofIdentifier(node), scope);
+			return this.decodeTarget(this.bindings.ofIdentifier(node), node, scope);
 		const value = frame.values.get(declaration);
 		if (value !== undefined) return value;
-		if (scope.seen.has(declaration) || !ts.isVariableDeclaration(declaration) || declaration.initializer === undefined)
-			return UNRESOLVED;
+		if (scope.seen.has(declaration)) return unknownAt(node, 'cycle');
+		if (!ts.isVariableDeclaration(declaration) || declaration.initializer === undefined) return UNRESOLVED;
 		const decoded = this.decode(declaration.initializer, within(scope, declaration, frame));
 		return withoutWritten(decoded, this.bindings.writesTo(declaration));
 	}
 
 	/** The value a name or namespace member is bound to (`Bindings`); a cycle between constants is unresolved. */
-	private decodeTarget(target: Target | undefined, scope: Scope): Decoded {
+	private decodeTarget(target: Target | undefined, node: ts.Expression, scope: Scope): Decoded {
+		if (!this.follow()) return unknownAt(node, 'limit');
 		if (target === undefined) return UNRESOLVED;
 		if (target.kind === 'undefined') return known(undefined);
-		if (scope.seen.has(target.declaration)) return UNRESOLVED;
+		if (scope.seen.has(target.declaration)) return unknownAt(node, 'cycle');
 		// A top-level constant or an export reads no builder's parameters.
 		const decoded = this.decode(target.expression, within(scope, target.declaration, undefined));
 		return withoutWritten(decoded, this.bindings.writesTo(target.declaration));
-	}
-
-	/** A spread has unknown length, so the whole array is unresolved; a single unknown element is a hole. */
-	private decodeArray(node: ts.ArrayLiteralExpression, scope: Scope): Decoded {
-		if (node.elements.some(ts.isSpreadElement)) return UNRESOLVED;
-		const value: unknown[] = [];
-		let complete = true;
-		for (const element of node.elements) {
-			const item = this.decode(element, scope);
-			if (item.complete || item.value !== undefined) value.push(item.value);
-			else value.length += 1;
-			complete &&= item.complete;
-		}
-		return { value, complete };
-	}
-
-	private decodeObject(node: ts.ObjectLiteralExpression, scope: Scope): Decoded {
-		let merged: Merged = { target: freshRecord(), complete: true };
-		for (const property of node.properties) {
-			const step = this.decodeProperty(property, merged.target, scope);
-			merged = { target: step.target, complete: merged.complete && step.complete };
-		}
-		return { value: merged.target, complete: merged.complete };
-	}
-
-	/** Adds one property to `target`; a spread may hand back a fresh target when earlier keys stop being known. */
-	private decodeProperty(property: ts.ObjectLiteralElementLike, target: Record<string, unknown>, scope: Scope): Merged {
-		if (ts.isSpreadAssignment(property)) return this.mergeSpread(property, target, scope);
-		if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property))
-			return { target, complete: false };
-		const key = staticKey(property.name);
-		if (key === undefined) return { target, complete: false };
-		const initializer = ts.isShorthandPropertyAssignment(property) ? property.name : property.initializer;
-		const part = this.decode(initializer, scope);
-		if (part.complete || part.value !== undefined) defineEntry(target, key, part.value);
-		return { target, complete: part.complete };
-	}
-
-	/**
-	 * An unresolved spread may override every key written before it, so those keys are no longer
-	 * known: the object starts over. Spreading `null`/`undefined` is a no-op; spreading an array or
-	 * a string adds index keys this reader does not model, so the object stays incomplete.
-	 */
-	private mergeSpread(property: ts.SpreadAssignment, previous: Record<string, unknown>, scope: Scope): Merged {
-		const part = this.decode(property.expression, scope);
-		const target = part.complete ? previous : freshRecord();
-		if (isRecord(part.value)) {
-			for (const [key, entry] of Object.entries(part.value)) defineEntry(target, key, entry);
-			return { target, complete: part.complete };
-		}
-		return { target, complete: part.complete && (part.value === null || part.value === undefined) };
 	}
 }

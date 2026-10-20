@@ -36,7 +36,6 @@ export class Bindings {
 
 	constructor(
 		private readonly program: ts.Program,
-		private readonly file: ts.SourceFile,
 		exempt: (call: Call) => boolean
 	) {
 		this.checker = program.getTypeChecker();
@@ -168,11 +167,11 @@ export class Bindings {
 	}
 
 	/**
-	 * The analysed file, or a project source without syntax errors. Declaration files have no values;
+	 * A project source without syntax errors, the analysed files included: nothing read from a
+	 * recovered tree is trusted, wherever it is read from (A36). Declaration files have no values;
 	 * an external library's sources are not the project's, and the bundler may resolve another version.
 	 */
 	private isReadable(file: ts.SourceFile): boolean {
-		if (file === this.file) return true;
 		const known = this.readable.get(file);
 		if (known !== undefined) return known;
 		const readable =

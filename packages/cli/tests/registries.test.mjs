@@ -65,7 +65,7 @@ test('--registries: analyze passes the context on to every extracted config', as
 		files.lineOnly
 	]);
 	assert.equal(code, 1);
-	assert.match(out, /error: \$\.data\.datasets\[0\]\.type "bar" is not registered with the runtime/);
+	assert.match(out, /error: \S+chart\.ts:1:\d+ \$\.data\.datasets\[0\]\.type "bar" is not registered with the runtime/);
 });
 
 test('--registries: a missing or unparsable file is an input error; a malformed context is reported, not fatal', async (t) => {

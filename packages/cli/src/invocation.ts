@@ -5,11 +5,14 @@ import { isLibrary, type Library } from './libraries.js';
 const CONFIG_COMMANDS = ['validate', 'quality', 'analyze'] as const;
 export type ConfigCommand = (typeof CONFIG_COMMANDS)[number];
 
-/** `validate`, `quality` or `analyze` one input file. */
+/** `validate` or `quality` one input file; `analyze` one or more source files, or a whole project. */
 export interface ConfigInvocation {
 	readonly command: ConfigCommand;
 	readonly library: Library;
+	/** The input file, or for `analyze` the first file, or the tsconfig of a project scan: where installed packages are looked up from. */
 	readonly file: string;
+	/** `analyze`: every `--file`; empty for a scan of `--project`. */
+	readonly files: readonly string[];
 	readonly name: string | undefined;
 	/** An exact version, `auto` (the installed package), or undefined: no claim about the user's install. */
 	readonly libraryVersion: string | undefined;
@@ -34,7 +37,7 @@ export type Invocation = ConfigInvocation | SchemaInvocation;
 
 const OPTIONS = {
 	library: { type: 'string' },
-	file: { type: 'string' },
+	file: { type: 'string', multiple: true },
 	name: { type: 'string' },
 	'library-version': { type: 'string' },
 	registries: { type: 'string' },
@@ -70,10 +73,22 @@ function configInvocation(
 	rest: readonly string[],
 	values: Values
 ): ConfigInvocation | undefined {
-	const { library, file, name, json, registries, project, patterns, dir, 'library-version': libraryVersion } = values;
-	if (rest.length > 0 || library === undefined || file === undefined || dir !== undefined) return undefined;
+	const { library, file: files = [], name, json, registries, project, patterns, dir } = values;
+	if (rest.length > 0 || library === undefined || dir !== undefined) return undefined;
 	if (!isLibrary(library) || misplaced(command, values)) return undefined;
-	return { command, library, file, name, libraryVersion, registries, project, patterns, json };
+	const file = inputOf(command, files, project);
+	if (file === undefined) return undefined;
+	const libraryVersion = values['library-version'];
+	return { command, library, file, files, name, libraryVersion, registries, project, patterns, json };
+}
+
+/**
+ * `validate` and `quality` read exactly one file; `analyze` one or more, or with none, every file
+ * of `--project`. The file installed packages are looked up from: the first, or the tsconfig.
+ */
+function inputOf(command: ConfigCommand, files: readonly string[], project: string | undefined): string | undefined {
+	if (command !== 'analyze') return files.length === 1 ? files[0] : undefined;
+	return files[0] ?? project;
 }
 
 /** `schema build --library <library> [--dir <project>] [--json]`, and nothing else. */
