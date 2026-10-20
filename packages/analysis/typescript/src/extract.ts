@@ -5,6 +5,7 @@ import { Bindings } from './bindings.js';
 import { StaticDecoder } from './decoder.js';
 import { inMemoryProgram, type ReadOnlyProgram } from './program.js';
 import { type Binding, bindingOf } from './scope.js';
+import { pathText, withoutWritten, type Write } from './writes.js';
 
 export interface SourceObject {
 	readonly name: string;
@@ -57,11 +58,15 @@ function syntaxDiagnostics({ program, file }: ReadOnlyProgram, fileName: string)
 class Collector {
 	readonly objects: SourceObject[] = [];
 
+	private readonly decoder: StaticDecoder;
+
 	constructor(
 		private readonly file: ts.SourceFile,
-		private readonly decoder: StaticDecoder,
+		private readonly bindings: Bindings,
 		private readonly context: { readonly fileName: string; readonly parses: boolean }
-	) {}
+	) {
+		this.decoder = new StaticDecoder(bindings);
+	}
 
 	visit(node: ts.Node): void {
 		if (isObjectDeclaration(node)) this.collect(node);
@@ -71,13 +76,34 @@ class Collector {
 	}
 
 	private collect(node: ObjectDeclaration): void {
-		const { value, complete: resolved } = this.decoder.decode(node.initializer);
+		const initial = this.decoder.decode(node.initializer);
+		const writes = this.bindings.writesTo(node);
+		const { value } = withoutWritten(initial, writes);
 		if (!isRecord(value)) return;
 		const name = node.name.text;
 		const binding = bindingOf(node);
 		const position = positionAt(this.file, node.getStart(this.file));
-		const diagnostics = this.reasons(name, binding, resolved, position);
+		const diagnostics = [
+			...this.reasons(name, binding, initial.complete, position),
+			...writes.map((write) => this.mutated(name, write))
+		];
 		this.objects.push({ name, ...position, binding, value, complete: diagnostics.length === 0, diagnostics });
+	}
+
+	/** Where code may change the object: that path is left out (CG-03-05). */
+	private mutated(name: string, { path, node }: Write): Diagnostic {
+		const file = node.getSourceFile();
+		const fileName = file === this.file ? this.context.fileName : file.fileName;
+		const position = positionAt(file, node.getStart(file));
+		return {
+			code: 'CFG_MUTATED',
+			severity: 'info',
+			message: `${name}${pathText(path)} is changed at ${fileName}:${String(position.line)}; its value is not read.`,
+			path: `$${pathText(path)}`,
+			confidence: 'unknown',
+			file: fileName,
+			...position
+		};
 	}
 
 	private reasons(name: string, binding: Binding, resolved: boolean, position: Position): Diagnostic[] {
@@ -108,8 +134,8 @@ class Collector {
 /** The objects of the analysed file, read through its Program's checker. */
 export function extract(read: ReadOnlyProgram, fileName: string): AnalysisOutput {
 	const diagnostics = syntaxDiagnostics(read, fileName);
-	const decoder = new StaticDecoder(new Bindings(read.program, read.file));
-	const collector = new Collector(read.file, decoder, { fileName, parses: diagnostics.length === 0 });
+	const bindings = new Bindings(read.program, read.file);
+	const collector = new Collector(read.file, bindings, { fileName, parses: diagnostics.length === 0 });
 	collector.visit(read.file);
 	return { objects: collector.objects, diagnostics };
 }

@@ -1,6 +1,7 @@
 import ts from 'typescript';
 
 import { bindingOf, isDynamicScope } from './scope.js';
+import { type Chain, type Write, writeSites } from './writes.js';
 
 /** What a name is bound to, when a static reader may take it as a value: `undefined`, or an expression to decode. */
 export type Target =
@@ -29,6 +30,8 @@ function isTopLevelConstant(node: ts.Node): node is Constant {
 export class Bindings {
 	private readonly checker: ts.TypeChecker;
 	private readonly readable = new Map<ts.SourceFile, boolean>();
+	/** Writes by the declaration they change, from every readable file; built on first use. */
+	private writes: Map<ts.Node, Write[]> | undefined;
 
 	constructor(
 		private readonly program: ts.Program,
@@ -51,6 +54,46 @@ export class Bindings {
 		const declarations = this.followed(this.checker.getSymbolAtLocation(expression))?.declarations ?? [];
 		if (declarations.length === 0 || !declarations.every(ts.isSourceFile)) return undefined;
 		return this.valueOf(this.followed(this.checker.getSymbolAtLocation(name)));
+	}
+
+	/** Every place readable code may change the constant `declaration` declares (CG-03-05). */
+	writesTo(declaration: ts.Node): readonly Write[] {
+		this.writes ??= this.collectWrites();
+		return this.writes.get(declaration) ?? [];
+	}
+
+	private collectWrites(): Map<ts.Node, Write[]> {
+		const writes = new Map<ts.Node, Write[]>();
+		for (const file of this.program.getSourceFiles().filter((source) => this.isReadable(source)))
+			for (const { chain, node } of writeSites(file)) {
+				const written = this.writtenConstant(chain);
+				if (written === undefined) continue;
+				const list = writes.get(written.declaration) ?? [];
+				list.push({ path: written.path, node });
+				writes.set(written.declaration, list);
+			}
+		return writes;
+	}
+
+	/** The declaration a written chain starts at (through imports and namespace members), and the path within it. */
+	private writtenConstant({ root, accesses }: Chain): { declaration: ts.Node; path: Write['path'] } | undefined {
+		const symbol = this.followed(this.checker.getSymbolAtLocation(root));
+		const [first, ...rest] = accesses;
+		const declarations = symbol?.declarations ?? [];
+		if (first === undefined || declarations.length === 0 || !declarations.every(ts.isSourceFile))
+			return this.declared(symbol, accesses);
+		const member = ts.isPropertyAccessExpression(first.node) ? first.node.name : first.node.argumentExpression;
+		return this.declared(this.followed(this.checker.getSymbolAtLocation(member)), rest);
+	}
+
+	private declared(
+		symbol: ts.Symbol | undefined,
+		accesses: Chain['accesses']
+	): ReturnType<Bindings['writtenConstant']> {
+		const declaration = symbol?.valueDeclaration ?? symbol?.declarations?.find(ts.isExportAssignment);
+		if (declaration === undefined || !(ts.isVariableDeclaration(declaration) || ts.isExportAssignment(declaration)))
+			return undefined;
+		return { declaration, path: accesses.map(({ step }) => step) };
 	}
 
 	/** `{ min }` names the property; the value it reads is the binding `min`. */

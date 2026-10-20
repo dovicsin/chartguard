@@ -1,9 +1,2 @@
-const IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
-
-/**
- * The path segment of an object key: `.key` for an identifier, `["key"]` (JSON-quoted) for any
- * other, so every path names exactly one place (`$.title["te.xt"]` is not `$.title.te.xt`).
- */
-export function keySegment(key: string): string {
-	return IDENTIFIER.test(key) ? `.${key}` : `[${JSON.stringify(key)}]`;
-}
+/** Kept here for the config-core public API; the definition lives in core, shared with source analysis. */
+export { keySegment } from '@chartguard/core';

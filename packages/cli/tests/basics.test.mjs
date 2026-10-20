@@ -110,7 +110,7 @@ test('analyze never validates a let config: its initializer may be stale, so it 
 	assert.equal(json.entries[0].result, undefined);
 	assert.deepEqual(
 		json.entries[0].notes.map((d) => d.code),
-		['CFG_REASSIGNABLE']
+		['CFG_REASSIGNABLE', 'CFG_MUTATED']
 	);
 });
 

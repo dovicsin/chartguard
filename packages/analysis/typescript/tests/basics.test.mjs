@@ -56,7 +56,8 @@ test('a let or var object is reported with its binding and is never complete', (
 	const [object] = extractStaticConfigs('let config = { foo: 1 };\nconfig = { foo: 2 };', 'a.ts').objects;
 	assert.equal(object.binding, 'let');
 	assert.equal(object.complete, false);
-	assert.deepEqual(plain(object.value), { foo: 1 });
+	// The reassignment writes the whole binding: nothing of the initializer is claimed (CG-03-05).
+	assert.deepEqual(plain(object.value), {});
 	assert.deepEqual(object.diagnostics, [
 		{
 			code: 'CFG_REASSIGNABLE',
@@ -67,8 +68,19 @@ test('a let or var object is reported with its binding and is never complete', (
 			file: 'a.ts',
 			line: 1,
 			column: 5
+		},
+		{
+			code: 'CFG_MUTATED',
+			severity: 'info',
+			message: 'config is changed at a.ts:2; its value is not read.',
+			path: '$',
+			confidence: 'unknown',
+			file: 'a.ts',
+			line: 2,
+			column: 1
 		}
 	]);
+	assert.deepEqual(plain(named('var config = { foo: 1 };').value), { foo: 1 });
 	assert.equal(named('var config = { foo: 1 };').binding, 'var');
 });
 

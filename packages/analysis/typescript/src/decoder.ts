@@ -4,6 +4,7 @@ import ts from 'typescript';
 import type { Bindings, Target } from './bindings.js';
 import { type Decoded, known, UNRESOLVED } from './decoded.js';
 import { decodeLiteral, isTransparentWrapper, staticKey } from './literals.js';
+import { withoutWritten } from './writes.js';
 
 const MAX_DEPTH = 25;
 
@@ -58,10 +59,11 @@ export class StaticDecoder {
 		if (target === undefined) return UNRESOLVED;
 		if (target.kind === 'undefined') return known(undefined);
 		if (scope.seen.has(target.declaration)) return UNRESOLVED;
-		return this.decode(target.expression, {
+		const decoded = this.decode(target.expression, {
 			depth: scope.depth + 1,
 			seen: new Set([...scope.seen, target.declaration])
 		});
+		return withoutWritten(decoded, this.bindings.writesTo(target.declaration));
 	}
 
 	/** A spread has unknown length, so the whole array is unresolved; a single unknown element is a hole. */
