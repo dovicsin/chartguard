@@ -97,7 +97,7 @@ test('a name shadowed by a parameter, local, loop or catch binding is not the to
 	assert.deepEqual(plain(objects.find((object) => object.name === 'outer').value), { foo: 0 });
 });
 
-test('a hoisted var, a local enum, class or function anywhere in the enclosing function shadows too (A2)', () => {
+test('a hoisted var, a local enum, class or function anywhere in the enclosing function shadows (A2)', () => {
 	const sources = [
 		'const min = 0;\nfunction f(x) { if (x) { var min = 9; } const config = { foo: min }; }',
 		'const min = 0;\nfunction f() { for (var min = 1; ; ) {} const config = { foo: min }; }',
@@ -105,9 +105,9 @@ test('a hoisted var, a local enum, class or function anywhere in the enclosing f
 		'const min = 0;\nfunction f() { try { var min = 3; } finally {} const config = { foo: min }; }',
 		'const min = 0;\nfunction f() { enum min { A } const config = { foo: min }; }',
 		'const min = 0;\nfunction f() { const config = { foo: min }; function min() {} }',
-		'const min = 0;\nfunction f() { const config = { foo: min }; class min {} }',
-		'const min = 0;\nfunction f() { const config = { foo: min }; { let min = 4; } }'
+		'const min = 0;\nfunction f() { const config = { foo: min }; class min {} }'
 	];
+	// A `let` in a sibling block does not shadow: scoping is exact since CG-03-02 (resolution.test.mjs).
 	for (const source of sources) {
 		const config = named(source);
 		assert.equal(config.complete, false, source);

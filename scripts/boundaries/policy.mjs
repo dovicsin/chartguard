@@ -36,14 +36,16 @@ function libraryRules(library) {
 
 /**
  * The dependency law from the architecture docs. `external` and `peer` hold
- * exact names or patterns; `node` allows Node.js built-ins in source.
+ * exact names or patterns; `node` allows Node.js built-ins in source: `true` for the whole package,
+ * or the package-relative files that may use them, which no other module of the package may import.
  * A workspace package missing from this table is itself a violation.
  */
 export const POLICY = {
 	[CORE]: rule(),
 	[CONFIG_CORE]: rule({ internal: [CORE] }),
 	[QUALITY_CORE]: rule({ internal: [CORE] }),
-	[ANALYSIS]: rule({ internal: [CORE], external: ['typescript'] }),
+	/** Runs anywhere; only the `./project` entry reads a project from disk (CG-03-02). */
+	[ANALYSIS]: rule({ internal: [CORE], external: ['typescript'], node: ['src/project.ts'] }),
 	'@chartguard/eslint-plugin': rule({
 		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, ANALYSIS],
 		peer: ['eslint']

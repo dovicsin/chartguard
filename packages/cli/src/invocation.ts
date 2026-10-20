@@ -15,6 +15,8 @@ export interface ConfigInvocation {
 	readonly libraryVersion: string | undefined;
 	/** A JSON file with the registry context: what the user's runtime has registered. */
 	readonly registries: string | undefined;
+	/** `analyze`: the tsconfig to build the Program with; undefined discovers the nearest one. */
+	readonly project: string | undefined;
 	readonly json: boolean;
 }
 
@@ -34,6 +36,7 @@ const OPTIONS = {
 	name: { type: 'string' },
 	'library-version': { type: 'string' },
 	registries: { type: 'string' },
+	project: { type: 'string' },
 	dir: { type: 'string' },
 	json: { type: 'boolean', default: false }
 } as const;
@@ -51,10 +54,12 @@ export function isHelpRequest(argv: readonly string[]): boolean {
 	return first === undefined || HELP_WORDS.has(first);
 }
 
-/** `--name` belongs to `analyze`; `--library-version` and `--registries` to the config checks, not to `quality`. */
-function misplaced(command: ConfigCommand, { name, registries, 'library-version': libraryVersion }: Values): boolean {
+/** `--name` and `--project` belong to `analyze`; `--library-version` and `--registries` to the config checks, not to `quality`. */
+function misplaced(command: ConfigCommand, values: Values): boolean {
+	const { name, registries, project, 'library-version': libraryVersion } = values;
 	const context = libraryVersion !== undefined || registries !== undefined;
-	return (name !== undefined && command !== 'analyze') || (context && command === 'quality');
+	const source = name !== undefined || project !== undefined;
+	return (source && command !== 'analyze') || (context && command === 'quality');
 }
 
 function configInvocation(
@@ -62,16 +67,16 @@ function configInvocation(
 	rest: readonly string[],
 	values: Values
 ): ConfigInvocation | undefined {
-	const { library, file, name, json, registries, dir, 'library-version': libraryVersion } = values;
+	const { library, file, name, json, registries, project, dir, 'library-version': libraryVersion } = values;
 	if (rest.length > 0 || library === undefined || file === undefined || dir !== undefined) return undefined;
 	if (!isLibrary(library) || misplaced(command, values)) return undefined;
-	return { command, library, file, name, libraryVersion, registries, json };
+	return { command, library, file, name, libraryVersion, registries, project, json };
 }
 
 /** `schema build --library <library> [--dir <project>] [--json]`, and nothing else. */
 function schemaInvocation(rest: readonly string[], values: Values): SchemaInvocation | undefined {
-	const { library, dir, json, file, name, registries, 'library-version': libraryVersion } = values;
-	const foreign = [file, name, registries, libraryVersion].some((value) => value !== undefined);
+	const { library, dir, json, file, name, registries, project, 'library-version': libraryVersion } = values;
+	const foreign = [file, name, registries, project, libraryVersion].some((value) => value !== undefined);
 	if (rest.length !== 1 || rest[0] !== 'build' || foreign || library === undefined || !isLibrary(library))
 		return undefined;
 	return { command: 'schema', library, directory: dir ?? '.', json };

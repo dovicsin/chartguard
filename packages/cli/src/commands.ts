@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
+import type { ProjectAnalysis } from '@chartguard/analysis-typescript/project';
 import type { Diagnostic, ValidationOptions } from '@chartguard/core';
 
 import { analyzeEntry, printEntries, selectConfigs } from './analyze.js';
@@ -74,19 +75,29 @@ const qualityCommand: CommandHandler = async ({ library, file, json }, io) => {
 	return reportQuality(analyze(config), json, io);
 };
 
+/** The file read in a Program with its project's options; an unusable tsconfig is the user's input to fix. */
+async function analyzeSource(text: string, { file, project }: ConfigInvocation): Promise<ProjectAnalysis> {
+	const { analyzeProject, ProjectConfigError } = await import('@chartguard/analysis-typescript/project');
+	try {
+		return analyzeProject(text, file, { tsconfig: project ?? true });
+	} catch (error) {
+		if (error instanceof ProjectConfigError) throw new InputError(error.message);
+		throw error;
+	}
+}
+
 const analyzeCommand: CommandHandler = async (invocation, io) => {
 	const { library, file, name, json } = invocation;
-	const text = await readText(file);
-	const { extractStaticConfigs } = await import('@chartguard/analysis-typescript');
-	const source = extractStaticConfigs(text, file);
+	const source = await analyzeSource(await readText(file), invocation);
 	if (source.diagnostics.length > 0) throw new InputError(describeSyntax(file, source.diagnostics));
 	const configs = selectConfigs(source.objects, name);
 	if (configs.length === 0) throw new InputError('No suitable static object found. Specify --name <variable>.');
 	const { validate, schema } = await loadConfigValidator(library, file);
 	const options = await validationOptions(invocation);
 	const entries = configs.map((object) => analyzeEntry(object, validate, options));
-	if (json) printJson({ mode: 'analyze', library, schema, entries }, io);
-	else printEntries(entries, schemaNote(schema, library), io);
+	const project = { tsconfig: source.tsconfig ?? null };
+	if (json) printJson({ mode: 'analyze', library, schema, project, entries }, io);
+	else printEntries(entries, { schema: schemaNote(schema, library), tsconfig: source.tsconfig }, io);
 	return entries.some((entry) => entry.result?.valid === false) ? EXIT_INVALID : EXIT_OK;
 };
 

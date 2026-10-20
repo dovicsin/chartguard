@@ -2,7 +2,9 @@
 	"extends": "../../../tsconfig.base.json",
 	"compilerOptions": {
 		"rootDir": "./src",
-		"outDir": "./dist"
+		"outDir": "./dist",
+		// Only src/project.ts (the `./project` export) uses Node; the root entry runs anywhere.
+		"types": ["node"]
 	},
 	"include": ["src/**/*.ts"],
 	"references": [

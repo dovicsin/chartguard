@@ -101,7 +101,7 @@ test('unreadable files are input failures', async () => {
 test('analyze never validates a let config: its initializer may be stale, so it explains instead', async () => {
 	const { code, out } = await run(['analyze', '--library', 'chartjs', '--file', example('chartjs-let-source.ts')]);
 	assert.equal(code, 0);
-	assert.match(out, /^config @ line 1: not validated \(dynamic \/ partial\)/);
+	assert.match(out, /^config @ line 1: not validated \(dynamic \/ partial\)$/m);
 	assert.match(out, /config is declared with let and may be reassigned/);
 	assert.doesNotMatch(out, /error/);
 	const json = JSON.parse(
@@ -190,4 +190,68 @@ test('analyze passes the version on to every extracted config', async () => {
 	]);
 	assert.match(out, /^config @ line 2: partial$/m);
 	assert.match(out, /warning: \$ 3\.0\.0 is not supported: this schema describes chartjs 4\.5\.1\. Not validated\./);
+});
+
+/** A project directory with a tsconfig and a chart source; removed after the test. */
+function sourceProject(t, files) {
+	const root = mkdtempSync(join(tmpdir(), 'chartguard-cli-project-'));
+	t.after(() => rmSync(root, { recursive: true, force: true }));
+	for (const [name, text] of Object.entries(files)) {
+		mkdirSync(join(root, name, '..'), { recursive: true });
+		writeFileSync(join(root, name), text);
+	}
+	return root;
+}
+const CHART =
+	'const size = 2;\nexport const config = { type: "bar", data: { datasets: [] }, options: { responsive: size } };';
+
+test('analyze reads the file with the nearest tsconfig and says which; --project names another', async (t) => {
+	const root = sourceProject(t, { 'tsconfig.json': '{}', 'other/tsconfig.json': '{}', 'src/chart.ts': CHART });
+	const file = join(root, 'src/chart.ts');
+	const found = await run(['analyze', '--library', 'chartjs', '--file', file]);
+	assert.match(found.out, new RegExp(`^Read with ${join(root, 'tsconfig.json').replaceAll('\\', '\\\\')}\\.$`, 'm'));
+	assert.equal(found.code, 1);
+	assert.match(found.out, /error: \$\.options\.responsive/);
+	const named = await run([
+		'analyze',
+		'--library',
+		'chartjs',
+		'--file',
+		file,
+		'--project',
+		join(root, 'other/tsconfig.json'),
+		'--json'
+	]);
+	assert.deepEqual(JSON.parse(named.out).project, { tsconfig: join(root, 'other/tsconfig.json') });
+});
+
+test('an unusable tsconfig is an input error (exit 2) naming the file and the problem', async (t) => {
+	const root = sourceProject(t, {
+		'tsconfig.json': '{ "compilerOptions": { "target": "es1999" } }',
+		'chart.ts': CHART
+	});
+	const { code, err } = await run(['analyze', '--library', 'chartjs', '--file', join(root, 'chart.ts')]);
+	assert.equal(code, 2);
+	assert.match(err, /Cannot use .*tsconfig\.json/);
+	assert.match(err, /target/);
+	const missing = await run([
+		'analyze',
+		'--library',
+		'chartjs',
+		'--file',
+		join(root, 'chart.ts'),
+		'--project',
+		join(root, 'nope.json')
+	]);
+	assert.equal(missing.code, 2);
+});
+
+test('--project belongs to analyze only', async () => {
+	for (const command of ['validate', 'quality'])
+		assert.equal(
+			(await run([command, '--library', 'chartjs', '--file', 'x.json', '--project', 'tsconfig.json'])).code,
+			2,
+			command
+		);
+	assert.equal((await run(['schema', 'build', '--library', 'highcharts', '--project', 'tsconfig.json'])).code, 2);
 });

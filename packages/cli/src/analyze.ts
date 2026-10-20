@@ -42,9 +42,16 @@ function describeDiagnostic({ severity, path, message, suggestion }: Diagnostic)
 	return `  ${severity}: ${[path, message, suggestion].filter((part) => part !== undefined).join(' ')}`;
 }
 
-/** The entries as text, after the note on which schema checked them, if there is one. */
-export function printEntries(entries: readonly AnalyzedEntry[], schemaNote: string | undefined, io: Io): void {
-	if (schemaNote !== undefined) io.out(schemaNote.trimStart());
+/** What the entries were read and checked with: the tsconfig, and the schema when it is not the shipped one. */
+export interface AnalysisNotes {
+	readonly schema: string | undefined;
+	readonly tsconfig: string | undefined;
+}
+
+/** The entries as text, after the notes on how they were read and checked. */
+export function printEntries(entries: readonly AnalyzedEntry[], notes: AnalysisNotes, io: Io): void {
+	io.out(notes.tsconfig === undefined ? 'Read without a tsconfig.' : `Read with ${notes.tsconfig}.`);
+	if (notes.schema !== undefined) io.out(notes.schema.trimStart());
 	for (const entry of entries) {
 		io.out(describeEntry(entry));
 		for (const diagnostic of [...entry.notes, ...(entry.result?.diagnostics ?? [])])

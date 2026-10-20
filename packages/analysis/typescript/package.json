@@ -18,6 +18,10 @@
 		".": {
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
+		},
+		"./project": {
+			"types": "./dist/project.d.ts",
+			"import": "./dist/project.js"
 		}
 	},
 	"scripts": {

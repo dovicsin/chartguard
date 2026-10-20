@@ -224,3 +224,25 @@ test('a relative import is judged by path segment: a sibling directory whose nam
 	assert.equal(check('./..lib/b.js'), undefined);
 	assert.equal(check('../../x.js'), 'relative import "../../x.js" escapes the package');
 });
+
+test('a package may allow Node in named files only, and no other module may import them', () => {
+	const packageDir = '/repo/packages/analysis/typescript';
+	const check = (file, specifier) =>
+		checkImport({
+			rule: POLICY['@chartguard/analysis-typescript'],
+			declared: new Set(['typescript', '@chartguard/core']),
+			packageDir,
+			file: `${packageDir}/${file}`,
+			specifier
+		});
+	assert.equal(check('src/project.ts', 'node:path'), undefined);
+	assert.equal(check('src/extract.ts', 'node:path'), 'must not import Node.js built-in "node:path"');
+	assert.equal(check('src/project.ts', './extract.js'), undefined);
+	assert.equal(
+		check('src/index.ts', './project.js'),
+		'imports the Node-only module "./project.js" into a module that must run without Node'
+	);
+	// Named by path segments: a file elsewhere with the same base name is not the allowed one.
+	assert.equal(check('src/lib/project.ts', 'node:path'), 'must not import Node.js built-in "node:path"');
+	assert.equal(check('src/index.ts', './lib/project.js'), undefined);
+});

@@ -3,13 +3,14 @@ import ts from 'typescript';
 
 import { type Decoded, known, UNRESOLVED } from './decoded.js';
 import { decodeLiteral, isTransparentWrapper, staticKey } from './literals.js';
-import { isLocallyBound } from './scope.js';
+import { bindingOf, isDynamicScope } from './scope.js';
 
 const MAX_DEPTH = 25;
 
 interface Scope {
 	readonly depth: number;
-	readonly seen: ReadonlySet<string>;
+	/** Constants being decoded on the way here: reaching one again is a cycle. */
+	readonly seen: ReadonlySet<ts.Node>;
 }
 
 const ROOT_SCOPE: Scope = { depth: 0, seen: new Set() };
@@ -38,8 +39,10 @@ const freshRecord = (): Record<string, unknown> => Object.create(null) as Record
  * partially known container is kept, so nothing unknown ever turns into a value.
  */
 export class StaticDecoder {
-	/** Top-level `const` initializers by name; anything else may change at runtime. */
-	constructor(private readonly constants: ReadonlyMap<string, ts.Expression>) {}
+	constructor(
+		private readonly checker: ts.TypeChecker,
+		private readonly file: ts.SourceFile
+	) {}
 
 	decode(node: ts.Expression, scope: Scope = ROOT_SCOPE): Decoded {
 		if (scope.depth > MAX_DEPTH) return UNRESOLVED;
@@ -52,13 +55,42 @@ export class StaticDecoder {
 		return UNRESOLVED;
 	}
 
-	/** A name bound by an enclosing function, block or loop is not the top-level constant. */
+	/**
+	 * A name resolves through the checker to what it is bound to, exactly as the runtime scopes it,
+	 * unless the scope is dynamic (`with`, direct `eval`). Only a top-level `const` of this file has
+	 * a value (A1); a parameter, a local, a `let`, an import (CG-03-03) is unresolved.
+	 */
 	private decodeIdentifier(node: ts.Identifier, scope: Scope): Decoded {
-		if (isLocallyBound(node, node.text)) return UNRESOLVED;
-		if (node.text === 'undefined') return known(undefined);
-		const initializer = this.constants.get(node.text);
-		if (initializer === undefined || scope.seen.has(node.text)) return UNRESOLVED;
-		return this.decode(initializer, { depth: scope.depth + 1, seen: new Set([...scope.seen, node.text]) });
+		if (isDynamicScope(node)) return UNRESOLVED;
+		const symbol = this.symbolOf(node);
+		// The checker's own `undefined`: no declaration anywhere, so nothing shadows it.
+		if (symbol?.name === 'undefined' && (symbol.declarations ?? []).length === 0) return known(undefined);
+		// A value and a type may share a name (`const config` and `interface config`): the value is what is read.
+		const declaration = symbol?.valueDeclaration;
+		if (declaration === undefined || !this.isTopLevelConstant(declaration) || scope.seen.has(declaration))
+			return UNRESOLVED;
+		return this.decode(declaration.initializer, {
+			depth: scope.depth + 1,
+			seen: new Set([...scope.seen, declaration])
+		});
+	}
+
+	/** `{ min }` names the property; the value it reads is the binding `min`. */
+	private symbolOf(node: ts.Identifier): ts.Symbol | undefined {
+		const { parent } = node;
+		if (ts.isShorthandPropertyAssignment(parent) && parent.name === node)
+			return this.checker.getShorthandAssignmentValueSymbol(parent);
+		return this.checker.getSymbolAtLocation(node);
+	}
+
+	private isTopLevelConstant(node: ts.Node): node is ts.VariableDeclaration & { readonly initializer: ts.Expression } {
+		return (
+			ts.isVariableDeclaration(node) &&
+			node.initializer !== undefined &&
+			bindingOf(node) === 'const' &&
+			ts.isVariableStatement(node.parent.parent) &&
+			node.parent.parent.parent === this.file
+		);
 	}
 
 	/** A spread has unknown length, so the whole array is unresolved; a single unknown element is a hole. */
