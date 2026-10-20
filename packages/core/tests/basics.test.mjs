@@ -17,8 +17,14 @@ test('statuses reflect unknowns, coverage and confirmed errors', () => {
 	assert.equal(result('x', '1', 'partial', []).status, 'partial');
 	const unresolved = { code: 'ANY_CODE', severity: 'info', message: 'x', path: '$', confidence: 'unknown' };
 	assert.equal(result('x', '1', 'full', [unresolved]).status, 'partial');
-	const inferred = { code: 'CFG_UNKNOWN_KEY', severity: 'warning', message: 'x', path: '$', confidence: 'inferred' };
-	assert.equal(result('x', '1', 'full', [inferred]).status, 'valid');
+	// A likely problem from a schema fact that is not authoritative: not confirmed, not certified either (CG-02-07).
+	const inferred = { code: 'ANY_CODE', severity: 'warning', message: 'x', path: '$', confidence: 'inferred' };
+	assert.deepEqual(
+		[result('x', '1', 'full', [inferred]).status, result('x', '1', 'full', [inferred]).valid],
+		['partial', true]
+	);
+	const certainWarning = { ...inferred, confidence: 'certain' };
+	assert.equal(result('x', '1', 'full', [certainWarning]).status, 'valid');
 	assert.equal(
 		result('x', '1', 'full', [{ code: 'E', severity: 'error', message: 'x', path: '$', confidence: 'certain' }]).status,
 		'invalid'

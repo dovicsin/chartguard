@@ -11,3 +11,16 @@ export function unresolved(code: string, path: string, message: string): Diagnos
 export function inconclusive(code: string, path: string, message: string): Diagnostic {
 	return { code, severity: 'info', path, message, confidence: 'unknown' };
 }
+
+/**
+ * A finding read from a schema fact that is not authoritative (CG-02-07): an error becomes a
+ * warning and a certain finding an inferred one; an undecided finding stays undecided.
+ */
+export function asInferred(diagnostic: Diagnostic): Diagnostic {
+	if (diagnostic.confidence !== 'certain') return diagnostic;
+	return {
+		...diagnostic,
+		severity: diagnostic.severity === 'error' ? 'warning' : diagnostic.severity,
+		confidence: 'inferred'
+	};
+}

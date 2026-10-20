@@ -76,6 +76,12 @@ export interface NodeSchema {
 	 * when plugins may add variants to it (`echarts`). See `withExtensions`.
 	 */
 	readonly extensionPoint?: string;
+	/**
+	 * The facts at and below this node are not authoritative (IR `derived` or `manual` provenance,
+	 * or a curated or plugin schema that says so): its findings are likely problems, never
+	 * confirmed ones (CG-02-07).
+	 */
+	readonly inferred?: true;
 	/** Object: a `null` optional property counts as absent (the runtime reads options with `pick()`, Highcharts). */
 	readonly nullAsAbsent?: boolean;
 	/** Object: schema for keys not listed in `properties` (a record of caller-chosen keys). */

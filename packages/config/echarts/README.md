@@ -27,4 +27,4 @@ const validate = withExtensions([
 ]);
 ```
 
-A variant schema is the whole series: options every series shares (`id`, `z`, …) are not inherited, so declare them or open the object (`s.object({...}, { additional: 'allow' })`). Built-ins cannot be replaced and a name has one owner; either throws `ExtensionError`. With a `registries` context, an extension series must be registered like any other.
+A variant schema is the whole series: options every series shares (`id`, `z`, …) are not inherited, so declare them or open the object (`s.object({...}, { additional: 'allow' })`). Built-ins cannot be replaced and a name has one owner; either throws `ExtensionError`. With a `registries` context, an extension series must be registered like any other. A schema marked `inferred: true` reports likely problems (warnings), never errors.

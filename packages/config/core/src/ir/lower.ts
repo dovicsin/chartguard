@@ -1,5 +1,13 @@
 import type { AdditionalProperties, EnumValue, NodeSchema, SchemaKind, SchemaManifest } from '../schema.js';
-import type { IrNode, LiteralNode, ObjectNode, PropertyNode, SchemaArtifact, UnionNode } from './types.js';
+import type {
+	ConfidenceTier,
+	IrNode,
+	LiteralNode,
+	ObjectNode,
+	PropertyNode,
+	SchemaArtifact,
+	UnionNode
+} from './types.js';
 
 export interface LoweredSchema {
 	readonly manifest: SchemaManifest;
@@ -27,6 +35,12 @@ function isLiteral(node: IrNode): node is LiteralNode {
 function isEnumValue(value: LiteralNode['value']): value is EnumValue {
 	return value !== null;
 }
+
+/**
+ * What a provenance tier lets a fact claim (CG-02-07): `authoritative` is confirmed, `derived`
+ * and `manual` only likely (`inferred`), `unknown` nothing (the node is checked as `any`).
+ */
+const isInferredTier = (tier: ConfidenceTier | undefined): boolean => tier === 'derived' || tier === 'manual';
 
 /** A union of same-typed literals is an enum; anything else is not expressible yet. */
 function enumOf(members: readonly IrNode[]): NodeSchema | undefined {
@@ -70,9 +84,16 @@ class Lowerer {
 		ref: (node, path) => this.lowerRef(node.ref, path)
 	};
 
+	/**
+	 * A node's own tier applies to everything it states. An object's own provenance states only that
+	 * it is closed (`additionalOf`): its properties are stated by their own provenance.
+	 */
 	lower(node: IrNode, path: string): NodeSchema {
+		const tier = node.provenance?.confidence;
+		if (tier === 'unknown') return this.approximate(path);
 		const lowering = this.lowerings[node.kind] as (node: IrNode, path: string) => NodeSchema;
-		return lowering(node, path);
+		const lowered = lowering(node, path);
+		return node.kind !== 'object' && isInferredTier(tier) ? this.annotated(lowered, { inferred: true }) : lowered;
 	}
 
 	private approximate(path: string): NodeSchema {
@@ -110,9 +131,12 @@ class Lowerer {
 	private lowerObject(node: ObjectNode, path: string): NodeSchema {
 		const entries = this.propertiesOf(node);
 		const properties = Object.fromEntries(
-			entries.map(([key, property]) => [key, this.withMetadata(this.lower(property.node, `${path}.${key}`), property)])
+			entries.map(([key, property]) => [key, this.lowerProperty(property, `${path}.${key}`)])
 		);
-		const required = entries.filter(([, property]) => property.required === true).map(([key]) => key);
+		// A property whose existence is not established is never required.
+		const required = entries
+			.filter(([, { required: isRequired, provenance }]) => isRequired === true && provenance.confidence !== 'unknown')
+			.map(([key]) => key);
 		const nullAsAbsent = node.nullAsAbsent === true ? { nullAsAbsent: true } : {};
 		const point = node.extensionPoint === undefined ? {} : { extensionPoint: node.extensionPoint };
 		return {
@@ -150,17 +174,25 @@ class Lowerer {
 		return schema;
 	}
 
-	/**
-	 * A property's value with its metadata. Metadata is copied onto the value, except onto a
-	 * definition still being lowered (a recursive reference): copying it now would copy an empty
-	 * node, so the value is wrapped in a one-member union, which accepts exactly what its member does.
-	 */
-	private withMetadata(value: NodeSchema, { handledBy, deprecated }: PropertyNode): NodeSchema {
-		if (handledBy === undefined && deprecated === undefined) return value;
-		const metadata = {
+	/** A property's value with its metadata; the property's tier covers its value and everything below. */
+	private lowerProperty(property: PropertyNode, path: string): NodeSchema {
+		const { handledBy, deprecated, provenance } = property;
+		if (provenance.confidence === 'unknown') return this.approximate(path);
+		return this.annotated(this.lower(property.node, path), {
 			...(handledBy === undefined ? {} : { handledBy }),
-			...(deprecated === undefined ? {} : { deprecated })
-		};
+			...(deprecated === undefined ? {} : { deprecated }),
+			...(isInferredTier(provenance.confidence) ? { inferred: true as const } : {})
+		});
+	}
+
+	/**
+	 * `value` with metadata, never changing `value` itself: it may be a shared definition. Metadata is
+	 * copied onto the value, except onto a definition still being lowered (a recursive reference):
+	 * copying it now would copy an empty node, so the value is wrapped in a one-member union, which
+	 * accepts exactly what its member does.
+	 */
+	private annotated(value: NodeSchema, metadata: Partial<NodeSchema>): NodeSchema {
+		if (Object.keys(metadata).length === 0) return value;
 		return this.incomplete.has(value) ? { kind: 'union', anyOf: [value], ...metadata } : { ...value, ...metadata };
 	}
 }

@@ -1,7 +1,7 @@
 import { type Diagnostic, isContainer, ownDataProperty, type ValidationOptions } from '@chartguard/core';
 
 import { deprecationFinding } from './deprecation.js';
-import { confirmed, inconclusive, unresolved } from './diagnostics.js';
+import { asInferred, confirmed, inconclusive, unresolved } from './diagnostics.js';
 import { registrationFinding, unhandledFinding, unknownKeyFinding, variantFinding } from './findings.js';
 import { isListLike, kindOf } from './kind.js';
 import { keySegment } from './paths.js';
@@ -17,10 +17,19 @@ const MAX_VISITS = 1_000_000;
 interface Cursor {
 	readonly path: string;
 	readonly depth: number;
+	/** A schema fact on the way here is not authoritative: findings below are likely, not confirmed (CG-02-07). */
+	readonly inferred: boolean;
 }
 
+const ROOT: Cursor = { path: '$', depth: 0, inferred: false };
+
 function descend(cursor: Cursor, segment: string): Cursor {
-	return { path: `${cursor.path}${segment}`, depth: cursor.depth + 1 };
+	return { ...cursor, path: `${cursor.path}${segment}`, depth: cursor.depth + 1 };
+}
+
+/** The cursor at `schema`: inferred from there on when the schema's own facts are. */
+function at(cursor: Cursor, schema: NodeSchema | undefined): Cursor {
+	return schema?.inferred === true && !cursor.inferred ? { ...cursor, inferred: true } : cursor;
 }
 
 interface HoleRun {
@@ -60,15 +69,16 @@ export class ConfigWalker {
 		private readonly registries: Registries = new Map()
 	) {}
 
-	walk(value: unknown, schema: NodeSchema, cursor: Cursor = { path: '$', depth: 0 }): void {
-		if (cursor.depth === 0) this.root = value;
-		if (this.stops(cursor) || this.unhandled(schema, cursor.path)) return;
+	walk(value: unknown, schema: NodeSchema, from: Cursor = ROOT): void {
+		if (from.depth === 0) this.root = value;
+		const cursor = at(from, schema);
+		if (this.stops(cursor) || this.unhandled(schema, cursor)) return;
 		if (schema.kind === 'union') {
 			const context = { registries: this.registries, root: this.root, extensions: this.manifest.extensions };
 			this.walkUnion(value, selectVariant(value, schema, context), cursor);
 			return;
 		}
-		if (schema.kind === 'any' || !this.matchesShape(value, schema, cursor.path)) return;
+		if (schema.kind === 'any' || !this.matchesShape(value, schema, cursor)) return;
 		if (isContainer(value)) this.walkContainer(value, schema, cursor);
 	}
 
@@ -81,21 +91,27 @@ export class ConfigWalker {
 			case 'accepted':
 				return;
 			case 'mismatch':
-				this.diagnostics.push(confirmed('CFG_TYPE', path, `Expected ${selection.expected}, got ${kindOf(value)}.`));
+				this.report(cursor, confirmed('CFG_TYPE', path, `Expected ${selection.expected}, got ${kindOf(value)}.`));
 				return;
 			case 'ambiguous':
-				this.diagnostics.push(
+				this.report(
+					cursor,
 					inconclusive('CFG_AMBIGUOUS', path, 'Value fits several schema variants; its contents are not checked.')
 				);
 				return;
 			case 'unknown-variant':
 			case 'invalid-variant':
-				this.diagnostics.push(variantFinding(selection, path));
+				this.report(cursor, variantFinding(selection, path));
 				return;
 			case 'registered':
 			case 'unregistered':
-				this.diagnostics.push(registrationFinding(selection, path));
+				this.report(cursor, registrationFinding(selection, path));
 		}
+	}
+
+	/** Every finding about the value at `cursor` goes through here, weakened where the schema is not authoritative. */
+	private report(cursor: Cursor, diagnostic: Diagnostic): void {
+		this.diagnostics.push(cursor.inferred ? asInferred(diagnostic) : diagnostic);
 	}
 
 	/** Past the work budget (reported once) or the depth limit, the walk stops here. */
@@ -112,20 +128,21 @@ export class ConfigWalker {
 	}
 
 	/** An option whose component or plugin the runtime does not have: reported; its contents do not matter. */
-	private unhandled({ handledBy }: NodeSchema, path: string): boolean {
+	private unhandled({ handledBy }: NodeSchema, cursor: Cursor): boolean {
 		if (handledBy === undefined || isHandled(this.registries, handledBy) !== false) return false;
-		this.diagnostics.push(unhandledFinding(handledBy, path));
+		this.report(cursor, unhandledFinding(handledBy, cursor.path));
 		return true;
 	}
 
-	private matchesShape(value: unknown, schema: NodeSchema, path: string): boolean {
+	private matchesShape(value: unknown, schema: NodeSchema, cursor: Cursor): boolean {
 		const actual = kindOf(value);
+		const { path } = cursor;
 		if (actual !== schema.kind) {
-			this.diagnostics.push(confirmed('CFG_TYPE', path, `Expected ${schema.kind}, got ${actual}.`));
+			this.report(cursor, confirmed('CFG_TYPE', path, `Expected ${schema.kind}, got ${actual}.`));
 			return false;
 		}
 		if (schema.enum !== undefined && !schema.enum.some((allowed) => allowed === value))
-			this.diagnostics.push(confirmed('CFG_ENUM', path, `Value must be one of: ${schema.enum.join(', ')}.`));
+			this.report(cursor, confirmed('CFG_ENUM', path, `Value must be one of: ${schema.enum.join(', ')}.`));
 		return true;
 	}
 
@@ -165,7 +182,7 @@ export class ConfigWalker {
 	}
 
 	private walkObject(object: object, schema: NodeSchema, cursor: Cursor): void {
-		this.checkRequired(object, schema.required ?? [], cursor.path);
+		this.checkRequired(object, schema, cursor);
 		const keys = Object.keys(object);
 		if (keys.length > MAX_ENTRIES)
 			this.diagnostics.push(unresolved('CFG_TRUNCATED', cursor.path, 'Object inspection limit reached.'));
@@ -178,13 +195,14 @@ export class ConfigWalker {
 	 * For an incomplete input (static extraction with unresolved spreads) a missing key is unresolved,
 	 * because the part that was not extracted may supply it.
 	 */
-	private checkRequired(object: object, required: readonly string[], path: string): void {
-		const report = this.options.incomplete === true ? unresolved : confirmed;
-		for (const key of required) {
+	private checkRequired(object: object, schema: NodeSchema, cursor: Cursor): void {
+		const finding = this.options.incomplete === true ? unresolved : confirmed;
+		for (const key of schema.required ?? []) {
 			const entry = ownDataProperty(object, key);
 			const present = Object.hasOwn(object, key) && !(entry.found && entry.value === undefined);
-			if (!present)
-				this.diagnostics.push(report('CFG_REQUIRED', `${path}${keySegment(key)}`, `Missing required property ${key}.`));
+			// That the key is required is a fact of its own property, with that property's tier.
+			const where = at(descend(cursor, keySegment(key)), schema.properties?.[key]);
+			if (!present) this.report(where, finding('CFG_REQUIRED', where.path, `Missing required property ${key}.`));
 		}
 	}
 
@@ -201,11 +219,11 @@ export class ConfigWalker {
 		const field = Object.hasOwn(known, key) ? known[key] : (this.extensionOption(schema, key) ?? schema.values);
 		if (field === undefined) {
 			const unknown = unknownKeyFinding(key, schema, this.manifest.coverage, cursor.path);
-			if (unknown !== undefined) this.diagnostics.push(unknown);
+			if (unknown !== undefined) this.report(cursor, unknown);
 			return;
 		}
 		if (field.deprecated !== undefined)
-			this.diagnostics.push(deprecationFinding(object, key, cursor.path, field.deprecated));
+			this.report(at(cursor, field), deprecationFinding(object, key, cursor.path, field.deprecated));
 		this.walk(entry.value, field, cursor);
 	}
 

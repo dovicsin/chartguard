@@ -24,4 +24,4 @@ const validate = withExtensions([
 validate(config).extensions; // ["datalabels", "streaming"]
 ```
 
-An extension may not replace a built-in plugin or scale, and two extensions may not define the same name; either throws `ExtensionError` when the validator is built. A finding against an extension is as certain as the schema you gave it. Plugin chart types (controllers) cannot be described yet.
+An extension may not replace a built-in plugin or scale, and two extensions may not define the same name; either throws `ExtensionError` when the validator is built. A finding against an extension is as certain as the schema you gave it; mark a schema you are not sure of with `inferred: true` (`{ ...s.object({...}), inferred: true }`) and its findings are reported as likely problems (warnings), never as errors. Plugin chart types (controllers) cannot be described yet.

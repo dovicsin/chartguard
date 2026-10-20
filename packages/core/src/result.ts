@@ -4,14 +4,18 @@ export function isConfirmedError(diagnostic: Diagnostic): boolean {
 	return diagnostic.severity === 'error';
 }
 
-/** Producers mark anything they could not decide with `confidence: 'unknown'`; codes carry no meaning here. */
-function isUnresolved(diagnostic: Diagnostic): boolean {
-	return diagnostic.confidence === 'unknown';
+/**
+ * Producers mark anything they could not decide with `confidence: 'unknown'`, and a likely problem
+ * read from a schema fact that is not authoritative with `'inferred'` (CG-02-07). Either keeps a
+ * result from `valid`, which needs a complete, authoritative check. Codes carry no meaning here.
+ */
+function isUndecided(diagnostic: Diagnostic): boolean {
+	return diagnostic.confidence !== 'certain';
 }
 
 function statusOf(coverage: Coverage, diagnostics: readonly Diagnostic[]): ValidationStatus {
 	if (diagnostics.some(isConfirmedError)) return 'invalid';
-	if (coverage === 'partial' || diagnostics.some(isUnresolved)) return 'partial';
+	if (coverage === 'partial' || diagnostics.some(isUndecided)) return 'partial';
 	return 'valid';
 }
 
