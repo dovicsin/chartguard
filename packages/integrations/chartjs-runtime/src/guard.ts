@@ -7,6 +7,8 @@ import {
 	type ValidationResult
 } from '@chartguard/core';
 
+import { registriesOf } from './registries.js';
+
 /** When a result was produced: the chart's creation, or an update (`chart.update(mode)`). */
 export interface GuardEvent {
 	readonly phase: 'create' | 'update';
@@ -16,7 +18,10 @@ export interface GuardEvent {
 export interface GuardOptions {
 	/** Replaces the shipped `validate`, e.g. `withExtensions([...])`. */
 	readonly validator?: ConfigValidator;
-	/** Passed to every validation; `libraryVersion` defaults to the running `Chart.version`. */
+	/**
+	 * Passed to every validation. `libraryVersion` defaults to the running `Chart.version`, and
+	 * `registries` to what `Chart.registry` holds (`registriesOf`); a registry id named here replaces the read one.
+	 */
 	readonly options?: ValidationOptions;
 	/** Receives every result; without it, a result with confirmed errors is written with `console.warn`. */
 	readonly onResult?: (result: ValidationResult, event: GuardEvent) => void;
@@ -127,9 +132,24 @@ class Guard {
 		};
 	}
 
+	/**
+	 * The caller's options with what the running Chart.js says, read now: `Chart.version` and what
+	 * `Chart.registry` holds plus the config's inline plugins (`registriesOf`). What the caller names wins.
+	 */
 	private validationOptions(chart: GuardedChart): ValidationOptions {
 		const libraryVersion = this.options.options?.libraryVersion ?? runningVersion(chart);
-		return { ...this.options.options, ...(libraryVersion === undefined ? {} : { libraryVersion }) };
+		const inline: unknown = isPlain(this.created)
+			? Object.getOwnPropertyDescriptor(this.created, 'plugins')?.value
+			: undefined;
+		const registries = {
+			...registriesOf(chart.constructor as { readonly registry?: unknown }, inline),
+			...this.options.options?.registries
+		};
+		return {
+			...this.options.options,
+			...(libraryVersion === undefined ? {} : { libraryVersion }),
+			...(Object.keys(registries).length === 0 ? {} : { registries })
+		};
 	}
 
 	private create(chart: GuardedChart): void {

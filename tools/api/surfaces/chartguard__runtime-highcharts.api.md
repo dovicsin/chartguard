@@ -49,12 +49,17 @@ interface HighchartsChart {
 }
 
 ### HighchartsNamespace
-interface HighchartsNamespace<C extends object> {
-    readonly version?: unknown;
+interface HighchartsNamespace<C extends object> extends HighchartsRuntime {
     chart?(container: unknown, options: unknown): C;
     stockChart?(container: unknown, options: unknown): C;
     mapChart?(container: unknown, options: unknown): C;
     ganttChart?(container: unknown, options: unknown): C;
+}
+
+### HighchartsRuntime
+interface HighchartsRuntime {
+    readonly version?: unknown;
+    readonly seriesTypes?: unknown;
 }
 
 ### HighchartsSeries
@@ -80,6 +85,9 @@ function checkUpdate(chart: HighchartsChart, options: unknown, settings?: Update
 
 ### createChart
 function createChart<C extends object>(highcharts: HighchartsNamespace<C>, container: unknown, options: unknown, guard?: CreateGuard): Created<C>;
+
+### registriesOf
+function registriesOf(highcharts: HighchartsRuntime): Readonly<Record<string, RegistryContext>>;
 
 ### update
 function update(chart: HighchartsChart, options: unknown, settings?: UpdateSettings, guard?: ChartGuard): ValidationResult;

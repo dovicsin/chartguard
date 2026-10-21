@@ -17,7 +17,7 @@ const UPDATE_MARK = 1000;
 
 /**
  * Runs in the page. Renders every option into its own container and records how Highcharts
- * reacted: what it reported through `displayError` (an error or a warning, also the ones its own
+ * reacted (and which series types it had): what it reported through `displayError` (an error or a warning, also the ones its own
  * console de-duplication would hide after the first chart), other console output, and a throw.
  */
 const REVIVE = `
@@ -53,6 +53,8 @@ for (const options of CASES.map(revive)) {
 	} finally {
 		Object.assign(console, original);
 	}
+	// What the page's Highcharts has registered, as runtime-highcharts \`registriesOf\` reads it.
+	current.seriesTypes = Object.keys(Highcharts.seriesTypes);
 	outcomes.push(current);
 }
 document.getElementById('outcomes').textContent = encodeURIComponent(JSON.stringify(outcomes));
@@ -173,7 +175,7 @@ export function runHighchartsUpdates(cases) {
 
 /**
  * Renders each `{ config, modules }` with the pinned Highcharts in headless Chrome and returns the
- * outcomes in order (`{ threw, messages }`, as the other runners). Cases that load the same
+ * outcomes in order (`{ threw, messages }`, as the other runners, and the `seriesTypes` the page had). Cases that load the same
  * modules share one page; the configs must be plain JSON.
  */
 export async function runHighcharts(cases) {

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { createValidator, validate } from '@chartguard/config-highcharts';
 
 import { KNOWN_VALID } from '../../../config/highcharts/tests/fixtures/known-valid.mjs';
-import { addSeries, checkUpdate, createChart, update } from '../dist/index.js';
+import { addSeries, checkUpdate, createChart, registriesOf, update } from '../dist/index.js';
 
 /** Generated from the installed highcharts by `npm run build`; never committed (CG-01-05). */
 const LOCAL = fileURLToPath(
@@ -208,4 +208,34 @@ test('without onResult only a result with confirmed errors is warned, naming the
 	const events = [];
 	addSeries(chart, { data: [1] }, {}, { onResult: (_, event) => events.push(event) });
 	assert.deepEqual(events, [{ phase: 'addSeries' }]);
+});
+
+test('registriesOf reads the series types a live Highcharts has; without them there is no context', () => {
+	assert.deepEqual(registriesOf({ seriesTypes: { line: {}, column: {}, area: {} } }), {
+		'highcharts.series': { names: ['area', 'column', 'line'], complete: true }
+	});
+	assert.deepEqual(registriesOf({}), {});
+	assert.deepEqual(registriesOf({ seriesTypes: null }), {});
+});
+
+test('every call checks against the series types Highcharts has at that moment; a registry the caller names wins', () => {
+	const seriesTypes = { line: {}, column: {} };
+	const { chart } = chartOf(MIXED);
+	const highcharts = { version: '13.1.1', seriesTypes, chart: () => chart };
+	const sankey = { series: [{ type: 'sankey', keys: ['from', 'to', 'weight'], data: [['a', 'b', 1]] }] };
+	const created = createChart(highcharts, 'box', sankey, { ...full, block: true });
+	assert.deepEqual(findings(created.result), ['error CFG_UNREGISTERED $.series[0].type']);
+	assert.equal(created.chart, undefined);
+	const named = { ...full, options: { registries: { 'highcharts.series': { names: [], complete: false } } } };
+	assert.deepEqual(findings(createChart(highcharts, 'box', sankey, named).result), []);
+	// The sankey module loads after the chart was created: the next update knows it.
+	assert.deepEqual(findings(addSeries(chart, sankey.series[0], {}, full).result), [
+		'error CFG_UNREGISTERED $.series[0].type'
+	]);
+	seriesTypes.sankey = {};
+	assert.deepEqual(findings(addSeries(chart, sankey.series[0], {}, full).result), []);
+	assert.deepEqual(
+		findings(checkUpdate(chart, { series: [{}, {}, { type: 'arearange' }] }, { oneToOne: true }, full)),
+		['error CFG_UNREGISTERED $.series[2].type']
+	);
 });

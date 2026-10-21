@@ -10,6 +10,8 @@ import {
 	type ValidationResult
 } from '@chartguard/core';
 
+import { type EChartsRuntime, registriesOf } from './registries.js';
+
 /** What `chart.setOption` takes besides the option: `notMerge` as a boolean, or the settings object. */
 export type SetOptionSettings =
 	| boolean
@@ -31,6 +33,11 @@ export interface SetOptionGuard {
 	readonly validator?: ConfigValidator;
 	/** Passed to every validation: `libraryVersion: echarts.version`, `registries`. */
 	readonly options?: ValidationOptions;
+	/**
+	 * The namespace the chart's runtime registers on (`echarts/core` after `use`, or `echarts`): what it
+	 * has registered is read on every call (`registriesOf`). A registry id named in `options` wins.
+	 */
+	readonly echarts?: EChartsRuntime;
 	/** Receives every result; without it, a result with confirmed errors is written with `console.warn`. */
 	readonly onResult?: (result: ValidationResult, event: { readonly fresh: boolean }) => void;
 	/** An invalid option is not set: the chart keeps what it has. */
@@ -111,6 +118,13 @@ function merged(option: unknown, types: readonly unknown[]): unknown {
 	);
 }
 
+/** The guard's options with the registry context of `guard.echarts`, read now. */
+function optionsOf({ options, echarts }: SetOptionGuard): ValidationOptions | undefined {
+	if (echarts === undefined) return options;
+	const registries = { ...registriesOf(echarts), ...options?.registries };
+	return Object.keys(registries).length === 0 ? options : { ...options, registries };
+}
+
 function warn(checked: ValidationResult): void {
 	if (checked.valid) return;
 	const listed = checked.diagnostics
@@ -128,6 +142,7 @@ export function checkOption(
 	guard: SetOptionGuard = {}
 ): ValidationResult {
 	const validator = guard.validator ?? validate;
+	const options = optionsOf(guard);
 	const fresh = isFresh(chart, settings);
 	const series = itemsAt(own(option, 'series'), '$.series');
 	const based = itemsAt(own(own(option, 'baseOption'), 'series'), '$.baseOption.series');
@@ -142,7 +157,7 @@ export function checkOption(
 			.map(({ path }) => dropped(path));
 	} else missing = [];
 	// A merge update is partial by design: what it leaves out, the chart already has.
-	const checked = validator(view, fresh ? guard.options : { ...guard.options, incomplete: true });
+	const checked = validator(view, fresh ? options : { ...options, incomplete: true });
 	return {
 		...checked,
 		...result(checked.library, checked.schemaVersion, checked.coverage, [...checked.diagnostics, ...missing])

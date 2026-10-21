@@ -14,6 +14,7 @@ setOption(chart, { series: [{ data: next }] }); // a merge update: checked again
 - **A fresh option** (the chart has none yet, `notMerge`, or `replaceMerge` naming `series`) needs a `type` on every series: echarts drops one without it ("Unknown series"); ChartGuard reports `CFG_REQUIRED $.series[i].type`.
 - **A merge update** may leave the type out: when its series name no `id` or `name`, each one is checked as the type of the series it merges into, and one beyond the chart's series is reported (echarts drops it). What an update leaves out (the axes it does not repeat) is not a finding; a rule about it is reported as unresolved.
 - `checkOption(chart, option, settings?)` gives the same result without setting anything.
+- **What is registered**: pass the namespace you call `use` on (`{ echarts }`, from `echarts/core`). Each call then reads what it has registered: a series or component that is not registered is a confirmed `CFG_UNREGISTERED` error (echarts would drop it or throw). `registriesOf(echarts)` gives the same context for your own validation.
 - **Reporting**: `onResult(result, { fresh })` receives every result; without it, a result with confirmed errors is written with `console.warn`. **Blocking**: `{ block: true }` does not set an invalid option.
 - Pass `libraryVersion: echarts.version`: an ECharts instance does not say which version it is. `validator` replaces the shipped schema (for example `withExtensions([...])` from `@chartguard/config-echarts`).
 

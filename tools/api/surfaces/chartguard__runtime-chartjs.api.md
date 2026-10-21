@@ -27,5 +27,10 @@ interface GuardPlugin {
 ### guard
 function guard<T extends object>(config: T, options?: GuardOptions): T;
 
+### registriesOf
+function registriesOf(chart: {
+    readonly registry?: unknown;
+}, plugins?: unknown): Readonly<Record<string, RegistryContext>>;
+
 ### validateBeforeCreate
 validateBeforeCreate: import("@chartguard/core").ValidateBeforeCreate

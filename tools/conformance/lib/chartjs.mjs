@@ -1,6 +1,7 @@
 import * as chartjs from 'chart.js';
-import { _adapters, Chart, registerables, registry } from 'chart.js';
+import { _adapters, Chart, registerables } from 'chart.js';
 
+import { registriesOf } from '../../../packages/integrations/chartjs-runtime/dist/index.js';
 import { observe } from './capture.mjs';
 import { copyPlain } from './copy.mjs';
 
@@ -70,15 +71,6 @@ export function createChartjs(config) {
 
 const EVERY_REGISTERABLE = registerables.flatMap((group) => (Array.isArray(group) ? group : Object.values(group)));
 
-/** What the runtime has registered, as the validator's registry context (controllers, scales, plugins). */
-function registeredNow() {
-	const names = (typed) => Object.keys(typed.items).sort();
-	return {
-		'chartjs.controllers': { names: names(registry.controllers), complete: true },
-		'chartjs.scales': { names: names(registry.scales), complete: true },
-		'chartjs.plugins': { names: names(registry.plugins), complete: true }
-	};
-}
 
 /**
  * Runs `body` against a tree-shaken Chart.js: only `modules` (export names such as `LineController`,
@@ -94,7 +86,8 @@ export function withChartjsModules(modules, body) {
 	Chart.unregister(...EVERY_REGISTERABLE);
 	try {
 		Chart.register(...items);
-		return body(registeredNow());
+		// What the runtime has registered, read as runtime-chartjs reads it for its guard.
+		return body(registriesOf(Chart));
 	} finally {
 		Chart.unregister(...items);
 		Chart.register(...EVERY_REGISTERABLE);

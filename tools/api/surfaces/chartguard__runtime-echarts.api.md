@@ -6,10 +6,16 @@ interface EChartsInstance {
     getOption(): unknown;
 }
 
+### EChartsRuntime
+interface EChartsRuntime {
+    readonly ComponentModel?: unknown;
+}
+
 ### SetOptionGuard
 interface SetOptionGuard {
     readonly validator?: ConfigValidator;
     readonly options?: ValidationOptions;
+    readonly echarts?: EChartsRuntime;
     readonly onResult?: (result: ValidationResult, event: {
         readonly fresh: boolean;
     }) => void;
@@ -26,6 +32,9 @@ type SetOptionSettings = boolean | {
 
 ### checkOption
 function checkOption(chart: EChartsInstance, option: unknown, settings?: SetOptionSettings, guard?: SetOptionGuard): ValidationResult;
+
+### registriesOf
+function registriesOf(echarts: EChartsRuntime): Readonly<Record<string, RegistryContext>>;
 
 ### setOption
 function setOption(chart: EChartsInstance, option: unknown, settings?: SetOptionSettings, guard?: SetOptionGuard): ValidationResult;

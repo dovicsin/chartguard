@@ -1,13 +1,13 @@
 import type { ValidationResult } from '@chartguard/core';
 
-import { type ChartGuard, proceed, remember, validatorOf } from './report.js';
+import type { HighchartsRuntime } from './registries.js';
+import { type ChartGuard, proceed, remember, settingsFor, validatorOf } from './report.js';
 
 /** The Highcharts constructors: `chart`, and those the Stock, Maps and Gantt bundles add. */
 export type ChartFactory = 'chart' | 'stockChart' | 'mapChart' | 'ganttChart';
 
 /** The part of the `Highcharts` namespace this path uses. */
-export interface HighchartsNamespace<C extends object> {
-	readonly version?: unknown;
+export interface HighchartsNamespace<C extends object> extends HighchartsRuntime {
 	chart?(container: unknown, options: unknown): C;
 	stockChart?(container: unknown, options: unknown): C;
 	mapChart?(container: unknown, options: unknown): C;
@@ -26,9 +26,9 @@ export interface Created<C extends object> {
 }
 
 /**
- * The safe construction path (CG-04-04): `options` is validated for the running `Highcharts.version`,
- * reported, then `Highcharts[factory](container, options)` is called unless `block` and invalid. The
- * chart remembers that version for `update` and `addSeries`. Nothing is patched; `options` is never
+ * The safe construction path (CG-04-04): `options` is validated for the running `Highcharts.version`
+ * and the series types it has (CG-04-05), reported, then `Highcharts[factory](container, options)` is called unless `block` and invalid. The
+ * chart remembers that Highcharts for `update` and `addSeries`. Nothing is patched; `options` is never
  * changed and its getters never run.
  */
 export function createChart<C extends object>(
@@ -39,11 +39,9 @@ export function createChart<C extends object>(
 ): Created<C> {
 	const factory = guard.factory ?? 'chart';
 	if (typeof highcharts[factory] !== 'function') throw new TypeError(`Highcharts.${factory} is not loaded.`);
-	const libraryVersion = guard.options?.libraryVersion ?? highcharts.version;
-	const settings = typeof libraryVersion === 'string' ? { ...guard.options, libraryVersion } : guard.options;
-	const checked = validatorOf(guard)(options, settings);
+	const checked = validatorOf(guard)(options, settingsFor(highcharts, guard));
 	if (!proceed(checked, 'create', guard)) return { chart: undefined, result: checked };
 	const chart = highcharts[factory](container, options);
-	remember(chart, libraryVersion);
+	remember(chart, highcharts);
 	return { chart, result: checked };
 }

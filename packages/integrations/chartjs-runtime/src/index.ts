@@ -6,3 +6,4 @@ export const validateBeforeCreate = createValidateBeforeCreate('chartjs', valida
 
 export type { GuardEvent, GuardOptions, GuardPlugin } from './guard.js';
 export { guard } from './guard.js';
+export { registriesOf } from './registries.js';

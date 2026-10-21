@@ -1,6 +1,8 @@
 import { validate } from '@chartguard/config-highcharts';
 import type { ConfigValidator, ValidationOptions, ValidationResult } from '@chartguard/core';
 
+import { type HighchartsRuntime, registriesOf } from './registries.js';
+
 /** Which call a result belongs to. */
 export interface ChartEvent {
 	readonly phase: 'create' | 'update' | 'addSeries';
@@ -9,7 +11,10 @@ export interface ChartEvent {
 export interface ChartGuard {
 	/** Replaces the shipped curated `validate`, e.g. `createValidator(artifact)` for the full local schema. */
 	readonly validator?: ConfigValidator;
-	/** Passed to every validation; `libraryVersion` defaults to the `Highcharts.version` the chart was created with. */
+	/**
+	 * Passed to every validation. `libraryVersion` defaults to the running `Highcharts.version`, and
+	 * `registries` to the series types it has (`registriesOf`); a registry id named here replaces the read one.
+	 */
 	readonly options?: ValidationOptions;
 	/** Receives every result; without it, a result with confirmed errors is written with `console.warn`. */
 	readonly onResult?: (result: ValidationResult, event: ChartEvent) => void;
@@ -20,18 +25,27 @@ export interface ChartGuard {
 /** Every host Highcharts runs in has a console; the package compiles without DOM or Node types. */
 declare const console: { warn(...data: unknown[]): void };
 
-/** The `Highcharts.version` each chart created through `createChart` was created with. */
-const versions = new WeakMap<object, string>();
+/** The Highcharts each chart created through `createChart` was created with. */
+const runtimes = new WeakMap<object, HighchartsRuntime>();
 
-export function remember(chart: object, version: unknown): void {
-	if (typeof version === 'string') versions.set(chart, version);
+export function remember(chart: object, highcharts: HighchartsRuntime): void {
+	runtimes.set(chart, highcharts);
 }
 
-/** The guard's options, with the chart's remembered version unless the caller names one. */
-export function optionsFor(chart: object, guard: ChartGuard): ValidationOptions {
-	const libraryVersion = guard.options?.libraryVersion ?? versions.get(chart);
-	return { ...guard.options, ...(libraryVersion === undefined ? {} : { libraryVersion }) };
+/**
+ * The guard's options with what the running Highcharts says, read now: its version and the series
+ * types it has (`registriesOf`). What the caller names (`libraryVersion`, a registry id) wins.
+ */
+export function settingsFor(highcharts: HighchartsRuntime | undefined, guard: ChartGuard): ValidationOptions {
+	const version = guard.options?.libraryVersion ?? highcharts?.version;
+	const libraryVersion = typeof version === 'string' ? { libraryVersion: version } : {};
+	const registries = { ...(highcharts === undefined ? {} : registriesOf(highcharts)), ...guard.options?.registries };
+	return { ...guard.options, ...libraryVersion, ...(Object.keys(registries).length === 0 ? {} : { registries }) };
 }
+
+/** `settingsFor` the Highcharts the chart was created with, if it was created through `createChart`. */
+export const optionsFor = (chart: object, guard: ChartGuard): ValidationOptions =>
+	settingsFor(runtimes.get(chart), guard);
 
 export const validatorOf = (guard: ChartGuard): ConfigValidator => guard.validator ?? validate;
 

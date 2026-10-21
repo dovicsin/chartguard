@@ -46,7 +46,7 @@ export const RUNTIME_CONTRACT = [
 		config: { series: [{ type: 'sankey', data: [] }] },
 		findings: [],
 		runtime: 'rejected',
-		why: 'False negative (CG-04-05): the schema describes every module; which ones are loaded is a registry context (`highcharts.series`). Source shows the modules a project imports but never that nothing else loads one (a script tag, another bundle), so a complete context needs the live runtime (CG-04-05).'
+		why: 'False negative (CG-04-05) without a registry context: the schema describes every module, and source never shows that nothing else loads one (a script tag, another bundle). `@chartguard/runtime-highcharts` reads the live context (`registriesOf`, used by `createChart`/`update`/`addSeries`), and then this case is `CFG_UNREGISTERED`: see module-contract.mjs, verified against the runtime.'
 	},
 	{
 		name: 'module series with its module',

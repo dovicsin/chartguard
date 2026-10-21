@@ -1,13 +1,6 @@
+import { registriesOf } from '../../../packages/integrations/echarts-runtime/dist/index.js';
 import { runAsEntryPoint } from '../../shared/entry.mjs';
 import { renderWith } from './echarts-render.mjs';
-
-/** Every class the runtime has registered, as echarts names them: `<mainType>.<subType>` or `<mainType>`. */
-function registeredNames(ComponentModel) {
-	const types = ComponentModel.getAllClassMainTypes().flatMap((mainType) =>
-		ComponentModel.getClassesByMainType(mainType).map((model) => model.type)
-	);
-	return [...new Set(types)].sort();
-}
 
 async function main([input]) {
 	const { option, modules } = JSON.parse(input);
@@ -22,7 +15,8 @@ async function main([input]) {
 	});
 	core.use([SVGRenderer, ...installers]);
 	const outcome = renderWith(core, option);
-	const registries = { echarts: { names: registeredNames(core.ComponentModel), complete: true } };
+	// What the runtime has registered, read as runtime-echarts reads it.
+	const registries = registriesOf(core);
 	process.stdout.write(JSON.stringify({ outcome, registries }));
 	return 0;
 }
