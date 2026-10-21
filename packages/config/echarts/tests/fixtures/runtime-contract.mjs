@@ -213,7 +213,7 @@ export const RUNTIME_CONTRACT = [
 		config: { series: [{ data: [1] }] },
 		findings: ['info CFG_AMBIGUOUS $.series[0]'],
 		runtime: 'rejected',
-		why: 'False negative (CG-04-03): a fresh option needs `type`, but a setOption merge update or a timeline `options` entry legitimately omits it. Which one a call is depends on the instance it reaches at run time, which the safe setOption path knows (CG-04-03); source cannot tell.'
+		why: 'False negative (CG-04-03): a fresh option needs `type` (echarts drops the series: "Unknown series"), but a setOption merge update or a timeline `options` entry legitimately omits it. A validation without the chart cannot tell which; the safe path `setOption(chart, option)` of @chartguard/runtime-echarts can, and reports it (CFG_REQUIRED, tested against the runtime).'
 	},
 	{
 		name: 'heatmap without visualMap',
