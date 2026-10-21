@@ -51,19 +51,21 @@ const isPlain = (value: unknown): value is object => {
 };
 
 /**
- * A copy of the plain objects and arrays in `value` as they are now, by property descriptor: data
- * properties are copied, accessors are kept as accessors and never run; anything else is shared.
+ * A copy of the plain objects in `value` as they are now, by property descriptor: data properties are
+ * copied, accessors are kept as accessors and never run; anything else is shared. Arrays are shared,
+ * not copied: between `guard()` and `beforeInit` Chart.js writes only into objects (chart.js@4.5.1
+ * `initConfig`: `config.data`, `data.datasets`/`data.labels` when missing, `config.options`,
+ * `options.plugins`, `options.scales`; `mergeScaleConfig` merges into new objects), never into an
+ * array, so a shared array still holds what the caller passed, and the copy costs nothing per data
+ * point (CG-04-06).
  */
 function snapshot(value: unknown, copies = new Map<object, object>()): unknown {
-	if (!isPlain(value)) return value;
+	if (!isPlain(value) || Array.isArray(value)) return value;
 	const known = copies.get(value);
 	if (known !== undefined) return known;
-	const copy: object = Array.isArray(value)
-		? (new Array(value.length) as unknown[])
-		: (Object.create(Object.getPrototypeOf(value) as object | null) as object);
+	const copy = Object.create(Object.getPrototypeOf(value) as object | null) as object;
 	copies.set(value, copy);
 	for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(value))) {
-		if (Array.isArray(value) && key === 'length') continue;
 		const copied = 'value' in descriptor ? { ...descriptor, value: snapshot(descriptor.value, copies) } : descriptor;
 		Object.defineProperty(copy, key, copied);
 	}

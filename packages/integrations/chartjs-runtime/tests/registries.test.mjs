@@ -32,6 +32,9 @@ test("a config's inline plugins count as plugins; one that cannot be read makes 
 		assert.deepEqual(registriesOf(Chart, [Legend, hidden])['chartjs.plugins'], { names: ['legend'], complete: false });
 		assert.equal(reads, 0);
 		assert.equal(registriesOf(Chart, 'legend')['chartjs.plugins'].complete, false);
+		// A bundler may expose the runtime through getters: it is the library, read as it is exposed.
+		const bundled = Object.defineProperty({}, 'registry', { get: () => Chart.registry });
+		assert.deepEqual(registriesOf(bundled), registriesOf(Chart));
 		assert.deepEqual(registriesOf({}), {});
 		assert.deepEqual(registriesOf({ registry: { controllers: { items: {} } } }), {});
 	}));

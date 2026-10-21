@@ -1,16 +1,22 @@
 import { isContainer, isRecord, ownDataProperty, type OwnProperty, type RegistryContext } from '@chartguard/core';
 
 const MISSING: OwnProperty = { found: false, accessor: false };
-/** An own data property of an object or a function (`Chart` is a class), never through a getter. */
+/** An own data property of the caller's config, never through a getter. */
 const read = (value: unknown, key: string): unknown => {
-	const readable = isContainer(value) || typeof value === 'function';
-	const property = readable ? ownDataProperty(value, key) : MISSING;
+	const property = isContainer(value) ? ownDataProperty(value, key) : MISSING;
 	return property.found ? property.value : undefined;
 };
 
+/**
+ * A property of the runtime, read as the runtime exposes it (`Chart` is a class; a bundler may expose
+ * it through getters). This is the library, never the caller's config.
+ */
+const runtime = (value: unknown, key: string): unknown =>
+	isContainer(value) || typeof value === 'function' ? (value as Record<string, unknown>)[key] : undefined;
+
 /** The ids a typed registry holds (`registry.controllers.items`), or undefined when it cannot be read. */
 function idsOf(registry: unknown, kind: string): string[] | undefined {
-	const items = read(read(registry, kind), 'items');
+	const items = runtime(runtime(registry, kind), 'items');
 	return isContainer(items) ? Object.keys(items).sort() : undefined;
 }
 
@@ -30,14 +36,14 @@ function inlineIds(plugins: unknown): { readonly ids: readonly string[]; readonl
  * The registry context of a live Chart.js (CG-04-05): the controllers, scales and plugins `Chart.registry`
  * holds now (chart.js@4.5.1: `registry.getController`/`getScale` throw for any other; a plugin that is
  * neither registered nor inline never runs). Pass the config's own `plugins` so the inline ones count;
- * when one of them cannot be read, the plugins are an incomplete context. Only own data properties are
- * read: no getter runs. A `Chart` without a readable registry gives no context, so no claim.
+ * when one of them cannot be read, the plugins are an incomplete context. The config's plugins are
+ * read through own data properties only: none of its getters runs. A `Chart` without a readable registry gives no context, so no claim.
  */
 export function registriesOf(
 	chart: { readonly registry?: unknown },
 	plugins?: unknown
 ): Readonly<Record<string, RegistryContext>> {
-	const registry = read(chart, 'registry');
+	const registry = runtime(chart, 'registry');
 	const controllers = idsOf(registry, 'controllers');
 	const scales = idsOf(registry, 'scales');
 	const registered = idsOf(registry, 'plugins');

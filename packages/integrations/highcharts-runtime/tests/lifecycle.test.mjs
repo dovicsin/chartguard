@@ -216,6 +216,8 @@ test('registriesOf reads the series types a live Highcharts has; without them th
 	});
 	assert.deepEqual(registriesOf({}), {});
 	assert.deepEqual(registriesOf({ seriesTypes: null }), {});
+	const bundled = Object.defineProperty({}, 'seriesTypes', { get: () => ({ line: {} }) });
+	assert.deepEqual(registriesOf(bundled), { 'highcharts.series': { names: ['line'], complete: true } });
 });
 
 test('every call checks against the series types Highcharts has at that moment; a registry the caller names wins', () => {

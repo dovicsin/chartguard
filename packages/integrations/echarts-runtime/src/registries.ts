@@ -1,17 +1,17 @@
-import { isContainer, ownDataProperty, type OwnProperty, type RegistryContext } from '@chartguard/core';
+import { isContainer, type RegistryContext } from '@chartguard/core';
 
 /** The part of the `echarts` (or `echarts/core`) namespace the registry context is read from. */
 export interface EChartsRuntime {
 	readonly ComponentModel?: unknown;
 }
 
-const MISSING: OwnProperty = { found: false, accessor: false };
-/** An own data property of an object or a function (a model class), never through a getter. */
-const read = (value: unknown, key: string): unknown => {
-	const readable = isContainer(value) || typeof value === 'function';
-	const property = readable ? ownDataProperty(value, key) : MISSING;
-	return property.found ? property.value : undefined;
-};
+/**
+ * A property of the runtime, read as the runtime exposes it: a bundler's module namespace exports
+ * are getters (esbuild `__export`), so reading only data properties would find no registry. This is
+ * the library, never the caller's option, whose getters are never run.
+ */
+const read = (value: unknown, key: string): unknown =>
+	isContainer(value) || typeof value === 'function' ? (value as Record<string, unknown>)[key] : undefined;
 
 /** Both listers close over the class storage and never use `this` (echarts@6.1.0 lib/util/clazz.js). */
 type Lister = (mainType?: string) => unknown;

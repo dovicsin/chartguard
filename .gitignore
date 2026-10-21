@@ -45,6 +45,9 @@
 !/examples/sample-app/src/**/*.ts
 !/examples/sample-app/src/**/*.tsx
 !/examples/sample-app/src/**/*.js
+# The M4 gate runtime sample apps (code only; their README stays local)
+!/examples/runtime-apps/tsconfig.json
+!/examples/runtime-apps/src/*.ts
 
 # Packages
 !/packages/**/package.json

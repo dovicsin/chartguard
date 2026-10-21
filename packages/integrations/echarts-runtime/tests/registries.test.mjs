@@ -24,6 +24,9 @@ test('registriesOf reads the classes a tree-shaken echarts registered; anything 
 	assert.equal(complete, true);
 	assert.ok(names.includes('series.line') && names.includes('grid'));
 	assert.ok(!names.includes('series.bar'));
+	// A bundled application's namespace exposes its exports through getters (esbuild `__export`).
+	const bundled = Object.defineProperty({}, 'ComponentModel', { enumerable: true, get: () => echarts.ComponentModel });
+	assert.deepEqual(registriesOf(bundled), registriesOf(echarts));
 	assert.deepEqual(registriesOf({}), {});
 	assert.deepEqual(
 		registriesOf({ ComponentModel: { getAllClassMainTypes: () => 'x', getClassesByMainType: () => [] } }),
