@@ -3,3 +3,6 @@ import { createValidateBeforeCreate } from '@chartguard/core';
 
 /** Never monkey-patches global APIs. Caller owns the original factory and side effects. */
 export const validateBeforeCreate = createValidateBeforeCreate('chartjs', validate);
+
+export type { GuardEvent, GuardOptions, GuardPlugin } from './guard.js';
+export { guard } from './guard.js';

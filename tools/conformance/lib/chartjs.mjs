@@ -52,12 +52,20 @@ function fakeContext(canvas) {
  */
 export function runChartjs(config) {
 	return observe(() => {
-		const canvas = { width: 400, height: 300, style: {}, addEventListener() {}, removeEventListener() {} };
-		const context = fakeContext(canvas);
-		canvas.getContext = () => context;
 		// Chart.js writes its default scales into the config it receives; the caller's stays untouched.
-		new Chart(canvas, copyPlain(config)).destroy();
+		createChartjs(copyPlain(config)).destroy();
 	});
+}
+
+/**
+ * A live chart on a fake canvas, for tests of what happens after creation (updates, plugins). The
+ * config is passed as given, so Chart.js writes into it; the caller destroys the chart.
+ */
+export function createChartjs(config) {
+	const canvas = { width: 400, height: 300, style: {}, addEventListener() {}, removeEventListener() {} };
+	const context = fakeContext(canvas);
+	canvas.getContext = () => context;
+	return new Chart(canvas, config);
 }
 
 const EVERY_REGISTERABLE = registerables.flatMap((group) => (Array.isArray(group) ? group : Object.values(group)));
