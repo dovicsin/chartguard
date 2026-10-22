@@ -94,6 +94,14 @@ export interface AccessSemantics {
 	readonly keyboard: Fact<boolean>;
 }
 
+/** The motion a chart starts by itself when it is drawn (CG-05-04 part 7). */
+export interface MotionSemantics {
+	/** Whether something keeps moving without end (a looping animation, a ripple effect). */
+	readonly endless: Fact<boolean>;
+	/** The longest animation that runs when the chart is drawn, in milliseconds (0 when none). */
+	readonly longest: Fact<number>;
+}
+
 /**
  * Library-neutral chart semantics (CG-05-02). Every fact is known, with the path it was read from
  * (or the runtime default and its pointer), or unknown with why: rules claim nothing on an unknown fact.
@@ -106,4 +114,5 @@ export interface ChartSemantics {
 	readonly access: AccessSemantics;
 	/** The background the series are drawn on, in each colour scheme; unknown when the page shows through. */
 	readonly background: Fact<Shades>;
+	readonly motion: MotionSemantics;
 }

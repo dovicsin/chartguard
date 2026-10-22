@@ -15,6 +15,7 @@ import { copyPlain } from '../lib/copy.mjs';
 import { runEcharts } from '../lib/echarts.mjs';
 import { runEchartsInBrowser } from '../lib/echarts-browser.mjs';
 import { runHighcharts } from '../lib/highcharts.mjs';
+import { chartjsMotion, echartsMotion } from '../lib/motion.mjs';
 
 /**
  * The rule catalog against the runtimes (CG-05-04): every contract chart renders on its pinned runtime,
@@ -40,6 +41,8 @@ const PREMISES = {
 	// Keyboard access the library gives, turned off: nothing takes focus.
 	VIS_KEYBOARD_DISABLED: ({ keyboardOff }) => keyboardOff === true,
 	// A cartesian series drawn below 3:1 against the background the browser computed (undefined: page shows through).
+	// Motion that runs forever, or longer than five seconds, as the runtime resolves it.
+	VIS_LONG_MOTION: ({ motion }) => (motion === undefined ? undefined : motion.endless || motion.longest > 5000),
 	VIS_LOW_CONTRAST_SERIES: ({ contrasts }) => (contrasts === undefined ? undefined : contrasts.some((ratio) => ratio !== undefined && ratio < 3))
 };
 
@@ -62,8 +65,9 @@ function builtChartjs(config) {
 		const arcs = metas.filter(({ type }) => type === 'pie' || type === 'doughnut');
 		const pieMisdrawn = arcs.some((meta) => meta._parsed.some((value, index) => value < 0 && meta.data[index].circumference > 0));
 		const title = drawn(chart.options.plugins.title);
+		const motion = chartjsMotion(chart, config);
 		const colors = cartesian.map((meta) => (meta.type === 'line' ? meta.dataset.options.borderColor : meta.data[0].options.backgroundColor));
-		return { colors, bars: cartesian.filter(({ type }) => type === 'bar').map(axis), valueAxes: cartesian.map(axis), pieMisdrawn, title, config };
+		return { motion, colors, bars: cartesian.filter(({ type }) => type === 'bar').map(axis), valueAxes: cartesian.map(axis), pieMisdrawn, title, config };
 	} finally {
 		chart.destroy();
 	}
@@ -94,15 +98,16 @@ function builtEcharts(option, browserOutcome) {
 		const title = component === undefined || component.get('show') === false ? '' : (component.get('text') ?? '');
 		const described = browserOutcome === undefined ? undefined : browserOutcome.label !== '';
 		const background = chart.getModel().get('backgroundColor');
+		const motion = echartsMotion(chart);
 		const contrasts = typeof background === 'string' && background !== 'transparent' ? measured.map(({ color }) => contrastRatio(color, background)) : undefined;
-		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn, title, config: option, colors: measured.map(({ color }) => color), described, contrasts };
+		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn, title, config: option, colors: measured.map(({ color }) => color), described, contrasts, motion };
 	} finally {
 		chart.dispose();
 	}
 }
 
 /** The y axes Highcharts built for its series (recorded by the page runner). */
-function builtHighcharts({ series, yAxes, title, access, shades }, config) {
+function builtHighcharts({ series, yAxes, title, access, shades, durations }, config) {
 	const measured = series
 		.filter(({ yAxis }) => yAxis !== null)
 		.map(({ type, yAxis }) => ({ type, id: yAxis, ...yAxes[yAxis] }));
@@ -112,7 +117,7 @@ function builtHighcharts({ series, yAxes, title, access, shades }, config) {
 	const cartesian = series.map(({ type, yAxis }, index) => (type !== 'pie' && yAxis !== null ? index : -1)).filter((index) => index >= 0);
 	const contrasts = ['light', 'dark'].flatMap((scheme) => cartesian.map((index) => contrastRatio(shades[scheme].series[index] ?? '', shades[scheme].background)));
 	// The harness loads the accessibility module: keyboard focus is there unless the config turns it off.
-	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured, pieMisdrawn, title, config, colors, described: access.points > 0, keyboardOff: !access.keyboard, contrasts };
+	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured, pieMisdrawn, title, config, colors, described: access.points > 0, keyboardOff: !access.keyboard, contrasts, motion: { endless: false, longest: Math.max(0, ...durations) } };
 }
 
 const run = (config, render) => verdictOf(render(copyPlain(config)));

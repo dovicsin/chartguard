@@ -4,6 +4,7 @@ export type {
 	AxisSemantics,
 	ChartSemantics,
 	CoordinateSystem,
+	MotionSemantics,
 	Orientation,
 	ScaleType,
 	SeriesKind,

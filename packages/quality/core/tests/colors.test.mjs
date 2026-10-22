@@ -37,6 +37,7 @@ const chart = (items) => ({
 	series: { known: true, path: '$.series', items: items.map((item, index) => series(...item, index)) },
 	axes: [],
 	background: none('$.background'),
+	motion: { endless: none('$.endless'), longest: none('$.longest') },
 	access: { dataDescribed: none('$.access'), keyboard: none('$.keyboard') }
 });
 const codes = (semantics) => review(semantics).diagnostics.map((d) => `${d.code} ${d.path}`);

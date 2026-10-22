@@ -12,6 +12,7 @@ import {
 } from '@chartguard/quality-core';
 
 import { asText, axesOf } from './axes.js';
+import { motionOf } from './motion.js';
 import { scalesOf } from './scales.js';
 import { addedScales, seriesOf } from './series.js';
 
@@ -40,7 +41,8 @@ export function normalize(config: unknown): ChartSemantics {
 		// A canvas gets its text alternative and keyboard access from the page, not from the config.
 		access: { dataDescribed: unknown('$', 'unmodelled'), keyboard: unknown('$', 'unmodelled') },
 		// A canvas is transparent: the page behind it is the background.
-		background: unknown('$', 'unmodelled')
+		background: unknown('$', 'unmodelled'),
+		motion: motionOf(config, datasets)
 	};
 }
 

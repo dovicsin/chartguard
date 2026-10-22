@@ -4,6 +4,7 @@ import { lowContrastSeries, sameColorSeries } from './colors.js';
 import { valueOf } from './facts.js';
 import { emptyTitle, placeholderText, valueAxisUntitled } from './labels.js';
 import { CARTESIAN, configured, measuredAxes } from './measure.js';
+import { longMotion } from './motion.js';
 
 /**
  * Bars encode values by their length from zero. The runtimes draw bars from zero while zero is in the
@@ -179,5 +180,6 @@ export const QUALITY_RULES: readonly QualityRule[] = [
 	valueAxisUntitled,
 	emptyTitle,
 	dataNotDescribed,
-	keyboardDisabled
+	keyboardDisabled,
+	longMotion
 ];

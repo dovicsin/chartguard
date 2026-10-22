@@ -23,6 +23,7 @@ import {
 } from '@chartguard/quality-core';
 
 import { seriesColors } from './color.js';
+import { motionOf } from './motion.js';
 import { FROM_SERIES, seriesOf } from './series.js';
 import { backgroundOf } from './shades.js';
 
@@ -181,7 +182,8 @@ export function normalize(config: unknown): ChartSemantics {
 			: items,
 		axes: axesOf(config),
 		access: accessOf(config),
-		background: backgroundOf(config)
+		background: backgroundOf(config),
+		motion: motionOf(config, items)
 	};
 }
 

@@ -18,6 +18,7 @@ import {
 
 import { axesOf } from './axes.js';
 import { seriesColors } from './color.js';
+import { motionOf } from './motion.js';
 import { seriesOf } from './series.js';
 
 const TITLE_SHOWN: Default<boolean> = { value: true, pointer: 'echarts@6.1.0 dist/echarts.js:84452 show: true,' };
@@ -74,7 +75,8 @@ export function normalize(config: unknown): ChartSemantics {
 			: items,
 		axes: axesOf(config),
 		access: accessOf(config),
-		background: backgroundOf(config)
+		background: backgroundOf(config),
+		motion: motionOf(config, items)
 	};
 }
 

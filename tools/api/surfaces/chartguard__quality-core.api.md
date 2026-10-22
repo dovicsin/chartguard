@@ -25,6 +25,7 @@ interface ChartSemantics {
     readonly axes: readonly AxisSemantics[];
     readonly access: AccessSemantics;
     readonly background: Fact<Shades>;
+    readonly motion: MotionSemantics;
 }
 
 ### CoordinateSystem
@@ -77,6 +78,12 @@ type Listed<T> = {
     readonly path: string;
     readonly items: readonly T[];
 } | UnknownFact;
+
+### MotionSemantics
+interface MotionSemantics {
+    readonly endless: Fact<boolean>;
+    readonly longest: Fact<number>;
+}
 
 ### Orientation
 type Orientation = 'vertical' | 'horizontal';

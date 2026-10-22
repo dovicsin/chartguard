@@ -10,6 +10,7 @@ import { cjBars, ecBars, hcBars, LABELS } from './charts.mjs';
 import { COLOR_CASES } from './colors-cases.mjs';
 import { CONTRAST_CASES } from './contrast-cases.mjs';
 import { LABEL_CASES } from './labels-cases.mjs';
+import { MOTION_CASES } from './motion-cases.mjs';
 
 const CASES = [
 	{
@@ -249,6 +250,11 @@ function realistic(entry) {
 	);
 }
 
-export const RULES_CONTRACT = [...CASES, ...COLOR_CASES, ...CONTRAST_CASES, ...LABEL_CASES, ...ACCESS_CASES].map(
-	realistic
-);
+export const RULES_CONTRACT = [
+	...CASES,
+	...COLOR_CASES,
+	...CONTRAST_CASES,
+	...LABEL_CASES,
+	...ACCESS_CASES,
+	...MOTION_CASES
+].map(realistic);

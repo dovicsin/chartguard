@@ -67,6 +67,8 @@ for (const options of CASES.map(revive)) {
 			container.classList.remove('highcharts-' + scheme);
 		}
 		current.observed = {
+			// The initial animation of each series, as Highcharts resolves it.
+			durations: chart.series.map((series) => Highcharts.animObject(series.options.animation).duration),
 			shades,
 			inverted: chart.inverted === true,
 			polar: chart.polar === true,

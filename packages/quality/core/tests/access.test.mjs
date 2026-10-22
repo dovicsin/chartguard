@@ -18,6 +18,7 @@ const chart = (dataDescribed, keyboard) => ({
 	series: { known: true, path: '$.series', items: [] },
 	axes: [],
 	background: none('$.background'),
+	motion: { endless: none('$.endless'), longest: none('$.longest') },
 	access: { dataDescribed, keyboard }
 });
 const codes = (semantics) => review(semantics).diagnostics.map((d) => `${d.code} ${d.path}`);

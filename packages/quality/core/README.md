@@ -29,6 +29,7 @@ Rules claim nothing on an unknown fact. Rules about an author's choice fire only
 | `value-axis-untitled` | `VIS_VALUE_AXIS_UNTITLED` | info | a value axis whose title, and the chart's, are known to show nothing |
 | `data-not-described` | `VIS_DATA_NOT_DESCRIBED` | warning | assistive technology gets no description of the data (ECharts without `aria`, Highcharts with accessibility off) |
 | `keyboard-disabled` | `VIS_KEYBOARD_DISABLED` | warning | the config turns keyboard navigation off |
+| `long-motion` | `VIS_LONG_MOTION` | warning | motion that starts by itself and runs forever (a looping animation, a ripple effect) or longer than five seconds |
 | `empty-title` | `VIS_EMPTY_TITLE` | info | a title the config sets to blank text, unless it is known to be hidden |
 
 Findings are advisory. A chart's purpose is not in its config, so every finding asks the reader to verify; each rule's `limits` say where it can be wrong.
