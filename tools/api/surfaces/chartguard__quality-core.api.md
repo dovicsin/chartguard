@@ -1,5 +1,11 @@
 ## @chartguard/quality-core
 
+### AccessSemantics
+interface AccessSemantics {
+    readonly dataDescribed: Fact<boolean>;
+    readonly keyboard: Fact<boolean>;
+}
+
 ### AxisSemantics
 interface AxisSemantics {
     readonly key: string;
@@ -17,6 +23,7 @@ interface ChartSemantics {
     readonly title: TitleSemantics;
     readonly series: Listed<SeriesSemantics>;
     readonly axes: readonly AxisSemantics[];
+    readonly access: AccessSemantics;
 }
 
 ### CoordinateSystem

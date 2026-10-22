@@ -54,7 +54,12 @@ for (const options of CASES.map(revive)) {
 			polar: chart.polar === true,
 			series: chart.series.map((series) => ({ type: series.type, yAxis: series.yAxis ? series.yAxis.index : null, stacking: series.options.stacking ?? null, color: typeof series.color === 'string' ? series.color : null, points: series.points.map((point) => ({ y: point.y ?? null, valid: point.isValid() })) })),
 			yAxes: chart.yAxis.map((axis) => ({ min: axis.min, max: axis.max, reversed: axis.reversed === true, log: axis.logarithmic !== undefined, title: axis.axisTitle?.textStr ?? '' })),
-			title: chart.title?.textStr ?? ''
+			title: chart.title?.textStr ?? '',
+			// What assistive technology gets: labelled data points, and anything taking keyboard focus.
+			access: {
+				points: [...chart.renderTo.querySelectorAll('path[aria-label], rect[aria-label]')].length,
+				keyboard: chart.renderTo.querySelector('[tabindex="0"]') !== null
+			}
 		};
 		chart.destroy();
 	} catch (error) {

@@ -1,5 +1,6 @@
 export type { Evidence, RuleInfo } from './catalog.js';
 export type {
+	AccessSemantics,
 	AxisSemantics,
 	ChartSemantics,
 	CoordinateSystem,

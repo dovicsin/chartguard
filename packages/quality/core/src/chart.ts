@@ -74,6 +74,14 @@ export interface TitleSemantics {
 	readonly shown: Fact<boolean>;
 }
 
+/** What assistive technology gets from the chart (CG-05-04 part 5). */
+export interface AccessSemantics {
+	/** Whether the data is described to assistive technology: point labels, or a generated description. */
+	readonly dataDescribed: Fact<boolean>;
+	/** Whether the chart can be operated with a keyboard. */
+	readonly keyboard: Fact<boolean>;
+}
+
 /**
  * Library-neutral chart semantics (CG-05-02). Every fact is known, with the path it was read from
  * (or the runtime default and its pointer), or unknown with why: rules claim nothing on an unknown fact.
@@ -83,4 +91,5 @@ export interface ChartSemantics {
 	readonly title: TitleSemantics;
 	readonly series: Listed<SeriesSemantics>;
 	readonly axes: readonly AxisSemantics[];
+	readonly access: AccessSemantics;
 }

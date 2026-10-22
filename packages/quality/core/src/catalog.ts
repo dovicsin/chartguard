@@ -95,6 +95,12 @@ export const SOURCES = {
 		venue: 'W3C Recommendation',
 		year: 2023
 	},
+	wcag22Keyboard: {
+		authors: 'W3C',
+		title: 'Web Content Accessibility Guidelines (WCAG) 2.2, Success Criterion 2.1.1 Keyboard',
+		venue: 'W3C Recommendation',
+		year: 2023
+	},
 	wcag22: {
 		authors: 'W3C',
 		title: 'Web Content Accessibility Guidelines (WCAG) 2.2, Success Criterion 1.1.1 Non-text Content',

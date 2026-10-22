@@ -7,7 +7,8 @@ import {
 	type Listed,
 	readFact,
 	review,
-	type SeriesSemantics
+	type SeriesSemantics,
+	unknown
 } from '@chartguard/quality-core';
 
 import { asText, axesOf } from './axes.js';
@@ -35,7 +36,9 @@ export function normalize(config: unknown): ChartSemantics {
 			shown: readFact(config, [...titleAt, 'display'], isBoolean, TITLE_SHOWN)
 		},
 		series,
-		axes: axesOf(config, series, scales)
+		axes: axesOf(config, series, scales),
+		// A canvas gets its text alternative and keyboard access from the page, not from the config.
+		access: { dataDescribed: unknown('$', 'unmodelled'), keyboard: unknown('$', 'unmodelled') }
 	};
 }
 

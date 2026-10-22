@@ -13,6 +13,7 @@ import { verdictOf } from '../lib/capture.mjs';
 import { createChartjs, runChartjs } from '../lib/chartjs.mjs';
 import { copyPlain } from '../lib/copy.mjs';
 import { runEcharts } from '../lib/echarts.mjs';
+import { runEchartsInBrowser } from '../lib/echarts-browser.mjs';
 import { runHighcharts } from '../lib/highcharts.mjs';
 
 /**
@@ -33,12 +34,19 @@ const PREMISES = {
 		[title, ...valueAxes.map((axis) => axis.title)].some((text) => text !== '' && !JSON.stringify(config).includes(JSON.stringify(text))),
 	VIS_VALUE_AXIS_UNTITLED: ({ title, valueAxes }) => title === '' && valueAxes.some((axis) => axis.title === ''),
 	// Two cartesian series the runtime drew in one colour.
-	VIS_SAME_COLOR_SERIES: ({ colors }) => new Set(colors.map(colorKey)).size < colors.length
+	VIS_SAME_COLOR_SERIES: ({ colors }) => new Set(colors.map(colorKey)).size < colors.length,
+	// Nothing in the chart describes its data to assistive technology (undefined: not measured here).
+	VIS_DATA_NOT_DESCRIBED: ({ described }) => (described === undefined ? undefined : !described),
+	// Keyboard access the library gives, turned off: nothing takes focus.
+	VIS_KEYBOARD_DISABLED: ({ keyboardOff }) => keyboardOff === true
 };
 
 function checkPremises(findings, built, where) {
 	const codes = new Set(findings.map((finding) => finding.split(' ')[0]));
-	for (const [code, premise] of Object.entries(PREMISES)) assert.equal(premise(built), codes.has(code), `${where}: ${code}`);
+	for (const [code, premise] of Object.entries(PREMISES)) {
+		const holds = premise(built);
+		if (holds !== undefined) assert.equal(holds, codes.has(code), `${where}: ${code}`);
+	}
 }
 
 /** The value scales Chart.js built for the datasets, and whether an arc was drawn for a negative value. */
@@ -60,7 +68,7 @@ function builtChartjs(config) {
 }
 
 /** The value axes echarts built for its grid series. */
-function builtEcharts(option) {
+function builtEcharts(option, browserOutcome) {
 	const chart = echarts.init(null, null, { renderer: 'svg', ssr: true, width: 400, height: 300 });
 	try {
 		chart.setOption(copyPlain(option));
@@ -82,24 +90,31 @@ function builtEcharts(option) {
 		const pieMisdrawn = pies.some((model) => model.getData().count() < model.getRawData().count());
 		const component = chart.getModel().getComponent('title');
 		const title = component === undefined || component.get('show') === false ? '' : (component.get('text') ?? '');
-		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn, title, config: option, colors: measured.map(({ color }) => color) };
+		const described = browserOutcome === undefined ? undefined : browserOutcome.label !== '';
+		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn, title, config: option, colors: measured.map(({ color }) => color), described };
 	} finally {
 		chart.dispose();
 	}
 }
 
 /** The y axes Highcharts built for its series (recorded by the page runner). */
-function builtHighcharts({ series, yAxes, title }, config) {
+function builtHighcharts({ series, yAxes, title, access }, config) {
 	const measured = series
 		.filter(({ yAxis }) => yAxis !== null)
 		.map(({ type, yAxis }) => ({ type, id: yAxis, ...yAxes[yAxis] }));
 	// Highcharts leaves negative pie points out (`isValid`: `y >= 0`).
 	const pieMisdrawn = series.some(({ type, points }) => type === 'pie' && points.some(({ y, valid }) => y !== null && y < 0 && !valid));
 	const colors = series.filter(({ type, yAxis }) => type !== 'pie' && yAxis !== null).map(({ color }) => color);
-	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured, pieMisdrawn, title, config, colors };
+	// The harness loads the accessibility module: keyboard focus is there unless the config turns it off.
+	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured, pieMisdrawn, title, config, colors, described: access.points > 0, keyboardOff: !access.keyboard };
 }
 
 const run = (config, render) => verdictOf(render(copyPlain(config)));
+
+const browser = { skip: browserSkipReason() ?? false };
+// What assistive technology gets from echarts needs a DOM: every echarts case also runs in headless Chrome.
+const echartsEntries = RULES_CONTRACT.filter((entry) => entry.echarts !== undefined);
+const echartsAccess = browser.skip === false ? await runEchartsInBrowser(echartsEntries.map((entry) => entry.echarts.config)) : [];
 
 for (const entry of RULES_CONTRACT) {
 	if (entry.chartjs !== undefined)
@@ -120,11 +135,10 @@ for (const entry of RULES_CONTRACT) {
 				analyzeEcharts(config).diagnostics.map((d) => `${d.code} ${d.path}`),
 				findings
 			);
-			checkPremises(findings, builtEcharts(config), entry.name);
+			checkPremises(findings, builtEcharts(config, echartsAccess[echartsEntries.indexOf(entry)]), entry.name);
 		});
 }
 
-const browser = { skip: browserSkipReason() ?? false };
 const highcharts = RULES_CONTRACT.filter((entry) => entry.highcharts !== undefined);
 
 test('quality rules, highcharts: every contract chart renders, gets its findings, and their premises hold', browser, async () => {

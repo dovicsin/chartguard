@@ -103,7 +103,8 @@ const chart = ({ items = [], axes = [], text = none('$.title.text'), shown = non
 	library: 't',
 	title: { text, shown },
 	series: { known: true, path: '$.series', items },
-	axes
+	axes,
+	access: { dataDescribed: none('$.access'), keyboard: none('$.keyboard') }
 });
 const codes = (report) => report.diagnostics.map((d) => `${d.code} ${d.path}`);
 

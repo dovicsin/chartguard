@@ -4,8 +4,8 @@ import test from 'node:test';
 import { checkPackagePointers } from '../../core/tests/pointers.mjs';
 import { analyze, normalize } from '../dist/index.js';
 
-/** The label rules (CG-05-04 part 3) fire on most bare test configs; they have tests of their own. */
-const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED']);
+/** The label and access rules (CG-05-04 parts 3, 5) fire on most bare test configs; they have tests of their own. */
+const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED', 'VIS_DATA_NOT_DESCRIBED']);
 const codes = (config) =>
 	analyze(config)
 		.diagnostics.filter((d) => !LABELS.has(d.code))
@@ -159,3 +159,8 @@ test('getters are never run and leave their facts unknown', () => {
 
 test('every runtime default points at the line of the pinned chart.js that applies it', () =>
 	assert.equal(checkPackagePointers(import.meta.url), 19));
+
+test('access: a canvas gets its text alternative and keyboard access from the page', () => {
+	const { dataDescribed, keyboard } = normalize({}).access;
+	assert.deepEqual([brief(dataDescribed), brief(keyboard)], ['? unmodelled $', '? unmodelled $']);
+});

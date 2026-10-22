@@ -35,7 +35,8 @@ const chart = (items) => ({
 	library: 't',
 	title: { text: fact('T', '$.title'), shown: none('$.shown') },
 	series: { known: true, path: '$.series', items: items.map((item, index) => series(...item, index)) },
-	axes: []
+	axes: [],
+	access: { dataDescribed: none('$.access'), keyboard: none('$.keyboard') }
 });
 const codes = (semantics) => review(semantics).diagnostics.map((d) => `${d.code} ${d.path}`);
 

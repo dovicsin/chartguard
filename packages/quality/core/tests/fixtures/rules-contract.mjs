@@ -5,6 +5,7 @@
  * runtime and checks the premise of each finding on what the runtime built (the bars' axis range
  * excludes zero, the axis is logarithmic or reversed, two value axes are in use).
  */
+import { ACCESS_CASES } from './access-cases.mjs';
 import { cjBars, ecBars, hcBars, LABELS } from './charts.mjs';
 import { COLOR_CASES } from './colors-cases.mjs';
 import { LABEL_CASES } from './labels-cases.mjs';
@@ -209,12 +210,20 @@ const TITLED = {
 	highcharts: (config) => ({ title: { text: TITLE }, ...config, yAxis: yTitled(config.yAxis ?? {}) })
 };
 
-export const RULES_CONTRACT = [...CASES, ...COLOR_CASES, ...LABEL_CASES].map((entry) =>
-	entry.labels === true
-		? entry
-		: Object.fromEntries(
-				Object.entries(entry).map(([key, value]) =>
-					key in TITLED ? [key, { ...value, config: TITLED[key](value.config) }] : [key, value]
-				)
-			)
-);
+/** Every case that is not about accessibility is an accessible chart: ECharts describes its data only with `aria`. */
+const accessible = (key, config) => (key === 'echarts' ? { aria: { enabled: true }, ...config } : config);
+
+/** A case as a real chart would be written: titled unless it is about labels, accessible unless it is about access. */
+function realistic(entry) {
+	const config = (key, value) => {
+		const titled = entry.labels === true ? value : TITLED[key](value);
+		return entry.access === true ? titled : accessible(key, titled);
+	};
+	return Object.fromEntries(
+		Object.entries(entry).map(([key, value]) =>
+			key in TITLED ? [key, { ...value, config: config(key, value.config) }] : [key, value]
+		)
+	);
+}
+
+export const RULES_CONTRACT = [...CASES, ...COLOR_CASES, ...LABEL_CASES, ...ACCESS_CASES].map(realistic);

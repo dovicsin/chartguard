@@ -4,8 +4,8 @@ import test from 'node:test';
 import { checkPackagePointers } from '../../core/tests/pointers.mjs';
 import { analyze, normalize } from '../dist/index.js';
 
-/** The label rules (CG-05-04 part 3) fire on most bare test configs; they have tests of their own. */
-const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED']);
+/** The label and access rules (CG-05-04 parts 3, 5) fire on most bare test configs; they have tests of their own. */
+const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED', 'VIS_DATA_NOT_DESCRIBED']);
 const codes = (config) =>
 	analyze(config)
 		.diagnostics.filter((d) => !LABELS.has(d.code))
@@ -166,4 +166,23 @@ test('titles: null hides a title; a y axis without text takes lang.yAxisTitle, e
 		brief(normalize({}).axes.find(({ key }) => key === 'xAxis[0]').title.text),
 		'? unset $.xAxis.title.text'
 	);
+});
+
+test('access: off with accessibility.enabled false; keyboard off by its own switch; otherwise the module decides', () => {
+	const access = (config) => {
+		const { dataDescribed, keyboard } = normalize(config).access;
+		return [brief(dataDescribed), brief(keyboard)];
+	};
+	assert.deepEqual(access({}), [
+		'? unmodelled $.accessibility.enabled',
+		'? unmodelled $.accessibility.keyboardNavigation.enabled'
+	]);
+	assert.deepEqual(access({ accessibility: { enabled: false } }), [
+		'false config $.accessibility.enabled',
+		'false config $.accessibility.enabled'
+	]);
+	assert.deepEqual(access({ accessibility: { keyboardNavigation: { enabled: false } } }), [
+		'? unmodelled $.accessibility.enabled',
+		'false config $.accessibility.keyboardNavigation.enabled'
+	]);
 });

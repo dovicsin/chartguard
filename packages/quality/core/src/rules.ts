@@ -1,3 +1,4 @@
+import { dataNotDescribed, keyboardDisabled } from './access.js';
 import { type QualityRule, rule, SOURCES } from './catalog.js';
 import { sameColorSeries } from './colors.js';
 import { valueOf } from './facts.js';
@@ -175,5 +176,7 @@ export const QUALITY_RULES: readonly QualityRule[] = [
 	sameColorSeries,
 	placeholderText,
 	valueAxisUntitled,
-	emptyTitle
+	emptyTitle,
+	dataNotDescribed,
+	keyboardDisabled
 ];

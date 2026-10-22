@@ -4,8 +4,8 @@ import test from 'node:test';
 
 import { analyze, normalize } from '../dist/index.js';
 
-/** The label rules (CG-05-04 part 3) fire on most bare test configs; they have tests of their own. */
-const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED']);
+/** The label and access rules (CG-05-04 parts 3, 5) fire on most bare test configs; they have tests of their own. */
+const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED', 'VIS_DATA_NOT_DESCRIBED']);
 const codes = (config) =>
 	analyze(config)
 		.diagnostics.filter((d) => !LABELS.has(d.code))

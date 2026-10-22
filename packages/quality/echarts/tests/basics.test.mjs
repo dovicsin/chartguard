@@ -4,8 +4,8 @@ import test from 'node:test';
 import { checkPackagePointers } from '../../core/tests/pointers.mjs';
 import { analyze, normalize } from '../dist/index.js';
 
-/** The label rules (CG-05-04 part 3) fire on most bare test configs; they have tests of their own. */
-const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED']);
+/** The label and access rules (CG-05-04 parts 3, 5) fire on most bare test configs; they have tests of their own. */
+const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED', 'VIS_DATA_NOT_DESCRIBED']);
 const codes = (config) =>
 	analyze(config)
 		.diagnostics.filter((d) => !LABELS.has(d.code))
@@ -14,9 +14,13 @@ const brief = (fact) =>
 	fact.known ? `${String(fact.value)} ${fact.source} ${fact.path}` : `? ${fact.reason} ${fact.path}`;
 const CATEGORY = { xAxis: { type: 'category', data: ['a'] } };
 
-test('an empty option is an advisory report with no findings', () => {
+test('an empty option: its only finding is that echarts describes nothing without aria', () => {
 	assert.equal(analyze({}).library, 'echarts');
-	assert.deepEqual(analyze({}).diagnostics, []);
+	assert.deepEqual(
+		analyze({}).diagnostics.map((d) => `${d.code} ${d.path}`),
+		['VIS_DATA_NOT_DESCRIBED $.aria.enabled']
+	);
+	assert.deepEqual(analyze({ aria: { enabled: true } }).diagnostics, []);
 });
 
 test('series: kind, name and the axis their values are measured on (by index, by id, else the first)', () => {
@@ -168,7 +172,7 @@ test('findings point at the ECharts option that triggered them', () => {
 });
 
 test('every runtime default points at the line of the pinned echarts that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 13));
+	assert.equal(checkPackagePointers(import.meta.url), 15));
 
 test('titles: no title draws none; an axis name is shown with its axis', () => {
 	const { title, axes } = normalize({ xAxis: { data: ['a'], show: false, name: 'Day' }, yAxis: {} });
@@ -179,5 +183,22 @@ test('titles: no title draws none; an axis name is shown with its axis', () => {
 			['Day config $.xAxis.name', 'false config $.xAxis.show'],
 			[' default $.yAxis.name', 'true default $.yAxis.show']
 		]
+	);
+});
+
+test('access: echarts describes the data only with aria enabled and its label on; keyboard is not a config choice', () => {
+	const access = (option) => {
+		const { dataDescribed, keyboard } = normalize(option).access;
+		return [brief(dataDescribed), brief(keyboard)];
+	};
+	assert.deepEqual(access({}), ['false default $.aria.enabled', '? unmodelled $']);
+	assert.deepEqual(access({ aria: { enabled: true } }), ['true default $.aria.label.enabled', '? unmodelled $']);
+	assert.deepEqual(
+		access({ aria: { enabled: true, label: { enabled: false } } })[0],
+		'false config $.aria.label.enabled'
+	);
+	assert.deepEqual(
+		access({ aria: Object.defineProperty({}, 'enabled', { get: () => true }) })[0],
+		'? accessor $.aria.enabled'
 	);
 });

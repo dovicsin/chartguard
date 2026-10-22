@@ -1,5 +1,6 @@
 import type { QualityReport } from '@chartguard/core';
 import {
+	type AccessSemantics,
 	type AxisSemantics,
 	type ChartSemantics,
 	type CoordinateSystem,
@@ -143,6 +144,24 @@ function axesOf(config: unknown): AxisSemantics[] {
 	});
 }
 
+/**
+ * With `accessibility.enabled: false` Highcharts labels its points for no one and takes no keyboard
+ * focus (measured: only the SVG keeps a label, the chart title). Otherwise both need the accessibility
+ * module, which the config does not show: not modelled unless the config turns keyboard navigation off.
+ */
+function accessOf(config: unknown): AccessSemantics {
+	const enabled = readFact(config, ['accessibility', 'enabled'], isBoolean);
+	if (enabled.known && !enabled.value) return { dataDescribed: enabled, keyboard: enabled };
+	const keyboard = readFact(config, ['accessibility', 'keyboardNavigation', 'enabled'], isBoolean);
+	return {
+		dataDescribed: enabled.known || enabled.reason === 'unset' ? unknown(enabled.path, 'unmodelled') : enabled,
+		keyboard:
+			keyboard.known && !keyboard.value
+				? keyboard
+				: unknown(keyboard.path, keyboard.known || keyboard.reason === 'unset' ? 'unmodelled' : keyboard.reason)
+	};
+}
+
 /** The Highcharts options as library-neutral chart semantics (CG-05-02, CG-05-03). */
 export function normalize(config: unknown): ChartSemantics {
 	const items = itemsAt(config, ['series']);
@@ -159,7 +178,8 @@ export function normalize(config: unknown): ChartSemantics {
 					)
 				}
 			: items,
-		axes: axesOf(config)
+		axes: axesOf(config),
+		access: accessOf(config)
 	};
 }
 
