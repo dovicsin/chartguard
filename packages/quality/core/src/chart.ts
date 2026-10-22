@@ -12,6 +12,22 @@ export type Stacking = 'none' | 'stacked' | 'percent';
 /** The coordinate system a series is drawn in. */
 export type CoordinateSystem = 'cartesian' | 'polar';
 
+/** A value of a series and where it is in the config. */
+export interface ValueAt {
+	readonly value: number;
+	readonly path: string;
+}
+
+/**
+ * The numeric values a series draws: how many, the smallest and the largest. The payload of a
+ * `Fact`: known only when every element of the data could be read (gaps, `null`, are skipped).
+ */
+export interface ValueSummary {
+	readonly count: number;
+	readonly min: ValueAt | undefined;
+	readonly max: ValueAt | undefined;
+}
+
 /** One series (dataset): its library type, what it draws, its name and the axis its values are measured on. */
 export interface SeriesSemantics {
 	/** Where the series is in the config. */
@@ -25,6 +41,8 @@ export interface SeriesSemantics {
 	/** Cartesian series only; `inapplicable` in polar and axis-less series. */
 	readonly orientation: Fact<Orientation>;
 	readonly stacking: Fact<Stacking>;
+	/** Its values as the runtime reads them from `data`; `unmodelled` for shapes not read yet (datasets, parsing keys, ranges). */
+	readonly values: Fact<ValueSummary>;
 }
 
 /** How an axis maps values to positions. */

@@ -18,6 +18,8 @@ import {
 	type UnknownFact
 } from '@chartguard/quality-core';
 
+import { valuesOf } from './values.js';
+
 const CHART_TYPE: Default<string> = {
 	value: 'line',
 	pointer: "highcharts@13.1.1 highcharts.src.js:1191 type: 'line',"
@@ -126,6 +128,7 @@ export function seriesOf(config: unknown, item: Item, chart: ChartLayout): Serie
 		type,
 		kind: type.known ? { ...type, value: KINDS[type.value] ?? 'other' } : type,
 		name: readFact(config, [...item.segments, 'name'], isString),
-		...layoutOf(config, item, type, chart)
+		...layoutOf(config, item, type, chart),
+		values: valuesOf(config, item, type)
 	};
 }

@@ -150,6 +150,42 @@ const dualAxis = rule(
 	}
 );
 
+/**
+ * A pie shows each value as its share of the whole. No runtime can show a negative share: chart.js
+ * draws its absolute value (`TAU * (Math.abs(value) / total)`, dist/chart.js:2022), echarts drops it
+ * (`negativeDataFilter`, dist/echarts.js:48014), highcharts leaves it out of the total and the pie
+ * (`isNumber(this.y) && this.y >= 0`, highcharts.src.js:46534).
+ */
+const pieNegative = rule(
+	{
+		id: 'pie-negative',
+		code: 'VIS_PIE_NEGATIVE',
+		severity: 'warning',
+		title: 'A negative value in a pie',
+		rationale:
+			'A pie shows each value as its share of a whole, and readers judge the slices as proportions. A negative value is not a share: the runtimes draw it as a positive slice or leave it out, so the slices no longer show the data.',
+		evidence: [SOURCES.spence1991],
+		limits: [
+			'Only values read from the config are checked; data from an ECharts dataset, Chart.js custom parsing keys or Highcharts `keys` is not read.',
+			'The finding points at the smallest value; every negative value of the series is affected.'
+		]
+	},
+	(chart, report) => {
+		if (!chart.series.known) return [];
+		return chart.series.items.flatMap(({ kind, values }) => {
+			const min = valueOf(kind) === 'pie' ? valueOf(values)?.min : undefined;
+			return min !== undefined && min.value < 0
+				? [
+						report(
+							min.path,
+							'A pie cannot show a negative value as a share of the whole: the runtime draws it as a positive slice or leaves it out.'
+						)
+					]
+				: [];
+		});
+	}
+);
+
 const emptyTitle = rule(
 	{
 		id: 'empty-title',
@@ -175,5 +211,6 @@ export const QUALITY_RULES: readonly QualityRule[] = [
 	barLogScale,
 	reversedValueAxis,
 	dualAxis,
+	pieNegative,
 	emptyTitle
 ];

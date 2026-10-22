@@ -8,10 +8,24 @@ export type {
 	SeriesKind,
 	SeriesSemantics,
 	Stacking,
-	TitleSemantics
+	TitleSemantics,
+	ValueAt,
+	ValueSummary
 } from './chart.js';
 export type { Default, Fact, KnownFact, Listed, UnknownFact, UnknownReason } from './facts.js';
 export { defaulted, known, unknown, valueOf } from './facts.js';
-export type { Item, PathSegment } from './read.js';
-export { firstSet, formatPath, isBoolean, isNumber, isString, itemsAt, readFact, readPath } from './read.js';
+export type { ElementReader, Item, PathSegment } from './read.js';
+export {
+	firstSet,
+	formatPath,
+	isBoolean,
+	isNumber,
+	isString,
+	itemsAt,
+	numberElement,
+	numberOr,
+	readFact,
+	readPath,
+	valuesAt
+} from './read.js';
 export { review, RULE_CATALOG } from './review.js';

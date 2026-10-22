@@ -69,12 +69,34 @@ test('R5 one engines policy: every workspace package declares the root Node rang
 
 test('R6 quality facts: every chart-semantics field is a Fact, a list of facts or a named structural field, never a bare value (B3, CG-05-02)', () => {
 	const chart = readFileSync(join(ROOT, 'packages/quality/core/src/chart.ts'), 'utf8');
+	const interfaces = chart
+		.split(/^export interface /m)
+		.slice(1)
+		.map((block) => ({
+			name: /^\w+/.exec(block)[0],
+			fields: [...block.matchAll(/^\s*(readonly \w+\??: .*)$/gm)].map((match) => match[1].trim())
+		}));
+	// A payload is carried inside a Fact (`Fact<ValueSummary>`), or inside another payload: the Fact gives it its path.
+	const payloads = new Set(interfaces.filter(({ name }) => chart.includes(`Fact<${name}>`)).map(({ name }) => name));
+	const carried = ({ fields }) => interfaces.filter((other) => fields.some((field) => field.includes(other.name)));
+	for (const block of interfaces)
+		if (payloads.has(block.name)) carried(block).forEach(({ name }) => payloads.add(name));
 	const STRUCTURAL =
 		/^readonly (path|key|library): string;$|^readonly \w+: (Fact<|Listed<|readonly \w+Semantics\[\]|\w+Semantics;)/;
-	const fields = [...chart.matchAll(/^\s*(readonly \w+\??: .*)$/gm)].map((match) => match[1].trim());
-	assert.ok(fields.length > 0);
+	const bare = interfaces
+		.filter(({ name }) => !payloads.has(name))
+		.flatMap(({ fields }) => fields.filter((field) => !STRUCTURAL.test(field)));
+	assert.ok(interfaces.length > 0);
+	assert.deepEqual(bare, []);
+	// A payload that holds a value holds where it was read from.
+	const pathless = interfaces.filter(
+		({ name, fields }) =>
+			payloads.has(name) &&
+			fields.some((field) => field.startsWith('readonly value:')) &&
+			!fields.includes('readonly path: string;')
+	);
 	assert.deepEqual(
-		fields.filter((field) => !STRUCTURAL.test(field)),
+		pathless.map(({ name }) => name),
 		[]
 	);
 });

@@ -15,6 +15,7 @@ import {
 } from '@chartguard/quality-core';
 
 import { type Axis, type DatasetScales, scaleOf, type Scales } from './scales.js';
+import { valuesOf } from './values.js';
 
 /** Runtime facts, each pointing at the line of the pinned chart.js that applies it. */
 export const INDEX_AXIS: Default<string> = {
@@ -157,11 +158,13 @@ function layoutOf(config: unknown, item: Item, type: Fact<string>, scales: Scale
 
 export function seriesOf(config: unknown, item: Item, scales: Scales): SeriesSemantics {
 	const type = typeOf(config, item);
+	const layout = layoutOf(config, item, type, scales);
 	return {
 		path: item.path,
 		type,
 		kind: kindOf(config, item, type),
 		name: readFact(config, [...item.segments, 'label'], isString),
-		...layoutOf(config, item, type, scales)
+		...layout,
+		values: valuesOf(config, item, type, layout.orientation)
 	};
 }

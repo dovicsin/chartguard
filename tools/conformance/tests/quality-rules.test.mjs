@@ -24,7 +24,9 @@ const PREMISES = {
 	VIS_BAR_BASELINE: ({ bars }) => bars.some(({ min, max, log }) => !log && (min > 0 || max < 0)),
 	VIS_BAR_LOG_SCALE: ({ bars }) => bars.some(({ log }) => log),
 	VIS_REVERSED_VALUE_AXIS: ({ valueAxes }) => valueAxes.some(({ reversed }) => reversed),
-	VIS_DUAL_AXIS: ({ valueAxes }) => new Set(valueAxes.map(({ id }) => id)).size >= 2
+	VIS_DUAL_AXIS: ({ valueAxes }) => new Set(valueAxes.map(({ id }) => id)).size >= 2,
+	// A pie that does not show its values as given: a slice drawn for a negative value, or one left out.
+	VIS_PIE_NEGATIVE: ({ pieMisdrawn }) => pieMisdrawn
 };
 
 function checkPremises(findings, built, where) {
@@ -32,13 +34,16 @@ function checkPremises(findings, built, where) {
 	for (const [code, premise] of Object.entries(PREMISES)) assert.equal(premise(built), codes.has(code), `${where}: ${code}`);
 }
 
-/** The value scales Chart.js built for the datasets (bars and other cartesian ones). */
+/** The value scales Chart.js built for the datasets, and whether an arc was drawn for a negative value. */
 function builtChartjs(config) {
 	const chart = createChartjs(copyPlain(config));
 	try {
-		const metas = chart.data.datasets.map((_, index) => chart.getDatasetMeta(index)).filter(({ vScale }) => vScale !== undefined);
+		const metas = chart.data.datasets.map((_, index) => chart.getDatasetMeta(index));
+		const cartesian = metas.filter(({ vScale }) => vScale !== undefined);
 		const axis = ({ vScale }) => ({ id: vScale.id, min: vScale.min, max: vScale.max, log: vScale.type === 'logarithmic', reversed: vScale.options.reverse === true });
-		return { bars: metas.filter(({ type }) => type === 'bar').map(axis), valueAxes: metas.map(axis) };
+		const arcs = metas.filter(({ type }) => type === 'pie' || type === 'doughnut');
+		const pieMisdrawn = arcs.some((meta) => meta._parsed.some((value, index) => value < 0 && meta.data[index].circumference > 0));
+		return { bars: cartesian.filter(({ type }) => type === 'bar').map(axis), valueAxes: cartesian.map(axis), pieMisdrawn };
 	} finally {
 		chart.destroy();
 	}
@@ -59,7 +64,10 @@ function builtEcharts(option) {
 				const [min, max] = axis.scale.getExtent();
 				return { type: model.subType, id: `${axis.dim}${String(axis.model.componentIndex)}`, min, max, log: axis.type === 'log', reversed: axis.inverse === true };
 			});
-		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured };
+		// echarts filters negative pie values out before drawing (`negativeDataFilter`).
+		const pies = chart.getModel().getSeries().filter((model) => model.subType === 'pie');
+		const pieMisdrawn = pies.some((model) => model.getData().count() < model.getRawData().count());
+		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn };
 	} finally {
 		chart.dispose();
 	}
@@ -70,7 +78,9 @@ function builtHighcharts({ series, yAxes }) {
 	const measured = series
 		.filter(({ yAxis }) => yAxis !== null)
 		.map(({ type, yAxis }) => ({ type, id: yAxis, ...yAxes[yAxis] }));
-	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured };
+	// Highcharts leaves negative pie points out (`isValid`: `y >= 0`).
+	const pieMisdrawn = series.some(({ type, points }) => type === 'pie' && points.some(({ y, valid }) => y !== null && y < 0 && !valid));
+	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured, pieMisdrawn };
 }
 
 const run = (config, render) => verdictOf(render(copyPlain(config)));

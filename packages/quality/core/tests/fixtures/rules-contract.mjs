@@ -156,6 +156,52 @@ export const RULES_CONTRACT = [
 		}
 	},
 	{
+		name: 'a negative value in a pie',
+		chartjs: {
+			config: { type: 'pie', data: { labels: ['a', 'b', 'c'], datasets: [{ data: [3, -1, 2] }] } },
+			findings: ['VIS_PIE_NEGATIVE $.data.datasets[0].data[1]']
+		},
+		echarts: {
+			config: {
+				series: [
+					{
+						type: 'pie',
+						data: [
+							{ name: 'a', value: 3 },
+							{ name: 'b', value: -1 },
+							{ name: 'c', value: 2 }
+						]
+					}
+				]
+			},
+			findings: ['VIS_PIE_NEGATIVE $.series[0].data[1].value']
+		},
+		highcharts: {
+			config: {
+				series: [
+					{
+						type: 'pie',
+						data: [
+							['a', 3],
+							['b', -1],
+							['c', 2]
+						]
+					}
+				]
+			},
+			findings: ['VIS_PIE_NEGATIVE $.series[0].data[1][1]']
+		}
+	},
+	{
+		name: 'counterexample: a pie of positive values and a zero',
+		chartjs: {
+			config: { type: 'pie', data: { labels: ['a', 'b', 'c'], datasets: [{ data: [3, 0, 2] }] } },
+			findings: []
+		},
+		echarts: { config: { series: [{ type: 'pie', data: [3, 0, 2] }] }, findings: [] },
+		highcharts: { config: { series: [{ type: 'pie', data: [3, 0, 2] }] }, findings: [] }
+	},
+	{
 		name: 'an empty title',
 		chartjs: {
 			config: { ...cjBars([1, 2], {}), options: { plugins: { title: { display: true, text: '' } } } },

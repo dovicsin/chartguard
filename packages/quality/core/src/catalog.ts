@@ -71,6 +71,12 @@ export const SOURCES = {
 		venue: 'IEEE Transactions on Visualization and Computer Graphics 17(12)',
 		year: 2011
 	},
+	spence1991: {
+		authors: 'Spence, Lewandowsky',
+		title: 'Displaying Proportions and Percentages',
+		venue: 'Applied Cognitive Psychology 5(1)',
+		year: 1991
+	},
 	wcag22: {
 		authors: 'W3C',
 		title: 'Web Content Accessibility Guidelines (WCAG) 2.2, Success Criterion 1.1.1 Non-text Content',

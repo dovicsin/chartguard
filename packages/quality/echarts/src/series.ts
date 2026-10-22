@@ -14,6 +14,7 @@ import {
 } from '@chartguard/quality-core';
 
 import { axisType, referredAxis } from './axes.js';
+import { valuesOf } from './values.js';
 
 /** Each cartesian series type defaults to the grid, at the line of its own default options. */
 const GRID: Readonly<Record<string, Default<string>>> = {
@@ -125,6 +126,7 @@ export function seriesOf(config: unknown, item: Item): SeriesSemantics {
 		type,
 		kind: kindOf(config, item, type),
 		name: readFact(config, [...item.segments, 'name'], isString),
-		...layoutOf(config, item, type)
+		...layoutOf(config, item, type),
+		values: valuesOf(config, item)
 	};
 }

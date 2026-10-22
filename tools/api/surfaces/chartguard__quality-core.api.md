@@ -28,6 +28,9 @@ interface Default<T> {
     readonly pointer: string;
 }
 
+### ElementReader
+type ElementReader = (element: unknown, path: readonly PathSegment[]) => ValueAt | null | UnknownFact;
+
 ### Evidence
 interface Evidence {
     readonly authors: string;
@@ -103,6 +106,7 @@ interface SeriesSemantics {
     readonly coordinateSystem: Fact<CoordinateSystem>;
     readonly orientation: Fact<Orientation>;
     readonly stacking: Fact<Stacking>;
+    readonly values: Fact<ValueSummary>;
 }
 
 ### Stacking
@@ -123,6 +127,19 @@ interface UnknownFact {
 
 ### UnknownReason
 type UnknownReason = 'unset' | 'accessor' | 'dynamic' | 'shape' | 'unmodelled' | 'inapplicable';
+
+### ValueAt
+interface ValueAt {
+    readonly value: number;
+    readonly path: string;
+}
+
+### ValueSummary
+interface ValueSummary {
+    readonly count: number;
+    readonly min: ValueAt | undefined;
+    readonly max: ValueAt | undefined;
+}
 
 ### defaulted
 defaulted: <T>({ value, pointer }: Default<T>, path: string) => KnownFact<T>
@@ -150,6 +167,12 @@ function itemsAt(root: unknown, path: readonly PathSegment[], { single }?: {
 ### known
 known: <T>(value: T, path: string) => KnownFact<T>
 
+### numberElement
+function numberElement(element: unknown, path: readonly PathSegment[]): ValueAt | null | undefined;
+
+### numberOr
+function numberOr(element: unknown, path: readonly PathSegment[], reason: UnknownFact['reason']): ValueAt | null | UnknownFact;
+
 ### readFact
 function readFact<T>(root: unknown, path: readonly PathSegment[], is: (value: unknown) => value is T, fallback?: Default<T>): Fact<T>;
 
@@ -164,3 +187,6 @@ unknown: (path: string, reason: UnknownReason) => UnknownFact
 
 ### valueOf
 valueOf: <T>(fact: Fact<T>) => T | undefined
+
+### valuesAt
+function valuesAt(root: unknown, path: readonly PathSegment[], read: ElementReader): Fact<ValueSummary>;

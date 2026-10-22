@@ -52,7 +52,7 @@ for (const options of CASES.map(revive)) {
 		current.observed = {
 			inverted: chart.inverted === true,
 			polar: chart.polar === true,
-			series: chart.series.map((series) => ({ type: series.type, yAxis: series.yAxis ? series.yAxis.index : null, stacking: series.options.stacking ?? null })),
+			series: chart.series.map((series) => ({ type: series.type, yAxis: series.yAxis ? series.yAxis.index : null, stacking: series.options.stacking ?? null, points: series.points.map((point) => ({ y: point.y ?? null, valid: point.isValid() })) })),
 			yAxes: chart.yAxis.map((axis) => ({ min: axis.min, max: axis.max, reversed: axis.reversed === true, log: axis.logarithmic !== undefined }))
 		};
 		chart.destroy();
