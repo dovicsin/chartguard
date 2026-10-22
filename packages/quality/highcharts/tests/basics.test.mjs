@@ -150,7 +150,7 @@ test('stacking resolves through the series, plotOptions for its type and plotOpt
 });
 
 test('every runtime default points at the line of the pinned highcharts that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 8));
+	assert.equal(checkPackagePointers(import.meta.url), 10));
 
 test('titles: null hides a title; a y axis without text takes lang.yAxisTitle, else "Values"; an implicit y axis is read', () => {
 	const hidden = normalize({ title: { text: null }, yAxis: { title: { text: null } } });

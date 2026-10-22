@@ -25,7 +25,7 @@ export function normalize(config: unknown): ChartSemantics {
 	const datasets = itemsAt(config, ['data', 'datasets']);
 	const scales = scalesOf(config, datasets, addedScales(config));
 	const series: Listed<SeriesSemantics> = datasets.known
-		? { ...datasets, items: datasets.items.map((item) => seriesOf(config, item, scales)) }
+		? { ...datasets, items: datasets.items.map((item) => seriesOf(config, item, scales, datasets)) }
 		: datasets;
 	const titleAt = ['options', 'plugins', 'title'];
 	return {

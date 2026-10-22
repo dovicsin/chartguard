@@ -168,7 +168,7 @@ test('findings point at the ECharts option that triggered them', () => {
 });
 
 test('every runtime default points at the line of the pinned echarts that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 12));
+	assert.equal(checkPackagePointers(import.meta.url), 13));
 
 test('titles: no title draws none; an axis name is shown with its axis', () => {
 	const { title, axes } = normalize({ xAxis: { data: ['a'], show: false, name: 'Day' }, yAxis: {} });

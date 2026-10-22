@@ -83,6 +83,12 @@ export const SOURCES = {
 		venue: 'Analytics Press',
 		year: 2012
 	},
+	ware2012: {
+		authors: 'Ware',
+		title: 'Information Visualization: Perception for Design (3rd edition)',
+		venue: 'Morgan Kaufmann',
+		year: 2012
+	},
 	wcag22Labels: {
 		authors: 'W3C',
 		title: 'Web Content Accessibility Guidelines (WCAG) 2.2, Success Criterion 2.4.6 Headings and Labels',

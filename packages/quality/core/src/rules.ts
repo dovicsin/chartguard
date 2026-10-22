@@ -1,4 +1,5 @@
 import { type QualityRule, rule, SOURCES } from './catalog.js';
+import { sameColorSeries } from './colors.js';
 import { valueOf } from './facts.js';
 import { emptyTitle, placeholderText, valueAxisUntitled } from './labels.js';
 import { CARTESIAN, configured, measuredAxes } from './measure.js';
@@ -171,6 +172,7 @@ export const QUALITY_RULES: readonly QualityRule[] = [
 	reversedValueAxis,
 	dualAxis,
 	pieNegative,
+	sameColorSeries,
 	placeholderText,
 	valueAxisUntitled,
 	emptyTitle

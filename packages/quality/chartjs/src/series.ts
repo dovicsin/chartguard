@@ -5,6 +5,7 @@ import {
 	firstSet,
 	isString,
 	type Item,
+	type Listed,
 	type Orientation,
 	readFact,
 	type SeriesKind,
@@ -14,6 +15,7 @@ import {
 	type UnknownFact
 } from '@chartguard/quality-core';
 
+import { colorOf } from './color.js';
 import { type Axis, type DatasetScales, scaleOf, type Scales } from './scales.js';
 import { valuesOf } from './values.js';
 
@@ -156,7 +158,7 @@ function layoutOf(config: unknown, item: Item, type: Fact<string>, scales: Scale
 	return cartesianLayout(config, item, type, scales);
 }
 
-export function seriesOf(config: unknown, item: Item, scales: Scales): SeriesSemantics {
+export function seriesOf(config: unknown, item: Item, scales: Scales, datasets: Listed<Item>): SeriesSemantics {
 	const type = typeOf(config, item);
 	const layout = layoutOf(config, item, type, scales);
 	return {
@@ -165,6 +167,7 @@ export function seriesOf(config: unknown, item: Item, scales: Scales): SeriesSem
 		kind: kindOf(config, item, type),
 		name: readFact(config, [...item.segments, 'label'], isString),
 		...layout,
+		color: colorOf(config, item, type, datasets),
 		values: valuesOf(config, item, type, layout.orientation)
 	};
 }

@@ -121,7 +121,7 @@ function layoutOf(config: unknown, item: Item, type: Fact<string>, chart: ChartL
 	};
 }
 
-export function seriesOf(config: unknown, item: Item, chart: ChartLayout): SeriesSemantics {
+export function seriesOf(config: unknown, item: Item, chart: ChartLayout, color: Fact<string>): SeriesSemantics {
 	const type = typeOf(config, item);
 	return {
 		path: item.path,
@@ -129,6 +129,7 @@ export function seriesOf(config: unknown, item: Item, chart: ChartLayout): Serie
 		kind: type.known ? { ...type, value: KINDS[type.value] ?? 'other' } : type,
 		name: readFact(config, [...item.segments, 'name'], isString),
 		...layoutOf(config, item, type, chart),
+		color,
 		values: valuesOf(config, item, type)
 	};
 }

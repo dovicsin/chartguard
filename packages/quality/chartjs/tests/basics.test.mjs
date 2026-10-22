@@ -158,4 +158,4 @@ test('getters are never run and leave their facts unknown', () => {
 });
 
 test('every runtime default points at the line of the pinned chart.js that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 17));
+	assert.equal(checkPackagePointers(import.meta.url), 19));

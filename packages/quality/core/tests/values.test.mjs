@@ -18,7 +18,8 @@ const series = (kind, valueAxis, orientation = fact('vertical', '$.o')) => ({
 	kind: fact(kind, '$.t'),
 	name: none('$.n'),
 	valueAxis,
-	orientation
+	orientation,
+	color: none('$.color')
 });
 const chart = ({ items = [], axes = [], text = none('$.title.text'), shown = none('$.title.show') } = {}) => ({
 	library: 't',

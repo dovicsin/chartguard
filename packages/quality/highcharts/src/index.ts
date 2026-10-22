@@ -21,6 +21,7 @@ import {
 	type UnknownFact
 } from '@chartguard/quality-core';
 
+import { seriesColors } from './color.js';
 import { FROM_SERIES, seriesOf } from './series.js';
 
 /**
@@ -146,10 +147,18 @@ function axesOf(config: unknown): AxisSemantics[] {
 export function normalize(config: unknown): ChartSemantics {
 	const items = itemsAt(config, ['series']);
 	const chart = { coordinateSystem: coordinateSystemOf(config), orientation: orientationOf(config, items) };
+	const colors = seriesColors(config, items);
 	return {
 		library: 'highcharts',
 		title: titleOf(readFact(config, ['title', 'text'], isTitle, TITLE_TEXT), '$.title'),
-		series: items.known ? { ...items, items: items.items.map((item) => seriesOf(config, item, chart)) } : items,
+		series: items.known
+			? {
+					...items,
+					items: items.items.map((item, index) =>
+						seriesOf(config, item, chart, colors[index] ?? unknown(item.path, 'unmodelled'))
+					)
+				}
+			: items,
 		axes: axesOf(config)
 	};
 }

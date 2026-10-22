@@ -41,6 +41,11 @@ export interface SeriesSemantics {
 	/** Cartesian series only; `inapplicable` in polar and axis-less series. */
 	readonly orientation: Fact<Orientation>;
 	readonly stacking: Fact<Stacking>;
+	/**
+	 * The colour the series is drawn in, as the runtime sets it: a CSS colour (Highcharts palette colours
+	 * are CSS variables). Per-point colours and gradients are `unmodelled`.
+	 */
+	readonly color: Fact<string>;
 	/** Its values as the runtime reads them from `data`; `unmodelled` for shapes not read yet (datasets, parsing keys, ranges). */
 	readonly values: Fact<ValueSummary>;
 }

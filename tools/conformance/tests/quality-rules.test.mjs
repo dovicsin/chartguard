@@ -4,6 +4,7 @@ import test from 'node:test';
 import * as echarts from 'echarts';
 
 import { analyze as analyzeChartjs } from '../../../packages/quality/chartjs/dist/index.js';
+import { colorKey } from '../../../packages/quality/core/dist/index.js';
 import { RULES_CONTRACT } from '../../../packages/quality/core/tests/fixtures/rules-contract.mjs';
 import { analyze as analyzeEcharts } from '../../../packages/quality/echarts/dist/index.js';
 import { analyze as analyzeHighcharts } from '../../../packages/quality/highcharts/dist/index.js';
@@ -30,7 +31,9 @@ const PREMISES = {
 	// A drawn title whose text appears nowhere in the config: the library supplied it.
 	VIS_PLACEHOLDER_TEXT: ({ title, valueAxes, config }) =>
 		[title, ...valueAxes.map((axis) => axis.title)].some((text) => text !== '' && !JSON.stringify(config).includes(JSON.stringify(text))),
-	VIS_VALUE_AXIS_UNTITLED: ({ title, valueAxes }) => title === '' && valueAxes.some((axis) => axis.title === '')
+	VIS_VALUE_AXIS_UNTITLED: ({ title, valueAxes }) => title === '' && valueAxes.some((axis) => axis.title === ''),
+	// Two cartesian series the runtime drew in one colour.
+	VIS_SAME_COLOR_SERIES: ({ colors }) => new Set(colors.map(colorKey)).size < colors.length
 };
 
 function checkPremises(findings, built, where) {
@@ -49,7 +52,8 @@ function builtChartjs(config) {
 		const arcs = metas.filter(({ type }) => type === 'pie' || type === 'doughnut');
 		const pieMisdrawn = arcs.some((meta) => meta._parsed.some((value, index) => value < 0 && meta.data[index].circumference > 0));
 		const title = drawn(chart.options.plugins.title);
-		return { bars: cartesian.filter(({ type }) => type === 'bar').map(axis), valueAxes: cartesian.map(axis), pieMisdrawn, title, config };
+		const colors = cartesian.map((meta) => (meta.type === 'line' ? meta.dataset.options.borderColor : meta.data[0].options.backgroundColor));
+		return { colors, bars: cartesian.filter(({ type }) => type === 'bar').map(axis), valueAxes: cartesian.map(axis), pieMisdrawn, title, config };
 	} finally {
 		chart.destroy();
 	}
@@ -69,14 +73,16 @@ function builtEcharts(option) {
 				const axis = system.getOtherAxis(system.getBaseAxis());
 				const [min, max] = axis.scale.getExtent();
 				const title = axis.model.get('show') === false ? '' : (axis.model.get('name') ?? '');
-				return { type: model.subType, id: `${axis.dim}${String(axis.model.componentIndex)}`, min, max, log: axis.type === 'log', reversed: axis.inverse === true, title };
+				const data = model.getData();
+				const color = data.getVisual('style')[data.getVisual('drawType')];
+				return { type: model.subType, id: `${axis.dim}${String(axis.model.componentIndex)}`, min, max, log: axis.type === 'log', reversed: axis.inverse === true, title, color };
 			});
 		// echarts filters negative pie values out before drawing (`negativeDataFilter`).
 		const pies = chart.getModel().getSeries().filter((model) => model.subType === 'pie');
 		const pieMisdrawn = pies.some((model) => model.getData().count() < model.getRawData().count());
 		const component = chart.getModel().getComponent('title');
 		const title = component === undefined || component.get('show') === false ? '' : (component.get('text') ?? '');
-		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn, title, config: option };
+		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn, title, config: option, colors: measured.map(({ color }) => color) };
 	} finally {
 		chart.dispose();
 	}
@@ -89,7 +95,8 @@ function builtHighcharts({ series, yAxes, title }, config) {
 		.map(({ type, yAxis }) => ({ type, id: yAxis, ...yAxes[yAxis] }));
 	// Highcharts leaves negative pie points out (`isValid`: `y >= 0`).
 	const pieMisdrawn = series.some(({ type, points }) => type === 'pie' && points.some(({ y, valid }) => y !== null && y < 0 && !valid));
-	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured, pieMisdrawn, title, config };
+	const colors = series.filter(({ type, yAxis }) => type !== 'pie' && yAxis !== null).map(({ color }) => color);
+	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured, pieMisdrawn, title, config, colors };
 }
 
 const run = (config, render) => verdictOf(render(copyPlain(config)));

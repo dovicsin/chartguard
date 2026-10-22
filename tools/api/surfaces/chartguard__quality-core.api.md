@@ -106,6 +106,7 @@ interface SeriesSemantics {
     readonly coordinateSystem: Fact<CoordinateSystem>;
     readonly orientation: Fact<Orientation>;
     readonly stacking: Fact<Stacking>;
+    readonly color: Fact<string>;
     readonly values: Fact<ValueSummary>;
 }
 
@@ -140,6 +141,9 @@ interface ValueSummary {
     readonly min: ValueAt | undefined;
     readonly max: ValueAt | undefined;
 }
+
+### colorKey
+function colorKey(color: string): string;
 
 ### defaulted
 defaulted: <T>({ value, pointer }: Default<T>, path: string) => KnownFact<T>

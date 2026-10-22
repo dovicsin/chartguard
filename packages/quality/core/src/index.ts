@@ -12,6 +12,7 @@ export type {
 	ValueAt,
 	ValueSummary
 } from './chart.js';
+export { colorKey } from './color.js';
 export type { Default, Fact, KnownFact, Listed, UnknownFact, UnknownReason } from './facts.js';
 export { defaulted, known, unknown, valueOf } from './facts.js';
 export type { ElementReader, Item, PathSegment } from './read.js';

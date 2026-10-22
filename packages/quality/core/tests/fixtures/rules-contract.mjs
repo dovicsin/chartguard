@@ -6,6 +6,7 @@
  * excludes zero, the axis is logarithmic or reversed, two value axes are in use).
  */
 import { cjBars, ecBars, hcBars, LABELS } from './charts.mjs';
+import { COLOR_CASES } from './colors-cases.mjs';
 import { LABEL_CASES } from './labels-cases.mjs';
 
 const CASES = [
@@ -208,7 +209,7 @@ const TITLED = {
 	highcharts: (config) => ({ title: { text: TITLE }, ...config, yAxis: yTitled(config.yAxis ?? {}) })
 };
 
-export const RULES_CONTRACT = [...CASES, ...LABEL_CASES].map((entry) =>
+export const RULES_CONTRACT = [...CASES, ...COLOR_CASES, ...LABEL_CASES].map((entry) =>
 	entry.labels === true
 		? entry
 		: Object.fromEntries(

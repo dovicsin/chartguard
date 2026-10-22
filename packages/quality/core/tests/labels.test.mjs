@@ -28,7 +28,8 @@ const line = {
 	kind: fact('line', '$.t'),
 	name: none('$.n'),
 	valueAxis: fact('y', '$.a'),
-	orientation: fact('vertical', '$.o')
+	orientation: fact('vertical', '$.o'),
+	color: none('$.color')
 };
 const chart = (chartTitle, axisTitle) => ({
 	library: 't',

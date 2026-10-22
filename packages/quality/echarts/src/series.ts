@@ -119,7 +119,7 @@ function layoutOf(config: unknown, item: Item, type: Fact<string>): Layout {
 	return { coordinateSystem, stacking, ...gridLayout(config, item, type.value) };
 }
 
-export function seriesOf(config: unknown, item: Item): SeriesSemantics {
+export function seriesOf(config: unknown, item: Item, color: Fact<string>): SeriesSemantics {
 	const type = readFact(config, [...item.segments, 'type'], isString);
 	return {
 		path: item.path,
@@ -127,6 +127,7 @@ export function seriesOf(config: unknown, item: Item): SeriesSemantics {
 		kind: kindOf(config, item, type),
 		name: readFact(config, [...item.segments, 'name'], isString),
 		...layoutOf(config, item, type),
+		color,
 		values: valuesOf(config, item)
 	};
 }

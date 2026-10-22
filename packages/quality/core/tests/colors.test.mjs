@@ -1,0 +1,73 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import { colorKey, review } from '../dist/index.js';
+
+/** The colour facts and rule (CG-05-04 part 4). */
+test('colorKey: hex and rgb() notations of one colour share a key; other forms keep their own text', () => {
+	const red = ['#f00', '#FF0000', '#ff0000ff', 'rgb(255, 0, 0)', 'rgba(255,0,0,1)', 'rgb(255 0 0 / 100%)'];
+	assert.equal(new Set(red.map(colorKey)).size, 1);
+	assert.notEqual(colorKey('#ff000080'), colorKey('#ff0000'));
+	assert.equal(colorKey(' Red '), 'red');
+	assert.equal(colorKey('var(--highcharts-color-0)'), 'var(--highcharts-color-0)');
+	assert.notEqual(colorKey('red'), colorKey('#f00'));
+});
+
+const fact = (value, path, source = 'config') => ({
+	known: true,
+	value,
+	path,
+	source,
+	...(source === 'default' ? { pointer: 'p' } : {})
+});
+const none = (path, reason = 'unset') => ({ known: false, path, reason });
+const series = (kind, color, index) => ({
+	path: `$.s${String(index)}`,
+	type: fact(kind, '$.t'),
+	kind: fact(kind, '$.t'),
+	name: none('$.n'),
+	valueAxis: none('$.a'),
+	orientation: none('$.o'),
+	color,
+	values: none('$.v')
+});
+const chart = (items) => ({
+	library: 't',
+	title: { text: fact('T', '$.title'), shown: none('$.shown') },
+	series: { known: true, path: '$.series', items: items.map((item, index) => series(...item, index)) },
+	axes: []
+});
+const codes = (semantics) => review(semantics).diagnostics.map((d) => `${d.code} ${d.path}`);
+
+test('same colour: each later cartesian series in a colour an earlier one has', () => {
+	assert.deepEqual(
+		codes(
+			chart([
+				['bar', fact('#369', '$.c0')],
+				['line', fact('rgb(51,102,153)', '$.c1')],
+				['bar', fact('#336699', '$.c2', 'default')],
+				['bar', fact('#000', '$.c3')]
+			])
+		),
+		['VIS_SAME_COLOR_SERIES $.c1', 'VIS_SAME_COLOR_SERIES $.c2']
+	);
+	// Unknown colours and pies are not compared.
+	assert.deepEqual(
+		codes(
+			chart([
+				['bar', none('$.c0', 'unmodelled')],
+				['bar', none('$.c1', 'unmodelled')]
+			])
+		),
+		[]
+	);
+	assert.deepEqual(
+		codes(
+			chart([
+				['pie', fact('#369', '$.c0')],
+				['pie', fact('#369', '$.c1')]
+			])
+		),
+		[]
+	);
+});
