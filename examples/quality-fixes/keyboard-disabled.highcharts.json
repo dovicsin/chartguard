@@ -1,0 +1,78 @@
+{
+	"rule": "keyboard-disabled",
+	"library": "highcharts",
+	"title": "Keyboard navigation turned off",
+	"before": {
+		"chart": {
+			"type": "column"
+		},
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"palette": {
+			"colors": ["#1f77b4", "#d62728", "#2ca02c"]
+		},
+		"xAxis": {
+			"categories": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"title": {
+				"text": "Units"
+			}
+		},
+		"series": [
+			{
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		],
+		"accessibility": {
+			"keyboardNavigation": {
+				"enabled": false
+			}
+		}
+	},
+	"findings": [
+		{
+			"code": "VIS_KEYBOARD_DISABLED",
+			"path": "$.accessibility.keyboardNavigation.enabled",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.accessibility.keyboardNavigation.enabled",
+				"from": false,
+				"value": true,
+				"effect": "Keyboard users can reach the points, legend and menus again (needs the accessibility module loaded)."
+			}
+		}
+	],
+	"after": {
+		"chart": {
+			"type": "column"
+		},
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"palette": {
+			"colors": ["#1f77b4", "#d62728", "#2ca02c"]
+		},
+		"xAxis": {
+			"categories": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"title": {
+				"text": "Units"
+			}
+		},
+		"series": [
+			{
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		],
+		"accessibility": {
+			"keyboardNavigation": {
+				"enabled": true
+			}
+		}
+	}
+}

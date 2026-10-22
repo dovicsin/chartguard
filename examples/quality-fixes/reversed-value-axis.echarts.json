@@ -1,0 +1,64 @@
+{
+	"rule": "reversed-value-axis",
+	"library": "echarts",
+	"title": "A line on a reversed value axis",
+	"before": {
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"aria": {
+			"enabled": true
+		},
+		"xAxis": {
+			"type": "category",
+			"data": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"name": "Units",
+			"inverse": true
+		},
+		"series": [
+			{
+				"type": "line",
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		]
+	},
+	"findings": [
+		{
+			"code": "VIS_REVERSED_VALUE_AXIS",
+			"path": "$.yAxis.inverse",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.yAxis.inverse",
+				"from": true,
+				"value": false,
+				"effect": "Larger values are drawn higher (or further right) again."
+			}
+		}
+	],
+	"after": {
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"aria": {
+			"enabled": true
+		},
+		"xAxis": {
+			"type": "category",
+			"data": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"name": "Units",
+			"inverse": false
+		},
+		"series": [
+			{
+				"type": "line",
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		]
+	}
+}

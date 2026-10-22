@@ -1,0 +1,64 @@
+{
+	"rule": "bar-baseline",
+	"library": "echarts",
+	"title": "Bars on an axis fitted to the data (scale: true)",
+	"before": {
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"aria": {
+			"enabled": true
+		},
+		"xAxis": {
+			"type": "category",
+			"data": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"name": "Units",
+			"scale": true
+		},
+		"series": [
+			{
+				"type": "bar",
+				"name": "Sales",
+				"data": [62, 65, 71]
+			}
+		]
+	},
+	"findings": [
+		{
+			"code": "VIS_BAR_BASELINE",
+			"path": "$.yAxis.scale",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.yAxis.scale",
+				"from": true,
+				"value": false,
+				"effect": "The value axis includes zero again (`scale: false`), so the bars grow from it."
+			}
+		}
+	],
+	"after": {
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"aria": {
+			"enabled": true
+		},
+		"xAxis": {
+			"type": "category",
+			"data": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"name": "Units",
+			"scale": false
+		},
+		"series": [
+			{
+				"type": "bar",
+				"name": "Sales",
+				"data": [62, 65, 71]
+			}
+		]
+	}
+}

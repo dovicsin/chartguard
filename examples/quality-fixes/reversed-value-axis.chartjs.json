@@ -1,0 +1,80 @@
+{
+	"rule": "reversed-value-axis",
+	"library": "chartjs",
+	"title": "A line on a reversed value axis",
+	"before": {
+		"type": "line",
+		"data": {
+			"labels": ["Q1", "Q2", "Q3"],
+			"datasets": [
+				{
+					"label": "Sales",
+					"data": [3, 5, 4],
+					"backgroundColor": "#1f77b4",
+					"borderColor": "#1f77b4"
+				}
+			]
+		},
+		"options": {
+			"plugins": {
+				"title": {
+					"display": true,
+					"text": "Quarterly sales"
+				}
+			},
+			"scales": {
+				"y": {
+					"title": {
+						"display": true,
+						"text": "Units"
+					},
+					"reverse": true
+				}
+			}
+		}
+	},
+	"findings": [
+		{
+			"code": "VIS_REVERSED_VALUE_AXIS",
+			"path": "$.options.scales.y.reverse",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.options.scales.y.reverse",
+				"from": true,
+				"value": false,
+				"effect": "Larger values are drawn higher (or further right) again."
+			}
+		}
+	],
+	"after": {
+		"type": "line",
+		"data": {
+			"labels": ["Q1", "Q2", "Q3"],
+			"datasets": [
+				{
+					"label": "Sales",
+					"data": [3, 5, 4],
+					"backgroundColor": "#1f77b4",
+					"borderColor": "#1f77b4"
+				}
+			]
+		},
+		"options": {
+			"plugins": {
+				"title": {
+					"display": true,
+					"text": "Quarterly sales"
+				}
+			},
+			"scales": {
+				"y": {
+					"title": {
+						"display": true,
+						"text": "Units"
+					},
+					"reverse": false
+				}
+			}
+		}
+	}
+}

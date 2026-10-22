@@ -40,6 +40,8 @@
 # Fixtures
 !/examples/*.json
 !/examples/*.ts
+# Before/after examples of the quality fixes (CG-05-06)
+!/examples/quality-fixes/*.json
 # The M3 gate sample app (code only; its README stays local)
 !/examples/sample-app/tsconfig.json
 !/examples/sample-app/src/**/*.ts

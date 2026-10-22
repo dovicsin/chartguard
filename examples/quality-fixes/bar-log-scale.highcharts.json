@@ -1,0 +1,70 @@
+{
+	"rule": "bar-log-scale",
+	"library": "highcharts",
+	"title": "Columns on a logarithmic axis",
+	"before": {
+		"chart": {
+			"type": "column"
+		},
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"palette": {
+			"colors": ["#1f77b4", "#d62728", "#2ca02c"]
+		},
+		"xAxis": {
+			"categories": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"title": {
+				"text": "Units"
+			},
+			"type": "logarithmic"
+		},
+		"series": [
+			{
+				"name": "Sales",
+				"data": [12, 340, 5600]
+			}
+		]
+	},
+	"findings": [
+		{
+			"code": "VIS_BAR_LOG_SCALE",
+			"path": "$.yAxis.type",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.yAxis.type",
+				"from": "logarithmic",
+				"value": "linear",
+				"effect": "The value axis is linear, so bar lengths encode the values; very small values may become hard to see."
+			}
+		}
+	],
+	"after": {
+		"chart": {
+			"type": "column"
+		},
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"palette": {
+			"colors": ["#1f77b4", "#d62728", "#2ca02c"]
+		},
+		"xAxis": {
+			"categories": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"title": {
+				"text": "Units"
+			},
+			"type": "linear"
+		},
+		"series": [
+			{
+				"name": "Sales",
+				"data": [12, 340, 5600]
+			}
+		]
+	}
+}

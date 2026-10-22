@@ -1,0 +1,84 @@
+{
+	"rule": "long-motion",
+	"library": "chartjs",
+	"title": "An animation that loops forever",
+	"before": {
+		"type": "bar",
+		"data": {
+			"labels": ["Q1", "Q2", "Q3"],
+			"datasets": [
+				{
+					"label": "Sales",
+					"data": [3, 5, 4],
+					"backgroundColor": "#1f77b4",
+					"borderColor": "#1f77b4"
+				}
+			]
+		},
+		"options": {
+			"plugins": {
+				"title": {
+					"display": true,
+					"text": "Quarterly sales"
+				}
+			},
+			"scales": {
+				"y": {
+					"title": {
+						"display": true,
+						"text": "Units"
+					}
+				}
+			},
+			"animation": {
+				"loop": true
+			}
+		}
+	},
+	"findings": [
+		{
+			"code": "VIS_LONG_MOTION",
+			"path": "$.options.animation.loop",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.options.animation.loop",
+				"from": true,
+				"value": false,
+				"effect": "The animation runs once instead of forever."
+			}
+		}
+	],
+	"after": {
+		"type": "bar",
+		"data": {
+			"labels": ["Q1", "Q2", "Q3"],
+			"datasets": [
+				{
+					"label": "Sales",
+					"data": [3, 5, 4],
+					"backgroundColor": "#1f77b4",
+					"borderColor": "#1f77b4"
+				}
+			]
+		},
+		"options": {
+			"plugins": {
+				"title": {
+					"display": true,
+					"text": "Quarterly sales"
+				}
+			},
+			"scales": {
+				"y": {
+					"title": {
+						"display": true,
+						"text": "Units"
+					}
+				}
+			},
+			"animation": {
+				"loop": false
+			}
+		}
+	}
+}

@@ -9,10 +9,12 @@ import {
 	readFact,
 	review,
 	type SeriesSemantics,
-	unknown
+	unknown,
+	withFixes
 } from '@chartguard/quality-core';
 
 import { asText, axesOf } from './axes.js';
+import { REMEDIES } from './fixes.js';
 import { motionOf } from './motion.js';
 import { scalesOf } from './scales.js';
 import { addedScales, seriesOf } from './series.js';
@@ -53,5 +55,7 @@ export { assertQualityOptions, QualityOptionsError } from '@chartguard/quality-c
 
 /** The rules' advisory findings on the config, shaped by the caller's rule settings and context (CG-05-05). */
 export function analyze(config: unknown, options?: QualityOptions): QualityReport {
-	return review(normalize(config), options);
+	const reviewed = (input: unknown): QualityReport => review(normalize(input), options);
+	// Each fix is offered only when the config with it applied, reviewed the same way, no longer has the finding nor a new one.
+	return withFixes(reviewed(config), config, REMEDIES, reviewed);
 }

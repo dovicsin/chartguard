@@ -1,0 +1,85 @@
+{
+	"rule": "data-not-described",
+	"library": "highcharts",
+	"title": "Accessibility turned off",
+	"before": {
+		"chart": {
+			"type": "column"
+		},
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"palette": {
+			"colors": ["#1f77b4", "#d62728", "#2ca02c"]
+		},
+		"xAxis": {
+			"categories": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"title": {
+				"text": "Units"
+			}
+		},
+		"series": [
+			{
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		],
+		"accessibility": {
+			"enabled": false
+		}
+	},
+	"findings": [
+		{
+			"code": "VIS_DATA_NOT_DESCRIBED",
+			"path": "$.accessibility.enabled",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.accessibility.enabled",
+				"from": false,
+				"value": true,
+				"effect": "Highcharts labels the chart and its points for assistive technology (needs the accessibility module loaded)."
+			}
+		},
+		{
+			"code": "VIS_KEYBOARD_DISABLED",
+			"path": "$.accessibility.enabled",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.accessibility.enabled",
+				"from": false,
+				"value": true,
+				"effect": "Keyboard users can reach the points, legend and menus again (needs the accessibility module loaded)."
+			}
+		}
+	],
+	"after": {
+		"chart": {
+			"type": "column"
+		},
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"palette": {
+			"colors": ["#1f77b4", "#d62728", "#2ca02c"]
+		},
+		"xAxis": {
+			"categories": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"title": {
+				"text": "Units"
+			}
+		},
+		"series": [
+			{
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		],
+		"accessibility": {
+			"enabled": true
+		}
+	}
+}

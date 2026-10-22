@@ -1,0 +1,80 @@
+{
+	"rule": "bar-log-scale",
+	"library": "chartjs",
+	"title": "Bars on a logarithmic axis",
+	"before": {
+		"type": "bar",
+		"data": {
+			"labels": ["Q1", "Q2", "Q3"],
+			"datasets": [
+				{
+					"label": "Sales",
+					"data": [12, 340, 5600],
+					"backgroundColor": "#1f77b4",
+					"borderColor": "#1f77b4"
+				}
+			]
+		},
+		"options": {
+			"plugins": {
+				"title": {
+					"display": true,
+					"text": "Quarterly sales"
+				}
+			},
+			"scales": {
+				"y": {
+					"title": {
+						"display": true,
+						"text": "Units"
+					},
+					"type": "logarithmic"
+				}
+			}
+		}
+	},
+	"findings": [
+		{
+			"code": "VIS_BAR_LOG_SCALE",
+			"path": "$.options.scales.y.type",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.options.scales.y.type",
+				"from": "logarithmic",
+				"value": "linear",
+				"effect": "The value scale is linear, so bar lengths encode the values; very small values may become hard to see."
+			}
+		}
+	],
+	"after": {
+		"type": "bar",
+		"data": {
+			"labels": ["Q1", "Q2", "Q3"],
+			"datasets": [
+				{
+					"label": "Sales",
+					"data": [12, 340, 5600],
+					"backgroundColor": "#1f77b4",
+					"borderColor": "#1f77b4"
+				}
+			]
+		},
+		"options": {
+			"plugins": {
+				"title": {
+					"display": true,
+					"text": "Quarterly sales"
+				}
+			},
+			"scales": {
+				"y": {
+					"title": {
+						"display": true,
+						"text": "Units"
+					},
+					"type": "linear"
+				}
+			}
+		}
+	}
+}

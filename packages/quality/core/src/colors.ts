@@ -13,6 +13,10 @@ export const sameColorSeries = rule(
 		severity: 'warning',
 		impact: 'misleads',
 		context: [],
+		fix: {
+			offered: false,
+			why: "A new colour has to stay distinct from the others, keep its contrast and carry the series' meaning: choosing it is a design decision."
+		},
 		title: 'Two series drawn in the same colour',
 		rationale:
 			'Colour is how readers tell series apart and match them to the legend. Two series in one colour cannot be told apart; it happens when an explicit colour is repeated, when Chart.js falls back to its one default grey, or when more series than palette colours wrap around the palette.',
@@ -66,6 +70,10 @@ export const lowContrastSeries = rule(
 				note: 'A chart that draws no background of its own (a Chart.js canvas, ECharts without `backgroundColor`, a transparent Highcharts background) shows its series on the page: the page background the caller declares is the one they are measured against.'
 			}
 		],
+		fix: {
+			offered: false,
+			why: 'A darker or lighter colour changes the palette and has to stay distinct from the other series: choosing it is a design decision.'
+		},
 		title: 'A series with low contrast against its background',
 		rationale:
 			"A line, bar or point that carries data needs a contrast of at least 3:1 against what it is drawn on, or readers with low vision lose it. Translucent colours are judged as drawn, over the background; charts that follow the user's light or dark scheme are judged in each.",

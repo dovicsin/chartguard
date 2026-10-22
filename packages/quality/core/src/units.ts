@@ -12,6 +12,7 @@ export const percentWithoutUnit = rule(
 		severity: 'info',
 		impact: 'omits',
 		context: [],
+		fix: { offered: true, edit: 'Sets the tick label format to `{value}%` when the axis has no format of its own.' },
 		title: 'Shares shown as bare numbers',
 		rationale:
 			'A percent-stacked chart shows each value as its share of the stack, on an axis from 0 to 100. Without a percent sign on its tick labels or in its title, the axis reads as amounts, and readers take the shares for the values themselves.',

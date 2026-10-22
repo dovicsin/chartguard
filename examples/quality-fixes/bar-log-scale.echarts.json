@@ -1,0 +1,64 @@
+{
+	"rule": "bar-log-scale",
+	"library": "echarts",
+	"title": "Bars on a logarithmic axis",
+	"before": {
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"aria": {
+			"enabled": true
+		},
+		"xAxis": {
+			"type": "category",
+			"data": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"name": "Units",
+			"type": "log"
+		},
+		"series": [
+			{
+				"type": "bar",
+				"name": "Sales",
+				"data": [12, 340, 5600]
+			}
+		]
+	},
+	"findings": [
+		{
+			"code": "VIS_BAR_LOG_SCALE",
+			"path": "$.yAxis.type",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.yAxis.type",
+				"from": "log",
+				"value": "value",
+				"effect": "The value axis is linear, so bar lengths encode the values; very small values may become hard to see."
+			}
+		}
+	],
+	"after": {
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"aria": {
+			"enabled": true
+		},
+		"xAxis": {
+			"type": "category",
+			"data": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"name": "Units",
+			"type": "value"
+		},
+		"series": [
+			{
+				"type": "bar",
+				"name": "Sales",
+				"data": [12, 340, 5600]
+			}
+		]
+	}
+}

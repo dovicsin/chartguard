@@ -20,6 +20,10 @@ export const dataNotDescribed = rule(
 				note: '`true`: the page describes the data (a data table, a text alternative next to the chart); the finding is suppressed.'
 			}
 		],
+		fix: {
+			offered: true,
+			edit: "Turns the library's description on (ECharts `aria.enabled` or `aria.label.enabled`; Highcharts `accessibility.enabled`, which needs the accessibility module loaded). A canvas is described by the page: no fix."
+		},
 		title: 'The data is not described to assistive technology',
 		rationale:
 			'A chart drawn as graphics gives a screen reader nothing to read unless the library labels its points or generates a description. ECharts does so only with `aria.enabled`; Highcharts only with its accessibility module enabled.',
@@ -47,6 +51,10 @@ export const keyboardDisabled = rule(
 		severity: 'warning',
 		impact: 'excludes',
 		context: [],
+		fix: {
+			offered: true,
+			edit: 'Turns keyboard navigation back on (Highcharts `accessibility.keyboardNavigation.enabled` or `accessibility.enabled`).'
+		},
 		title: 'Keyboard access turned off',
 		rationale:
 			"Keyboard users reach a chart's points, legend and menus only through the library's keyboard navigation. A config that turns it off leaves them with what a mouse user hovers over.",

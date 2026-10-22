@@ -1,0 +1,88 @@
+{
+	"rule": "percent-without-unit",
+	"library": "highcharts",
+	"title": "Shares stacked to 100 with bare numbers on the axis",
+	"before": {
+		"chart": {
+			"type": "column"
+		},
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"palette": {
+			"colors": ["#1f77b4", "#d62728", "#2ca02c"]
+		},
+		"xAxis": {
+			"categories": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"title": {
+				"text": "Share of sales"
+			}
+		},
+		"series": [
+			{
+				"name": "Online",
+				"data": [60, 70, 55]
+			},
+			{
+				"name": "Stores",
+				"data": [40, 30, 45]
+			}
+		],
+		"plotOptions": {
+			"series": {
+				"stacking": "percent"
+			}
+		}
+	},
+	"findings": [
+		{
+			"code": "VIS_PERCENT_WITHOUT_UNIT",
+			"path": "$.yAxis.labels.format",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.yAxis.labels.format",
+				"value": "{value}%",
+				"effect": "The tick labels show the shares with a percent sign."
+			}
+		}
+	],
+	"after": {
+		"chart": {
+			"type": "column"
+		},
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"palette": {
+			"colors": ["#1f77b4", "#d62728", "#2ca02c"]
+		},
+		"xAxis": {
+			"categories": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"title": {
+				"text": "Share of sales"
+			},
+			"labels": {
+				"format": "{value}%"
+			}
+		},
+		"series": [
+			{
+				"name": "Online",
+				"data": [60, 70, 55]
+			},
+			{
+				"name": "Stores",
+				"data": [40, 30, 45]
+			}
+		],
+		"plotOptions": {
+			"series": {
+				"stacking": "percent"
+			}
+		}
+	}
+}

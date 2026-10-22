@@ -34,6 +34,43 @@ Rules claim nothing on an unknown fact. Rules about an author's choice fire only
 | `empty-title` | `VIS_EMPTY_TITLE` | info | a title the config sets to blank text, unless it is known to be hidden |
 | `percent-without-unit` | `VIS_PERCENT_WITHOUT_UNIT` | info | a percent-stacked value axis whose tick labels and title show no `%` |
 
+## Fixes
+
+The adapters' `analyze` attaches a `set-option` fix to a finding only when the fix is trustworthy:
+
+- **The config decides it:** the fix sets the option the finding names, to a value decided from what the option holds.
+- **It is verified:** applied and reviewed again, the finding is gone and no new finding appears.
+
+Each catalog entry's `fix` says which edit its rule offers, or why it offers none (the remedy needs the author's words, data or design choices).
+
+| Rule | Fix |
+| --- | --- |
+| `bar-baseline` | the configured minimum, maximum or base to 0; `beginAtZero: true` (Chart.js), `scale: false` (ECharts) |
+| `bar-log-scale` | the axis type to linear |
+| `reversed-value-axis` | the reversal off |
+| `percent-without-unit` | `labels.format: '{value}%'` where the axis has no format |
+| `data-not-described` | ECharts `aria` on, Highcharts `accessibility.enabled` on (with the accessibility module) |
+| `keyboard-disabled` | Highcharts keyboard navigation on |
+| `long-motion` | a loop off, an ECharts ripple on hover only, a duration over five seconds to one second |
+
+Before/after examples for every fixable rule are in `examples/quality-fixes`. Each is checked on the pinned runtimes: both versions render, `after` is the fix applied to `before`, and what the rule is about is drawn before and not after.
+
+```json
+{
+	"code": "VIS_BAR_BASELINE",
+	"path": "$.options.scales.y.min",
+	"fix": {
+		"kind": "set-option",
+		"path": "$.options.scales.y.min",
+		"from": 60,
+		"value": 0,
+		"effect": "The bars grow from zero again, so their lengths are proportional to their values."
+	}
+}
+```
+
+`withFixes(report, config, remedies, analyze)` is the machinery: an adapter's `remedies` propose, its `analyze` verifies.
+
 ## Settings and context
 
 `review(chart, options)` and every adapter's `analyze(config, options)` take the caller's options:

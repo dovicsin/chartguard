@@ -1,0 +1,82 @@
+{
+	"rule": "long-motion",
+	"library": "highcharts",
+	"title": "Series animating for eight seconds",
+	"before": {
+		"chart": {
+			"type": "column"
+		},
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"palette": {
+			"colors": ["#1f77b4", "#d62728", "#2ca02c"]
+		},
+		"xAxis": {
+			"categories": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"title": {
+				"text": "Units"
+			}
+		},
+		"series": [
+			{
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		],
+		"plotOptions": {
+			"series": {
+				"animation": {
+					"duration": 8000
+				}
+			}
+		}
+	},
+	"findings": [
+		{
+			"code": "VIS_LONG_MOTION",
+			"path": "$.plotOptions.series.animation.duration",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.plotOptions.series.animation.duration",
+				"from": 8000,
+				"value": 1000,
+				"effect": "The series animate for one second instead of more than five."
+			}
+		}
+	],
+	"after": {
+		"chart": {
+			"type": "column"
+		},
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"palette": {
+			"colors": ["#1f77b4", "#d62728", "#2ca02c"]
+		},
+		"xAxis": {
+			"categories": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"title": {
+				"text": "Units"
+			}
+		},
+		"series": [
+			{
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		],
+		"plotOptions": {
+			"series": {
+				"animation": {
+					"duration": 1000
+				}
+			}
+		}
+	}
+}

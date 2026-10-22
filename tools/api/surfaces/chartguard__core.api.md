@@ -35,13 +35,30 @@ interface Diagnostic {
 }
 
 ### Fix
-type Fix = KeyRename;
+type Fix = KeyRename | OptionEdit;
+
+### FixError
+class FixError extends Error {
+    readonly name = "FixError";
+}
 
 ### KeyRename
 interface KeyRename {
     readonly kind: 'rename-key';
     readonly to: string;
 }
+
+### OptionEdit
+interface OptionEdit {
+    readonly kind: 'set-option';
+    readonly path: string;
+    readonly from?: OptionValue;
+    readonly value: OptionValue;
+    readonly effect: string;
+}
+
+### OptionValue
+type OptionValue = string | number | boolean | null;
 
 ### OwnProperty
 type OwnProperty = {
@@ -104,6 +121,9 @@ interface ValidationResult {
 
 ### ValidationStatus
 type ValidationStatus = 'valid' | 'invalid' | 'partial';
+
+### applyFix
+function applyFix(config: unknown, fix: Fix, path?: string): unknown;
 
 ### createValidateBeforeCreate
 function createValidateBeforeCreate(library: string, validate: ConfigValidator): ValidateBeforeCreate;

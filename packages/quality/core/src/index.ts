@@ -1,4 +1,4 @@
-export type { ContextCondition, ContextFact, Evidence, Impact, RuleInfo } from './catalog.js';
+export type { ContextCondition, ContextFact, Evidence, FixPolicy, Impact, RuleInfo } from './catalog.js';
 export { SEVERITY_OF_IMPACT } from './catalog.js';
 export type {
 	AccessSemantics,
@@ -22,6 +22,8 @@ export type { Default, Fact, KnownFact, Listed, UnknownFact, UnknownReason } fro
 export { defaulted, known, unknown, valueOf } from './facts.js';
 export type { ValueRange } from './fit.js';
 export { dataRange, zeroFit } from './fit.js';
+export type { Current, Remedies, Remedy } from './fixes.js';
+export { currentAt, withFixes } from './fixes.js';
 export type { ElementReader, Item, PathSegment } from './read.js';
 export {
 	firstSet,

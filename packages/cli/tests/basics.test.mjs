@@ -44,8 +44,18 @@ test('quality json output is tagged with its mode, is advisory and points at the
 			['VIS_VALUE_AXIS_UNTITLED', '$.options.scales.y.title.text']
 		]
 	);
+	// A verified fix comes with its finding: the edit, what it held, and what changes (CG-05-06).
+	assert.deepEqual(report.diagnostics[0].fix, {
+		kind: 'set-option',
+		path: '$.options.scales.y.min',
+		from: 85,
+		value: 0,
+		effect: 'The bars grow from zero again, so their lengths are proportional to their values.'
+	});
+	assert.equal(report.diagnostics[1].fix, undefined);
 	const text = await run(['quality', '--library', 'chartjs', '--file', example('chartjs-quality.json')]);
 	assert.match(text.out, /advisory/);
+	assert.match(text.out, /\n {4}FIX \$\.options\.scales\.y\.min = 0: The bars grow from zero again/);
 });
 
 test('validate json output is tagged with its mode', async () => {

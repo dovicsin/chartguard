@@ -1,0 +1,70 @@
+{
+	"rule": "reversed-value-axis",
+	"library": "highcharts",
+	"title": "A line on a reversed value axis",
+	"before": {
+		"chart": {
+			"type": "line"
+		},
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"palette": {
+			"colors": ["#1f77b4", "#d62728", "#2ca02c"]
+		},
+		"xAxis": {
+			"categories": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"title": {
+				"text": "Units"
+			},
+			"reversed": true
+		},
+		"series": [
+			{
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		]
+	},
+	"findings": [
+		{
+			"code": "VIS_REVERSED_VALUE_AXIS",
+			"path": "$.yAxis.reversed",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.yAxis.reversed",
+				"from": true,
+				"value": false,
+				"effect": "Larger values are drawn higher (or further right) again."
+			}
+		}
+	],
+	"after": {
+		"chart": {
+			"type": "line"
+		},
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"palette": {
+			"colors": ["#1f77b4", "#d62728", "#2ca02c"]
+		},
+		"xAxis": {
+			"categories": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"title": {
+				"text": "Units"
+			},
+			"reversed": false
+		},
+		"series": [
+			{
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		]
+	}
+}

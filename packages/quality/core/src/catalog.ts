@@ -42,6 +42,14 @@ export interface ContextCondition {
 }
 
 /**
+ * A rule's fix (CG-05-06): `offered`, the edit the adapters propose where the config decides it and
+ * it is verified to resolve the finding; or why there is none (what a fix would need that only the
+ * author knows, or an edit that would silence the finding without removing the harm).
+ */
+export type FixPolicy =
+	{ readonly offered: true; readonly edit: string } | { readonly offered: false; readonly why: string };
+
+/**
  * What a rule is and why (CG-05-04): its finding code and severity (advisory only: never an error),
  * the reasoning, the sources it rests on, and the cases where it is knowingly wrong or silent.
  */
@@ -53,6 +61,8 @@ export interface RuleInfo {
 	readonly impact: Impact;
 	/** The context facts that change what the rule reports (CG-05-05). */
 	readonly context: readonly ContextCondition[];
+	/** Whether the adapters offer a fix for the rule's findings, and which edit, or why none (CG-05-06). */
+	readonly fix: FixPolicy;
 	readonly title: string;
 	readonly rationale: string;
 	readonly evidence: readonly Evidence[];

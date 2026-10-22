@@ -19,6 +19,10 @@ export const placeholderText = rule(
 		severity: 'warning',
 		impact: 'misleads',
 		context: [],
+		fix: {
+			offered: false,
+			why: 'The title has to say what is shown, which only the author knows; hiding it would leave the chart without one.'
+		},
 		title: "A title showing the library's placeholder text",
 		rationale:
 			'A title or axis title the config does not set can still be drawn with the library\'s placeholder text (Highcharts draws "Chart title" and a y axis titled "Values"). It tells the reader nothing about the chart and is announced as its label by assistive technology.',
@@ -54,6 +58,7 @@ export const valueAxisUntitled = rule(
 		severity: 'info',
 		impact: 'omits',
 		context: [],
+		fix: { offered: false, why: "The quantity and its unit are the author's to name." },
 		title: 'A value axis without a title, in a chart without one',
 		rationale:
 			'Numbers on an axis mean little without what they count and in which unit. An axis title is the usual place for the quantity and its unit.',
@@ -82,6 +87,10 @@ export const emptyTitle = rule(
 		severity: 'info',
 		impact: 'omits',
 		context: [],
+		fix: {
+			offered: false,
+			why: "Hiding the blank title would silence the finding but still give readers no context; the words are the author's."
+		},
 		title: 'An empty chart title',
 		rationale:
 			'A title the config sets to blank text shows nothing; the chart needs its context (what, where, when) from somewhere, and assistive technology needs a text alternative.',

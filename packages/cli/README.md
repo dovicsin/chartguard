@@ -25,3 +25,12 @@ The full Highcharts schema cannot ship with ChartGuard (license). `chartguard sc
 Suppressed findings are printed as `SUPPRESSED (setting|context)` with their reason, and rules turned off as `OFF`; the JSON report has `suppressed` and `disabled`.
 
 A malformed settings file is an input error (exit 2) listing every problem.
+
+## Fixes
+
+A finding with a verified fix is followed by its edit:
+
+- `FIX <path> = <value>: <effect>` for a quality fix, which changes the drawing;
+- `FIX rename to <key>` for a deprecation the runtime renames itself.
+
+The JSON report has the fix on the diagnostic. The CLI never writes your files.

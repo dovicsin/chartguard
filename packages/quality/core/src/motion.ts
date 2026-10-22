@@ -18,6 +18,10 @@ export const longMotion = rule(
 				note: '`true`: the page gives a control that pauses or stops the motion, which meets WCAG 2.2.2; the finding is suppressed.'
 			}
 		],
+		fix: {
+			offered: true,
+			edit: 'Stops a loop (Chart.js `loop: false`; an ECharts ripple only on hover; an ECharts lines effect run once when one run lasts at most five seconds), or sets a duration over five seconds to one second.'
+		},
 		title: 'Motion that runs on by itself',
 		rationale:
 			'Motion that starts by itself and lasts longer than five seconds distracts readers who need to concentrate and can harm people with vestibular disorders; without a way to pause it, they cannot read the rest of the page.',

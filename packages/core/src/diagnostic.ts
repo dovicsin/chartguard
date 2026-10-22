@@ -12,7 +12,24 @@ export interface KeyRename {
 	readonly to: string;
 }
 
-export type Fix = KeyRename;
+/** An option value an edit reads or writes: JSON's primitives. */
+export type OptionValue = string | number | boolean | null;
+
+/**
+ * An edit that changes what is drawn, to what a quality finding asks (CG-05-06): set the option at
+ * `path` (the finding notation) to `value`. It holds `from` when the finding was made, or nothing
+ * when `from` is absent; `applyFix` refuses it once that is no longer so. `effect` says what changes.
+ * Never applied without the user: unlike `rename-key`, it does not preserve behaviour.
+ */
+export interface OptionEdit {
+	readonly kind: 'set-option';
+	readonly path: string;
+	readonly from?: OptionValue;
+	readonly value: OptionValue;
+	readonly effect: string;
+}
+
+export type Fix = KeyRename | OptionEdit;
 
 export interface Diagnostic {
 	code: string;
@@ -22,7 +39,11 @@ export interface Diagnostic {
 	ruleId?: string;
 	suggestion?: string;
 	documentationUrl?: string;
-	/** Present only when applying it cannot change what the runtime does. */
+	/**
+	 * `rename-key`: present only when applying it cannot change what the runtime does, so a tool may
+	 * apply it. `set-option`: changes what is drawn, as the finding asks, offered only when the edit was
+	 * verified to resolve the finding without a new one; apply it only at the user's request.
+	 */
 	fix?: Fix;
 	confidence: Confidence;
 	file?: string;

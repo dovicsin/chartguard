@@ -1,4 +1,4 @@
-import type { Diagnostic, QualityReport, ValidationResult } from '@chartguard/core';
+import type { Diagnostic, Fix, QualityReport, ValidationResult } from '@chartguard/core';
 
 import { EXIT_INVALID, EXIT_OK } from './exit-codes.js';
 import type { Io } from './io.js';
@@ -7,10 +7,17 @@ import { schemaNote, type SchemaSource } from './schema-source.js';
 const PARTIAL_NOTE = '  NOTE: partial schema coverage; absence of errors is not a compatibility guarantee.';
 const ADVISORY_NOTE = '  NOTE: quality findings are advisory and depend on context; they never fail a build.';
 
+/** A fix as a line under its finding: what to set (and what changes), or the key to rename. */
+function describeFix(fix: Fix): string {
+	if (fix.kind === 'rename-key') return `    FIX rename to ${fix.to} (the runtime reads it so already)`;
+	return `    FIX ${fix.path} = ${JSON.stringify(fix.value)}: ${fix.effect}`;
+}
+
 function describe(diagnostic: Diagnostic): string {
-	const { severity, code, path, message, suggestion } = diagnostic;
+	const { severity, code, path, message, suggestion, fix } = diagnostic;
 	const hint = suggestion === undefined ? '' : ` ${suggestion}`;
-	return `  ${severity.toUpperCase()} ${code} ${path}: ${message}${hint}`;
+	const line = `  ${severity.toUpperCase()} ${code} ${path}: ${message}${hint}`;
+	return fix === undefined ? line : `${line}\n${describeFix(fix)}`;
 }
 
 /** `4.5.1` or `4.5.1, sha256-1a2b3c4d5e6f` (a short digest identifies the exact generated schema). */

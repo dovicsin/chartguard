@@ -1,0 +1,80 @@
+{
+	"rule": "bar-baseline",
+	"library": "chartjs",
+	"title": "Bars on an axis that starts at 60",
+	"before": {
+		"type": "bar",
+		"data": {
+			"labels": ["Q1", "Q2", "Q3"],
+			"datasets": [
+				{
+					"label": "Sales",
+					"data": [62, 65, 71],
+					"backgroundColor": "#1f77b4",
+					"borderColor": "#1f77b4"
+				}
+			]
+		},
+		"options": {
+			"plugins": {
+				"title": {
+					"display": true,
+					"text": "Quarterly sales"
+				}
+			},
+			"scales": {
+				"y": {
+					"title": {
+						"display": true,
+						"text": "Units"
+					},
+					"min": 60
+				}
+			}
+		}
+	},
+	"findings": [
+		{
+			"code": "VIS_BAR_BASELINE",
+			"path": "$.options.scales.y.min",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.options.scales.y.min",
+				"from": 60,
+				"value": 0,
+				"effect": "The bars grow from zero again, so their lengths are proportional to their values."
+			}
+		}
+	],
+	"after": {
+		"type": "bar",
+		"data": {
+			"labels": ["Q1", "Q2", "Q3"],
+			"datasets": [
+				{
+					"label": "Sales",
+					"data": [62, 65, 71],
+					"backgroundColor": "#1f77b4",
+					"borderColor": "#1f77b4"
+				}
+			]
+		},
+		"options": {
+			"plugins": {
+				"title": {
+					"display": true,
+					"text": "Quarterly sales"
+				}
+			},
+			"scales": {
+				"y": {
+					"title": {
+						"display": true,
+						"text": "Units"
+					},
+					"min": 0
+				}
+			}
+		}
+	}
+}

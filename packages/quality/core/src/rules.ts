@@ -46,6 +46,10 @@ const barBaseline = rule(
 		severity: 'warning',
 		impact: 'misleads',
 		context: [],
+		fix: {
+			offered: true,
+			edit: 'Sets the configured minimum, maximum or base to 0, or turns a range fitted to the data back to one that includes zero (Chart.js `beginAtZero: true`, ECharts `scale: false`).'
+		},
 		title: 'Bars that do not grow from zero',
 		rationale:
 			'A bar encodes its value by its length from the baseline. When the value axis starts above zero (or ends below it for negative bars), or the bars grow from another value, every bar loses the same length, and their ratios no longer match the values: readers overestimate differences.',
@@ -90,6 +94,10 @@ const barLogScale = rule(
 		severity: 'warning',
 		impact: 'misleads',
 		context: [],
+		fix: {
+			offered: true,
+			edit: 'Sets the axis type to linear (Chart.js and Highcharts `linear`, ECharts `value`). Values far apart may then make the smallest bars too short to see.'
+		},
 		title: 'Bars on a logarithmic axis',
 		rationale:
 			'A logarithmic axis has no zero, so a bar starts at an arbitrary value and its length encodes the logarithm of its value relative to that start, while readers judge bars by length as the value itself.',
@@ -118,6 +126,7 @@ const reversedValueAxis = rule(
 		severity: 'warning',
 		impact: 'misleads',
 		context: [],
+		fix: { offered: true, edit: 'Turns the reversal off.' },
 		title: 'A reversed value axis',
 		rationale:
 			'Readers expect larger values higher (or further right). An inverted value axis turns a rise into a fall; in experiments it reversed the message readers took from the chart.',
@@ -146,6 +155,10 @@ const dualAxis = rule(
 		severity: 'info',
 		impact: 'risks',
 		context: [],
+		fix: {
+			offered: false,
+			why: "Quantities in different units need their own scales; separate panels are a layout one chart's config cannot express, and merging the axes would mislead."
+		},
 		title: 'Series measured on two value axes',
 		rationale:
 			'With two value scales in one plot, where lines cross and how steep they look depend on how each scale was chosen; readers read crossings and slopes as properties of the data.',
@@ -185,6 +198,7 @@ const pieNegative = rule(
 		severity: 'warning',
 		impact: 'misleads',
 		context: [],
+		fix: { offered: false, why: "The data, or the chart type, has to change; which one is the author's choice." },
 		title: 'A negative value in a pie',
 		rationale:
 			'A pie shows each value as its share of a whole, and readers judge the slices as proportions. A negative value is not a share: the runtimes draw it as a positive slice or leave it out, so the slices no longer show the data.',

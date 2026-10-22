@@ -43,6 +43,14 @@ type ContextFact = 'background' | 'describesData' | 'pausesMotion';
 ### CoordinateSystem
 type CoordinateSystem = 'cartesian' | 'polar';
 
+### Current
+type Current = {
+    readonly set: false;
+} | {
+    readonly set: true;
+    readonly value: OptionValue;
+};
+
 ### Default
 interface Default<T> {
     readonly value: T;
@@ -62,6 +70,15 @@ interface Evidence {
 
 ### Fact
 type Fact<T> = KnownFact<T> | UnknownFact;
+
+### FixPolicy
+type FixPolicy = {
+    readonly offered: true;
+    readonly edit: string;
+} | {
+    readonly offered: false;
+    readonly why: string;
+};
 
 ### Ignore
 interface Ignore {
@@ -141,6 +158,15 @@ class QualityOptionsError extends TypeError {
 ### RULE_CATALOG
 RULE_CATALOG: readonly RuleInfo[]
 
+### Remedies
+type Remedies = Readonly<Record<string, (now: Current, path: string, config: unknown) => Remedy | undefined>>;
+
+### Remedy
+interface Remedy {
+    readonly value: OptionValue;
+    readonly effect: string;
+}
+
 ### RuleInfo
 interface RuleInfo {
     readonly id: string;
@@ -148,6 +174,7 @@ interface RuleInfo {
     readonly severity: 'warning' | 'info';
     readonly impact: Impact;
     readonly context: readonly ContextCondition[];
+    readonly fix: FixPolicy;
     readonly title: string;
     readonly rationale: string;
     readonly evidence: readonly Evidence[];
@@ -244,6 +271,9 @@ function colorKey(color: string): string;
 ### contrastRatio
 function contrastRatio(foreground: string, background: string): number | undefined;
 
+### currentAt
+function currentAt(config: unknown, path: string): Current | undefined;
+
 ### dataRange
 function dataRange(series: Listed<SeriesSemantics>, key: string, at: string): Fact<ValueRange>;
 
@@ -305,6 +335,9 @@ valueOf: <T>(fact: Fact<T>) => T | undefined
 
 ### valuesAt
 function valuesAt(root: unknown, path: readonly PathSegment[], read: ElementReader): Fact<ValueSummary>;
+
+### withFixes
+function withFixes(report: QualityReport, config: unknown, remedies: Remedies, analyze: (config: unknown) => QualityReport): QualityReport;
 
 ### zeroFit
 function zeroFit(ranges: readonly ValueRange[], asked: KnownFact<unknown>): Fact<ZeroFit>;

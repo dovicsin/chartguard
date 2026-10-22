@@ -1,0 +1,58 @@
+{
+	"rule": "data-not-described",
+	"library": "echarts",
+	"title": "A chart without aria",
+	"before": {
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"xAxis": {
+			"type": "category",
+			"data": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"name": "Units"
+		},
+		"series": [
+			{
+				"type": "bar",
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		]
+	},
+	"findings": [
+		{
+			"code": "VIS_DATA_NOT_DESCRIBED",
+			"path": "$.aria.enabled",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.aria.enabled",
+				"value": true,
+				"effect": "ECharts describes the chart and its data to assistive technology (`aria`)."
+			}
+		}
+	],
+	"after": {
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"xAxis": {
+			"type": "category",
+			"data": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"name": "Units"
+		},
+		"series": [
+			{
+				"type": "bar",
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		],
+		"aria": {
+			"enabled": true
+		}
+	}
+}

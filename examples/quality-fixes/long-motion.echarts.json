@@ -1,0 +1,62 @@
+{
+	"rule": "long-motion",
+	"library": "echarts",
+	"title": "A ripple that never stops",
+	"before": {
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"aria": {
+			"enabled": true
+		},
+		"xAxis": {
+			"type": "category",
+			"data": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"name": "Units"
+		},
+		"series": [
+			{
+				"type": "effectScatter",
+				"name": "Sales",
+				"data": [3, 5, 4]
+			}
+		]
+	},
+	"findings": [
+		{
+			"code": "VIS_LONG_MOTION",
+			"path": "$.series[0].showEffectOn",
+			"fix": {
+				"kind": "set-option",
+				"path": "$.series[0].showEffectOn",
+				"value": "emphasis",
+				"effect": "The ripple plays only while the pointer is on a point, not from the first render on."
+			}
+		}
+	],
+	"after": {
+		"title": {
+			"text": "Quarterly sales"
+		},
+		"aria": {
+			"enabled": true
+		},
+		"xAxis": {
+			"type": "category",
+			"data": ["Q1", "Q2", "Q3"]
+		},
+		"yAxis": {
+			"name": "Units"
+		},
+		"series": [
+			{
+				"type": "effectScatter",
+				"name": "Sales",
+				"data": [3, 5, 4],
+				"showEffectOn": "emphasis"
+			}
+		]
+	}
+}
