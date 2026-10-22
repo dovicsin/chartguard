@@ -17,6 +17,9 @@ interface ChartSemantics {
     readonly axes: readonly AxisSemantics[];
 }
 
+### CoordinateSystem
+type CoordinateSystem = 'cartesian' | 'polar';
+
 ### Default
 interface Default<T> {
     readonly value: T;
@@ -54,6 +57,9 @@ type Listed<T> = {
     readonly items: readonly T[];
 } | UnknownFact;
 
+### Orientation
+type Orientation = 'vertical' | 'horizontal';
+
 ### PathSegment
 type PathSegment = string | number;
 
@@ -67,7 +73,13 @@ interface SeriesSemantics {
     readonly kind: Fact<SeriesKind>;
     readonly name: Fact<string>;
     readonly valueAxis: Fact<string>;
+    readonly coordinateSystem: Fact<CoordinateSystem>;
+    readonly orientation: Fact<Orientation>;
+    readonly stacking: Fact<Stacking>;
 }
+
+### Stacking
+type Stacking = 'none' | 'stacked' | 'percent';
 
 ### TitleSemantics
 interface TitleSemantics {
@@ -87,6 +99,9 @@ type UnknownReason = 'unset' | 'accessor' | 'dynamic' | 'shape' | 'unmodelled' |
 
 ### defaulted
 defaulted: <T>({ value, pointer }: Default<T>, path: string) => KnownFact<T>
+
+### firstSet
+function firstSet<T>(scopes: readonly Fact<T>[], fallback?: Default<T>): Fact<T>;
 
 ### formatPath
 function formatPath(path: readonly PathSegment[]): string;

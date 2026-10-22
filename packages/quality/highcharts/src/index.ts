@@ -2,6 +2,7 @@ import type { QualityReport } from '@chartguard/core';
 import {
 	type AxisSemantics,
 	type ChartSemantics,
+	type CoordinateSystem,
 	type Default,
 	type Fact,
 	isBoolean,
@@ -9,93 +10,63 @@ import {
 	isString,
 	type Item,
 	itemsAt,
+	type KnownFact,
 	type Listed,
+	type Orientation,
 	readFact,
-	readPath,
 	review,
-	type SeriesKind,
-	type SeriesSemantics,
 	unknown,
 	type UnknownFact
 } from '@chartguard/quality-core';
 
-/** Runtime defaults, each pointing at the line of the pinned highcharts that applies it. */
-const DEFAULTS = {
-	chartType: { value: 'line', pointer: "highcharts@13.1.1 highcharts.src.js:1191 type: 'line'," },
-	titleText: { value: 'Chart title', pointer: "highcharts@13.1.1 highcharts.src.js:5417 text: 'Chart title'," }
-} as const satisfies Record<string, Default<unknown>>;
-/** A series binds the axis its `yAxis` names by index or id, else the first (`Series#bindAxes`). */
-const BIND_AXIS = 'highcharts@13.1.1 highcharts.src.js:33142 if ((seriesOptions[coll] ?? 0) === axis.index ||';
+import { FROM_SERIES, seriesOf } from './series.js';
 
-const KINDS: Readonly<Record<string, SeriesKind>> = {
-	column: 'bar',
-	bar: 'bar',
-	line: 'line',
-	spline: 'line',
-	area: 'area',
-	areaspline: 'area',
-	scatter: 'scatter',
-	pie: 'pie'
+const TITLE_TEXT: Default<string> = {
+	value: 'Chart title',
+	pointer: "highcharts@13.1.1 highcharts.src.js:5417 text: 'Chart title',"
 };
 
-/** A series' type: its own, else the chart's (`Chart#initSeries`: `options.type || optionsChart.type`). */
-function typeOf(config: unknown, item: Item): Fact<string> {
-	const own = readFact(config, [...item.segments, 'type'], isString);
-	return own.known || own.reason !== 'unset' ? own : readFact(config, ['chart', 'type'], isString, DEFAULTS.chartType);
-}
+const defaultAt = <T>(value: T, path: string): Fact<T> => ({
+	known: true,
+	value,
+	path,
+	source: 'default',
+	pointer: FROM_SERIES
+});
 
-const yAxes = (config: unknown): Listed<Item> => itemsAt(config, ['yAxis'], { single: true });
+/** Polar when `chart.polar` says so; no built-in series type requires it. */
+function coordinateSystemOf(config: unknown): Fact<CoordinateSystem> {
+	const polar = readFact(config, ['chart', 'polar'], isBoolean);
+	if (polar.known) return { ...polar, value: polar.value ? 'polar' : 'cartesian' };
+	return polar.reason === 'unset' ? defaultAt('cartesian', polar.path) : polar;
+}
 
 /**
- * The y axis a series is measured on (in Highcharts the value axis, also for horizontal `bar` and
- * inverted charts): the one its `yAxis` names by index or id, else the first. Polar charts and
- * types without these axes are left for CG-05-03.
+ * Whether a `bar` series inverts the chart: the chart type, or the own type of any series, is `bar`
+ * (its class has `inverted: true`). Unknown when a type that could be `bar` cannot be read.
  */
-function valueAxisOf(config: unknown, item: Item, type: Fact<string>): Fact<string> {
-	const named = readFact(
-		config,
-		[...item.segments, 'yAxis'],
-		(value): value is number | string => isNumber(value) || isString(value)
-	);
-	return unmodelledAxis(config, type, named.path) ?? boundAxis(config, named);
+function barInverts(config: unknown, items: Listed<Item>): Fact<boolean> | undefined {
+	if (!items.known) return items;
+	const types = [
+		readFact(config, ['chart', 'type'], isString),
+		...items.items.map((item) => readFact(config, [...item.segments, 'type'], isString))
+	];
+	const bar = types.find((type): type is KnownFact<string> => type.known && type.value === 'bar');
+	if (bar !== undefined) return { ...bar, value: true };
+	return types.find((type): type is UnknownFact => !type.known && type.reason !== 'unset');
 }
 
-/** Why a series has no modelled value axis, or undefined for a cartesian type on a flat (not polar) chart. */
-function unmodelledAxis(config: unknown, type: Fact<string>, at: string): UnknownFact | undefined {
-	if (!type.known) return unknown(at, type.reason);
-	if (KINDS[type.value] === 'pie') return unknown(at, 'inapplicable');
-	const polar = readFact(config, ['chart', 'polar'], isBoolean);
-	const flat = polar.known ? !polar.value : polar.reason === 'unset';
-	return KINDS[type.value] !== undefined && flat ? undefined : unknown(at, 'unmodelled');
-}
-
-/** The y axis the series' `yAxis` names by index or id, else the first. */
-function boundAxis(config: unknown, named: Fact<number | string>): Fact<string> {
-	if (!named.known && named.reason !== 'unset') return named;
-	const axes = yAxes(config);
-	if (!axes.known) return unknown(named.path, axes.reason);
-	const reference = named.known ? named.value : 0;
-	// Without `yAxis` options Highcharts creates one axis (`options[coll] = splat(options[coll] || {})`, highcharts.src.js:38885).
-	const items = axes.items.length === 0 ? [{ value: {} }] : axes.items;
-	const index = items.findIndex(
-		(axis, position) => position === reference || readPath(axis.value, ['id']) === reference
-	);
-	if (index < 0) return unknown(named.path, 'unmodelled');
-	const key = `yAxis[${String(index)}]`;
-	return named.known
-		? { ...named, value: key }
-		: { known: true, value: key, path: named.path, source: 'default', pointer: BIND_AXIS };
-}
-
-function seriesOf(config: unknown, item: Item): SeriesSemantics {
-	const type = typeOf(config, item);
-	return {
-		path: item.path,
-		type,
-		kind: type.known ? { ...type, value: KINDS[type.value] ?? 'other' } : type,
-		name: readFact(config, [...item.segments, 'name'], isString),
-		valueAxis: valueAxisOf(config, item, type)
-	};
+/**
+ * Every cartesian series of a chart has one orientation: horizontal when the chart is `inverted`,
+ * which a `bar` series also turns on (`chart.inverted: false` does not stop it: `optionsChart[key] || …`).
+ */
+function orientationOf(config: unknown, items: Listed<Item>): Fact<Orientation> {
+	const inverted = readFact(config, ['chart', 'inverted'], isBoolean);
+	if (inverted.known && inverted.value) return { ...inverted, value: 'horizontal' };
+	if (!inverted.known && inverted.reason !== 'unset') return inverted;
+	const bar = barInverts(config, items);
+	if (bar === undefined) return defaultAt('vertical', inverted.path);
+	return bar.known ? { ...bar, value: 'horizontal' } : bar;
 }
 
 function axesOf(config: unknown): AxisSemantics[] {
@@ -112,17 +83,18 @@ function axesOf(config: unknown): AxisSemantics[] {
 	});
 }
 
-/** The Highcharts options as library-neutral chart semantics (CG-05-02). */
+/** The Highcharts options as library-neutral chart semantics (CG-05-02, CG-05-03). */
 export function normalize(config: unknown): ChartSemantics {
 	const items = itemsAt(config, ['series']);
+	const chart = { coordinateSystem: coordinateSystemOf(config), orientation: orientationOf(config, items) };
 	return {
 		library: 'highcharts',
 		title: {
-			text: readFact(config, ['title', 'text'], isString, DEFAULTS.titleText),
+			text: readFact(config, ['title', 'text'], isString, TITLE_TEXT),
 			// Highcharts has no switch: a title shows unless its text is empty; not modelled yet.
 			shown: unknown('$.title.text', 'unmodelled')
 		},
-		series: items.known ? { ...items, items: items.items.map((item) => seriesOf(config, item)) } : items,
+		series: items.known ? { ...items, items: items.items.map((item) => seriesOf(config, item, chart)) } : items,
 		axes: axesOf(config)
 	};
 }

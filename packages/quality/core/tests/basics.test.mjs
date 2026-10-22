@@ -138,3 +138,25 @@ test('a report is advisory: it names its library and rules version and carries n
 	assert.equal(valueOf(none('$.x')), undefined);
 	assert.equal(valueOf(fact(2, '$.x')), 2);
 });
+
+test('an option resolved through scopes: the first scope that sets it; an unreadable one before decides; else the default', async () => {
+	const { firstSet } = await import('../dist/index.js');
+	const config = { series: [{}], plotOptions: { line: { stacking: 'normal' }, series: { stacking: 'percent' } } };
+	const scopes = (root) =>
+		[
+			['series', 0],
+			['plotOptions', 'line'],
+			['plotOptions', 'series']
+		].map((path) => readFact(root, [...path, 'stacking'], (v) => typeof v === 'string'));
+	assert.equal(firstSet(scopes(config)).path, '$.plotOptions.line.stacking');
+	const hidden = { ...config, series: [Object.defineProperty({}, 'stacking', { get: () => 'x' })] };
+	assert.deepEqual(firstSet(scopes(hidden)), { known: false, path: '$.series[0].stacking', reason: 'accessor' });
+	assert.deepEqual(firstSet(scopes({ series: [{}] }), DEFAULT), {
+		known: true,
+		value: 0,
+		path: '$.series[0].stacking',
+		source: 'default',
+		pointer: DEFAULT.pointer
+	});
+	assert.deepEqual(firstSet(scopes({ series: [{}] })), { known: false, path: '$.series[0].stacking', reason: 'unset' });
+});

@@ -47,7 +47,14 @@ for (const options of CASES.map(revive)) {
 	container.style.cssText = 'width: 400px; height: 300px';
 	document.body.append(container);
 	try {
-		Highcharts.chart(container, options).destroy();
+		const chart = Highcharts.chart(container, options);
+		// What the chart built, for the quality semantics (CG-05-03): its inversion and each series' axis and stacking.
+		current.observed = {
+			inverted: chart.inverted === true,
+			polar: chart.polar === true,
+			series: chart.series.map((series) => ({ type: series.type, yAxis: series.yAxis ? series.yAxis.index : null, stacking: series.options.stacking ?? null }))
+		};
+		chart.destroy();
 	} catch (error) {
 		current.threw = error instanceof Error ? error.message : String(error);
 	} finally {
@@ -175,7 +182,7 @@ export function runHighchartsUpdates(cases) {
 
 /**
  * Renders each `{ config, modules }` with the pinned Highcharts in headless Chrome and returns the
- * outcomes in order (`{ threw, messages }`, as the other runners, and the `seriesTypes` the page had). Cases that load the same
+ * outcomes in order (`{ threw, messages }`, as the other runners, the `seriesTypes` the page had and what each chart `observed`). Cases that load the same
  * modules share one page; the configs must be plain JSON.
  */
 export async function runHighcharts(cases) {

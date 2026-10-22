@@ -1,11 +1,19 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
 const POINTER =
 	/'((?:[\w.-]+)@(\d+\.\d+\.\d+) ([\w./-]+):(\d+) [^']*)'|"((?:[\w.-]+)@(\d+\.\d+\.\d+) ([\w./-]+):(\d+) [^"]*)"/g;
 const PARTS = /^([\w.-]+)@(\d+\.\d+\.\d+) ([\w./-]+):(\d+) (.+)$/;
+
+/** `checkPointers` over every module of a package's `src`; returns how many pointers it checked. */
+export function checkPackagePointers(testUrl) {
+	const directory = new URL('../src/', testUrl);
+	return readdirSync(directory)
+		.filter((file) => file.endsWith('.ts'))
+		.reduce((count, file) => count + checkPointers(fileURLToPath(new URL(file, directory))), 0);
+}
 
 /**
  * Every runtime-default pointer written in `source` (`<package>@<version> <file>:<line> <text>`) names

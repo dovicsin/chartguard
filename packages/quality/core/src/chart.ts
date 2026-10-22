@@ -3,6 +3,15 @@ import type { Fact, Listed } from './facts.js';
 /** What a series draws, across libraries; `other` keeps the library type for rules that need it. */
 export type SeriesKind = 'bar' | 'line' | 'area' | 'scatter' | 'pie' | 'other';
 
+/** The direction a series' values grow in: up (`vertical`, the values on the y axis) or across (`horizontal`). */
+export type Orientation = 'vertical' | 'horizontal';
+
+/** Whether a series' values are stacked onto the series sharing its stack, as amounts or as shares (`percent`). */
+export type Stacking = 'none' | 'stacked' | 'percent';
+
+/** The coordinate system a series is drawn in. */
+export type CoordinateSystem = 'cartesian' | 'polar';
+
 /** One series (dataset): its library type, what it draws, its name and the axis its values are measured on. */
 export interface SeriesSemantics {
 	/** Where the series is in the config. */
@@ -12,6 +21,10 @@ export interface SeriesSemantics {
 	readonly name: Fact<string>;
 	/** The `key` of the axis in `ChartSemantics.axes` its values are plotted against. */
 	readonly valueAxis: Fact<string>;
+	readonly coordinateSystem: Fact<CoordinateSystem>;
+	/** Cartesian series only; `inapplicable` in polar and axis-less series. */
+	readonly orientation: Fact<Orientation>;
+	readonly stacking: Fact<Stacking>;
 }
 
 /** One axis: the key series refer to it by, and its range and title. */

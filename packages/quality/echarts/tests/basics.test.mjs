@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
 
-import { checkPointers } from '../../core/tests/pointers.mjs';
+import { checkPackagePointers } from '../../core/tests/pointers.mjs';
 import { analyze, normalize } from '../dist/index.js';
 
 const codes = (config) => analyze(config).diagnostics.map((d) => `${d.code} ${d.path}`);
@@ -42,34 +41,75 @@ test('series: kind, name and the axis their values are measured on (by index, by
 	assert.equal(normalize({ series: { type: 'bar' } }).series.items[0].path, '$.series');
 });
 
-test('a horizontal layout, a missing axis or another coordinate system leaves the value axis unmodelled', () => {
-	const valueAxis = (option) => brief(normalize(option).series.items[0].valueAxis);
-	assert.equal(
-		valueAxis({ xAxis: { type: 'value' }, yAxis: { type: 'category' }, series: [{ type: 'bar' }] }),
-		'? unmodelled $.series[0].yAxisIndex'
-	);
-	assert.equal(
-		valueAxis({ xAxis: {}, yAxis: { data: ['a'] }, series: [{ type: 'bar' }] }),
-		'? unmodelled $.series[0].yAxisIndex'
-	);
-	assert.equal(valueAxis({ yAxis: {}, series: [{ type: 'bar' }] }), '? unmodelled $.series[0].yAxisIndex');
-	assert.equal(
-		valueAxis({ ...CATEGORY, yAxis: {}, series: [{ type: 'bar', coordinateSystem: 'polar' }] }),
-		'? unmodelled $.series[0].yAxisIndex'
-	);
-	// An x axis with data defaults to category (the runtime's own rule): a vertical bar.
-	assert.equal(
-		valueAxis({ xAxis: { data: ['a'] }, yAxis: {}, series: [{ type: 'bar' }] }),
+test('orientation from the axis types: the measuring axis carries the values; vertical and horizontal grids', () => {
+	const layout = (option) => {
+		const { orientation, valueAxis, coordinateSystem } = normalize(option).series.items[0];
+		return [brief(coordinateSystem), brief(orientation), brief(valueAxis)];
+	};
+	assert.deepEqual(layout({ ...CATEGORY, yAxis: {}, series: [{ type: 'bar' }] }), [
+		'cartesian default $.series[0].coordinateSystem',
+		'vertical default $.yAxis.type',
 		'yAxis[0] default $.series[0].yAxisIndex'
+	]);
+	assert.deepEqual(
+		layout({ xAxis: { type: 'value' }, yAxis: { type: 'category' }, series: [{ type: 'bar', xAxisIndex: 0 }] }),
+		[
+			'cartesian default $.series[0].coordinateSystem',
+			'horizontal config $.xAxis.type',
+			'xAxis[0] config $.series[0].xAxisIndex'
+		]
 	);
-	assert.equal(
-		valueAxis({ xAxis: {}, yAxis: {}, series: [{ type: 'scatter' }] }),
+	// A y axis with data is a category axis by the runtime's own default.
+	assert.deepEqual(layout({ xAxis: {}, yAxis: { data: ['a'] }, series: [{ type: 'bar' }] }).slice(1), [
+		'horizontal default $.xAxis.type',
+		'xAxis[0] default $.series[0].xAxisIndex'
+	]);
+	assert.deepEqual(layout({ xAxis: {}, yAxis: {}, series: [{ type: 'scatter' }] }).slice(1), [
+		'vertical default $.yAxis.type',
 		'yAxis[0] default $.series[0].yAxisIndex'
+	]);
+	// Two measuring axes for a bar, a missing axis, polar: not modelled.
+	assert.deepEqual(layout({ xAxis: {}, yAxis: {}, series: [{ type: 'bar' }] }).slice(1), [
+		'? unmodelled $.series[0]',
+		'? unmodelled $.series[0].yAxisIndex'
+	]);
+	assert.deepEqual(layout({ yAxis: {}, series: [{ type: 'bar' }] }).slice(1), [
+		'? unmodelled $.series[0]',
+		'? unmodelled $.series[0].yAxisIndex'
+	]);
+	assert.deepEqual(layout({ ...CATEGORY, yAxis: {}, series: [{ type: 'bar', coordinateSystem: 'polar' }] }), [
+		'polar config $.series[0].coordinateSystem',
+		'? unmodelled $.series[0]',
+		'? unmodelled $.series[0].yAxisIndex'
+	]);
+	assert.deepEqual(
+		layout({ series: [{ type: 'bar', coordinateSystem: 'calendar' }] })[0],
+		'? unmodelled $.series[0].coordinateSystem'
 	);
-	// Horizontal bars with a minimum on their category axis: no baseline claim (the starter claimed one).
+});
+
+test('a horizontal bar is measured on its x axis: its baseline is the x minimum, not the category y one', () => {
 	assert.deepEqual(
 		codes({ xAxis: { type: 'value' }, yAxis: { type: 'category', min: 3 }, series: [{ type: 'bar' }] }),
 		[]
+	);
+	assert.deepEqual(
+		codes({ xAxis: { type: 'value', min: 3 }, yAxis: { type: 'category' }, series: [{ type: 'bar' }] }),
+		['VIS_BAR_BASELINE $.xAxis.min']
+	);
+});
+
+test('area and stacking: areaStyle draws an area; a non-empty stack stacks', () => {
+	const series = (extra) => normalize({ ...CATEGORY, yAxis: {}, series: [{ type: 'line', ...extra }] }).series.items[0];
+	assert.equal(brief(series({}).kind), 'line config $.series[0].type');
+	assert.equal(brief(series({ areaStyle: {} }).kind), 'area config $.series[0].areaStyle');
+	assert.equal(brief(series({ areaStyle: null }).kind), 'line config $.series[0].type');
+	assert.equal(brief(series({}).stacking), 'none default $.series[0].stack');
+	assert.equal(brief(series({ stack: 'total' }).stacking), 'stacked config $.series[0].stack');
+	assert.equal(brief(series({ stack: '' }).stacking), 'none config $.series[0].stack');
+	assert.equal(
+		brief(normalize({ series: [{ type: 'pie', stack: 'x' }] }).series.items[0].stacking),
+		'? inapplicable $.series[0].stack'
 	);
 });
 
@@ -107,4 +147,4 @@ test('findings point at the ECharts option that triggered them', () => {
 });
 
 test('every runtime default points at the line of the pinned echarts that applies it', () =>
-	assert.equal(checkPointers(fileURLToPath(new URL('../src/index.ts', import.meta.url))), 3));
+	assert.equal(checkPackagePointers(import.meta.url), 8));

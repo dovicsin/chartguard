@@ -84,3 +84,16 @@ export function itemsAt(root: unknown, path: readonly PathSegment[], { single = 
 export const isString = (value: unknown): value is string => typeof value === 'string';
 export const isNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 export const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
+
+/**
+ * An option the runtime resolves through scopes, most specific first (a series, then the options for
+ * its type, then those for every series): the first scope that sets it. A scope that cannot be read
+ * (a getter, a function) before it decides the fact; none set: the runtime default, at the most
+ * specific path, or unset there.
+ */
+export function firstSet<T>(scopes: readonly Fact<T>[], fallback?: Default<T>): Fact<T> {
+	const decided = scopes.find((fact) => fact.known || fact.reason !== 'unset');
+	if (decided !== undefined) return decided;
+	const at = scopes[0]?.path ?? '$';
+	return fallback === undefined ? unknown(at, 'unset') : defaulted(fallback, at);
+}

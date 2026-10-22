@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
 
-import { checkPointers } from '../../core/tests/pointers.mjs';
+import { checkPackagePointers } from '../../core/tests/pointers.mjs';
 import { analyze, normalize } from '../dist/index.js';
 
 const codes = (config) => analyze(config).diagnostics.map((d) => `${d.code} ${d.path}`);
@@ -42,9 +41,10 @@ test('series: type from the series, else the chart, else line; the y axis they b
 	assert.equal(brief(normalize({ series: [{}] }).series.items[0].type), 'line default $.chart.type');
 	// Without yAxis options Highcharts creates one: the series is measured on it.
 	assert.equal(brief(normalize({ series: [{}] }).series.items[0].valueAxis), 'yAxis[0] default $.series[0].yAxis');
+	// In a polar chart the y axis is the radial value axis.
 	assert.equal(
 		brief(normalize({ chart: { polar: true }, series: [{ type: 'column' }] }).series.items[0].valueAxis),
-		'? unmodelled $.series[0].yAxis'
+		'yAxis[0] default $.series[0].yAxis'
 	);
 });
 
@@ -74,5 +74,56 @@ test('findings point at the Highcharts option; horizontal bar charts measure on 
 	assert.deepEqual(codes({ chart: { type: 'column' }, yAxis: { min: 2 } }), []);
 });
 
+test("coordinate system and orientation are the chart's: polar from chart.polar; inverted by chart.inverted or by any bar series", () => {
+	const layout = (config) => {
+		const { coordinateSystem, orientation } = normalize(config).series.items[0];
+		return [brief(coordinateSystem), brief(orientation)];
+	};
+	assert.deepEqual(layout({ series: [{ type: 'column' }] }), [
+		'cartesian default $.chart.polar',
+		'vertical default $.chart.inverted'
+	]);
+	assert.deepEqual(layout({ chart: { inverted: true }, series: [{ type: 'column' }] }), [
+		'cartesian default $.chart.polar',
+		'horizontal config $.chart.inverted'
+	]);
+	assert.deepEqual(layout({ chart: { type: 'bar' }, series: [{}] })[1], 'horizontal config $.chart.type');
+	// One bar series inverts every series of the chart, and `inverted: false` does not stop it.
+	assert.deepEqual(
+		layout({ chart: { inverted: false }, series: [{ type: 'line' }, { type: 'bar' }] })[1],
+		'horizontal config $.series[1].type'
+	);
+	assert.deepEqual(
+		layout({ series: [{ type: 'line' }, Object.defineProperty({}, 'type', { get: () => 'bar' })] })[1],
+		'? accessor $.series[1].type'
+	);
+	assert.deepEqual(layout({ chart: { polar: true }, series: [{ type: 'column' }] }), [
+		'polar config $.chart.polar',
+		'? inapplicable $.series[0]'
+	]);
+	assert.deepEqual(layout({ series: [{ type: 'pie' }] }), ['? inapplicable $.series[0]', '? inapplicable $.series[0]']);
+});
+
+test('stacking resolves through the series, plotOptions for its type and plotOptions.series', () => {
+	const stacking = (config) => brief(normalize(config).series.items[0].stacking);
+	assert.equal(stacking({ series: [{ type: 'column' }] }), 'none default $.series[0].stacking');
+	assert.equal(
+		stacking({ plotOptions: { series: { stacking: 'normal' } }, series: [{ type: 'column' }] }),
+		'stacked config $.plotOptions.series.stacking'
+	);
+	assert.equal(
+		stacking({
+			plotOptions: { series: { stacking: 'normal' }, column: { stacking: 'percent' } },
+			series: [{ type: 'column' }]
+		}),
+		'percent config $.plotOptions.column.stacking'
+	);
+	assert.equal(
+		stacking({ plotOptions: { column: { stacking: 'percent' } }, series: [{ type: 'column', stacking: null }] }),
+		'none config $.series[0].stacking'
+	);
+	assert.equal(stacking({ series: [{ type: 'area', stacking: 'stream' }] }), '? unmodelled $.series[0].stacking');
+});
+
 test('every runtime default points at the line of the pinned highcharts that applies it', () =>
-	assert.equal(checkPointers(fileURLToPath(new URL('../src/index.ts', import.meta.url))), 3));
+	assert.equal(checkPackagePointers(import.meta.url), 5));
