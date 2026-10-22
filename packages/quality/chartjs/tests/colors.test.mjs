@@ -50,3 +50,12 @@ test('per-point colours, plugin types and getters are not modelled', () => {
 		'? accessor $.data.datasets[1].backgroundColor'
 	]);
 });
+
+test('shades and background: a colour is the same in both schemes; the canvas background is the page', () => {
+	const chart = normalize({ type: 'bar', data: data({ backgroundColor: '#f00' }) });
+	assert.deepEqual(
+		[chart.series.items[0].shades.value.light.value, chart.series.items[0].shades.value.dark.value],
+		['#f00', '#f00']
+	);
+	assert.deepEqual(chart.background, { known: false, path: '$', reason: 'unmodelled' });
+});

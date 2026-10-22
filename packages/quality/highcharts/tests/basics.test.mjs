@@ -4,8 +4,13 @@ import test from 'node:test';
 import { checkPackagePointers } from '../../core/tests/pointers.mjs';
 import { analyze, normalize } from '../dist/index.js';
 
-/** The label and access rules (CG-05-04 parts 3, 5) fire on most bare test configs; they have tests of their own. */
-const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED', 'VIS_DATA_NOT_DESCRIBED']);
+/** The label, access and contrast rules (CG-05-04 parts 3, 5, 6) fire on most bare test configs; they have tests of their own. */
+const LABELS = new Set([
+	'VIS_PLACEHOLDER_TEXT',
+	'VIS_VALUE_AXIS_UNTITLED',
+	'VIS_DATA_NOT_DESCRIBED',
+	'VIS_LOW_CONTRAST_SERIES'
+]);
 const codes = (config) =>
 	analyze(config)
 		.diagnostics.filter((d) => !LABELS.has(d.code))
@@ -150,7 +155,7 @@ test('stacking resolves through the series, plotOptions for its type and plotOpt
 });
 
 test('every runtime default points at the line of the pinned highcharts that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 10));
+	assert.equal(checkPackagePointers(import.meta.url), 25));
 
 test('titles: null hides a title; a y axis without text takes lang.yAxisTitle, else "Values"; an implicit y axis is read', () => {
 	const hidden = normalize({ title: { text: null }, yAxis: { title: { text: null } } });

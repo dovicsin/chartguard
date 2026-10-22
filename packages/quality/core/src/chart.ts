@@ -1,4 +1,4 @@
-import type { Fact, Listed } from './facts.js';
+import type { Fact, KnownFact, Listed } from './facts.js';
 
 /** What a series draws, across libraries; `other` keeps the library type for rules that need it. */
 export type SeriesKind = 'bar' | 'line' | 'area' | 'scatter' | 'pie' | 'other';
@@ -11,6 +11,16 @@ export type Stacking = 'none' | 'stacked' | 'percent';
 
 /** The coordinate system a series is drawn in. */
 export type CoordinateSystem = 'cartesian' | 'polar';
+
+/**
+ * A colour as it is shown in each colour scheme the chart can be shown in: `light`, `dark`, or both
+ * (the same colour in both when it does not depend on the scheme). The payload of a `Fact`; each shade
+ * carries where it was read from, or the runtime default it comes from.
+ */
+export interface Shades {
+	readonly light: KnownFact<string> | undefined;
+	readonly dark: KnownFact<string> | undefined;
+}
 
 /** A value of a series and where it is in the config. */
 export interface ValueAt {
@@ -46,6 +56,8 @@ export interface SeriesSemantics {
 	 * are CSS variables). Per-point colours and gradients are `unmodelled`.
 	 */
 	readonly color: Fact<string>;
+	/** Its colour as shown in each colour scheme: CSS variables resolved, for contrast. */
+	readonly shades: Fact<Shades>;
 	/** Its values as the runtime reads them from `data`; `unmodelled` for shapes not read yet (datasets, parsing keys, ranges). */
 	readonly values: Fact<ValueSummary>;
 }
@@ -92,4 +104,6 @@ export interface ChartSemantics {
 	readonly series: Listed<SeriesSemantics>;
 	readonly axes: readonly AxisSemantics[];
 	readonly access: AccessSemantics;
+	/** The background the series are drawn on, in each colour scheme; unknown when the page shows through. */
+	readonly background: Fact<Shades>;
 }

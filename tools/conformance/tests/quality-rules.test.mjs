@@ -4,7 +4,7 @@ import test from 'node:test';
 import * as echarts from 'echarts';
 
 import { analyze as analyzeChartjs } from '../../../packages/quality/chartjs/dist/index.js';
-import { colorKey } from '../../../packages/quality/core/dist/index.js';
+import { colorKey, contrastRatio } from '../../../packages/quality/core/dist/index.js';
 import { RULES_CONTRACT } from '../../../packages/quality/core/tests/fixtures/rules-contract.mjs';
 import { analyze as analyzeEcharts } from '../../../packages/quality/echarts/dist/index.js';
 import { analyze as analyzeHighcharts } from '../../../packages/quality/highcharts/dist/index.js';
@@ -38,7 +38,9 @@ const PREMISES = {
 	// Nothing in the chart describes its data to assistive technology (undefined: not measured here).
 	VIS_DATA_NOT_DESCRIBED: ({ described }) => (described === undefined ? undefined : !described),
 	// Keyboard access the library gives, turned off: nothing takes focus.
-	VIS_KEYBOARD_DISABLED: ({ keyboardOff }) => keyboardOff === true
+	VIS_KEYBOARD_DISABLED: ({ keyboardOff }) => keyboardOff === true,
+	// A cartesian series drawn below 3:1 against the background the browser computed (undefined: page shows through).
+	VIS_LOW_CONTRAST_SERIES: ({ contrasts }) => (contrasts === undefined ? undefined : contrasts.some((ratio) => ratio !== undefined && ratio < 3))
 };
 
 function checkPremises(findings, built, where) {
@@ -91,22 +93,26 @@ function builtEcharts(option, browserOutcome) {
 		const component = chart.getModel().getComponent('title');
 		const title = component === undefined || component.get('show') === false ? '' : (component.get('text') ?? '');
 		const described = browserOutcome === undefined ? undefined : browserOutcome.label !== '';
-		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn, title, config: option, colors: measured.map(({ color }) => color), described };
+		const background = chart.getModel().get('backgroundColor');
+		const contrasts = typeof background === 'string' && background !== 'transparent' ? measured.map(({ color }) => contrastRatio(color, background)) : undefined;
+		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn, title, config: option, colors: measured.map(({ color }) => color), described, contrasts };
 	} finally {
 		chart.dispose();
 	}
 }
 
 /** The y axes Highcharts built for its series (recorded by the page runner). */
-function builtHighcharts({ series, yAxes, title, access }, config) {
+function builtHighcharts({ series, yAxes, title, access, shades }, config) {
 	const measured = series
 		.filter(({ yAxis }) => yAxis !== null)
 		.map(({ type, yAxis }) => ({ type, id: yAxis, ...yAxes[yAxis] }));
 	// Highcharts leaves negative pie points out (`isValid`: `y >= 0`).
 	const pieMisdrawn = series.some(({ type, points }) => type === 'pie' && points.some(({ y, valid }) => y !== null && y < 0 && !valid));
 	const colors = series.filter(({ type, yAxis }) => type !== 'pie' && yAxis !== null).map(({ color }) => color);
+	const cartesian = series.map(({ type, yAxis }, index) => (type !== 'pie' && yAxis !== null ? index : -1)).filter((index) => index >= 0);
+	const contrasts = ['light', 'dark'].flatMap((scheme) => cartesian.map((index) => contrastRatio(shades[scheme].series[index] ?? '', shades[scheme].background)));
 	// The harness loads the accessibility module: keyboard focus is there unless the config turns it off.
-	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured, pieMisdrawn, title, config, colors, described: access.points > 0, keyboardOff: !access.keyboard };
+	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured, pieMisdrawn, title, config, colors, described: access.points > 0, keyboardOff: !access.keyboard, contrasts };
 }
 
 const run = (config, render) => verdictOf(render(copyPlain(config)));

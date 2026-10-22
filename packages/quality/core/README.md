@@ -24,6 +24,7 @@ Rules claim nothing on an unknown fact. Rules about an author's choice fire only
 | `dual-axis` | `VIS_DUAL_AXIS` | info | series of one orientation measured on two value axes |
 | `pie-negative` | `VIS_PIE_NEGATIVE` | warning | a negative value in a pie series (drawn as a positive slice or left out) |
 | `same-color-series` | `VIS_SAME_COLOR_SERIES` | warning | two cartesian series drawn in the same colour (a repeated colour, Chart.js's default grey, a wrapped palette) |
+| `low-contrast-series` | `VIS_LOW_CONTRAST_SERIES` | info | a cartesian series below 3:1 against a known background, in each colour scheme the chart can show |
 | `placeholder-text` | `VIS_PLACEHOLDER_TEXT` | warning | a chart or value-axis title drawn with the library's placeholder text (Highcharts "Chart title", "Values") |
 | `value-axis-untitled` | `VIS_VALUE_AXIS_UNTITLED` | info | a value axis whose title, and the chart's, are known to show nothing |
 | `data-not-described` | `VIS_DATA_NOT_DESCRIBED` | warning | assistive technology gets no description of the data (ECharts without `aria`, Highcharts with accessibility off) |

@@ -37,3 +37,29 @@ test('colour from plotOptions, colorByPoint, styled mode and out-of-range colorI
 	assert.deepEqual(colors({ chart: { styledMode: true }, series: [{}] }), ['? unmodelled $.series[0].color']);
 	assert.deepEqual(colors({ colors: ['#111'], series: [{ colorIndex: 3 }] }), ['? unmodelled $.series[0].color']);
 });
+
+test('shades: palette variables resolved per scheme (light, dark overrides, palette colors); backgrounds; colorScheme and injectCSS are not modelled', () => {
+	const shade = (fact) =>
+		fact.known ? `${String(fact.value.light?.value)} / ${String(fact.value.dark?.value)}` : `? ${fact.reason}`;
+	const chart = normalize({ series: [{}, {}, { color: '#000' }] });
+	assert.deepEqual(
+		chart.series.items.map(({ shades }) => shade(shades)),
+		['#2caffe / #2caffe', '#544fc5 / #00e272', '#000 / #000']
+	);
+	assert.equal(shade(chart.background), '#ffffff / #141414');
+	const palette = normalize({
+		palette: { colors: ['#111'], light: { colors: ['#222'], backgroundColor: '#eee' } },
+		series: [{}]
+	});
+	assert.equal(shade(palette.series.items[0].shades), '#222 / #111');
+	assert.equal(shade(palette.background), '#eee / #141414');
+	assert.equal(
+		shade(normalize({ chart: { plotBackgroundColor: '#ccc', backgroundColor: '#000' }, series: [{}] }).background),
+		'#ccc / #ccc'
+	);
+	assert.equal(
+		shade(normalize({ palette: { colorScheme: 'dark' }, series: [{}] }).series.items[0].shades),
+		'? unmodelled'
+	);
+	assert.equal(shade(normalize({ palette: { injectCSS: false }, series: [{}] }).background), '? unmodelled');
+});

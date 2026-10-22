@@ -27,3 +27,33 @@ export function colorKey(color: string): string {
 	if (rgb !== null) return `rgba(${fromRgb(rgb).join(',')})`;
 	return text.replace(/\s+/g, '');
 }
+
+/** The red, green, blue (0–255) and alpha (0–1) of a hex or `rgb()` colour, or undefined for other forms. */
+function rgbaOf(color: string): readonly number[] | undefined {
+	const key = colorKey(color);
+	if (!key.startsWith('rgba(')) return undefined;
+	return key.slice(5, -1).split(',').map(Number);
+}
+
+/** The relative luminance of a colour's red, green and blue (WCAG 2.2). */
+function luminance([red = 0, green = 0, blue = 0]: readonly number[]): number {
+	const linear = (channel: number): number => {
+		const value = channel / 255;
+		return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+	};
+	return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+}
+
+/**
+ * The contrast ratio (WCAG 2.2, 1 to 21) of `foreground` drawn over `background`: a translucent
+ * foreground is composited over the background first. Undefined when either colour is not in a hex or
+ * `rgb()` form, or the background is not opaque (whatever is behind it shows through).
+ */
+export function contrastRatio(foreground: string, background: string): number | undefined {
+	const [front, back] = [rgbaOf(foreground), rgbaOf(background)];
+	if (front === undefined || back?.[3] !== 1) return undefined;
+	const alpha = front[3] ?? 1;
+	const drawn = [0, 1, 2].map((index) => (front[index] ?? 0) * alpha + (back[index] ?? 0) * (1 - alpha));
+	const [lighter, darker] = [luminance(drawn), luminance(back)].sort((a, b) => b - a);
+	return ((lighter ?? 0) + 0.05) / ((darker ?? 0) + 0.05);
+}

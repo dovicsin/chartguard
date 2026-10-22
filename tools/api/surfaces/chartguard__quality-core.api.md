@@ -24,6 +24,7 @@ interface ChartSemantics {
     readonly series: Listed<SeriesSemantics>;
     readonly axes: readonly AxisSemantics[];
     readonly access: AccessSemantics;
+    readonly background: Fact<Shades>;
 }
 
 ### CoordinateSystem
@@ -114,7 +115,14 @@ interface SeriesSemantics {
     readonly orientation: Fact<Orientation>;
     readonly stacking: Fact<Stacking>;
     readonly color: Fact<string>;
+    readonly shades: Fact<Shades>;
     readonly values: Fact<ValueSummary>;
+}
+
+### Shades
+interface Shades {
+    readonly light: KnownFact<string> | undefined;
+    readonly dark: KnownFact<string> | undefined;
 }
 
 ### Stacking
@@ -151,6 +159,9 @@ interface ValueSummary {
 
 ### colorKey
 function colorKey(color: string): string;
+
+### contrastRatio
+function contrastRatio(foreground: string, background: string): number | undefined;
 
 ### defaulted
 defaulted: <T>({ value, pointer }: Default<T>, path: string) => KnownFact<T>
@@ -192,6 +203,9 @@ function readPath(root: unknown, path: readonly PathSegment[]): unknown;
 
 ### review
 function review(chart: ChartSemantics): QualityReport;
+
+### sameShades
+function sameShades(color: Fact<string>): Fact<Shades>;
 
 ### unknown
 unknown: (path: string, reason: UnknownReason) => UnknownFact

@@ -6,6 +6,7 @@ import {
 	type Item,
 	type Orientation,
 	readFact,
+	sameShades,
 	type SeriesKind,
 	type SeriesSemantics,
 	type Stacking,
@@ -128,6 +129,7 @@ export function seriesOf(config: unknown, item: Item, color: Fact<string>): Seri
 		name: readFact(config, [...item.segments, 'name'], isString),
 		...layoutOf(config, item, type),
 		color,
+		shades: sameShades(color),
 		values: valuesOf(config, item)
 	};
 }

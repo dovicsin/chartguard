@@ -93,8 +93,30 @@ test('ECharts: every known series colour is the colour the series style task ass
 
 const browser = { skip: browserSkipReason() ?? false };
 
-test('Highcharts: every known series colour is the colour the series takes', browser, async () => {
-	const configs = [...HIGHCHARTS, ...contract('highcharts')];
+const SCHEMES = [
+	{ series: [{ type: 'column', data: [1] }, { type: 'line', data: [1, 2] }, { type: 'column', data: [1] }] },
+	{ palette: { colors: ['#123456'], dark: { colors: [null, '#abcdef'], backgroundColor: '#000033' } }, series: [{ type: 'column', data: [1] }, { type: 'column', data: [1] }] },
+	{ chart: { plotBackgroundColor: '#eeeeee', backgroundColor: '#000000' }, series: [{ type: 'line', color: 'rgba(0, 0, 0, 0.5)', data: [1, 2] }] }
+];
+
+/** Each known shade and the background, per scheme, against what the browser computed. */
+function agreeShades({ series, background }, shades, where) {
+	for (const scheme of ['light', 'dark']) {
+		const back = background.known ? background.value[scheme] : undefined;
+		if (back !== undefined) assert.equal(colorKey(back.value), colorKey(shades[scheme].background), `${where} background ${scheme}`);
+		series.items.forEach(({ shades: own }, index) => {
+			const shade = own.known ? own.value[scheme] : undefined;
+			if (shade !== undefined) assert.equal(colorKey(shade.value), colorKey(shades[scheme].series[index]), `${where} series ${String(index)} ${scheme}`);
+		});
+	}
+}
+
+test('Highcharts: every known series colour is the colour the series takes, and every known shade is what the browser shows in each scheme', browser, async () => {
+	const configs = [...HIGHCHARTS, ...SCHEMES, ...contract('highcharts')];
 	const outcomes = await runHighcharts(configs.map((config) => ({ config })));
-	configs.forEach((config, position) => agree(normalizeHighcharts(config), (index) => outcomes[position].observed.series[index].color, JSON.stringify(config)));
+	configs.forEach((config, position) => {
+		const semantics = normalizeHighcharts(config);
+		agree(semantics, (index) => outcomes[position].observed.series[index].color, JSON.stringify(config));
+		agreeShades(semantics, outcomes[position].observed.shades, JSON.stringify(config));
+	});
 });

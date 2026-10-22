@@ -2,13 +2,17 @@ import type { QualityReport } from '@chartguard/core';
 import {
 	type AccessSemantics,
 	type ChartSemantics,
+	contrastRatio,
 	type Default,
+	type Fact,
 	isBoolean,
 	isString,
 	itemsAt,
 	readFact,
 	readPath,
 	review,
+	sameShades,
+	type Shades,
 	unknown
 } from '@chartguard/quality-core';
 
@@ -30,6 +34,20 @@ function accessOf(config: unknown): AccessSemantics {
 		enabled.known && enabled.value ? readFact(config, ['aria', 'label', 'enabled'], isBoolean, ARIA_LABEL) : enabled;
 	// echarts has no keyboard navigation of its own: not something the config decides.
 	return { dataDescribed: described, keyboard: unknown('$', 'unmodelled') };
+}
+
+/**
+ * The background: the option's `backgroundColor` when it is opaque. Without one echarts draws none
+ * (`ecModel.get('backgroundColor') || 'transparent'`, dist/echarts.js:29469) and the page shows
+ * through; a grid that draws its own background (`grid.show`) is not modelled.
+ */
+function backgroundOf(config: unknown): Fact<Shades> {
+	const grid = readFact(config, ['grid', 'show'], isBoolean);
+	if (!grid.known && grid.reason !== 'unset') return grid;
+	if (grid.known && grid.value) return unknown(grid.path, 'unmodelled');
+	const color = readFact(config, ['backgroundColor'], isString);
+	if (!color.known) return color.reason === 'unset' ? unknown(color.path, 'unmodelled') : color;
+	return contrastRatio('#000', color.value) === undefined ? unknown(color.path, 'unmodelled') : sameShades(color);
 }
 
 /** Without a title (or its text) echarts draws none. */
@@ -55,7 +73,8 @@ export function normalize(config: unknown): ChartSemantics {
 				}
 			: items,
 		axes: axesOf(config),
-		access: accessOf(config)
+		access: accessOf(config),
+		background: backgroundOf(config)
 	};
 }
 

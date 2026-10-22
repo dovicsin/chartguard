@@ -53,3 +53,18 @@ test('a line repainted by lineStyle, functions, pies and unreadable series are n
 		'? unmodelled $.series[1].itemStyle.color'
 	]);
 });
+
+test('background: only an opaque backgroundColor; without one, or translucent, or with a grid background, the page decides', () => {
+	const background = (option) => {
+		const fact = normalize(option).background;
+		return fact.known ? `${fact.value.light.value} / ${fact.value.dark.value}` : `? ${fact.reason}`;
+	};
+	assert.equal(background({ backgroundColor: '#fff' }), '#fff / #fff');
+	assert.equal(background({}), '? unmodelled');
+	assert.equal(background({ backgroundColor: 'rgba(255, 255, 255, 0.5)' }), '? unmodelled');
+	assert.equal(background({ backgroundColor: '#fff', grid: { show: true } }), '? unmodelled');
+	assert.equal(
+		normalize({ series: [{ type: 'bar', itemStyle: { color: '#123' } }] }).series.items[0].shades.value.dark.value,
+		'#123'
+	);
+});

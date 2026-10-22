@@ -26,6 +26,7 @@ const chart = ({ items = [], axes = [], text = none('$.title.text'), shown = non
 	title: { text, shown },
 	series: { known: true, path: '$.series', items },
 	axes,
+	background: none('$.background'),
 	access: { dataDescribed: none('$.access'), keyboard: none('$.keyboard') }
 });
 const codes = (report) => report.diagnostics.map((d) => `${d.code} ${d.path}`);

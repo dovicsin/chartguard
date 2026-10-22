@@ -8,6 +8,7 @@ import {
 	type Listed,
 	type Orientation,
 	readFact,
+	sameShades,
 	type SeriesKind,
 	type SeriesSemantics,
 	type Stacking,
@@ -158,6 +159,12 @@ function layoutOf(config: unknown, item: Item, type: Fact<string>, scales: Scale
 	return cartesianLayout(config, item, type, scales);
 }
 
+/** A Chart.js colour does not depend on the colour scheme. */
+const colors = (color: Fact<string>): Pick<SeriesSemantics, 'color' | 'shades'> => ({
+	color,
+	shades: sameShades(color)
+});
+
 export function seriesOf(config: unknown, item: Item, scales: Scales, datasets: Listed<Item>): SeriesSemantics {
 	const type = typeOf(config, item);
 	const layout = layoutOf(config, item, type, scales);
@@ -167,7 +174,7 @@ export function seriesOf(config: unknown, item: Item, scales: Scales, datasets: 
 		kind: kindOf(config, item, type),
 		name: readFact(config, [...item.segments, 'label'], isString),
 		...layout,
-		color: colorOf(config, item, type, datasets),
+		...colors(colorOf(config, item, type, datasets)),
 		values: valuesOf(config, item, type, layout.orientation)
 	};
 }

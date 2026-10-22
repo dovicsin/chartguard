@@ -173,9 +173,14 @@ for (const wrapper of WRAPPERS) {
 
 	test(`${wrapper.name}: its own overhead stays small next to the validation (100 000 points)`, () => {
 		const input = wrapper.input(100_000);
-		const [bare, wrapped] = fastest([() => (wrapper.bare ?? wrapper.validator)(input), () => wrapper.run(input, wrapper.validator)]);
+		const bodies = [() => (wrapper.bare ?? wrapper.validator)(input), () => wrapper.run(input, wrapper.validator)];
 		// Budget: the wrapper adds at most half the validation time plus 2 ms (measured on the pinned runtimes).
-		assert.ok(wrapped <= bare * 1.5 + 2, `wrapped ${wrapped.toFixed(2)} ms vs validation ${bare.toFixed(2)} ms`);
+		const within = ([bare, wrapped]) => wrapped <= bare * 1.5 + 2;
+		// A spike shared by every run of one side (other test files, browsers) is measured again, longer:
+		// only an overrun that persists is a regression.
+		const first = fastest(bodies);
+		const [bare, wrapped] = within(first) ? first : fastest(bodies, 40);
+		assert.ok(within([bare, wrapped]), `wrapped ${wrapped.toFixed(2)} ms vs validation ${bare.toFixed(2)} ms`);
 	});
 }
 

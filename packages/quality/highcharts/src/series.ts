@@ -18,6 +18,7 @@ import {
 	type UnknownFact
 } from '@chartguard/quality-core';
 
+import { shadesOf } from './shades.js';
 import { valuesOf } from './values.js';
 
 const CHART_TYPE: Default<string> = {
@@ -130,6 +131,7 @@ export function seriesOf(config: unknown, item: Item, chart: ChartLayout, color:
 		name: readFact(config, [...item.segments, 'name'], isString),
 		...layoutOf(config, item, type, chart),
 		color,
+		shades: shadesOf(config, color),
 		values: valuesOf(config, item, type)
 	};
 }

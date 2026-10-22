@@ -1,5 +1,6 @@
 import { rule, SOURCES } from './catalog.js';
-import { colorKey } from './color.js';
+import type { Shades } from './chart.js';
+import { colorKey, contrastRatio } from './color.js';
 import { valueOf } from './facts.js';
 import { CARTESIAN } from './measure.js';
 
@@ -33,6 +34,52 @@ export const sameColorSeries = rule(
 					'This series is drawn in the same colour as an earlier one: readers cannot tell them apart; give it its own colour.'
 				)
 			];
+		});
+	}
+);
+
+/** WCAG 2.2 SC 1.4.11: graphical objects that carry information need 3:1 against adjacent colours. */
+const MINIMUM = 3;
+
+/** Each scheme where both shades are known and their contrast is below the minimum, with its ratio. */
+function lowContrast(front: Shades, back: Shades): string[] {
+	return (['light', 'dark'] as const).flatMap((scheme) => {
+		const [series, background] = [front[scheme], back[scheme]];
+		if (series === undefined || background === undefined) return [];
+		const ratio = contrastRatio(series.value, background.value);
+		return ratio !== undefined && ratio < MINIMUM ? [`${ratio.toFixed(2)}:1 in the ${scheme} scheme`] : [];
+	});
+}
+
+export const lowContrastSeries = rule(
+	{
+		id: 'low-contrast-series',
+		code: 'VIS_LOW_CONTRAST_SERIES',
+		severity: 'info',
+		title: 'A series with low contrast against its background',
+		rationale:
+			"A line, bar or point that carries data needs a contrast of at least 3:1 against what it is drawn on, or readers with low vision lose it. Translucent colours are judged as drawn, over the background; charts that follow the user's light or dark scheme are judged in each.",
+		evidence: [SOURCES.wcag22Contrast],
+		limits: [
+			'Only the chart background is compared: gridlines, other series and a page showing through (Chart.js canvases, ECharts without `backgroundColor`) are not.',
+			'Information given another way (data labels, a table) meets the criterion without the contrast; several default palettes have colours below 3:1 on white, so the finding is a note.',
+			'Only hex and rgb() colours are compared.'
+		]
+	},
+	({ series, background }, report) => {
+		if (!series.known || !background.known) return [];
+		return series.items.flatMap(({ kind, shades }) => {
+			const drawnKind = valueOf(kind);
+			if (!shades.known || drawnKind === undefined || !CARTESIAN.includes(drawnKind)) return [];
+			const low = lowContrast(shades.value, background.value);
+			return low.length === 0
+				? []
+				: [
+						report(
+							shades.path,
+							`This series has low contrast against the background (${low.join(', ')}; WCAG asks for 3:1).`
+						)
+					];
 		});
 	}
 );

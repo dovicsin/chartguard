@@ -17,6 +17,7 @@ const chart = (dataDescribed, keyboard) => ({
 	title: { text: fact('T', '$.title'), shown: none('$.shown') },
 	series: { known: true, path: '$.series', items: [] },
 	axes: [],
+	background: none('$.background'),
 	access: { dataDescribed, keyboard }
 });
 const codes = (semantics) => review(semantics).diagnostics.map((d) => `${d.code} ${d.path}`);

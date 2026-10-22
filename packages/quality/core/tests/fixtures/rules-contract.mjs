@@ -8,6 +8,7 @@
 import { ACCESS_CASES } from './access-cases.mjs';
 import { cjBars, ecBars, hcBars, LABELS } from './charts.mjs';
 import { COLOR_CASES } from './colors-cases.mjs';
+import { CONTRAST_CASES } from './contrast-cases.mjs';
 import { LABEL_CASES } from './labels-cases.mjs';
 
 const CASES = [
@@ -210,14 +211,36 @@ const TITLED = {
 	highcharts: (config) => ({ title: { text: TITLE }, ...config, yAxis: yTitled(config.yAxis ?? {}) })
 };
 
-/** Every case that is not about accessibility is an accessible chart: ECharts describes its data only with `aria`. */
-const accessible = (key, config) => (key === 'echarts' ? { aria: { enabled: true }, ...config } : config);
+/**
+ * Every case that is not about accessibility is an accessible chart: ECharts describes its data only
+ * with `aria`; Highcharts's default colours fall below 3:1 on white, so it gets colours with 3:1 on
+ * both its light and dark backgrounds.
+ */
+const ACCESSIBLE_COLORS = [
+	'#1f77b4',
+	'#d62728',
+	'#2ca02c',
+	'#9467bd',
+	'#8c564b',
+	'#7f7f7f',
+	'#3366cc',
+	'#dc3912',
+	'#109618',
+	'#0099c6'
+];
+const DESCRIBED = (key, option) => (key === 'echarts' ? { aria: { enabled: true }, ...option } : option);
+const CONTRASTED = (key, config) =>
+	key === 'highcharts' ? { palette: { colors: ACCESSIBLE_COLORS }, ...config } : config;
 
-/** A case as a real chart would be written: titled unless it is about labels, accessible unless it is about access. */
+/**
+ * A case as a real chart would be written: titled unless it is about labels, described to assistive
+ * technology unless it is about access, in colours with contrast unless it is about contrast.
+ */
 function realistic(entry) {
 	const config = (key, value) => {
 		const titled = entry.labels === true ? value : TITLED[key](value);
-		return entry.access === true ? titled : accessible(key, titled);
+		const described = entry.access === true ? titled : DESCRIBED(key, titled);
+		return entry.contrast === true ? described : CONTRASTED(key, described);
 	};
 	return Object.fromEntries(
 		Object.entries(entry).map(([key, value]) =>
@@ -226,4 +249,6 @@ function realistic(entry) {
 	);
 }
 
-export const RULES_CONTRACT = [...CASES, ...COLOR_CASES, ...LABEL_CASES, ...ACCESS_CASES].map(realistic);
+export const RULES_CONTRACT = [...CASES, ...COLOR_CASES, ...CONTRAST_CASES, ...LABEL_CASES, ...ACCESS_CASES].map(
+	realistic
+);

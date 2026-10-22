@@ -49,7 +49,25 @@ for (const options of CASES.map(revive)) {
 	try {
 		const chart = Highcharts.chart(container, options);
 		// What the chart built, for the quality semantics and rule premises (CG-05-03, CG-05-04): its inversion, each series' axis and stacking, each y axis' range, direction and scale.
+		// The colours as the browser computes them, in each scheme (the classes Highcharts documents for forcing one).
+		const computed = () => ({
+			// The plot background is always drawn, with no fill unless the options give one.
+			background: getComputedStyle((chart.options.chart.plotBackgroundColor ? chart.plotBackground : chart.chartBackground).element).fill,
+			series: chart.series.map((series) => {
+				const element = series.graph?.element ?? series.points[0]?.graphic?.element;
+				if (!element) return null;
+				const style = getComputedStyle(element);
+				return series.graph ? style.stroke : style.fill;
+			})
+		});
+		const shades = {};
+		for (const scheme of ['light', 'dark']) {
+			container.classList.add('highcharts-' + scheme);
+			shades[scheme] = computed();
+			container.classList.remove('highcharts-' + scheme);
+		}
 		current.observed = {
+			shades,
 			inverted: chart.inverted === true,
 			polar: chart.polar === true,
 			series: chart.series.map((series) => ({ type: series.type, yAxis: series.yAxis ? series.yAxis.index : null, stacking: series.options.stacking ?? null, color: typeof series.color === 'string' ? series.color : null, points: series.points.map((point) => ({ y: point.y ?? null, valid: point.isValid() })) })),

@@ -24,6 +24,7 @@ import {
 
 import { seriesColors } from './color.js';
 import { FROM_SERIES, seriesOf } from './series.js';
+import { backgroundOf } from './shades.js';
 
 /**
  * A y axis without a title text takes the language's `yAxisTitle` (`text: this.chart.options.lang.yAxisTitle`,
@@ -179,7 +180,8 @@ export function normalize(config: unknown): ChartSemantics {
 				}
 			: items,
 		axes: axesOf(config),
-		access: accessOf(config)
+		access: accessOf(config),
+		background: backgroundOf(config)
 	};
 }
 

@@ -1,6 +1,6 @@
 import { dataNotDescribed, keyboardDisabled } from './access.js';
 import { type QualityRule, rule, SOURCES } from './catalog.js';
-import { sameColorSeries } from './colors.js';
+import { lowContrastSeries, sameColorSeries } from './colors.js';
 import { valueOf } from './facts.js';
 import { emptyTitle, placeholderText, valueAxisUntitled } from './labels.js';
 import { CARTESIAN, configured, measuredAxes } from './measure.js';
@@ -174,6 +174,7 @@ export const QUALITY_RULES: readonly QualityRule[] = [
 	dualAxis,
 	pieNegative,
 	sameColorSeries,
+	lowContrastSeries,
 	placeholderText,
 	valueAxisUntitled,
 	emptyTitle,
