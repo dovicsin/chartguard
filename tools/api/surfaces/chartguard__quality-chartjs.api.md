@@ -4,4 +4,4 @@
 function analyze(config: unknown): QualityReport;
 
 ### normalize
-function normalize(config: unknown): NormalizedChart;
+function normalize(config: unknown): ChartSemantics;

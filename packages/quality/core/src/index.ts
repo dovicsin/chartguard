@@ -1,4 +1,6 @@
-export type { Fact, NormalizedChart } from './chart.js';
-export type { PathSegment } from './read.js';
-export { formatPath, numberAt, readPath, stringAt } from './read.js';
+export type { AxisSemantics, ChartSemantics, SeriesKind, SeriesSemantics, TitleSemantics } from './chart.js';
+export type { Default, Fact, KnownFact, Listed, UnknownFact, UnknownReason } from './facts.js';
+export { defaulted, known, unknown, valueOf } from './facts.js';
+export type { Item, PathSegment } from './read.js';
+export { formatPath, isBoolean, isNumber, isString, itemsAt, readFact, readPath } from './read.js';
 export { review } from './review.js';

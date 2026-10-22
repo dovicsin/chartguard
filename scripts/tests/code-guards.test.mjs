@@ -67,10 +67,16 @@ test('R5 one engines policy: every workspace package declares the root Node rang
 	}
 });
 
-test('R6 no mutable quality facts: rules receive facts with paths, never bare values', () => {
+test('R6 quality facts: every chart-semantics field is a Fact, a list of facts or a named structural field, never a bare value (B3, CG-05-02)', () => {
 	const chart = readFileSync(join(ROOT, 'packages/quality/core/src/chart.ts'), 'utf8');
-	const bare = [...chart.matchAll(/^\s*readonly \w+\?: (?!Fact<)/gm)].map((match) => match[0].trim());
-	assert.deepEqual(bare, []);
+	const STRUCTURAL =
+		/^readonly (path|key|library): string;$|^readonly \w+: (Fact<|Listed<|readonly \w+Semantics\[\]|\w+Semantics;)/;
+	const fields = [...chart.matchAll(/^\s*(readonly \w+\??: .*)$/gm)].map((match) => match[1].trim());
+	assert.ok(fields.length > 0);
+	assert.deepEqual(
+		fields.filter((field) => !STRUCTURAL.test(field)),
+		[]
+	);
 });
 
 test('R7 shipped files are tracked: every non-build entry in a package `files` list exists and is not git-ignored', () => {

@@ -1,12 +1,43 @@
-/** A fact read from a config together with the path it was read from, so a finding can point at it. */
-export interface Fact<T> {
-	readonly value: T;
+import type { Fact, Listed } from './facts.js';
+
+/** What a series draws, across libraries; `other` keeps the library type for rules that need it. */
+export type SeriesKind = 'bar' | 'line' | 'area' | 'scatter' | 'pie' | 'other';
+
+/** One series (dataset): its library type, what it draws, its name and the axis its values are measured on. */
+export interface SeriesSemantics {
+	/** Where the series is in the config. */
 	readonly path: string;
+	readonly type: Fact<string>;
+	readonly kind: Fact<SeriesKind>;
+	readonly name: Fact<string>;
+	/** The `key` of the axis in `ChartSemantics.axes` its values are plotted against. */
+	readonly valueAxis: Fact<string>;
 }
 
-/** Library-neutral facts about a chart; `undefined` means the fact is unknown. */
-export interface NormalizedChart {
-	readonly kind?: Fact<string> | undefined;
-	readonly yMin?: Fact<number> | undefined;
-	readonly title?: Fact<string> | undefined;
+/** One axis: the key series refer to it by, and its range and title. */
+export interface AxisSemantics {
+	/** Library-neutral and unique in the chart: `y`, `y-left` (Chart.js scale ids), `yAxis[0]`. */
+	readonly key: string;
+	/** Where the axis is configured, or would be. */
+	readonly path: string;
+	readonly min: Fact<number>;
+	readonly max: Fact<number>;
+	readonly title: Fact<string>;
+}
+
+/** The chart's title: its text and whether it is shown. */
+export interface TitleSemantics {
+	readonly text: Fact<string>;
+	readonly shown: Fact<boolean>;
+}
+
+/**
+ * Library-neutral chart semantics (CG-05-02). Every fact is known, with the path it was read from
+ * (or the runtime default and its pointer), or unknown with why: rules claim nothing on an unknown fact.
+ */
+export interface ChartSemantics {
+	readonly library: string;
+	readonly title: TitleSemantics;
+	readonly series: Listed<SeriesSemantics>;
+	readonly axes: readonly AxisSemantics[];
 }
