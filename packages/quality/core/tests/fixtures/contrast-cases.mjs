@@ -6,6 +6,8 @@ const TITLE = { text: 'Quarterly sales' };
 export const CONTRAST_CASES = [
 	{
 		name: "Highcharts's default colours on its light and dark backgrounds",
+		rule: 'low-contrast-series',
+		kind: 'triggers',
 		contrast: true,
 		highcharts: {
 			config: {
@@ -22,6 +24,8 @@ export const CONTRAST_CASES = [
 	},
 	{
 		name: 'a translucent series on an opaque background',
+		rule: 'low-contrast-series',
+		kind: 'triggers',
 		contrast: true,
 		echarts: {
 			config: {
@@ -43,6 +47,8 @@ export const CONTRAST_CASES = [
 	},
 	{
 		name: 'counterexample: a page showing through, or colours with contrast',
+		rule: 'low-contrast-series',
+		kind: 'counterexample',
 		contrast: true,
 		echarts: {
 			config: {

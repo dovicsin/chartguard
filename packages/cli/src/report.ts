@@ -40,6 +40,9 @@ export function reportQuality(report: QualityReport, json: boolean, io: Io): num
 	else {
 		io.out(`${report.library} quality review (rules ${report.rulesVersion})`);
 		for (const diagnostic of report.diagnostics) io.out(describe(diagnostic));
+		for (const { diagnostic, by, reason } of report.suppressed)
+			io.out(`  SUPPRESSED (${by}) ${diagnostic.code} ${diagnostic.path}: ${reason}`);
+		if (report.disabled.length > 0) io.out(`  OFF ${report.disabled.join(', ')}`);
 		io.out(ADVISORY_NOTE);
 	}
 	return EXIT_OK;

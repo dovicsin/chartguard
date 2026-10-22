@@ -1,6 +1,6 @@
 # @chartguard/quality-core
 
-Library-neutral chart semantics and the advisory quality rules that read them. The adapters (`@chartguard/quality-chartjs`, `-echarts`, `-highcharts`) turn a config into `ChartSemantics`; `review(chart)` returns a `QualityReport`: findings only, never a verdict, never an error.
+Library-neutral chart semantics and the advisory quality rules that read them. The adapters (`@chartguard/quality-chartjs`, `-echarts`, `-highcharts`) turn a config into `ChartSemantics`; `review(chart, options?)` returns a `QualityReport`: findings only, never a verdict, never an error.
 
 ## Facts
 
@@ -8,7 +8,8 @@ Every fact is one of:
 
 - **known from the config**, with the path it was read from;
 - **the runtime's default**, with a pointer to the line of the pinned package that applies it;
-- **unknown**, with its reason: `unset`, `accessor`, `dynamic`, `shape`, `unmodelled`, `inapplicable` or `layout` (it depends on the size the chart is drawn at).
+- **declared by the caller** (`context`), for a fact the chart leaves to the page;
+- **unknown**, with its reason: `unset`, `accessor`, `dynamic`, `shape`, `unmodelled`, `inapplicable`, `layout` (it depends on the size the chart is drawn at) or `page` (the chart leaves it to the page it is shown in).
 
 Rules claim nothing on an unknown fact. Rules about an author's choice fire only on facts from the config.
 
@@ -32,5 +33,41 @@ Rules claim nothing on an unknown fact. Rules about an author's choice fire only
 | `long-motion` | `VIS_LONG_MOTION` | warning | motion that starts by itself and runs forever (a looping animation, a ripple effect) or longer than five seconds |
 | `empty-title` | `VIS_EMPTY_TITLE` | info | a title the config sets to blank text, unless it is known to be hidden |
 | `percent-without-unit` | `VIS_PERCENT_WITHOUT_UNIT` | info | a percent-stacked value axis whose tick labels and title show no `%` |
+
+## Settings and context
+
+`review(chart, options)` and every adapter's `analyze(config, options)` take the caller's options:
+
+```json
+{
+	"rules": {
+		"value-axis-untitled": "off",
+		"dual-axis": "warning",
+		"bar-baseline": { "level": "info", "ignore": [{ "path": "$.options.scales.y", "reason": "A narrow band of stock prices." }] }
+	},
+	"context": { "background": { "light": "#ffffff", "dark": "#121212" }, "describesData": true, "pausesMotion": false }
+}
+```
+
+Each rule's setting works as follows:
+
+- **A level:** `off` (the rule does not run, and is listed in `disabled`), `info` or `warning`. Never `error`: quality never decides validity.
+- **An ignore:** a finding at the path, or inside it, is not reported. Paths are compared segment by segment, and a reason is required.
+- **Suppressed findings are kept** in `suppressed`, with why (`by: 'setting'` or `'context'`), never dropped.
+
+The context declares what the config cannot show about the page:
+
+- **`background`:** the page behind a chart that draws none (a Chart.js canvas, ECharts without `backgroundColor`, a transparent Highcharts background), so its series can be measured for contrast.
+- **`describesData`:** `true` meets `data-not-described` (the page has a table or a text alternative). `false` lets the rule decide for a canvas.
+- **`pausesMotion`:** `true` meets `long-motion` (WCAG 2.2.2).
+
+Each catalog entry lists the context facts that change it (`context`).
+
+Invalid options throw `QualityOptionsError`, listing every problem with where it is; `assertQualityOptions` checks them alone.
+
+A rule's default severity follows its `impact`:
+
+- `misleads` (every reader is shown the data wrongly) and `excludes` (some readers cannot get the content) are warnings;
+- `omits` and `risks` are information.
 
 Findings are advisory. A chart's purpose is not in its config, so every finding asks the reader to verify; each rule's `limits` say where it can be wrong.

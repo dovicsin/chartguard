@@ -167,5 +167,5 @@ test('every runtime default points at the line of the pinned chart.js that appli
 
 test('access: a canvas gets its text alternative and keyboard access from the page', () => {
 	const { dataDescribed, keyboard } = normalize({}).access;
-	assert.deepEqual([brief(dataDescribed), brief(keyboard)], ['? unmodelled $', '? unmodelled $']);
+	assert.deepEqual([brief(dataDescribed), brief(keyboard)], ['? page $', '? page $']);
 });

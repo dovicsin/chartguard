@@ -60,7 +60,10 @@ test('background: only an opaque backgroundColor; without one, or translucent, o
 		return fact.known ? `${fact.value.light.value} / ${fact.value.dark.value}` : `? ${fact.reason}`;
 	};
 	assert.equal(background({ backgroundColor: '#fff' }), '#fff / #fff');
-	assert.equal(background({}), '? unmodelled');
+	// Without a background, or with a transparent one, the page shows through.
+	assert.equal(background({}), '? page');
+	assert.equal(background({ backgroundColor: 'transparent' }), '? page');
+	assert.equal(background({ backgroundColor: 'rgba(255, 255, 255, 0)' }), '? page');
 	assert.equal(background({ backgroundColor: 'rgba(255, 255, 255, 0.5)' }), '? unmodelled');
 	assert.equal(background({ backgroundColor: '#fff', grid: { show: true } }), '? unmodelled');
 	assert.equal(

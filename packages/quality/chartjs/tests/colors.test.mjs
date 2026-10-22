@@ -57,5 +57,5 @@ test('shades and background: a colour is the same in both schemes; the canvas ba
 		[chart.series.items[0].shades.value.light.value, chart.series.items[0].shades.value.dark.value],
 		['#f00', '#f00']
 	);
-	assert.deepEqual(chart.background, { known: false, path: '$', reason: 'unmodelled' });
+	assert.deepEqual(chart.background, { known: false, path: '$', reason: 'page' });
 });

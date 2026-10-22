@@ -30,6 +30,16 @@ interface ChartSemantics {
     readonly motion: MotionSemantics;
 }
 
+### ContextCondition
+interface ContextCondition {
+    readonly fact: ContextFact;
+    readonly effect: 'supplies' | 'satisfies';
+    readonly note: string;
+}
+
+### ContextFact
+type ContextFact = 'background' | 'describesData' | 'pausesMotion';
+
 ### CoordinateSystem
 type CoordinateSystem = 'cartesian' | 'polar';
 
@@ -53,6 +63,15 @@ interface Evidence {
 ### Fact
 type Fact<T> = KnownFact<T> | UnknownFact;
 
+### Ignore
+interface Ignore {
+    readonly path: string;
+    readonly reason: string;
+}
+
+### Impact
+type Impact = 'misleads' | 'excludes' | 'omits' | 'risks';
+
 ### Item
 interface Item {
     readonly value: unknown;
@@ -65,7 +84,7 @@ type KnownFact<T> = {
     readonly known: true;
     readonly value: T;
     readonly path: string;
-    readonly source: 'config';
+    readonly source: 'config' | 'context';
 } | {
     readonly known: true;
     readonly value: T;
@@ -90,8 +109,34 @@ interface MotionSemantics {
 ### Orientation
 type Orientation = 'vertical' | 'horizontal';
 
+### PageBackground
+type PageBackground = string | {
+    readonly light?: string;
+    readonly dark?: string;
+};
+
 ### PathSegment
 type PathSegment = string | number;
+
+### QualityContext
+interface QualityContext {
+    readonly background?: PageBackground;
+    readonly describesData?: boolean;
+    readonly pausesMotion?: boolean;
+}
+
+### QualityOptions
+interface QualityOptions {
+    readonly rules?: Readonly<Record<string, RuleLevel | RuleSetting>>;
+    readonly context?: QualityContext;
+}
+
+### QualityOptionsError
+class QualityOptionsError extends TypeError {
+    readonly name = "QualityOptionsError";
+    readonly problems: readonly string[];
+    constructor(problems: readonly string[]);
+}
 
 ### RULE_CATALOG
 RULE_CATALOG: readonly RuleInfo[]
@@ -101,11 +146,25 @@ interface RuleInfo {
     readonly id: string;
     readonly code: string;
     readonly severity: 'warning' | 'info';
+    readonly impact: Impact;
+    readonly context: readonly ContextCondition[];
     readonly title: string;
     readonly rationale: string;
     readonly evidence: readonly Evidence[];
     readonly limits: readonly string[];
 }
+
+### RuleLevel
+type RuleLevel = 'off' | 'info' | 'warning';
+
+### RuleSetting
+interface RuleSetting {
+    readonly level?: RuleLevel;
+    readonly ignore?: readonly Ignore[];
+}
+
+### SEVERITY_OF_IMPACT
+SEVERITY_OF_IMPACT: Readonly<Record<Impact, 'warning' | 'info'>>
 
 ### ScaleType
 type ScaleType = 'linear' | 'log' | 'category' | 'time' | 'other';
@@ -152,7 +211,7 @@ interface UnknownFact {
 }
 
 ### UnknownReason
-type UnknownReason = 'unset' | 'accessor' | 'dynamic' | 'shape' | 'unmodelled' | 'inapplicable' | 'layout';
+type UnknownReason = 'unset' | 'accessor' | 'dynamic' | 'shape' | 'unmodelled' | 'inapplicable' | 'layout' | 'page';
 
 ### ValueAt
 interface ValueAt {
@@ -175,6 +234,9 @@ interface ValueSummary {
 
 ### ZeroFit
 type ZeroFit = 'excluded' | 'included';
+
+### assertQualityOptions
+function assertQualityOptions(value: unknown): asserts value is QualityOptions;
 
 ### colorKey
 function colorKey(color: string): string;
@@ -206,6 +268,9 @@ isNumber: (value: unknown) => value is number
 ### isString
 isString: (value: unknown) => value is string
 
+### isTransparent
+function isTransparent(color: string): boolean;
+
 ### itemsAt
 function itemsAt(root: unknown, path: readonly PathSegment[], { single }?: {
     single?: boolean | undefined;
@@ -227,7 +292,7 @@ function readFact<T>(root: unknown, path: readonly PathSegment[], is: (value: un
 function readPath(root: unknown, path: readonly PathSegment[]): unknown;
 
 ### review
-function review(chart: ChartSemantics): QualityReport;
+function review(chart: ChartSemantics, options?: QualityOptions): QualityReport;
 
 ### sameShades
 function sameShades(color: Fact<string>): Fact<Shades>;

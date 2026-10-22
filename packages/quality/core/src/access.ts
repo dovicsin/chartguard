@@ -7,13 +7,26 @@ export const dataNotDescribed = rule(
 		id: 'data-not-described',
 		code: 'VIS_DATA_NOT_DESCRIBED',
 		severity: 'warning',
+		impact: 'excludes',
+		context: [
+			{
+				fact: 'describesData',
+				effect: 'supplies',
+				note: '`false`: a chart that leaves its description to the page (a Chart.js canvas) gives assistive technology nothing.'
+			},
+			{
+				fact: 'describesData',
+				effect: 'satisfies',
+				note: '`true`: the page describes the data (a data table, a text alternative next to the chart); the finding is suppressed.'
+			}
+		],
 		title: 'The data is not described to assistive technology',
 		rationale:
 			'A chart drawn as graphics gives a screen reader nothing to read unless the library labels its points or generates a description. ECharts does so only with `aria.enabled`; Highcharts only with its accessibility module enabled.',
 		evidence: [SOURCES.wcag22],
 		limits: [
-			'The page may describe the data outside the chart (a caption, a table, an `aria-label` on the container); the config does not show it.',
-			'Chart.js draws on a canvas whose text alternative is set in the page, not in the config: it is not checked.'
+			'The page may describe the data outside the chart (a caption, a table, an `aria-label` on the container); the config does not show it. Declaring it (`context.describesData: true`) suppresses the finding.',
+			'Chart.js draws on a canvas whose text alternative is set in the page, not in the config: it is checked only when the caller declares what the page gives (`context.describesData`).'
 		]
 	},
 	({ access: { dataDescribed } }, report) =>
@@ -32,6 +45,8 @@ export const keyboardDisabled = rule(
 		id: 'keyboard-disabled',
 		code: 'VIS_KEYBOARD_DISABLED',
 		severity: 'warning',
+		impact: 'excludes',
+		context: [],
 		title: 'Keyboard access turned off',
 		rationale:
 			"Keyboard users reach a chart's points, legend and menus only through the library's keyboard navigation. A config that turns it off leaves them with what a mouse user hovers over.",

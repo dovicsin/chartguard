@@ -57,6 +57,8 @@ interface QualityReport {
     readonly library: string;
     readonly rulesVersion: string;
     readonly diagnostics: readonly Diagnostic[];
+    readonly suppressed: readonly Suppression[];
+    readonly disabled: readonly string[];
 }
 
 ### RegistryContext
@@ -67,6 +69,13 @@ interface RegistryContext {
 
 ### Severity
 type Severity = 'error' | 'warning' | 'info';
+
+### Suppression
+interface Suppression {
+    readonly diagnostic: Diagnostic;
+    readonly by: 'setting' | 'context';
+    readonly reason: string;
+}
 
 ### ValidateBeforeCreate
 type ValidateBeforeCreate = <T>(config: unknown, create: (value: unknown) => T, report?: ValidationReporter) => T;

@@ -1,4 +1,5 @@
-export type { Evidence, RuleInfo } from './catalog.js';
+export type { ContextCondition, ContextFact, Evidence, Impact, RuleInfo } from './catalog.js';
+export { SEVERITY_OF_IMPACT } from './catalog.js';
 export type {
 	AccessSemantics,
 	AxisSemantics,
@@ -16,7 +17,7 @@ export type {
 	ValueSummary,
 	ZeroFit
 } from './chart.js';
-export { colorKey, contrastRatio } from './color.js';
+export { colorKey, contrastRatio, isTransparent } from './color.js';
 export type { Default, Fact, KnownFact, Listed, UnknownFact, UnknownReason } from './facts.js';
 export { defaulted, known, unknown, valueOf } from './facts.js';
 export type { ValueRange } from './fit.js';
@@ -36,5 +37,7 @@ export {
 	readPath,
 	valuesAt
 } from './read.js';
-export { review, RULE_CATALOG } from './review.js';
+export { assertQualityOptions, review, RULE_CATALOG } from './review.js';
+export type { Ignore, PageBackground, QualityContext, QualityOptions, RuleLevel, RuleSetting } from './settings.js';
+export { QualityOptionsError } from './settings.js';
 export { sameShades } from './shades.js';

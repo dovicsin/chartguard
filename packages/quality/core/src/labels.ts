@@ -17,6 +17,8 @@ export const placeholderText = rule(
 		id: 'placeholder-text',
 		code: 'VIS_PLACEHOLDER_TEXT',
 		severity: 'warning',
+		impact: 'misleads',
+		context: [],
 		title: "A title showing the library's placeholder text",
 		rationale:
 			'A title or axis title the config does not set can still be drawn with the library\'s placeholder text (Highcharts draws "Chart title" and a y axis titled "Values"). It tells the reader nothing about the chart and is announced as its label by assistive technology.',
@@ -50,6 +52,8 @@ export const valueAxisUntitled = rule(
 		id: 'value-axis-untitled',
 		code: 'VIS_VALUE_AXIS_UNTITLED',
 		severity: 'info',
+		impact: 'omits',
+		context: [],
 		title: 'A value axis without a title, in a chart without one',
 		rationale:
 			'Numbers on an axis mean little without what they count and in which unit. An axis title is the usual place for the quantity and its unit.',
@@ -76,6 +80,8 @@ export const emptyTitle = rule(
 		id: 'empty-title',
 		code: 'VIS_EMPTY_TITLE',
 		severity: 'info',
+		impact: 'omits',
+		context: [],
 		title: 'An empty chart title',
 		rationale:
 			'A title the config sets to blank text shows nothing; the chart needs its context (what, where, when) from somewhere, and assistive technology needs a text alternative.',

@@ -6,6 +6,8 @@ const TITLE = { text: 'Quarterly sales' };
 export const ACCESS_CASES = [
 	{
 		name: 'echarts without aria describes nothing to assistive technology',
+		rule: 'data-not-described',
+		kind: 'triggers',
 		access: true,
 		echarts: {
 			config: { ...ecBars([1, 2], { name: 'Units' }), title: TITLE },
@@ -14,6 +16,8 @@ export const ACCESS_CASES = [
 	},
 	{
 		name: 'aria enabled but its description turned off',
+		rule: 'data-not-described',
+		kind: 'triggers',
 		access: true,
 		echarts: {
 			config: {
@@ -26,11 +30,15 @@ export const ACCESS_CASES = [
 	},
 	{
 		name: 'counterexample: aria enabled describes the data',
+		rule: 'data-not-described',
+		kind: 'counterexample',
 		access: true,
 		echarts: { config: { ...ecBars([1, 2], { name: 'Units' }), title: TITLE, aria: { enabled: true } }, findings: [] }
 	},
 	{
 		name: 'Highcharts accessibility turned off: no point labels and no keyboard access',
+		rule: 'data-not-described',
+		kind: 'triggers',
 		access: true,
 		highcharts: {
 			config: { ...hcBars([1, 2], { title: { text: 'Units' } }), title: TITLE, accessibility: { enabled: false } },
@@ -39,6 +47,8 @@ export const ACCESS_CASES = [
 	},
 	{
 		name: 'Highcharts keyboard navigation turned off',
+		rule: 'keyboard-disabled',
+		kind: 'triggers',
 		access: true,
 		highcharts: {
 			config: {

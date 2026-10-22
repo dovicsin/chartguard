@@ -3,7 +3,7 @@ import { readJson } from './input.js';
 import type { ConfigCommand, ConfigInvocation } from './invocation.js';
 import type { Io } from './io.js';
 import { loadQualityAdapter } from './libraries.js';
-import { validationOptions } from './options.js';
+import { qualityOptions, validationOptions } from './options.js';
 import { reportQuality, reportResult } from './report.js';
 import { loadConfigValidator } from './schema-source.js';
 
@@ -16,10 +16,12 @@ const validateCommand: CommandHandler = async (invocation, io) => {
 	return reportResult(validate(config, await validationOptions(invocation)), schema, json, io);
 };
 
-const qualityCommand: CommandHandler = async ({ library, file, json }, io) => {
+const qualityCommand: CommandHandler = async (invocation, io) => {
+	const { library, file, json } = invocation;
 	const config = await readJson(file);
-	const { analyze } = await loadQualityAdapter(library);
-	return reportQuality(analyze(config), json, io);
+	const adapter = await loadQualityAdapter(library);
+	const options = await qualityOptions(invocation, adapter);
+	return reportQuality(adapter.analyze(config, options), json, io);
 };
 
 export const COMMAND_HANDLERS: Record<ConfigCommand, CommandHandler> = {

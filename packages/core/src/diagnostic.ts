@@ -73,9 +73,23 @@ export interface ValidationResult {
 	diagnostics: Diagnostic[];
 }
 
+/**
+ * A finding that was not reported, and why: the caller's settings ignore it at its path (`setting`),
+ * or the context the caller declares meets the rule's concern (`context`). It is kept, never dropped.
+ */
+export interface Suppression {
+	readonly diagnostic: Diagnostic;
+	readonly by: 'setting' | 'context';
+	readonly reason: string;
+}
+
 /** Advisory findings about a chart's presentation. Never a verdict: there is no `valid` and no error severity. */
 export interface QualityReport {
 	readonly library: string;
 	readonly rulesVersion: string;
 	readonly diagnostics: readonly Diagnostic[];
+	/** Findings the caller's settings or context suppressed, in rule order. */
+	readonly suppressed: readonly Suppression[];
+	/** The rules the caller's settings turned off, by id: they did not run. */
+	readonly disabled: readonly string[];
 }

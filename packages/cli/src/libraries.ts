@@ -1,4 +1,7 @@
 import type { ConfigValidator, QualityReport } from '@chartguard/core';
+import type { QualityOptions } from '@chartguard/quality-chartjs';
+
+export type { QualityOptions };
 
 const LIBRARIES = ['chartjs', 'echarts', 'highcharts'] as const;
 export type Library = (typeof LIBRARIES)[number];
@@ -7,8 +10,11 @@ interface ConfigAdapter {
 	readonly validate: ConfigValidator;
 }
 
-interface QualityAdapter {
-	readonly analyze: (config: unknown) => QualityReport;
+export interface QualityAdapter {
+	readonly analyze: (config: unknown, options?: QualityOptions) => QualityReport;
+	/** Throws the adapter's `QualityOptionsError` listing every problem of the options. */
+	readonly assertQualityOptions: (value: unknown) => asserts value is QualityOptions;
+	readonly QualityOptionsError: new (problems: readonly string[]) => Error;
 }
 
 /** Adapters load lazily so a run only pulls in the requested library. */

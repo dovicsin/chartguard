@@ -3,13 +3,20 @@
  * modelled; `accessor`: it sits behind a getter, which is never run; `dynamic`: a function decides it
  * at runtime; `shape`: the config holds a value of a shape this fact does not read; `unmodelled`: the
  * runtime decides it in a way not modelled yet; `inapplicable`: the chart has no such thing (a pie
- * series has no value axis); `layout`: it depends on the size the chart is drawn at.
+ * series has no value axis); `layout`: it depends on the size the chart is drawn at; `page`: the chart
+ * leaves it to the page it is shown in (a transparent background, a canvas's text alternative), which
+ * the caller can declare (`QualityContext`).
  */
-export type UnknownReason = 'unset' | 'accessor' | 'dynamic' | 'shape' | 'unmodelled' | 'inapplicable' | 'layout';
+export type UnknownReason =
+	'unset' | 'accessor' | 'dynamic' | 'shape' | 'unmodelled' | 'inapplicable' | 'layout' | 'page';
 
-/** A fact read from the config, or the runtime's default for it with a pointer into the pinned package. */
+/**
+ * A fact read from the config, the runtime's default for it with a pointer into the pinned package,
+ * or (`context`) what the caller declares about the page for a fact the chart leaves to it; its path is
+ * where the chart leaves it.
+ */
 export type KnownFact<T> =
-	| { readonly known: true; readonly value: T; readonly path: string; readonly source: 'config' }
+	| { readonly known: true; readonly value: T; readonly path: string; readonly source: 'config' | 'context' }
 	| {
 			readonly known: true;
 			readonly value: T;

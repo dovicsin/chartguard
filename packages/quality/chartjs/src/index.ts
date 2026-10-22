@@ -5,6 +5,7 @@ import {
 	isBoolean,
 	itemsAt,
 	type Listed,
+	type QualityOptions,
 	readFact,
 	review,
 	type SeriesSemantics,
@@ -39,13 +40,18 @@ export function normalize(config: unknown): ChartSemantics {
 		series,
 		axes: axesOf(config, { series, datasets }, scales),
 		// A canvas gets its text alternative and keyboard access from the page, not from the config.
-		access: { dataDescribed: unknown('$', 'unmodelled'), keyboard: unknown('$', 'unmodelled') },
-		// A canvas is transparent: the page behind it is the background.
-		background: unknown('$', 'unmodelled'),
+		access: { dataDescribed: unknown('$', 'page'), keyboard: unknown('$', 'page') },
+		// A canvas is transparent and Chart.js paints no background: the page behind it is the background.
+		background: unknown('$', 'page'),
 		motion: motionOf(config, datasets)
 	};
 }
 
-export function analyze(config: unknown): QualityReport {
-	return review(normalize(config));
+/** The options `analyze` takes, and their check: re-exported so a consumer needs only this adapter. */
+export type { QualityOptions } from '@chartguard/quality-core';
+export { assertQualityOptions, QualityOptionsError } from '@chartguard/quality-core';
+
+/** The rules' advisory findings on the config, shaped by the caller's rule settings and context (CG-05-05). */
+export function analyze(config: unknown, options?: QualityOptions): QualityReport {
+	return review(normalize(config), options);
 }

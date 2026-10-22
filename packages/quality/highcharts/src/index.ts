@@ -14,6 +14,7 @@ import {
 	type KnownFact,
 	type Listed,
 	type Orientation,
+	type QualityOptions,
 	readFact,
 	review,
 	type ScaleType,
@@ -254,6 +255,11 @@ export function normalize(config: unknown): ChartSemantics {
 	};
 }
 
-export function analyze(config: unknown): QualityReport {
-	return review(normalize(config));
+/** The options `analyze` takes, and their check: re-exported so a consumer needs only this adapter. */
+export type { QualityOptions } from '@chartguard/quality-core';
+export { assertQualityOptions, QualityOptionsError } from '@chartguard/quality-core';
+
+/** The rules' advisory findings on the config, shaped by the caller's rule settings and context (CG-05-05). */
+export function analyze(config: unknown, options?: QualityOptions): QualityReport {
+	return review(normalize(config), options);
 }

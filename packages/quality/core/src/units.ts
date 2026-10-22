@@ -10,6 +10,8 @@ export const percentWithoutUnit = rule(
 		id: 'percent-without-unit',
 		code: 'VIS_PERCENT_WITHOUT_UNIT',
 		severity: 'info',
+		impact: 'omits',
+		context: [],
 		title: 'Shares shown as bare numbers',
 		rationale:
 			'A percent-stacked chart shows each value as its share of the stack, on an axis from 0 to 100. Without a percent sign on its tick labels or in its title, the axis reads as amounts, and readers take the shares for the values themselves.',

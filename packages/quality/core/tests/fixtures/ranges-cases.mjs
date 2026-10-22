@@ -16,6 +16,8 @@ const percent = (yAxis) => ({
 export const RANGE_CASES = [
 	{
 		name: 'bars on a range fitted to the data that leaves zero out at every size',
+		rule: 'bar-baseline',
+		kind: 'triggers',
 		chartjs: {
 			config: cjBars([60, 70], { beginAtZero: false }),
 			findings: ['VIS_BAR_BASELINE $.options.scales.y.beginAtZero']
@@ -24,11 +26,15 @@ export const RANGE_CASES = [
 	},
 	{
 		name: 'counterexample: a range fitted to data close to zero keeps zero at every size',
+		rule: 'bar-baseline',
+		kind: 'counterexample',
 		chartjs: { config: cjBars([5, 70], { beginAtZero: false }), findings: [] },
 		echarts: { config: ecBars([5, 70], { scale: true }), findings: [] }
 	},
 	{
 		name: 'bars growing from a base other than zero',
+		rule: 'bar-baseline',
+		kind: 'triggers',
 		chartjs: {
 			config: {
 				...cjBars([60, 70], {}),
@@ -44,6 +50,8 @@ export const RANGE_CASES = [
 	},
 	{
 		name: 'counterexample: a base of zero set explicitly',
+		rule: 'bar-baseline',
+		kind: 'counterexample',
 		chartjs: {
 			config: {
 				...cjBars([60, 70], {}),
@@ -56,10 +64,14 @@ export const RANGE_CASES = [
 	},
 	{
 		name: 'shares stacked to 100 on an axis that shows no percent sign',
+		rule: 'percent-without-unit',
+		kind: 'triggers',
 		highcharts: { config: percent({}), findings: ['VIS_PERCENT_WITHOUT_UNIT $.yAxis.labels.format'] }
 	},
 	{
 		name: 'counterexample: percent-stacked shares labelled with a percent sign',
+		rule: 'percent-without-unit',
+		kind: 'counterexample',
 		highcharts: { config: percent({ labels: { format: '{value}%' } }), findings: [] }
 	}
 ];

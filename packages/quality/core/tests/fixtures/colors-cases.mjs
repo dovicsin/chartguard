@@ -6,6 +6,8 @@ const series = (count) => Array.from({ length: count }, (_, index) => index + 1)
 export const COLOR_CASES = [
 	{
 		name: 'one colour written twice, in two notations',
+		rule: 'same-color-series',
+		kind: 'triggers',
 		chartjs: {
 			config: {
 				type: 'bar',
@@ -43,6 +45,8 @@ export const COLOR_CASES = [
 	},
 	{
 		name: "Chart.js's own grey for every dataset without a colour, once one has a colour",
+		rule: 'same-color-series',
+		kind: 'triggers',
 		chartjs: {
 			config: {
 				type: 'bar',
@@ -60,6 +64,8 @@ export const COLOR_CASES = [
 	},
 	{
 		name: 'more series than palette colours: the palette wraps around',
+		rule: 'same-color-series',
+		kind: 'triggers',
 		echarts: {
 			config: {
 				xAxis: { type: 'category', data: LABELS },
@@ -78,6 +84,8 @@ export const COLOR_CASES = [
 	},
 	{
 		name: 'two series of one name share their palette colour',
+		rule: 'same-color-series',
+		kind: 'triggers',
 		echarts: {
 			config: {
 				xAxis: { type: 'category', data: LABELS },
@@ -92,6 +100,8 @@ export const COLOR_CASES = [
 	},
 	{
 		name: 'counterexample: distinct colours, and a palette long enough',
+		rule: 'same-color-series',
+		kind: 'counterexample',
 		chartjs: {
 			config: {
 				type: 'bar',

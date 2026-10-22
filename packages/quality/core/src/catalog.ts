@@ -11,6 +11,37 @@ export interface Evidence {
 }
 
 /**
+ * What a finding means for readers, which decides its default severity (`SEVERITY_OF_IMPACT`):
+ * `misleads`: the chart as drawn shows the data wrongly to every reader; `excludes`: some readers
+ * cannot get the content at all; `omits`: something readers may need is missing, and the text around
+ * the chart may give it; `risks`: the reading depends on choices readers cannot see, or other cues
+ * may carry what is at risk.
+ */
+export type Impact = 'misleads' | 'excludes' | 'omits' | 'risks';
+
+/** The default severity of each impact: a rule's `severity` is always this (tested). */
+export const SEVERITY_OF_IMPACT: Readonly<Record<Impact, 'warning' | 'info'>> = {
+	misleads: 'warning',
+	excludes: 'warning',
+	omits: 'info',
+	risks: 'info'
+};
+
+/** A fact about where the chart is shown, which the config cannot show and the caller declares (`QualityContext`). */
+export type ContextFact = 'background' | 'describesData' | 'pausesMotion';
+
+/**
+ * How a context fact the caller declares changes a rule (CG-05-05). `supplies`: it fills a fact the
+ * chart leaves to the page, so the rule can decide where it could not; `satisfies`: a `true` value meets
+ * the rule's concern, and its findings are suppressed (`by: 'context'`), never dropped.
+ */
+export interface ContextCondition {
+	readonly fact: ContextFact;
+	readonly effect: 'supplies' | 'satisfies';
+	readonly note: string;
+}
+
+/**
  * What a rule is and why (CG-05-04): its finding code and severity (advisory only: never an error),
  * the reasoning, the sources it rests on, and the cases where it is knowingly wrong or silent.
  */
@@ -18,6 +49,10 @@ export interface RuleInfo {
 	readonly id: string;
 	readonly code: string;
 	readonly severity: 'warning' | 'info';
+	/** What the finding means for readers; it decides `severity`. */
+	readonly impact: Impact;
+	/** The context facts that change what the rule reports (CG-05-05). */
+	readonly context: readonly ContextCondition[];
 	readonly title: string;
 	readonly rationale: string;
 	readonly evidence: readonly Evidence[];

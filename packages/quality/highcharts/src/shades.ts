@@ -1,5 +1,5 @@
 import { isContainer } from '@chartguard/core';
-import { type Fact, type KnownFact, readFact, type Shades, unknown } from '@chartguard/quality-core';
+import { type Fact, isTransparent, type KnownFact, readFact, type Shades, unknown } from '@chartguard/quality-core';
 
 type Scheme = 'light' | 'dark';
 
@@ -121,13 +121,19 @@ export function shadesOf(config: unknown, color: Fact<string>): Fact<Shades> {
 		: { ...color, value: { light, dark } };
 }
 
-/** The background series are drawn on: the plot background when it has one, else the chart's (a palette variable by default). */
+/**
+ * The background series are drawn on: the plot background when it has a colour, else the chart's (a
+ * palette variable by default). Transparent ones draw nothing: with both, the page shows through (`page`).
+ */
 export function backgroundOf(config: unknown): Fact<Shades> {
+	// An SVG fill of `none` draws nothing either.
+	const drawsNothing = (color: string): boolean => isTransparent(color) || color.trim().toLowerCase() === 'none';
 	const plot = readFact(config, ['chart', 'plotBackgroundColor'], isString);
-	if (plot.known) return shadesOf(config, plot);
+	if (plot.known && !drawsNothing(plot.value)) return shadesOf(config, plot);
+	if (!plot.known && plot.reason !== 'unset') return plot;
 	const chart = readFact(config, ['chart', 'backgroundColor'], isString, {
 		value: BACKGROUND_VARIABLE,
 		pointer: CHART_BACKGROUND
 	});
-	return plot.reason !== 'unset' ? plot : shadesOf(config, chart);
+	return chart.known && drawsNothing(chart.value) ? unknown(chart.path, 'page') : shadesOf(config, chart);
 }

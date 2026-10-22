@@ -7,6 +7,7 @@ export type {
 	QualityReport,
 	RegistryContext,
 	Severity,
+	Suppression,
 	ValidationOptions,
 	ValidationResult,
 	ValidationStatus

@@ -1,7 +1,7 @@
 export const USAGE = `ChartGuard starter (partial schema coverage)
 Usage:
   chartguard validate --library <chartjs|echarts|highcharts> --file config.json [--library-version <x|auto>] [--registries <file.json>] [--json]
-  chartguard quality  --library <chartjs|echarts|highcharts> --file config.json [--json]
+  chartguard quality  --library <chartjs|echarts|highcharts> --file config.json [--settings <file.json>] [--json]
   chartguard analyze  --library <chartjs|echarts|highcharts> (--file source.ts ... | --project tsconfig.json) [--name config] [--project <tsconfig.json>] [--patterns <file.json>] [--library-version <x|auto>] [--registries <file.json>] [--json]
   chartguard schema build --library highcharts [--dir <project>] [--json]
 --library-version: the version you run; another minor/patch turns confirmed errors into warnings,
@@ -15,6 +15,9 @@ Usage:
 analyze validates every config the file hands to the library (new Chart, setOption, Highcharts.chart,
   React wrappers); --name, or a file without such a call, selects variables by name instead.
 --patterns: your own wrappers, [{ "id", "library", "module" | "file", "export", "argument" | "prop" }].
+--settings: quality rule settings and the page the chart is shown on, { "rules": { "<rule id>": "off" | "info"
+  | "warning" | { "level", "ignore": [{ "path", "reason" }] } }, "context": { "background": "#fff" | { "light",
+  "dark" }, "describesData": true, "pausesMotion": true } }; suppressed findings are listed with why.
 schema build: generates the full Highcharts schema from your installed highcharts (it cannot ship with
   ChartGuard: license); validate and analyze then use it for that installed version.
 Exit codes: 0 no confirmed errors, 1 confirmed validation errors, 2 bad arguments or input, 3 internal failure.

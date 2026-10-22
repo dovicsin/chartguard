@@ -63,3 +63,15 @@ test('shades: palette variables resolved per scheme (light, dark overrides, pale
 	);
 	assert.equal(shade(normalize({ palette: { injectCSS: false }, series: [{}] }).background), '? unmodelled');
 });
+
+test('backgrounds that paint nothing: the plot falls back to the chart, the chart to the page', () => {
+	const shade = (fact) => (fact.known ? `${fact.value.light.value} / ${fact.value.dark.value}` : `? ${fact.reason}`);
+	// A transparent plot background falls back to the chart's; with a transparent chart background the page shows through.
+	const background = (options) => shade(normalize({ chart: options, series: [{}] }).background);
+	assert.equal(background({ plotBackgroundColor: 'transparent', backgroundColor: '#000' }), '#000 / #000');
+	assert.equal(background({ backgroundColor: 'transparent' }), '? page');
+	assert.equal(background({ backgroundColor: 'none' }), '? page');
+	assert.equal(background({ backgroundColor: 'rgba(0, 0, 0, 0)', plotBackgroundColor: 'none' }), '? page');
+	// A translucent background is what is drawn; contrast is not measured against it (not opaque).
+	assert.equal(background({ backgroundColor: 'rgba(0, 0, 0, 0.5)' }), 'rgba(0, 0, 0, 0.5) / rgba(0, 0, 0, 0.5)');
+});

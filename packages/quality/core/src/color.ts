@@ -57,3 +57,9 @@ export function contrastRatio(foreground: string, background: string): number | 
 	const [lighter, darker] = [luminance(drawn), luminance(back)].sort((a, b) => b - a);
 	return ((lighter ?? 0) + 0.05) / ((darker ?? 0) + 0.05);
 }
+
+/** Whether a colour draws nothing: `transparent`, or a hex or `rgb()` colour with zero alpha. */
+export function isTransparent(color: string): boolean {
+	if (color.trim().toLowerCase() === 'transparent') return true;
+	return rgbaOf(color)?.[3] === 0;
+}

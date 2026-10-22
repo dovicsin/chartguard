@@ -218,7 +218,7 @@ test('empty title: blank text the config sets, unless the title is known to be h
 
 test('a report is advisory: it names its library and rules version and carries no verdict', () => {
 	const report = review(chart({ text: fact('', '$.t') }));
-	assert.deepEqual(Object.keys(report).sort(), ['diagnostics', 'library', 'rulesVersion']);
+	assert.deepEqual(Object.keys(report).sort(), ['diagnostics', 'disabled', 'library', 'rulesVersion', 'suppressed']);
 	assert.equal(report.library, 't');
 	assert.ok(report.diagnostics.every((d) => d.severity !== 'error' && d.confidence === 'inferred'));
 	assert.equal(valueOf(none('$.x')), undefined);

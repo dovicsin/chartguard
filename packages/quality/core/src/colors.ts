@@ -11,6 +11,8 @@ export const sameColorSeries = rule(
 		id: 'same-color-series',
 		code: 'VIS_SAME_COLOR_SERIES',
 		severity: 'warning',
+		impact: 'misleads',
+		context: [],
 		title: 'Two series drawn in the same colour',
 		rationale:
 			'Colour is how readers tell series apart and match them to the legend. Two series in one colour cannot be told apart; it happens when an explicit colour is repeated, when Chart.js falls back to its one default grey, or when more series than palette colours wrap around the palette.',
@@ -56,12 +58,20 @@ export const lowContrastSeries = rule(
 		id: 'low-contrast-series',
 		code: 'VIS_LOW_CONTRAST_SERIES',
 		severity: 'info',
+		impact: 'risks',
+		context: [
+			{
+				fact: 'background',
+				effect: 'supplies',
+				note: 'A chart that draws no background of its own (a Chart.js canvas, ECharts without `backgroundColor`, a transparent Highcharts background) shows its series on the page: the page background the caller declares is the one they are measured against.'
+			}
+		],
 		title: 'A series with low contrast against its background',
 		rationale:
 			"A line, bar or point that carries data needs a contrast of at least 3:1 against what it is drawn on, or readers with low vision lose it. Translucent colours are judged as drawn, over the background; charts that follow the user's light or dark scheme are judged in each.",
 		evidence: [SOURCES.wcag22Contrast],
 		limits: [
-			'Only the chart background is compared: gridlines, other series and a page showing through (Chart.js canvases, ECharts without `backgroundColor`) are not.',
+			'Only the chart background is compared, not gridlines or other series. A page showing through (Chart.js canvases, ECharts without `backgroundColor`, a transparent Highcharts background) is compared only when the caller declares it (`context.background`); a scheme the declaration leaves out is not compared.',
 			'Information given another way (data labels, a table) meets the criterion without the contrast; several default palettes have colours below 3:1 on white, so the finding is a note.',
 			'Only hex and rgb() colours are compared.'
 		]

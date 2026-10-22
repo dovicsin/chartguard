@@ -3,7 +3,7 @@
 ```sh
 chartguard validate --library <chartjs|echarts|highcharts> --file config.json
 chartguard analyze  --library <chartjs|echarts|highcharts> --file chart.ts [--name <variable>] [--project <tsconfig.json>] [--patterns <file.json>]
-chartguard quality  --library <chartjs|echarts|highcharts> --file config.json
+chartguard quality  --library <chartjs|echarts|highcharts> --file config.json [--settings settings.json]
 chartguard schema build --library highcharts [--dir <project>]
 ```
 
@@ -17,3 +17,11 @@ chartguard schema build --library highcharts [--dir <project>]
 ## Highcharts
 
 The full Highcharts schema cannot ship with ChartGuard (license). `chartguard schema build --library highcharts` generates it from the `highcharts` installed in your project and writes it to `node_modules/.cache/chartguard/`. `validate` and `analyze` then use it for exactly that installed version, and say so; without it, they validate with a small curated subset and tell you how to build the full schema.
+
+## Quality settings
+
+`quality --settings settings.json` reads rule levels, ignores and the page context. The format is in `@chartguard/quality-core`'s README.
+
+Suppressed findings are printed as `SUPPRESSED (setting|context)` with their reason, and rules turned off as `OFF`; the JSON report has `suppressed` and `disabled`.
+
+A malformed settings file is an input error (exit 2) listing every problem.

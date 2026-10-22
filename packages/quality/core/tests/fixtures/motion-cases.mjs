@@ -4,6 +4,8 @@ import { cjBars, ecBars, hcBars } from './charts.mjs';
 export const MOTION_CASES = [
 	{
 		name: 'an animation that loops forever',
+		rule: 'long-motion',
+		kind: 'triggers',
 		chartjs: {
 			config: cjBars([1, 2], {}, { animation: { loop: true } }),
 			findings: ['VIS_LONG_MOTION $.options.animation.loop']
@@ -11,6 +13,8 @@ export const MOTION_CASES = [
 	},
 	{
 		name: 'a ripple effect that never stops, even with animation off',
+		rule: 'long-motion',
+		kind: 'triggers',
 		echarts: {
 			config: {
 				...ecBars([1, 2], { name: 'Units' }),
@@ -22,6 +26,8 @@ export const MOTION_CASES = [
 	},
 	{
 		name: 'an animation longer than five seconds',
+		rule: 'long-motion',
+		kind: 'triggers',
 		chartjs: {
 			config: cjBars([1, 2], {}, { animation: { duration: 6000 } }),
 			findings: ['VIS_LONG_MOTION $.options.animation.duration']
@@ -37,6 +43,8 @@ export const MOTION_CASES = [
 	},
 	{
 		name: 'counterexample: a ripple only on hover, and animations under five seconds',
+		rule: 'long-motion',
+		kind: 'counterexample',
 		chartjs: { config: cjBars([1, 2], {}, { animation: { duration: 4000 } }), findings: [] },
 		echarts: {
 			config: {

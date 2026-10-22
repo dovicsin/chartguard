@@ -22,6 +22,8 @@ export interface ConfigInvocation {
 	readonly project: string | undefined;
 	/** `analyze`: a JSON list of the project's own chart wrappers (CG-03-06). */
 	readonly patterns: string | undefined;
+	/** `quality`: a JSON file with rule settings and the page context (CG-05-05). */
+	readonly settings: string | undefined;
 	readonly json: boolean;
 }
 
@@ -43,6 +45,7 @@ const OPTIONS = {
 	registries: { type: 'string' },
 	project: { type: 'string' },
 	patterns: { type: 'string' },
+	settings: { type: 'string' },
 	dir: { type: 'string' },
 	json: { type: 'boolean', default: false }
 } as const;
@@ -60,12 +63,16 @@ export function isHelpRequest(argv: readonly string[]): boolean {
 	return first === undefined || HELP_WORDS.has(first);
 }
 
-/** `--name` and `--project` belong to `analyze`; `--library-version` and `--registries` to the config checks, not to `quality`. */
+/**
+ * `--name` and `--project` belong to `analyze`; `--library-version` and `--registries` to the config
+ * checks, not to `quality`; `--settings` to `quality` only.
+ */
 function misplaced(command: ConfigCommand, values: Values): boolean {
-	const { name, registries, project, patterns, 'library-version': libraryVersion } = values;
+	const { name, registries, project, patterns, settings, 'library-version': libraryVersion } = values;
 	const context = libraryVersion !== undefined || registries !== undefined;
 	const source = name !== undefined || project !== undefined || patterns !== undefined;
-	return (source && command !== 'analyze') || (context && command === 'quality');
+	const quality = settings !== undefined;
+	return (source && command !== 'analyze') || (context && command === 'quality') || (quality && command !== 'quality');
 }
 
 function configInvocation(
@@ -73,13 +80,13 @@ function configInvocation(
 	rest: readonly string[],
 	values: Values
 ): ConfigInvocation | undefined {
-	const { library, file: files = [], name, json, registries, project, patterns, dir } = values;
+	const { library, file: files = [], name, json, registries, project, patterns, settings, dir } = values;
 	if (rest.length > 0 || library === undefined || dir !== undefined) return undefined;
 	if (!isLibrary(library) || misplaced(command, values)) return undefined;
 	const file = inputOf(command, files, project);
 	if (file === undefined) return undefined;
 	const libraryVersion = values['library-version'];
-	return { command, library, file, files, name, libraryVersion, registries, project, patterns, json };
+	return { command, library, file, files, name, libraryVersion, registries, project, patterns, settings, json };
 }
 
 /**
@@ -93,8 +100,21 @@ function inputOf(command: ConfigCommand, files: readonly string[], project: stri
 
 /** `schema build --library <library> [--dir <project>] [--json]`, and nothing else. */
 function schemaInvocation(rest: readonly string[], values: Values): SchemaInvocation | undefined {
-	const { library, dir, json, file, name, registries, project, patterns, 'library-version': libraryVersion } = values;
-	const foreign = [file, name, registries, project, patterns, libraryVersion].some((value) => value !== undefined);
+	const {
+		library,
+		dir,
+		json,
+		file,
+		name,
+		registries,
+		project,
+		patterns,
+		settings,
+		'library-version': libraryVersion
+	} = values;
+	const foreign = [file, name, registries, project, patterns, settings, libraryVersion].some(
+		(value) => value !== undefined
+	);
 	if (rest.length !== 1 || rest[0] !== 'build' || foreign || library === undefined || !isLibrary(library))
 		return undefined;
 	return { command: 'schema', library, directory: dir ?? '.', json };

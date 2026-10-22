@@ -7,8 +7,10 @@ import {
 	type Fact,
 	isBoolean,
 	isString,
+	isTransparent,
 	itemsAt,
 	type Listed,
+	type QualityOptions,
 	readFact,
 	readPath,
 	review,
@@ -40,16 +42,18 @@ function accessOf(config: unknown): AccessSemantics {
 }
 
 /**
- * The background: the option's `backgroundColor` when it is opaque. Without one echarts draws none
- * (`ecModel.get('backgroundColor') || 'transparent'`, dist/echarts.js:29469) and the page shows
- * through; a grid that draws its own background (`grid.show`) is not modelled.
+ * The background: the option's `backgroundColor` when it is opaque. Without one (or with a transparent
+ * one) echarts draws none (`ecModel.get('backgroundColor') || 'transparent'`, dist/echarts.js:29469) and
+ * the page shows through (`page`); a translucent one, or a grid that draws its own background
+ * (`grid.show`), is not modelled.
  */
 function backgroundOf(config: unknown): Fact<Shades> {
 	const grid = readFact(config, ['grid', 'show'], isBoolean);
 	if (!grid.known && grid.reason !== 'unset') return grid;
 	if (grid.known && grid.value) return unknown(grid.path, 'unmodelled');
 	const color = readFact(config, ['backgroundColor'], isString);
-	if (!color.known) return color.reason === 'unset' ? unknown(color.path, 'unmodelled') : color;
+	if (!color.known) return color.reason === 'unset' ? unknown(color.path, 'page') : color;
+	if (isTransparent(color.value)) return unknown(color.path, 'page');
 	return contrastRatio('#000', color.value) === undefined ? unknown(color.path, 'unmodelled') : sameShades(color);
 }
 
@@ -83,6 +87,11 @@ export function normalize(config: unknown): ChartSemantics {
 	};
 }
 
-export function analyze(config: unknown): QualityReport {
-	return review(normalize(config));
+/** The options `analyze` takes, and their check: re-exported so a consumer needs only this adapter. */
+export type { QualityOptions } from '@chartguard/quality-core';
+export { assertQualityOptions, QualityOptionsError } from '@chartguard/quality-core';
+
+/** The rules' advisory findings on the config, shaped by the caller's rule settings and context (CG-05-05). */
+export function analyze(config: unknown, options?: QualityOptions): QualityReport {
+	return review(normalize(config), options);
 }

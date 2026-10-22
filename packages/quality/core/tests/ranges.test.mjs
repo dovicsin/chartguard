@@ -2,48 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { review } from '../dist/index.js';
+import { axis, chart, fact, none, series } from './fixtures/semantics.mjs';
 
 /** Ranges fitted to the data, bar bases and units (CG-05-04 part 8). */
-const fact = (value, path, source = 'config') => ({
-	known: true,
-	value,
-	path,
-	source,
-	...(source === 'default' ? { pointer: 'p' } : {})
-});
-const none = (path, reason = 'unset') => ({ known: false, path, reason });
-const series = (kind, valueAxis, orientation = fact('vertical', '$.o')) => ({
-	path: '$.s',
-	type: fact(kind, '$.t'),
-	kind: fact(kind, '$.t'),
-	name: none('$.n'),
-	stacking: none('$.stack'),
-	base: none('$.base'),
-	valueAxis,
-	orientation,
-	color: none('$.color')
-});
-const axis = (key, min, extra = {}) => ({
-	key,
-	path: `$.${key}`,
-	scale: none('$.scale'),
-	min,
-	max: none('$.max'),
-	fit: none('$.fit'),
-	unit: none('$.unit'),
-	reversed: none('$.reversed'),
-	title: { text: none('$.title'), shown: none('$.shown') },
-	...extra
-});
-const chart = ({ items = [], axes = [], text = none('$.title.text'), shown = none('$.title.show') } = {}) => ({
-	library: 't',
-	title: { text, shown },
-	series: { known: true, path: '$.series', items },
-	axes,
-	background: none('$.background'),
-	motion: { endless: none('$.endless'), longest: none('$.longest') },
-	access: { dataDescribed: none('$.access'), keyboard: none('$.keyboard') }
-});
 const codes = (report) => report.diagnostics.map((d) => `${d.code} ${d.path}`);
 
 test('bar baseline: a range fitted to the data that excludes zero at every size, and a configured base other than zero', () => {

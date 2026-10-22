@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { isDeepStrictEqual } from 'node:util';
 
 import * as echarts from 'echarts';
 
 import { analyze as analyzeChartjs } from '../../../packages/quality/chartjs/dist/index.js';
-import { colorKey, contrastRatio } from '../../../packages/quality/core/dist/index.js';
+import { colorKey, contrastRatio, RULE_CATALOG } from '../../../packages/quality/core/dist/index.js';
 import { RULES_CONTRACT } from '../../../packages/quality/core/tests/fixtures/rules-contract.mjs';
 import { analyze as analyzeEcharts } from '../../../packages/quality/echarts/dist/index.js';
 import { analyze as analyzeHighcharts } from '../../../packages/quality/highcharts/dist/index.js';
@@ -50,16 +51,71 @@ const PREMISES = {
 		valueAxes.some(({ percent }) => percent === undefined) ? undefined : valueAxes.some(({ percent, labels, title }) => percent && ![...labels, title].some((text) => text.includes('%')))
 };
 
-function checkPremises(findings, built, where) {
-	const codes = new Set(findings.map((finding) => finding.split(' ')[0]));
+const CODE_OF = new Map(RULE_CATALOG.map(({ id, code }) => [id, code]));
+
+/**
+ * Codes whose premise is not compared: the rule of an `unknown` case (the adapter claims nothing,
+ * whatever is drawn), and rules the case's settings turn off (they do not run).
+ */
+function unclaimed(entry, options) {
+	const off = Object.entries(options?.rules ?? {}).filter(([, setting]) => setting === 'off' || setting?.level === 'off');
+	return new Set([...(entry.kind === 'unknown' ? [entry.rule] : []), ...off.map(([id]) => id)].map((id) => CODE_OF.get(id)));
+}
+
+/** Each premise holds exactly when its rule reported or suppressed a finding (a suppressed finding is still a claim). */
+function checkPremises(entry, library, built) {
+	const { findings, suppressed = [], options } = entry[library];
+	const codes = new Set([...findings, ...suppressed].map((finding) => finding.split(' ')[0]));
+	const skipped = unclaimed(entry, options);
 	for (const [code, premise] of Object.entries(PREMISES)) {
-		const holds = premise(built);
-		if (holds !== undefined) assert.equal(holds, codes.has(code), `${where}: ${code}`);
+		const holds = skipped.has(code) ? undefined : premise(built);
+		if (holds !== undefined) assert.equal(holds, codes.has(code), `${entry.name}: ${code}`);
+		// A context case is measured, unless its premise is the declaration itself (said why in `declaredOnly`).
+		if (entry.kind === 'context' && code === CODE_OF.get(entry.rule) && entry[library].declaredOnly === undefined)
+			assert.notEqual(holds, undefined, `${entry.name}: the premise of ${code} is not measured`);
 	}
 }
 
+/** The adapter's report on a contract case: its findings, its suppressed findings, and the severity it set. */
+function checkReport(entry, library, analyze) {
+	const { config, options, findings, suppressed = [], severity } = entry[library];
+	const report = analyze(config, options);
+	const brief = ({ code, path }) => `${code} ${path}`;
+	assert.deepEqual(report.diagnostics.map(brief), findings, entry.name);
+	assert.deepEqual(report.suppressed.map(({ diagnostic }) => brief(diagnostic)), suppressed, entry.name);
+	if (severity !== undefined) for (const { severity: reported } of report.diagnostics) assert.equal(reported, severity, entry.name);
+}
+
+/** The declared page background in each scheme (a single colour is both). */
+function pageBackground(options) {
+	const background = options?.context?.background;
+	return typeof background === 'string' ? { light: background, dark: background } : background;
+}
+
+/** Contrast of drawn colours against the page the caller declares, in each scheme it names. */
+const pageContrasts = (colors, page) => ['light', 'dark'].flatMap((scheme) => (page?.[scheme] === undefined ? [] : colors.map((color) => contrastRatio(color, page[scheme]))));
+
+/** Chart.js paints no background (nothing fills the whole canvas): its series are on the page the caller declares. */
+function chartjsContrasts({ canvas }, colors, options) {
+	const painted = canvas.fills.some(([x, y, width, height]) => x <= 0 && y <= 0 && width >= canvas.width && height >= canvas.height);
+	const page = pageBackground(options);
+	return !painted && page !== undefined ? pageContrasts(colors, page) : undefined;
+}
+
+/**
+ * The contrast of echarts series: against its opaque `backgroundColor`, or, when it draws its full-size
+ * background rectangle with no fill, against the page the caller declares.
+ */
+function echartsContrasts(chart, colors, options) {
+	const background = chart.getModel().get('backgroundColor');
+	if (typeof background === 'string' && background !== 'transparent') return colors.map((color) => contrastRatio(color, background));
+	const unfilled = chart.renderToSVGString().includes('<rect width="400" height="300" x="0" y="0" fill="none">');
+	const page = pageBackground(options);
+	return unfilled && page !== undefined ? pageContrasts(colors, page) : undefined;
+}
+
 /** The value scales Chart.js built for the datasets, and whether an arc was drawn for a negative value. */
-function builtChartjs(config) {
+function builtChartjs(config, options) {
 	const chart = createChartjs(copyPlain(config));
 	try {
 		const metas = chart.data.datasets.map((_, index) => chart.getDatasetMeta(index));
@@ -73,14 +129,14 @@ function builtChartjs(config) {
 		const title = drawn(chart.options.plugins.title);
 		const motion = chartjsMotion(chart, config);
 		const colors = cartesian.map((meta) => (meta.type === 'line' ? meta.dataset.options.borderColor : meta.data[0].options.backgroundColor));
-		return { motion, colors, bars: cartesian.filter(({ type }) => type === 'bar').map(axis), valueAxes: cartesian.map(axis), pieMisdrawn, title, config };
+		return { motion, colors, contrasts: chartjsContrasts(chart, colors, options), bars: cartesian.filter(({ type }) => type === 'bar').map(axis), valueAxes: cartesian.map(axis), pieMisdrawn, title, config };
 	} finally {
 		chart.destroy();
 	}
 }
 
 /** The value axes echarts built for its grid series. */
-function builtEcharts(option, browserOutcome) {
+function builtEcharts(option, browserOutcome, options) {
 	const chart = echarts.init(null, null, { renderer: 'svg', ssr: true, width: 400, height: 300 });
 	try {
 		chart.setOption(copyPlain(option));
@@ -106,17 +162,19 @@ function builtEcharts(option, browserOutcome) {
 		const component = chart.getModel().getComponent('title');
 		const title = component === undefined || component.get('show') === false ? '' : (component.get('text') ?? '');
 		const described = browserOutcome === undefined ? undefined : browserOutcome.label !== '';
-		const background = chart.getModel().get('backgroundColor');
-		const motion = echartsMotion(chart);
-		const contrasts = typeof background === 'string' && background !== 'transparent' ? measured.map(({ color }) => contrastRatio(color, background)) : undefined;
-		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn, title, config: option, colors: measured.map(({ color }) => color), described, contrasts, motion };
+		const colors = measured.map(({ color }) => color);
+		const contrasts = echartsContrasts(chart, colors, options);
+		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn, title, config: option, colors, described, contrasts, motion: echartsMotion(chart) };
 	} finally {
 		chart.dispose();
 	}
 }
 
 /** The y axes Highcharts built for its series (recorded by the page runner). */
-function builtHighcharts({ series, yAxes, title, access, shades, durations }, config) {
+/** A computed SVG fill that paints nothing. */
+const UNPAINTED = new Set(['none', 'transparent', 'rgba(0, 0, 0, 0)']);
+
+function builtHighcharts({ series, yAxes, title, access, shades, durations }, config, options) {
 	const measured = series
 		.filter(({ yAxis }) => yAxis !== null)
 		.map(({ type, yAxis, fromZero }) => ({ type, id: yAxis, ...yAxes[yAxis], fromZero: fromZero !== false }));
@@ -124,38 +182,39 @@ function builtHighcharts({ series, yAxes, title, access, shades, durations }, co
 	const pieMisdrawn = series.some(({ type, points }) => type === 'pie' && points.some(({ y, valid }) => y !== null && y < 0 && !valid));
 	const colors = series.filter(({ type, yAxis }) => type !== 'pie' && yAxis !== null).map(({ color }) => color);
 	const cartesian = series.map(({ type, yAxis }, index) => (type !== 'pie' && yAxis !== null ? index : -1)).filter((index) => index >= 0);
-	const contrasts = ['light', 'dark'].flatMap((scheme) => cartesian.map((index) => contrastRatio(shades[scheme].series[index] ?? '', shades[scheme].background)));
+	// A background that paints nothing shows the page: the one the caller declares for that scheme, if any.
+	const page = pageBackground(options);
+	const behind = (scheme) => (UNPAINTED.has(shades[scheme].background) ? page?.[scheme] : shades[scheme].background);
+	const contrasts = ['light', 'dark'].flatMap((scheme) => (behind(scheme) === undefined ? [] : cartesian.map((index) => contrastRatio(shades[scheme].series[index] ?? '', behind(scheme)))));
 	// The harness loads the accessibility module: keyboard focus is there unless the config turns it off.
 	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured, pieMisdrawn, title, config, colors, described: access.points > 0, keyboardOff: !access.keyboard, contrasts, motion: { endless: false, longest: Math.max(0, ...durations) } };
 }
 
 const run = (config, render) => verdictOf(render(copyPlain(config)));
 
+/** Whether a config survives JSON as it is (no functions): only those run in a browser page. */
+const isJson = (value) => isDeepStrictEqual(JSON.parse(JSON.stringify(value)), copyPlain(value));
+
 const browser = { skip: browserSkipReason() ?? false };
-// What assistive technology gets from echarts needs a DOM: every echarts case also runs in headless Chrome.
-const echartsEntries = RULES_CONTRACT.filter((entry) => entry.echarts !== undefined);
-const echartsAccess = browser.skip === false ? await runEchartsInBrowser(echartsEntries.map((entry) => entry.echarts.config)) : [];
+// What assistive technology gets from echarts needs a DOM: every echarts case that is plain JSON also runs in headless Chrome.
+const echartsEntries = RULES_CONTRACT.filter((entry) => entry.echarts !== undefined && isJson(entry.echarts.config));
+const echartsAccess = browser.skip === false ? await runEchartsInBrowser(echartsEntries.map((entry) => copyPlain(entry.echarts.config))) : [];
 
 for (const entry of RULES_CONTRACT) {
 	if (entry.chartjs !== undefined)
 		test(`quality rules, chartjs: ${entry.name}`, () => {
-			const { config, findings } = entry.chartjs;
+			const { config, options } = entry.chartjs;
 			assert.equal(run(config, runChartjs), 'accepted');
-			assert.deepEqual(
-				analyzeChartjs(config).diagnostics.map((d) => `${d.code} ${d.path}`),
-				findings
-			);
-			checkPremises(findings, builtChartjs(config), entry.name);
+			checkReport(entry, 'chartjs', analyzeChartjs);
+			checkPremises(entry, 'chartjs', builtChartjs(config, options));
 		});
 	if (entry.echarts !== undefined)
 		test(`quality rules, echarts: ${entry.name}`, () => {
-			const { config, findings } = entry.echarts;
+			const { config, options } = entry.echarts;
 			assert.equal(run(config, runEcharts), 'accepted');
-			assert.deepEqual(
-				analyzeEcharts(config).diagnostics.map((d) => `${d.code} ${d.path}`),
-				findings
-			);
-			checkPremises(findings, builtEcharts(config, echartsAccess[echartsEntries.indexOf(entry)]), entry.name);
+			checkReport(entry, 'echarts', analyzeEcharts);
+			const index = echartsEntries.indexOf(entry);
+			checkPremises(entry, 'echarts', builtEcharts(config, index < 0 ? undefined : echartsAccess[index], options));
 		});
 }
 
@@ -164,13 +223,9 @@ const highcharts = RULES_CONTRACT.filter((entry) => entry.highcharts !== undefin
 test('quality rules, highcharts: every contract chart renders, gets its findings, and their premises hold', browser, async () => {
 	const outcomes = await runHighcharts(highcharts.map((entry) => ({ config: entry.highcharts.config })));
 	highcharts.forEach((entry, index) => {
-		const { config, findings } = entry.highcharts;
+		const { config, options } = entry.highcharts;
 		assert.equal(verdictOf(outcomes[index]), 'accepted', `${entry.name}: ${JSON.stringify(outcomes[index].messages)}`);
-		assert.deepEqual(
-			analyzeHighcharts(config).diagnostics.map((d) => `${d.code} ${d.path}`),
-			findings,
-			entry.name
-		);
-		checkPremises(findings, builtHighcharts(outcomes[index].observed, config), entry.name);
+		checkReport(entry, 'highcharts', analyzeHighcharts);
+		checkPremises(entry, 'highcharts', builtHighcharts(outcomes[index].observed, config, options));
 	});
 });
