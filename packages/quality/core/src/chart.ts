@@ -27,14 +27,21 @@ export interface SeriesSemantics {
 	readonly stacking: Fact<Stacking>;
 }
 
-/** One axis: the key series refer to it by, and its range and title. */
+/** How an axis maps values to positions. */
+export type ScaleType = 'linear' | 'log' | 'category' | 'time' | 'other';
+
+/** One axis: the key series refer to it by, its scale, range, direction and title. */
 export interface AxisSemantics {
 	/** Library-neutral and unique in the chart: `y`, `y-left` (Chart.js scale ids), `yAxis[0]`. */
 	readonly key: string;
 	/** Where the axis is configured, or would be. */
 	readonly path: string;
-	readonly min: Fact<number>;
-	readonly max: Fact<number>;
+	readonly scale: Fact<ScaleType>;
+	/** A number, or `data`: the axis starts at the smallest value shown (ECharts `min: 'dataMin'`). */
+	readonly min: Fact<number | 'data'>;
+	readonly max: Fact<number | 'data'>;
+	/** Values grow towards the origin of the screen direction (down, or left). */
+	readonly reversed: Fact<boolean>;
 	readonly title: Fact<string>;
 }
 

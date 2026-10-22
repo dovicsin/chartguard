@@ -4,8 +4,10 @@
 interface AxisSemantics {
     readonly key: string;
     readonly path: string;
-    readonly min: Fact<number>;
-    readonly max: Fact<number>;
+    readonly scale: Fact<ScaleType>;
+    readonly min: Fact<number | 'data'>;
+    readonly max: Fact<number | 'data'>;
+    readonly reversed: Fact<boolean>;
     readonly title: Fact<string>;
 }
 
@@ -24,6 +26,14 @@ type CoordinateSystem = 'cartesian' | 'polar';
 interface Default<T> {
     readonly value: T;
     readonly pointer: string;
+}
+
+### Evidence
+interface Evidence {
+    readonly authors: string;
+    readonly title: string;
+    readonly venue: string;
+    readonly year: number;
 }
 
 ### Fact
@@ -62,6 +72,23 @@ type Orientation = 'vertical' | 'horizontal';
 
 ### PathSegment
 type PathSegment = string | number;
+
+### RULE_CATALOG
+RULE_CATALOG: readonly RuleInfo[]
+
+### RuleInfo
+interface RuleInfo {
+    readonly id: string;
+    readonly code: string;
+    readonly severity: 'warning' | 'info';
+    readonly title: string;
+    readonly rationale: string;
+    readonly evidence: readonly Evidence[];
+    readonly limits: readonly string[];
+}
+
+### ScaleType
+type ScaleType = 'linear' | 'log' | 'category' | 'time' | 'other';
 
 ### SeriesKind
 type SeriesKind = 'bar' | 'line' | 'area' | 'scatter' | 'pie' | 'other';

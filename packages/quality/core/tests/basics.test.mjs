@@ -80,14 +80,24 @@ const fact = (value, path, source = 'config') => ({
 	...(source === 'default' ? { pointer: 'p' } : {})
 });
 const none = (path, reason = 'unset') => ({ known: false, path, reason });
-const series = (kind, valueAxis) => ({
+const series = (kind, valueAxis, orientation = fact('vertical', '$.o')) => ({
 	path: '$.s',
 	type: fact(kind, '$.t'),
 	kind: fact(kind, '$.t'),
 	name: none('$.n'),
-	valueAxis
+	valueAxis,
+	orientation
 });
-const axis = (key, min) => ({ key, path: `$.${key}`, min, max: none('$.max'), title: none('$.title') });
+const axis = (key, min, extra = {}) => ({
+	key,
+	path: `$.${key}`,
+	scale: none('$.scale'),
+	min,
+	max: none('$.max'),
+	reversed: none('$.reversed'),
+	title: none('$.title'),
+	...extra
+});
 const chart = ({ items = [], axes = [], text = none('$.title.text'), shown = none('$.title.show') } = {}) => ({
 	library: 't',
 	title: { text, shown },
@@ -99,7 +109,75 @@ const codes = (report) => report.diagnostics.map((d) => `${d.code} ${d.path}`);
 test('bar baseline: a configured non-zero minimum of an axis a bar series is measured on, once per axis', () => {
 	const axes = [axis('y', fact(60, '$.y.min')), axis('y2', fact(5, '$.y2.min'))];
 	const bars = [series('bar', fact('y', '$.a')), series('bar', fact('y', '$.b')), series('line', fact('y2', '$.c'))];
-	assert.deepEqual(codes(review(chart({ items: bars, axes }))), ['VIS_BAR_BASELINE $.y.min']);
+	// Once for the bars' axis; the line's axis starts at 5 but carries no bar (it is a second value axis).
+	assert.deepEqual(codes(review(chart({ items: bars, axes }))), ['VIS_BAR_BASELINE $.y.min', 'VIS_DUAL_AXIS $.c']);
+});
+
+test('bar baseline: only a range that excludes zero (min above it, max below it, or the data minimum)', () => {
+	const bar = [series('bar', fact('y', '$.a'))];
+	const run = (extra) => codes(review(chart({ items: bar, axes: [axis('y', none('$.y.min'), extra)] })));
+	// Bars start from zero while zero is in range: a negative minimum truncates nothing.
+	assert.deepEqual(run({ min: fact(-10, '$.y.min') }), []);
+	assert.deepEqual(run({ min: fact('data', '$.y.min') }), ['VIS_BAR_BASELINE $.y.min']);
+	assert.deepEqual(run({ max: fact(-5, '$.y.max') }), ['VIS_BAR_BASELINE $.y.max']);
+	assert.deepEqual(run({ max: fact(5, '$.y.max') }), []);
+	// A logarithmic axis is reported by its own rule, not as a baseline.
+	assert.deepEqual(run({ min: fact(10, '$.y.min'), scale: fact('log', '$.y.type') }), ['VIS_BAR_LOG_SCALE $.y.type']);
+});
+
+test('reversed value axes and dual axes are reported where the config sets them', () => {
+	const reversed = axis('y', none('$.y.min'), { reversed: fact(true, '$.y.reverse') });
+	assert.deepEqual(codes(review(chart({ items: [series('line', fact('y', '$.a'))], axes: [reversed] }))), [
+		'VIS_REVERSED_VALUE_AXIS $.y.reverse'
+	]);
+	assert.deepEqual(
+		codes(
+			review(
+				chart({
+					items: [series('line', fact('y', '$.a'))],
+					axes: [axis('y', none('$.m'), { reversed: fact(true, '$.r', 'default') })]
+				})
+			)
+		),
+		[]
+	);
+	const two = [series('bar', fact('y', '$.a')), series('line', fact('y2', '$.b'))];
+	assert.deepEqual(codes(review(chart({ items: two, axes: [axis('y', none('$.m')), axis('y2', none('$.m'))] }))), [
+		'VIS_DUAL_AXIS $.b'
+	]);
+	// Different orientations, or an orientation not known, are not two axes of one plot.
+	const crossed = [series('bar', fact('y', '$.a')), series('bar', fact('x', '$.b'), fact('horizontal', '$.o'))];
+	assert.deepEqual(
+		codes(review(chart({ items: crossed, axes: [axis('y', none('$.m')), axis('x', none('$.m'))] }))),
+		[]
+	);
+	const unknownOrientation = [
+		series('bar', fact('y', '$.a'), none('$.o')),
+		series('line', fact('y2', '$.b'), none('$.o'))
+	];
+	assert.deepEqual(
+		codes(review(chart({ items: unknownOrientation, axes: [axis('y', none('$.m')), axis('y2', none('$.m'))] }))),
+		[]
+	);
+});
+
+test('the rule catalog: every rule has a unique id and code, an advisory severity, sources and documented limits', async () => {
+	const { RULE_CATALOG } = await import('../dist/index.js');
+	assert.ok(RULE_CATALOG.length >= 5);
+	assert.equal(new Set(RULE_CATALOG.map(({ id }) => id)).size, RULE_CATALOG.length);
+	assert.equal(new Set(RULE_CATALOG.map(({ code }) => code)).size, RULE_CATALOG.length);
+	for (const rule of RULE_CATALOG) {
+		assert.match(rule.code, /^VIS_[A-Z_]+$/, rule.id);
+		assert.ok(['warning', 'info'].includes(rule.severity), rule.id);
+		assert.ok(rule.title.length > 0 && rule.rationale.length > 40, rule.id);
+		assert.ok(
+			rule.evidence.length > 0 &&
+				rule.evidence.every((source) => source.title && source.authors && source.venue && source.year > 1900),
+			rule.id
+		);
+		assert.ok(rule.limits.length > 0, rule.id);
+		assert.equal('check' in rule, false);
+	}
 });
 
 test('bar baseline claims nothing on zero, a default, an unknown axis or an unknown series list', () => {
@@ -159,4 +237,11 @@ test('an option resolved through scopes: the first scope that sets it; an unread
 		pointer: DEFAULT.pointer
 	});
 	assert.deepEqual(firstSet(scopes({ series: [{}] })), { known: false, path: '$.series[0].stacking', reason: 'unset' });
+});
+
+test('the README lists every rule of the catalog', async () => {
+	const { readFileSync } = await import('node:fs');
+	const { RULE_CATALOG } = await import('../dist/index.js');
+	const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+	for (const { id, code } of RULE_CATALOG) assert.ok(readme.includes(`| \`${id}\` | \`${code}\` |`), id);
 });

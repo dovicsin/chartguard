@@ -17,7 +17,7 @@ import {
 import { type Axis, type DatasetScales, scaleOf, type Scales } from './scales.js';
 
 /** Runtime facts, each pointing at the line of the pinned chart.js that applies it. */
-const INDEX_AXIS: Default<string> = {
+export const INDEX_AXIS: Default<string> = {
 	value: 'x',
 	pointer:
 		"chart.js@4.5.1 dist/chart.js:5234 return datasetOptions.indexAxis || options.indexAxis || datasetDefaults.indexAxis || 'x';"

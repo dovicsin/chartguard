@@ -48,11 +48,12 @@ for (const options of CASES.map(revive)) {
 	document.body.append(container);
 	try {
 		const chart = Highcharts.chart(container, options);
-		// What the chart built, for the quality semantics (CG-05-03): its inversion and each series' axis and stacking.
+		// What the chart built, for the quality semantics and rule premises (CG-05-03, CG-05-04): its inversion, each series' axis and stacking, each y axis' range, direction and scale.
 		current.observed = {
 			inverted: chart.inverted === true,
 			polar: chart.polar === true,
-			series: chart.series.map((series) => ({ type: series.type, yAxis: series.yAxis ? series.yAxis.index : null, stacking: series.options.stacking ?? null }))
+			series: chart.series.map((series) => ({ type: series.type, yAxis: series.yAxis ? series.yAxis.index : null, stacking: series.options.stacking ?? null })),
+			yAxes: chart.yAxis.map((axis) => ({ min: axis.min, max: axis.max, reversed: axis.reversed === true, log: axis.logarithmic !== undefined }))
 		};
 		chart.destroy();
 	} catch (error) {

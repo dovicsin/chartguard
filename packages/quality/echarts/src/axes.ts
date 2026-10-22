@@ -3,6 +3,7 @@ import {
 	type Default,
 	type Fact,
 	formatPath,
+	isBoolean,
 	isNumber,
 	isString,
 	type Item,
@@ -10,6 +11,7 @@ import {
 	type Listed,
 	readFact,
 	readPath,
+	type ScaleType,
 	unknown
 } from '@chartguard/quality-core';
 
@@ -53,17 +55,37 @@ export function axisType(config: unknown, direction: Direction, index: number): 
 	return { known: true, value, path: own.path, source: 'default', pointer: AXIS_TYPE };
 }
 
+const INVERSE: Default<boolean> = { value: false, pointer: 'echarts@6.1.0 dist/echarts.js:48474 inverse: false,' };
+const SCALE_TYPES: Readonly<Record<string, ScaleType>> = {
+	value: 'linear',
+	log: 'log',
+	category: 'category',
+	time: 'time'
+};
+
+/** A number, or `dataMin`/`dataMax`: the axis starts (or ends) at the data. A function decides at runtime. */
+const isBound = (value: unknown): value is number | string =>
+	isNumber(value) || value === 'dataMin' || value === 'dataMax';
+function boundOf(config: unknown, path: readonly (string | number)[]): Fact<number | 'data'> {
+	const bound = readFact(config, path, isBound);
+	return bound.known && typeof bound.value === 'string' ? { ...bound, value: 'data' } : (bound as Fact<number>);
+}
+
 export function axesOf(config: unknown): AxisSemantics[] {
 	return (['x', 'y'] as const).flatMap((direction) => {
 		const axes = axisItems(config, direction);
 		if (!axes.known) return [];
-		return axes.items.map((axis, index) => ({
-			key: `${direction}Axis[${String(index)}]`,
-			path: axis.path,
-			// `dataMin` and functions are baselines too; they are read in CG-05-04.
-			min: readFact(config, [...axis.segments, 'min'], isNumber),
-			max: readFact(config, [...axis.segments, 'max'], isNumber),
-			title: readFact(config, [...axis.segments, 'name'], isString)
-		}));
+		return axes.items.map((axis, index) => {
+			const type = axisType(config, direction, index);
+			return {
+				key: `${direction}Axis[${String(index)}]`,
+				path: axis.path,
+				scale: type.known ? { ...type, value: SCALE_TYPES[type.value] ?? 'other' } : type,
+				min: boundOf(config, [...axis.segments, 'min']),
+				max: boundOf(config, [...axis.segments, 'max']),
+				reversed: readFact(config, [...axis.segments, 'inverse'], isBoolean, INVERSE),
+				title: readFact(config, [...axis.segments, 'name'], isString)
+			};
+		});
 	});
 }

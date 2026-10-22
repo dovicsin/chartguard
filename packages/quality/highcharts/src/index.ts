@@ -15,6 +15,7 @@ import {
 	type Orientation,
 	readFact,
 	review,
+	type ScaleType,
 	unknown,
 	type UnknownFact
 } from '@chartguard/quality-core';
@@ -69,6 +70,24 @@ function orientationOf(config: unknown, items: Listed<Item>): Fact<Orientation> 
 	return bar.known ? { ...bar, value: 'horizontal' } : bar;
 }
 
+const AXIS_TYPE = "highcharts@13.1.1 highcharts.src.js:20136 axis.type = options.type || 'linear';";
+/** A y axis is reversed only when its options say so; x axes of inverted charts are reversed by default (:20261). */
+const Y_REVERSED: Default<boolean> = {
+	value: false,
+	pointer: 'highcharts@13.1.1 highcharts.src.js:20154 axis.reversed = options.reversed;'
+};
+const SCALE_TYPES: Readonly<Record<string, ScaleType>> = {
+	linear: 'linear',
+	logarithmic: 'log',
+	category: 'category',
+	datetime: 'time'
+};
+
+function scaleOf(config: unknown, path: readonly (string | number)[]): Fact<ScaleType> {
+	const type = readFact(config, [...path, 'type'], isString, { value: 'linear', pointer: AXIS_TYPE });
+	return type.known ? { ...type, value: SCALE_TYPES[type.value] ?? 'other' } : type;
+}
+
 function axesOf(config: unknown): AxisSemantics[] {
 	return (['xAxis', 'yAxis'] as const).flatMap((name) => {
 		const axes = itemsAt(config, [name], { single: true });
@@ -76,8 +95,10 @@ function axesOf(config: unknown): AxisSemantics[] {
 		return axes.items.map((axis, index) => ({
 			key: `${name}[${String(index)}]`,
 			path: axis.path,
+			scale: scaleOf(config, axis.segments),
 			min: readFact(config, [...axis.segments, 'min'], isNumber),
 			max: readFact(config, [...axis.segments, 'max'], isNumber),
+			reversed: readFact(config, [...axis.segments, 'reversed'], isBoolean, name === 'yAxis' ? Y_REVERSED : undefined),
 			title: readFact(config, [...axis.segments, 'title', 'text'], isString)
 		}));
 	});

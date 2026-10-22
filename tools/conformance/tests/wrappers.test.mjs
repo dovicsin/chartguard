@@ -103,6 +103,12 @@ const timed = (body) => {
 	return performance.now() - start;
 };
 
+/** A fixed CPU task (sorting 200 000 numbers): the unit the absolute budget is measured in. */
+const reference = () => {
+	const numbers = Array.from({ length: 200_000 }, (_, index) => (index * 7919) % 200_003);
+	return numbers.sort((a, b) => a - b)[0];
+};
+
 /**
  * The fastest of `runs` timings of each body, run in turn. For CPU-bound code the minimum is the
  * cost without interference (garbage collection, other test files, coverage); interleaving puts the
@@ -157,11 +163,12 @@ for (const wrapper of WRAPPERS) {
 		assert.equal(reads, 0);
 	});
 
-	test(`${wrapper.name}: a 10 000-point chart is checked within the 100 ms budget`, () => {
+	test(`${wrapper.name}: a 10 000-point chart is checked within its budget (3 reference units, about 100 ms)`, () => {
 		const input = wrapper.input(10_000);
-		// Budget for one check of a large chart (Node); measured at most about 20 ms on the pinned runtimes.
-		const [checked] = fastest([() => wrapper.run(input, wrapper.validator)], 5);
-		assert.ok(checked <= 100, `${checked.toFixed(2)} ms`);
+		// Measured against a fixed CPU task timed in turn with it, so load slows both alike. On the
+		// maintainer's machine the task takes about 33 ms and the slowest check about 20 ms (0.6 units).
+		const [checked, unit] = fastest([() => wrapper.run(input, wrapper.validator), reference], 5);
+		assert.ok(checked <= 3 * unit, `${checked.toFixed(2)} ms against a reference of ${unit.toFixed(2)} ms`);
 	});
 
 	test(`${wrapper.name}: its own overhead stays small next to the validation (100 000 points)`, () => {

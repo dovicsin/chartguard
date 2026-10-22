@@ -48,6 +48,22 @@ test('series: type from the series, else the chart, else line; the y axis they b
 	);
 });
 
+test('axes: type defaults to linear; y axes are not reversed unless set, x axes of inverted charts are left unknown', () => {
+	const { axes } = normalize({
+		xAxis: { categories: ['a'] },
+		yAxis: [{ type: 'logarithmic' }, { type: 'datetime', reversed: true }, { type: 'treegrid' }]
+	});
+	assert.deepEqual(
+		axes.map(({ key, scale, reversed }) => [key, brief(scale), brief(reversed)]),
+		[
+			['xAxis[0]', 'linear default $.xAxis.type', '? unset $.xAxis.reversed'],
+			['yAxis[0]', 'log config $.yAxis[0].type', 'false default $.yAxis[0].reversed'],
+			['yAxis[1]', 'time config $.yAxis[1].type', 'true config $.yAxis[1].reversed'],
+			['yAxis[2]', 'other config $.yAxis[2].type', 'false default $.yAxis[2].reversed']
+		]
+	);
+});
+
 test('wrongly typed or dynamic facts stay unknown', () => {
 	const chart = normalize({ chart: { type: 'bar' }, yAxis: { min: 'x' }, title: { text: () => 'T' }, series: [{}] });
 	assert.equal(brief(chart.axes.find(({ key }) => key === 'yAxis[0]').min), '? shape $.yAxis.min');
@@ -65,7 +81,7 @@ test('findings point at the Highcharts option; horizontal bar charts measure on 
 			yAxis: [{ min: 0 }, { id: 'r', min: 5 }],
 			series: [{}, { type: 'line', yAxis: 'r' }]
 		}),
-		[]
+		['VIS_DUAL_AXIS $.series[1].yAxis']
 	);
 	assert.deepEqual(codes({ yAxis: [{ min: 0 }, { min: 5 }], series: [{ type: 'column', yAxis: 1 }] }), [
 		'VIS_BAR_BASELINE $.yAxis[1].min'
@@ -126,4 +142,4 @@ test('stacking resolves through the series, plotOptions for its type and plotOpt
 });
 
 test('every runtime default points at the line of the pinned highcharts that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 5));
+	assert.equal(checkPackagePointers(import.meta.url), 7));

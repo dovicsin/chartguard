@@ -21,6 +21,11 @@ export function checkPackagePointers(testUrl) {
  */
 export function checkPointers(source) {
 	const text = readFileSync(source, 'utf8');
+	// A pointer built at runtime (a template or a helper) would escape this check: pointers are literals.
+	const built = [...text.matchAll(/`[^`\n]*`/g)]
+		.map(([literal]) => literal)
+		.filter((literal) => literal.includes('${') && literal.includes('.js:'));
+	assert.deepEqual(built, [], `${source}: a pointer is built from parts`);
 	const pointers = [...text.matchAll(POINTER)].map((match) => match[1] ?? match[5]);
 	for (const pointer of pointers) {
 		const [, name, version, file, line, quoted] = PARTS.exec(pointer);

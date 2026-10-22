@@ -1,20 +1,16 @@
 import type { QualityReport } from '@chartguard/core';
 import {
-	type AxisSemantics,
 	type ChartSemantics,
 	type Default,
-	type Fact,
-	formatPath,
 	isBoolean,
-	isNumber,
 	itemsAt,
 	type Listed,
 	readFact,
-	readPath,
 	review,
 	type SeriesSemantics
 } from '@chartguard/quality-core';
 
+import { asText, axesOf } from './axes.js';
 import { scalesOf } from './scales.js';
 import { addedScales, seriesOf } from './series.js';
 
@@ -23,31 +19,6 @@ const TITLE_SHOWN: Default<boolean> = { value: false, pointer: 'chart.js@4.5.1 d
 /** Chart.js titles are a string or one string per line. */
 const isText = (value: unknown): value is string | string[] =>
 	typeof value === 'string' || (Array.isArray(value) && (value as unknown[]).every((line) => typeof line === 'string'));
-const asText = (fact: Fact<string | string[]>): Fact<string> => {
-	if (!fact.known || typeof fact.value === 'string') return fact as Fact<string>;
-	return { ...fact, value: fact.value.join(' ') };
-};
-
-function axisOf(config: unknown, key: string): AxisSemantics {
-	const at = ['options', 'scales', key];
-	return {
-		key,
-		path: formatPath(at),
-		min: readFact(config, [...at, 'min'], isNumber),
-		max: readFact(config, [...at, 'max'], isNumber),
-		title: asText(readFact(config, [...at, 'title', 'text'], isText))
-	};
-}
-
-/** The configured scales, then every scale a dataset is measured on that is not configured. */
-function axesOf(config: unknown, series: Listed<SeriesSemantics>): AxisSemantics[] {
-	const scales = readPath(config, ['options', 'scales']);
-	const configured = typeof scales === 'object' && scales !== null && !Array.isArray(scales) ? Object.keys(scales) : [];
-	const referenced = series.known
-		? series.items.flatMap(({ valueAxis }) => (valueAxis.known ? [valueAxis.value] : []))
-		: [];
-	return [...new Set([...configured, ...referenced])].map((key) => axisOf(config, key));
-}
 
 /** The Chart.js config as library-neutral chart semantics (CG-05-02, CG-05-03). */
 export function normalize(config: unknown): ChartSemantics {
@@ -64,7 +35,7 @@ export function normalize(config: unknown): ChartSemantics {
 			shown: readFact(config, [...titleAt, 'display'], isBoolean, TITLE_SHOWN)
 		},
 		series,
-		axes: axesOf(config, series)
+		axes: axesOf(config, series, scales)
 	};
 }
 

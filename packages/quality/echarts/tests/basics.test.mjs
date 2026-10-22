@@ -119,8 +119,23 @@ test('axes: both directions, keyed by index, at the path they are configured', (
 		axes.map(({ key, path, min, max, title }) => [key, path, brief(min), brief(max), brief(title)]),
 		[
 			['xAxis[0]', '$.xAxis', '? unset $.xAxis.min', '? unset $.xAxis.max', 'Day config $.xAxis.name'],
-			['yAxis[0]', '$.yAxis[0]', '3 config $.yAxis[0].min', '? shape $.yAxis[0].max', '? unset $.yAxis[0].name'],
+			['yAxis[0]', '$.yAxis[0]', '3 config $.yAxis[0].min', 'data config $.yAxis[0].max', '? unset $.yAxis[0].name'],
 			['yAxis[1]', '$.yAxis[1]', '? unset $.yAxis[1].min', '? unset $.yAxis[1].max', '? unset $.yAxis[1].name']
+		]
+	);
+});
+
+test('axes: scale from the axis type (with data: category), dataMin/dataMax as the data, inverse defaults to false', () => {
+	const [x, y, y1] = normalize({
+		xAxis: { data: ['a'] },
+		yAxis: [{ type: 'log', min: 'dataMin', inverse: true }, { min: () => 0 }]
+	}).axes;
+	assert.deepEqual(
+		[x, y, y1].map(({ scale, min, reversed }) => [brief(scale), brief(min), brief(reversed)]),
+		[
+			['category default $.xAxis.type', '? unset $.xAxis.min', 'false default $.xAxis.inverse'],
+			['log config $.yAxis[0].type', 'data config $.yAxis[0].min', 'true config $.yAxis[0].inverse'],
+			['linear default $.yAxis[1].type', '? dynamic $.yAxis[1].min', 'false default $.yAxis[1].inverse']
 		]
 	);
 });
@@ -139,7 +154,8 @@ test('findings point at the ECharts option that triggered them', () => {
 	]);
 	assert.deepEqual(
 		codes({ ...CATEGORY, yAxis: [{ min: 0 }, { min: 3 }], series: [{ type: 'bar' }, { type: 'line', yAxisIndex: 1 }] }),
-		[]
+		// The line's axis starts at 3, but no bar is measured on it; two value axes are noted.
+		['VIS_DUAL_AXIS $.series[1].yAxisIndex']
 	);
 	assert.deepEqual(codes({ ...CATEGORY, yAxis: [{ min: 0 }, { min: 3 }], series: [{ type: 'bar', yAxisIndex: 1 }] }), [
 		'VIS_BAR_BASELINE $.yAxis[1].min'
@@ -147,4 +163,4 @@ test('findings point at the ECharts option that triggered them', () => {
 });
 
 test('every runtime default points at the line of the pinned echarts that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 8));
+	assert.equal(checkPackagePointers(import.meta.url), 9));
