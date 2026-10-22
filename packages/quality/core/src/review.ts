@@ -4,7 +4,7 @@ import type { RuleInfo } from './catalog.js';
 import type { ChartSemantics } from './chart.js';
 import { QUALITY_RULES } from './rules.js';
 
-const RULES_VERSION = 'quality-0.4';
+const RULES_VERSION = 'quality-0.5';
 
 /** The rule catalog: what each rule reports, why, on which sources, and where it is knowingly wrong. */
 export const RULE_CATALOG: readonly RuleInfo[] = QUALITY_RULES.map(({ check: _check, ...info }) => info);

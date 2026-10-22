@@ -3,6 +3,7 @@ import {
 	type Default,
 	type Fact,
 	firstSet,
+	isNumber,
 	isString,
 	type Item,
 	type Listed,
@@ -39,6 +40,23 @@ const CARTESIAN: Readonly<Record<string, SeriesKind>> = {
 const PIE = new Set(['pie', 'doughnut']);
 /** Drawn on the radial scale `r`. */
 const RADIAL = new Set(['radar', 'polarArea']);
+
+/** A bar grows from zero unless its `base` is set (`startValue = baseValue ?? start`, with `start` zero unless stacked). */
+const BASE: Default<number> = { value: 0, pointer: 'chart.js@4.5.1 dist/chart.js:1574 let start = 0;' };
+
+/** A bar's `base`, through the dataset, the options for bar datasets and the chart options (`datasetScopeKeys`). */
+function baseOf(config: unknown, item: Item, kind: Fact<SeriesKind>): Fact<number> {
+	if (!kind.known || kind.value !== 'bar')
+		return unknown(`${item.path}.base`, kind.known ? 'inapplicable' : kind.reason);
+	return firstSet(
+		[
+			readFact(config, [...item.segments, 'base'], isNumber),
+			readFact(config, ['options', 'datasets', 'bar', 'base'], isNumber),
+			readFact(config, ['options', 'base'], isNumber)
+		],
+		BASE
+	);
+}
 
 /** Any value the config sets, except one decided at runtime. */
 const isSet = (value: unknown): value is unknown => value !== undefined && typeof value !== 'function';
@@ -168,12 +186,14 @@ const colors = (color: Fact<string>): Pick<SeriesSemantics, 'color' | 'shades'> 
 export function seriesOf(config: unknown, item: Item, scales: Scales, datasets: Listed<Item>): SeriesSemantics {
 	const type = typeOf(config, item);
 	const layout = layoutOf(config, item, type, scales);
+	const kind = kindOf(config, item, type);
 	return {
 		path: item.path,
 		type,
-		kind: kindOf(config, item, type),
+		kind,
 		name: readFact(config, [...item.segments, 'label'], isString),
 		...layout,
+		base: baseOf(config, item, kind),
 		...colors(colorOf(config, item, type, datasets)),
 		values: valuesOf(config, item, type, layout.orientation)
 	};

@@ -1,51 +1,83 @@
 import { dataNotDescribed, keyboardDisabled } from './access.js';
 import { type QualityRule, rule, SOURCES } from './catalog.js';
+import type { AxisSemantics } from './chart.js';
 import { lowContrastSeries, sameColorSeries } from './colors.js';
 import { valueOf } from './facts.js';
 import { emptyTitle, placeholderText, valueAxisUntitled } from './labels.js';
 import { CARTESIAN, configured, measuredAxes } from './measure.js';
 import { longMotion } from './motion.js';
+import { percentWithoutUnit } from './units.js';
 
 /**
  * Bars encode values by their length from zero. The runtimes draw bars from zero while zero is in the
  * axis range (chart.js@4.5.1 `getBaseValue`: `min < 0 && max < 0 ? max : min > 0 && max > 0 ? min : 0`);
- * an axis whose range excludes zero cuts every bar short by the same amount.
+ * an axis whose range excludes zero cuts every bar short by the same amount, and so does a bar base
+ * other than zero (Chart.js `base`, ECharts `startValue`, Highcharts `threshold`).
  */
+
+/** The finding on an axis: a range the config sets, or one fitted to the data, that leaves zero out. */
+function cutAxis(axis: AxisSemantics): { path: string; message: string } | undefined {
+	const [min, max] = [configured(axis.min), configured(axis.max)];
+	if (min === 'data' || (typeof min === 'number' && min > 0))
+		return {
+			path: axis.min.path,
+			message:
+				'Bars are drawn on a value axis that starts above zero, so their lengths are not proportional to their values; verify that the comparison is not misleading.'
+		};
+	if (typeof max === 'number' && max < 0)
+		return {
+			path: axis.max.path,
+			message:
+				'Bars are drawn on a value axis that ends below zero, so their lengths are not proportional to their values; verify that the comparison is not misleading.'
+		};
+	if (configured(axis.fit) === 'excluded')
+		return {
+			path: axis.fit.path,
+			message:
+				'The value axis fits its range to the data, and for these values the range leaves zero out at every chart size: bar lengths are not proportional to their values; verify that the comparison is not misleading.'
+		};
+	return undefined;
+}
+
 const barBaseline = rule(
 	{
 		id: 'bar-baseline',
 		code: 'VIS_BAR_BASELINE',
 		severity: 'warning',
-		title: 'Bars on an axis that does not include zero',
+		title: 'Bars that do not grow from zero',
 		rationale:
-			'A bar encodes its value by its length from the baseline. When the value axis starts above zero (or ends below it for negative bars), every bar loses the same length, and their ratios no longer match the values: readers overestimate differences.',
+			'A bar encodes its value by its length from the baseline. When the value axis starts above zero (or ends below it for negative bars), or the bars grow from another value, every bar loses the same length, and their ratios no longer match the values: readers overestimate differences.',
 		evidence: [SOURCES.pandey2015, SOURCES.correll2020, SOURCES.cleveland1984],
 		limits: [
-			'Only a range the config sets is read: an axis that leaves zero out because of the data alone (Chart.js `beginAtZero: false`, ECharts `scale: true`) is not reported.',
+			"A range fitted to the data (Chart.js `beginAtZero: false`, ECharts `scale: true`) is reported only when the runtime's tick algorithm leaves zero out at every chart size; where it depends on the size, nothing is claimed. Highcharts ranges fitted to the data (`threshold: null`, `softThreshold: false`) depend on the size and are not reported.",
 			'A non-zero baseline can be deliberate when the differences matter more than the magnitudes (for example a narrow band of values far from zero); the finding asks to verify, it does not say the chart is wrong.',
 			'Logarithmic axes have no zero; they are reported by `bar-log-scale` instead.'
 		]
 	},
 	(chart, report) => {
-		return measuredAxes(chart, ['bar']).flatMap(({ axis }) => {
-			if (configured(axis.scale) === 'log') return [];
-			const [min, max] = [configured(axis.min), configured(axis.max)];
-			if (min === 'data' || (typeof min === 'number' && min > 0))
-				return [
-					report(
-						axis.min.path,
-						'Bars are drawn on a value axis that starts above zero, so their lengths are not proportional to their values; verify that the comparison is not misleading.'
-					)
-				];
-			if (typeof max === 'number' && max < 0)
-				return [
-					report(
-						axis.max.path,
-						'Bars are drawn on a value axis that ends below zero, so their lengths are not proportional to their values; verify that the comparison is not misleading.'
-					)
-				];
-			return [];
+		const measured = measuredAxes(chart, ['bar']).filter(({ axis }) => configured(axis.scale) !== 'log');
+		const axes = measured.flatMap(({ axis }) => {
+			const cut = cutAxis(axis);
+			return cut === undefined ? [] : [report(cut.path, cut.message)];
 		});
+		// A base the config sets, once per place it is set (an ECharts axis `startValue` serves all its bars).
+		const linear = new Set(measured.map(({ axis }) => axis.key));
+		const bases = new Map<string, number>();
+		if (chart.series.known)
+			for (const { kind, valueAxis, base } of chart.series.items) {
+				const [value, key] = [configured(base), valueOf(valueAxis)];
+				if (valueOf(kind) === 'bar' && key !== undefined && linear.has(key) && value !== undefined && value !== 0)
+					bases.set(base.path, value);
+			}
+		return [
+			...axes,
+			...[...bases].map(([path, value]) =>
+				report(
+					path,
+					`Bars grow from ${String(value)}, not from zero, so their lengths are not proportional to their values; verify that the comparison is not misleading.`
+				)
+			)
+		];
 	}
 );
 
@@ -179,6 +211,7 @@ export const QUALITY_RULES: readonly QualityRule[] = [
 	placeholderText,
 	valueAxisUntitled,
 	emptyTitle,
+	percentWithoutUnit,
 	dataNotDescribed,
 	keyboardDisabled,
 	longMotion

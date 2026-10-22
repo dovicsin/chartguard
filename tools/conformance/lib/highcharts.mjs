@@ -72,8 +72,9 @@ for (const options of CASES.map(revive)) {
 			shades,
 			inverted: chart.inverted === true,
 			polar: chart.polar === true,
-			series: chart.series.map((series) => ({ type: series.type, yAxis: series.yAxis ? series.yAxis.index : null, stacking: series.options.stacking ?? null, color: typeof series.color === 'string' ? series.color : null, points: series.points.map((point) => ({ y: point.y ?? null, valid: point.isValid() })) })),
-			yAxes: chart.yAxis.map((axis) => ({ min: axis.min, max: axis.max, reversed: axis.reversed === true, log: axis.logarithmic !== undefined, title: axis.axisTitle?.textStr ?? '' })),
+			// A column's base is where it grows from (its threshold as the options merge, kept within the axis); \`fromZero\` when that is where zero is.
+			series: chart.series.map((series) => ({ type: series.type, yAxis: series.yAxis ? series.yAxis.index : null, stacking: series.options.stacking ?? null, color: typeof series.color === 'string' ? series.color : null, fromZero: typeof series.translatedThreshold === 'number' ? Math.abs(series.translatedThreshold - series.yAxis.translate(0, 0, 1, 0, 1)) < 0.5 : null, threshold: series.options.threshold ?? null, points: series.points.map((point) => ({ y: point.y ?? null, valid: point.isValid() })) })),
+			yAxes: chart.yAxis.map((axis) => ({ min: axis.min, max: axis.max, reversed: axis.reversed === true, log: axis.logarithmic !== undefined, title: axis.axisTitle?.textStr ?? '', percent: axis.stacking?.usePercentage === true, labels: (axis.tickPositions ?? []).map((position) => axis.ticks[position]?.label?.textStr ?? '') })),
 			title: chart.title?.textStr ?? '',
 			// What assistive technology gets: labelled data points, and anything taking keyboard focus.
 			access: {

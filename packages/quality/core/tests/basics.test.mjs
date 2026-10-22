@@ -85,6 +85,8 @@ const series = (kind, valueAxis, orientation = fact('vertical', '$.o')) => ({
 	type: fact(kind, '$.t'),
 	kind: fact(kind, '$.t'),
 	name: none('$.n'),
+	stacking: none('$.stack'),
+	base: none('$.base'),
 	valueAxis,
 	orientation,
 	color: none('$.color')
@@ -95,6 +97,8 @@ const axis = (key, min, extra = {}) => ({
 	scale: none('$.scale'),
 	min,
 	max: none('$.max'),
+	fit: none('$.fit'),
+	unit: none('$.unit'),
 	reversed: none('$.reversed'),
 	title: { text: none('$.title'), shown: none('$.shown') },
 	...extra

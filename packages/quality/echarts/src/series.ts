@@ -2,10 +2,12 @@ import {
 	type CoordinateSystem,
 	type Default,
 	type Fact,
+	isNumber,
 	isString,
 	type Item,
 	type Orientation,
 	readFact,
+	readPath,
 	sameShades,
 	type SeriesKind,
 	type SeriesSemantics,
@@ -120,14 +122,47 @@ function layoutOf(config: unknown, item: Item, type: Fact<string>): Layout {
 	return { coordinateSystem, stacking, ...gridLayout(config, item, type.value) };
 }
 
+/** Bars grow from their value axis's `startValue`, else zero (`scale.getDefaultStartValue ? … : 0`). */
+const START: Default<number> = {
+	value: 0,
+	pointer:
+		'echarts@6.1.0 dist/echarts.js:35171 startValue = scale.getDefaultStartValue ? scale.getDefaultStartValue() : 0;'
+};
+const AXIS_KEY = /^([xy])Axis\[(\d+)\]$/u;
+const isList = (config: unknown, direction: string): boolean => Array.isArray(readPath(config, [`${direction}Axis`]));
+
+/** The `startValue` of the value axis `key` (`yAxis[0]`); log axes start from 1 (not modelled). */
+function startOf(config: unknown, key: string, at: string): Fact<number> {
+	const [, direction, index] = AXIS_KEY.exec(key) ?? [];
+	if (direction === undefined || index === undefined) return unknown(at, 'unmodelled');
+	const type = axisType(config, direction as 'x' | 'y', Number(index));
+	if (!type.known || type.value !== 'value') return unknown(at, type.known ? 'inapplicable' : type.reason);
+	return readFact(
+		config,
+		[`${direction}Axis`, ...(isList(config, direction) ? [Number(index)] : []), 'startValue'],
+		isNumber,
+		START
+	);
+}
+
+/** A bar's base: the `startValue` of the value axis it is measured on. */
+function baseOf(config: unknown, item: Item, kind: Fact<SeriesKind>, valueAxis: Fact<string>): Fact<number> {
+	const at = `${item.path}.base`;
+	if (!kind.known || kind.value !== 'bar') return unknown(at, kind.known ? 'inapplicable' : kind.reason);
+	return valueAxis.known ? startOf(config, valueAxis.value, at) : unknown(at, valueAxis.reason);
+}
+
 export function seriesOf(config: unknown, item: Item, color: Fact<string>): SeriesSemantics {
 	const type = readFact(config, [...item.segments, 'type'], isString);
+	const kind = kindOf(config, item, type);
+	const layout = layoutOf(config, item, type);
 	return {
 		path: item.path,
 		type,
-		kind: kindOf(config, item, type),
+		kind,
 		name: readFact(config, [...item.segments, 'name'], isString),
-		...layoutOf(config, item, type),
+		...layout,
+		base: baseOf(config, item, kind, layout.valueAxis),
 		color,
 		shades: sameShades(color),
 		values: valuesOf(config, item)

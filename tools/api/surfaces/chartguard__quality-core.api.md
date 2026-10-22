@@ -13,6 +13,8 @@ interface AxisSemantics {
     readonly scale: Fact<ScaleType>;
     readonly min: Fact<number | 'data'>;
     readonly max: Fact<number | 'data'>;
+    readonly fit: Fact<ZeroFit>;
+    readonly unit: Fact<string>;
     readonly reversed: Fact<boolean>;
     readonly title: TitleSemantics;
 }
@@ -121,6 +123,7 @@ interface SeriesSemantics {
     readonly coordinateSystem: Fact<CoordinateSystem>;
     readonly orientation: Fact<Orientation>;
     readonly stacking: Fact<Stacking>;
+    readonly base: Fact<number>;
     readonly color: Fact<string>;
     readonly shades: Fact<Shades>;
     readonly values: Fact<ValueSummary>;
@@ -149,13 +152,19 @@ interface UnknownFact {
 }
 
 ### UnknownReason
-type UnknownReason = 'unset' | 'accessor' | 'dynamic' | 'shape' | 'unmodelled' | 'inapplicable';
+type UnknownReason = 'unset' | 'accessor' | 'dynamic' | 'shape' | 'unmodelled' | 'inapplicable' | 'layout';
 
 ### ValueAt
 interface ValueAt {
     readonly value: number;
     readonly path: string;
 }
+
+### ValueRange
+type ValueRange = readonly [
+    number,
+    number
+];
 
 ### ValueSummary
 interface ValueSummary {
@@ -164,11 +173,17 @@ interface ValueSummary {
     readonly max: ValueAt | undefined;
 }
 
+### ZeroFit
+type ZeroFit = 'excluded' | 'included';
+
 ### colorKey
 function colorKey(color: string): string;
 
 ### contrastRatio
 function contrastRatio(foreground: string, background: string): number | undefined;
+
+### dataRange
+function dataRange(series: Listed<SeriesSemantics>, key: string, at: string): Fact<ValueRange>;
 
 ### defaulted
 defaulted: <T>({ value, pointer }: Default<T>, path: string) => KnownFact<T>
@@ -178,6 +193,9 @@ function firstSet<T>(scopes: readonly Fact<T>[], fallback?: Default<T>): Fact<T>
 
 ### formatPath
 function formatPath(path: readonly PathSegment[]): string;
+
+### holds
+function holds(root: unknown, path: readonly PathSegment[]): boolean;
 
 ### isBoolean
 isBoolean: (value: unknown) => value is boolean
@@ -222,3 +240,6 @@ valueOf: <T>(fact: Fact<T>) => T | undefined
 
 ### valuesAt
 function valuesAt(root: unknown, path: readonly PathSegment[], read: ElementReader): Fact<ValueSummary>;
+
+### zeroFit
+function zeroFit(ranges: readonly ValueRange[], asked: KnownFact<unknown>): Fact<ZeroFit>;

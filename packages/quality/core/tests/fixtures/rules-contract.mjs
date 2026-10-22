@@ -11,6 +11,7 @@ import { COLOR_CASES } from './colors-cases.mjs';
 import { CONTRAST_CASES } from './contrast-cases.mjs';
 import { LABEL_CASES } from './labels-cases.mjs';
 import { MOTION_CASES } from './motion-cases.mjs';
+import { RANGE_CASES } from './ranges-cases.mjs';
 
 const CASES = [
 	{
@@ -256,5 +257,6 @@ export const RULES_CONTRACT = [
 	...CONTRAST_CASES,
 	...LABEL_CASES,
 	...ACCESS_CASES,
-	...MOTION_CASES
+	...MOTION_CASES,
+	...RANGE_CASES
 ].map(realistic);

@@ -1,6 +1,7 @@
 import {
 	type AxisSemantics,
 	type Default,
+	defaulted,
 	type Fact,
 	formatPath,
 	isBoolean,
@@ -12,8 +13,11 @@ import {
 	readFact,
 	readPath,
 	type ScaleType,
+	type SeriesSemantics,
 	unknown
 } from '@chartguard/quality-core';
+
+import { fitOf } from './fit.js';
 
 export type Direction = 'x' | 'y';
 
@@ -74,18 +78,44 @@ function boundOf(config: unknown, path: readonly (string | number)[]): Fact<numb
 	return bound.known && typeof bound.value === 'string' ? { ...bound, value: 'data' } : (bound as Fact<number>);
 }
 
-export function axesOf(config: unknown): AxisSemantics[] {
+/** A value axis labels its ticks with plain numbers unless `axisLabel.formatter` says otherwise. */
+const PLAIN: Default<string> = {
+	value: '',
+	pointer: 'echarts@6.1.0 dist/echarts.js:34607 return axis.scale.getLabel(tick);'
+};
+const VALUE = '{value}';
+
+/**
+ * The unit of a value axis's labels: a string formatter is a template whose first `{value}` is replaced
+ * by the number (`labelFormatter.replace('{value}', …)`, dist/echarts.js:34578), so the rest is the unit;
+ * one without `{value}` shows the same text at every tick (not modelled). A function decides at runtime.
+ */
+function unitOf(config: unknown, segments: readonly (string | number)[], type: Fact<string>): Fact<string> {
+	const formatter = readFact(config, [...segments, 'axisLabel', 'formatter'], isString);
+	if (!formatter.known)
+		return formatter.reason === 'unset' && type.known && type.value === 'value'
+			? defaulted(PLAIN, formatter.path)
+			: unknown(formatter.path, formatter.reason === 'unset' ? 'unmodelled' : formatter.reason);
+	if (!type.known || type.value !== 'value' || !formatter.value.includes(VALUE))
+		return unknown(formatter.path, 'unmodelled');
+	return { ...formatter, value: formatter.value.replace(VALUE, '').trim() };
+}
+
+export function axesOf(config: unknown, series: Listed<SeriesSemantics>): AxisSemantics[] {
 	return (['x', 'y'] as const).flatMap((direction) => {
 		const axes = axisItems(config, direction);
 		if (!axes.known) return [];
 		return axes.items.map((axis, index) => {
 			const type = axisType(config, direction, index);
+			const key = `${direction}Axis[${String(index)}]`;
 			return {
-				key: `${direction}Axis[${String(index)}]`,
+				key,
 				path: axis.path,
 				scale: type.known ? { ...type, value: SCALE_TYPES[type.value] ?? 'other' } : type,
 				min: boundOf(config, [...axis.segments, 'min']),
 				max: boundOf(config, [...axis.segments, 'max']),
+				fit: fitOf(config, { item: axis, key, type }, series),
+				unit: unitOf(config, axis.segments, type),
 				reversed: readFact(config, [...axis.segments, 'inverse'], isBoolean, INVERSE),
 				// The name is drawn with the axis: hidden with it (`show: false`).
 				title: {

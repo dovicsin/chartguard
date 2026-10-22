@@ -17,6 +17,8 @@ const series = (kind, valueAxis, orientation = fact('vertical', '$.o')) => ({
 	type: fact(kind, '$.t'),
 	kind: fact(kind, '$.t'),
 	name: none('$.n'),
+	stacking: none('$.stack'),
+	base: none('$.base'),
 	valueAxis,
 	orientation,
 	color: none('$.color')

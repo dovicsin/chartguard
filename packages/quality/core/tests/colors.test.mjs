@@ -26,6 +26,8 @@ const series = (kind, color, index) => ({
 	type: fact(kind, '$.t'),
 	kind: fact(kind, '$.t'),
 	name: none('$.n'),
+	stacking: none('$.stack'),
+	base: none('$.base'),
 	valueAxis: none('$.a'),
 	orientation: none('$.o'),
 	color,

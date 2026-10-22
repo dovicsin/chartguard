@@ -37,7 +37,7 @@ export function normalize(config: unknown): ChartSemantics {
 			shown: readFact(config, [...titleAt, 'display'], isBoolean, TITLE_SHOWN)
 		},
 		series,
-		axes: axesOf(config, series, scales),
+		axes: axesOf(config, { series, datasets }, scales),
 		// A canvas gets its text alternative and keyboard access from the page, not from the config.
 		access: { dataDescribed: unknown('$', 'unmodelled'), keyboard: unknown('$', 'unmodelled') },
 		// A canvas is transparent: the page behind it is the background.

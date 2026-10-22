@@ -1,18 +1,22 @@
 import {
 	type AxisSemantics,
 	type Default,
+	defaulted,
 	type Fact,
 	firstSet,
 	formatPath,
 	isBoolean,
 	isNumber,
 	isString,
+	type Item,
 	type Listed,
 	readFact,
 	type ScaleType,
-	type SeriesSemantics
+	type SeriesSemantics,
+	unknown
 } from '@chartguard/quality-core';
 
+import { fitOf } from './fit.js';
 import type { Axis, Scales } from './scales.js';
 import { INDEX_AXIS } from './series.js';
 
@@ -48,6 +52,21 @@ const REVERSE: Default<boolean> = {
 	value: false,
 	pointer: 'chart.js@4.5.1 dist/chunks/helpers.dataset.js:934 reverse: false,'
 };
+
+/** A linear scale labels its ticks with plain numbers unless a callback formats them. */
+const NUMERIC: Default<string> = {
+	value: '',
+	pointer: 'chart.js@4.5.1 dist/chart.js:10364 callback: Ticks.formatters.numeric'
+};
+
+/** The unit around the tick labels: none on a linear scale without a callback; a callback decides at runtime. */
+function unitOf(config: unknown, path: readonly string[], scale: Fact<ScaleType>): Fact<string> {
+	const callback = readFact(config, [...path, 'ticks', 'callback'], (_value): _value is never => false);
+	if (callback.known || callback.reason !== 'unset') return callback;
+	return scale.known && scale.value === 'linear'
+		? defaulted(NUMERIC, callback.path)
+		: unknown(callback.path, 'unmodelled');
+}
 
 const SCALE_TYPES: Readonly<Record<string, ScaleType>> = {
 	linear: 'linear',
@@ -93,14 +112,17 @@ function scaleOf(config: unknown, path: readonly string[], axis: Axis | undefine
 	return { ...type, value: SCALE_TYPES[type.value] ?? 'other' };
 }
 
-function axisOf(config: unknown, key: string, axis: Axis | undefined): AxisSemantics {
+function axisOf(config: unknown, key: string, axis: Axis | undefined, chart: Datasets): AxisSemantics {
 	const path = ['options', 'scales', key];
+	const scale = scaleOf(config, path, axis);
 	return {
 		key,
 		path: formatPath(path),
-		scale: scaleOf(config, path, axis),
+		scale,
 		min: readFact(config, [...path, 'min'], isNumber),
 		max: readFact(config, [...path, 'max'], isNumber),
+		fit: fitOf(config, key, scale, chart),
+		unit: unitOf(config, path, scale),
 		reversed: readFact(config, [...path, 'reverse'], isBoolean, REVERSE),
 		title: {
 			text: asText(readFact(config, [...path, 'title', 'text'], isText, TITLE_TEXT)),
@@ -110,10 +132,16 @@ function axisOf(config: unknown, key: string, axis: Axis | undefined): AxisSeman
 }
 
 /** Every scale the chart builds that is read (configured or added by a dataset), and any a dataset names. */
-export function axesOf(config: unknown, series: Listed<SeriesSemantics>, scales: Scales): AxisSemantics[] {
+/** The datasets as read and as series: a fitted range is measured from their values. */
+interface Datasets {
+	readonly series: Listed<SeriesSemantics>;
+	readonly datasets: Listed<Item>;
+}
+
+export function axesOf(config: unknown, { series, datasets }: Datasets, scales: Scales): AxisSemantics[] {
 	const built = scales.entries.flatMap(({ id, axis }) => (id === undefined ? [] : [[id, axis] as const]));
 	const named = series.known ? series.items.flatMap(({ valueAxis }) => (valueAxis.known ? [valueAxis.value] : [])) : [];
 	const axes = new Map<string, Axis | undefined>(built);
 	for (const key of named) if (!axes.has(key)) axes.set(key, undefined);
-	return [...axes].map(([key, axis]) => axisOf(config, key, axis));
+	return [...axes].map(([key, axis]) => axisOf(config, key, axis, { series, datasets }));
 }

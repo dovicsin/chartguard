@@ -13,15 +13,19 @@ export type {
 	Stacking,
 	TitleSemantics,
 	ValueAt,
-	ValueSummary
+	ValueSummary,
+	ZeroFit
 } from './chart.js';
 export { colorKey, contrastRatio } from './color.js';
 export type { Default, Fact, KnownFact, Listed, UnknownFact, UnknownReason } from './facts.js';
 export { defaulted, known, unknown, valueOf } from './facts.js';
+export type { ValueRange } from './fit.js';
+export { dataRange, zeroFit } from './fit.js';
 export type { ElementReader, Item, PathSegment } from './read.js';
 export {
 	firstSet,
 	formatPath,
+	holds,
 	isBoolean,
 	isNumber,
 	isString,

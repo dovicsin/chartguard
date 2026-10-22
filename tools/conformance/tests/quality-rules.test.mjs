@@ -24,7 +24,8 @@ import { chartjsMotion, echartsMotion } from '../lib/motion.mjs';
  * model: the value axes the series are measured on, their range, scale and direction.
  */
 const PREMISES = {
-	VIS_BAR_BASELINE: ({ bars }) => bars.some(({ min, max, log }) => !log && (min > 0 || max < 0)),
+	// Bars cut short: drawn on a range without zero, or from a base other than zero.
+	VIS_BAR_BASELINE: ({ bars }) => bars.some(({ min, max, log, fromZero }) => !log && (min > 0 || max < 0 || !fromZero)),
 	VIS_BAR_LOG_SCALE: ({ bars }) => bars.some(({ log }) => log),
 	VIS_REVERSED_VALUE_AXIS: ({ valueAxes }) => valueAxes.some(({ reversed }) => reversed),
 	VIS_DUAL_AXIS: ({ valueAxes }) => new Set(valueAxes.map(({ id }) => id)).size >= 2,
@@ -43,7 +44,10 @@ const PREMISES = {
 	// A cartesian series drawn below 3:1 against the background the browser computed (undefined: page shows through).
 	// Motion that runs forever, or longer than five seconds, as the runtime resolves it.
 	VIS_LONG_MOTION: ({ motion }) => (motion === undefined ? undefined : motion.endless || motion.longest > 5000),
-	VIS_LOW_CONTRAST_SERIES: ({ contrasts }) => (contrasts === undefined ? undefined : contrasts.some((ratio) => ratio !== undefined && ratio < 3))
+	VIS_LOW_CONTRAST_SERIES: ({ contrasts }) => (contrasts === undefined ? undefined : contrasts.some((ratio) => ratio !== undefined && ratio < 3)),
+	// A percent-stacked axis whose drawn tick labels and title show no % (undefined: no percent stacking in the library).
+	VIS_PERCENT_WITHOUT_UNIT: ({ valueAxes }) =>
+		valueAxes.some(({ percent }) => percent === undefined) ? undefined : valueAxes.some(({ percent, labels, title }) => percent && ![...labels, title].some((text) => text.includes('%')))
 };
 
 function checkPremises(findings, built, where) {
@@ -61,7 +65,9 @@ function builtChartjs(config) {
 		const metas = chart.data.datasets.map((_, index) => chart.getDatasetMeta(index));
 		const cartesian = metas.filter(({ vScale }) => vScale !== undefined);
 		const drawn = ({ display, text }) => (display ? [text].flat().join(' ') : '');
-		const axis = ({ vScale }) => ({ id: vScale.id, min: vScale.min, max: vScale.max, log: vScale.type === 'logarithmic', reversed: vScale.options.reverse === true, title: drawn(vScale.options.title) });
+		// Chart.js draws a bar from the pixel of its base value (zero unless `base` is set), even off the chart area, aligned to half a pixel.
+		const fromZero = (meta) => meta.type !== 'bar' || meta.data.every(({ base }) => !Number.isFinite(base) || Math.abs(base - meta.vScale.getPixelForValue(0)) <= 1);
+		const axis = (meta) => ({ id: meta.vScale.id, min: meta.vScale.min, max: meta.vScale.max, log: meta.vScale.type === 'logarithmic', reversed: meta.vScale.options.reverse === true, title: drawn(meta.vScale.options.title), fromZero: fromZero(meta) });
 		const arcs = metas.filter(({ type }) => type === 'pie' || type === 'doughnut');
 		const pieMisdrawn = arcs.some((meta) => meta._parsed.some((value, index) => value < 0 && meta.data[index].circumference > 0));
 		const title = drawn(chart.options.plugins.title);
@@ -89,7 +95,10 @@ function builtEcharts(option, browserOutcome) {
 				const title = axis.model.get('show') === false ? '' : (axis.model.get('name') ?? '');
 				const data = model.getData();
 				const color = data.getVisual('style')[data.getVisual('drawType')];
-				return { type: model.subType, id: `${axis.dim}${String(axis.model.componentIndex)}`, min, max, log: axis.type === 'log', reversed: axis.inverse === true, title, color };
+				// A bar's layout starts at its base along the value axis (`y` for vertical bars, `x` for horizontal ones).
+				const zero = axis.toGlobalCoord(axis.dataToCoord(0));
+				const fromZero = model.subType !== 'bar' || data.mapArray((index) => data.getItemLayout(index)?.[axis.dim]).every((base) => !Number.isFinite(base) || Math.abs(base - zero) < 0.5);
+				return { type: model.subType, id: `${axis.dim}${String(axis.model.componentIndex)}`, min, max, log: axis.type === 'log', reversed: axis.inverse === true, title, color, fromZero };
 			});
 		// echarts filters negative pie values out before drawing (`negativeDataFilter`).
 		const pies = chart.getModel().getSeries().filter((model) => model.subType === 'pie');
@@ -110,7 +119,7 @@ function builtEcharts(option, browserOutcome) {
 function builtHighcharts({ series, yAxes, title, access, shades, durations }, config) {
 	const measured = series
 		.filter(({ yAxis }) => yAxis !== null)
-		.map(({ type, yAxis }) => ({ type, id: yAxis, ...yAxes[yAxis] }));
+		.map(({ type, yAxis, fromZero }) => ({ type, id: yAxis, ...yAxes[yAxis], fromZero: fromZero !== false }));
 	// Highcharts leaves negative pie points out (`isValid`: `y >= 0`).
 	const pieMisdrawn = series.some(({ type, points }) => type === 'pie' && points.some(({ y, valid }) => y !== null && y < 0 && !valid));
 	const colors = series.filter(({ type, yAxis }) => type !== 'pie' && yAxis !== null).map(({ color }) => color);

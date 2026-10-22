@@ -17,14 +17,17 @@ import {
 	readFact,
 	review,
 	type ScaleType,
+	type SeriesSemantics,
 	type TitleSemantics,
 	unknown,
-	type UnknownFact
+	type UnknownFact,
+	valueOf,
+	type ZeroFit
 } from '@chartguard/quality-core';
 
 import { seriesColors } from './color.js';
 import { motionOf } from './motion.js';
-import { FROM_SERIES, seriesOf } from './series.js';
+import { FROM_SERIES, seriesOf, seriesOption } from './series.js';
 import { backgroundOf } from './shades.js';
 
 /**
@@ -128,7 +131,68 @@ function scaleOf(config: unknown, path: readonly (string | number)[]): Fact<Scal
 	return type.known ? { ...type, value: SCALE_TYPES[type.value] ?? 'other' } : type;
 }
 
-function axesOf(config: unknown): AxisSemantics[] {
+/** Without `labels.format` or a formatter, labels are plain numbers (with `k`, `M` for magnitudes). */
+const PLAIN: Default<string> = {
+	value: '',
+	pointer: 'highcharts@13.1.1 highcharts.src.js:19474 return axis.defaultLabelFormatter.call(ctx);'
+};
+/** `{value}` with an optional number format, or `{text}`: the default label (:19471). */
+const PLACEHOLDER = /\{(?:value(?::[^}]*)?|text)\}/gu;
+
+/**
+ * The unit of an axis's labels: a `formatter` decides at runtime and comes first; a `format` shows the
+ * value through its placeholders, so the rest is the unit. Other template parts are not modelled.
+ */
+function unitOf(config: unknown, segments: readonly (string | number)[]): Fact<string> {
+	const formatter = readFact(config, [...segments, 'labels', 'formatter'], (_value): _value is never => false);
+	if (formatter.known || formatter.reason !== 'unset') return formatter;
+	const format = readFact(config, [...segments, 'labels', 'format'], isString, PLAIN);
+	if (!format.known || format.source === 'default') return format;
+	const rest = format.value.replace(PLACEHOLDER, '');
+	if (rest === format.value || rest.includes('{')) return unknown(format.path, 'unmodelled');
+	return { ...format, value: rest.trim() };
+}
+
+/** A soft threshold is on unless a series turns it off (`softThreshold: true`). */
+const SOFT: Default<boolean> = {
+	value: true,
+	pointer: 'highcharts@13.1.1 highcharts.src.js:32173 softThreshold: true,'
+};
+
+/** The bar on axis `key` that fits it to the data (a hard or no threshold), as an unknown `layout` fact. */
+function fittedBy(
+	config: unknown,
+	item: Item,
+	{ kind, type, valueAxis, base }: SeriesSemantics,
+	key: string
+): UnknownFact | undefined {
+	if (valueOf(kind) !== 'bar' || valueOf(valueAxis) !== key || !type.known) return undefined;
+	const soft = seriesOption(config, item, type.value, { name: 'softThreshold', is: isBoolean, fallback: SOFT });
+	if (soft.known && !soft.value) return unknown(soft.path, 'layout');
+	return !base.known && base.reason === 'layout' ? base : undefined;
+}
+
+/**
+ * Highcharts fits a y axis to the data when a bar on it turns its soft threshold off or has no
+ * threshold (`null`): the range then follows the tick algorithm, which depends on the plot size.
+ */
+function fitOf(config: unknown, key: string, at: string, series: Series): Fact<ZeroFit> {
+	if (!series.items.known || !series.semantics.known) return unknown(at, 'unset');
+	const { items } = series.items;
+	const fitted = series.semantics.items.map((semantics, index) => {
+		const item = items[index];
+		return item === undefined ? undefined : fittedBy(config, item, semantics, key);
+	});
+	return fitted.find((fact) => fact !== undefined) ?? unknown(at, 'unset');
+}
+
+/** The series as read and as semantics. */
+interface Series {
+	readonly items: Listed<Item>;
+	readonly semantics: Listed<SeriesSemantics>;
+}
+
+function axesOf(config: unknown, series: Series): AxisSemantics[] {
 	return (['xAxis', 'yAxis'] as const).flatMap((name) => {
 		const axes = itemsAt(config, [name], { single: true });
 		if (!axes.known) return [];
@@ -140,6 +204,8 @@ function axesOf(config: unknown): AxisSemantics[] {
 			scale: scaleOf(config, axis.segments),
 			min: readFact(config, [...axis.segments, 'min'], isNumber),
 			max: readFact(config, [...axis.segments, 'max'], isNumber),
+			fit: fitOf(config, `${name}[${String(index)}]`, axis.path, series),
+			unit: unitOf(config, axis.segments),
 			reversed: readFact(config, [...axis.segments, 'reversed'], isBoolean, name === 'yAxis' ? Y_REVERSED : undefined),
 			title: titleOf(axisTitle(config, axis.segments, name), `${axis.path}.title`)
 		}));
@@ -169,18 +235,19 @@ export function normalize(config: unknown): ChartSemantics {
 	const items = itemsAt(config, ['series']);
 	const chart = { coordinateSystem: coordinateSystemOf(config), orientation: orientationOf(config, items) };
 	const colors = seriesColors(config, items);
+	const series: Listed<SeriesSemantics> = items.known
+		? {
+				...items,
+				items: items.items.map((item, index) =>
+					seriesOf(config, item, chart, colors[index] ?? unknown(item.path, 'unmodelled'))
+				)
+			}
+		: items;
 	return {
 		library: 'highcharts',
 		title: titleOf(readFact(config, ['title', 'text'], isTitle, TITLE_TEXT), '$.title'),
-		series: items.known
-			? {
-					...items,
-					items: items.items.map((item, index) =>
-						seriesOf(config, item, chart, colors[index] ?? unknown(item.path, 'unmodelled'))
-					)
-				}
-			: items,
-		axes: axesOf(config),
+		series,
+		axes: axesOf(config, { items, semantics: series }),
 		access: accessOf(config),
 		background: backgroundOf(config),
 		motion: motionOf(config, items)

@@ -19,6 +19,8 @@ const axis = (axisTitle) => ({
 	scale: none('$.s'),
 	min: none('$.m'),
 	max: none('$.M'),
+	fit: none('$.fit'),
+	unit: none('$.unit'),
 	reversed: none('$.r'),
 	title: axisTitle
 });
@@ -27,6 +29,8 @@ const line = {
 	type: fact('line', '$.t'),
 	kind: fact('line', '$.t'),
 	name: none('$.n'),
+	stacking: none('$.stack'),
+	base: none('$.base'),
 	valueAxis: fact('y', '$.a'),
 	orientation: fact('vertical', '$.o'),
 	color: none('$.color')

@@ -8,7 +8,7 @@ Every fact is one of:
 
 - **known from the config**, with the path it was read from;
 - **the runtime's default**, with a pointer to the line of the pinned package that applies it;
-- **unknown**, with its reason: `unset`, `accessor`, `dynamic`, `shape`, `unmodelled` or `inapplicable`.
+- **unknown**, with its reason: `unset`, `accessor`, `dynamic`, `shape`, `unmodelled`, `inapplicable` or `layout` (it depends on the size the chart is drawn at).
 
 Rules claim nothing on an unknown fact. Rules about an author's choice fire only on facts from the config.
 
@@ -18,7 +18,7 @@ Rules claim nothing on an unknown fact. Rules about an author's choice fire only
 
 | Rule | Code | Severity | Reports |
 | --- | --- | --- | --- |
-| `bar-baseline` | `VIS_BAR_BASELINE` | warning | bars on a value axis whose configured range excludes zero (a minimum above it, a maximum below it, or the data minimum) |
+| `bar-baseline` | `VIS_BAR_BASELINE` | warning | bars that do not grow from zero: a configured range that excludes it (a minimum above it, a maximum below it, or the data minimum), a range fitted to the data that leaves it out at every chart size (Chart.js `beginAtZero: false`, ECharts `scale: true`), or a base other than zero (Chart.js `base`, ECharts `startValue`, Highcharts `threshold`) |
 | `bar-log-scale` | `VIS_BAR_LOG_SCALE` | warning | bars on a logarithmic value axis |
 | `reversed-value-axis` | `VIS_REVERSED_VALUE_AXIS` | warning | a value axis the config reverses |
 | `dual-axis` | `VIS_DUAL_AXIS` | info | series of one orientation measured on two value axes |
@@ -31,5 +31,6 @@ Rules claim nothing on an unknown fact. Rules about an author's choice fire only
 | `keyboard-disabled` | `VIS_KEYBOARD_DISABLED` | warning | the config turns keyboard navigation off |
 | `long-motion` | `VIS_LONG_MOTION` | warning | motion that starts by itself and runs forever (a looping animation, a ripple effect) or longer than five seconds |
 | `empty-title` | `VIS_EMPTY_TITLE` | info | a title the config sets to blank text, unless it is known to be hidden |
+| `percent-without-unit` | `VIS_PERCENT_WITHOUT_UNIT` | info | a percent-stacked value axis whose tick labels and title show no `%` |
 
 Findings are advisory. A chart's purpose is not in its config, so every finding asks the reader to verify; each rule's `limits` say where it can be wrong.

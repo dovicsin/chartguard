@@ -82,6 +82,11 @@ export function itemsAt(root: unknown, path: readonly PathSegment[], { single = 
 	return unknown(at, typeof found.value === 'function' ? 'dynamic' : 'shape');
 }
 
+/** Whether the config holds anything at `path`: a value of any shape, a function, or a getter (never run). */
+export function holds(root: unknown, path: readonly PathSegment[]): boolean {
+	return lookup(root, path).state !== 'missing';
+}
+
 export const isString = (value: unknown): value is string => typeof value === 'string';
 export const isNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 export const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';

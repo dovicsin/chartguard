@@ -59,11 +59,12 @@ export function runChartjs(config) {
 }
 
 /**
- * A live chart on a fake canvas, for tests of what happens after creation (updates, plugins). The
- * config is passed as given, so Chart.js writes into it; the caller destroys the chart.
+ * A live chart on a fake canvas, for tests of what happens after creation (updates, plugins), 400×300
+ * unless `size` says otherwise. The config is passed as given, so Chart.js writes into it; the caller
+ * destroys the chart.
  */
-export function createChartjs(config) {
-	const canvas = { width: 400, height: 300, style: {}, addEventListener() {}, removeEventListener() {} };
+export function createChartjs(config, { width = 400, height = 300 } = {}) {
+	const canvas = { width, height, style: {}, addEventListener() {}, removeEventListener() {} };
 	const context = fakeContext(canvas);
 	canvas.getContext = () => context;
 	return new Chart(canvas, config);

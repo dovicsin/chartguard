@@ -8,10 +8,12 @@ import {
 	isBoolean,
 	isString,
 	itemsAt,
+	type Listed,
 	readFact,
 	readPath,
 	review,
 	sameShades,
+	type SeriesSemantics,
 	type Shades,
 	unknown
 } from '@chartguard/quality-core';
@@ -59,21 +61,22 @@ export function normalize(config: unknown): ChartSemantics {
 	const items = itemsAt(config, ['series'], { single: true });
 	const colors = seriesColors(config, items);
 	const several = Array.isArray(readPath(config, ['title']));
+	const series: Listed<SeriesSemantics> = items.known
+		? {
+				...items,
+				items: items.items.map((item, index) =>
+					seriesOf(config, item, colors[index] ?? unknown(item.path, 'unmodelled'))
+				)
+			}
+		: items;
 	return {
 		library: 'echarts',
 		title: {
 			text: several ? unknown('$.title', 'unmodelled') : readFact(config, ['title', 'text'], isString, TITLE_TEXT),
 			shown: several ? unknown('$.title', 'unmodelled') : readFact(config, ['title', 'show'], isBoolean, TITLE_SHOWN)
 		},
-		series: items.known
-			? {
-					...items,
-					items: items.items.map((item, index) =>
-						seriesOf(config, item, colors[index] ?? unknown(item.path, 'unmodelled'))
-					)
-				}
-			: items,
-		axes: axesOf(config),
+		series,
+		axes: axesOf(config, series),
 		access: accessOf(config),
 		background: backgroundOf(config),
 		motion: motionOf(config, items)

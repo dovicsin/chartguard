@@ -52,6 +52,11 @@ export interface SeriesSemantics {
 	readonly orientation: Fact<Orientation>;
 	readonly stacking: Fact<Stacking>;
 	/**
+	 * The value a bar grows from (Chart.js `base`, ECharts `startValue` of its value axis, Highcharts
+	 * `threshold`); zero by default. `inapplicable` for series that are not bars.
+	 */
+	readonly base: Fact<number>;
+	/**
 	 * The colour the series is drawn in, as the runtime sets it: a CSS colour (Highcharts palette colours
 	 * are CSS variables). Per-point colours and gradients are `unmodelled`.
 	 */
@@ -61,6 +66,12 @@ export interface SeriesSemantics {
 	/** Its values as the runtime reads them from `data`; `unmodelled` for shapes not read yet (datasets, parsing keys, ranges). */
 	readonly values: Fact<ValueSummary>;
 }
+
+/**
+ * Where a range the runtime fits to the data puts zero: `excluded` at every size the chart can be
+ * drawn at, or `included` at every size.
+ */
+export type ZeroFit = 'excluded' | 'included';
 
 /** How an axis maps values to positions. */
 export type ScaleType = 'linear' | 'log' | 'category' | 'time' | 'other';
@@ -75,6 +86,17 @@ export interface AxisSemantics {
 	/** A number, or `data`: the axis starts at the smallest value shown (ECharts `min: 'dataMin'`). */
 	readonly min: Fact<number | 'data'>;
 	readonly max: Fact<number | 'data'>;
+	/**
+	 * Whether the range the runtime fits to the data leaves zero out, when the config asks for a range
+	 * fitted to the data (Chart.js `beginAtZero: false`, ECharts `scale: true`) and sets no bound: the
+	 * path is that switch. `unset` when the config does not ask; `layout` when it depends on the size.
+	 */
+	readonly fit: Fact<ZeroFit>;
+	/**
+	 * The unit the tick labels show around each value (`%` from a format `{value}%`); empty when they
+	 * show bare numbers. A function that formats them is `dynamic`.
+	 */
+	readonly unit: Fact<string>;
 	/** Values grow towards the origin of the screen direction (down, or left). */
 	readonly reversed: Fact<boolean>;
 	readonly title: TitleSemantics;

@@ -91,6 +91,58 @@ function stackingOf(config: unknown, item: Item, type: string): Fact<Stacking> {
 	return mapped === undefined ? unknown(stacking.path, 'unmodelled') : { ...stacking, value: mapped };
 }
 
+/** Columns and bars grow from their `threshold`, zero by default; `null` grows them from the axis minimum. */
+const THRESHOLD: Default<number | null> = {
+	value: 0,
+	pointer: 'highcharts@13.1.1 highcharts.src.js:44250 threshold: 0,'
+};
+const isThreshold = (value: unknown): value is number | null => value === null || isNumber(value);
+
+/** A series option: its name, the values read, and the runtime default. */
+export interface SeriesOption<T> {
+	readonly name: string;
+	readonly is: (value: unknown) => value is T;
+	readonly fallback?: Default<T>;
+}
+
+/** An option of a series as its options merge: the series, the options for its type, those for every series. */
+export function seriesOption<T>(
+	config: unknown,
+	item: Item,
+	type: string,
+	{ name, is, fallback }: SeriesOption<T>
+): Fact<T> {
+	const scopes = [item.segments, ['plotOptions', type], ['plotOptions', 'series']];
+	return firstSet(
+		scopes.map((scope) => readFact(config, [...scope, name], is)),
+		fallback
+	);
+}
+
+/** Whether the y axis `key` (`yAxis[i]`) may be logarithmic: its type is not known to be another. */
+function maybeLog(config: unknown, key: string): boolean {
+	const axes = itemsAt(config, ['yAxis'], { single: true });
+	const axis = axes.known ? axes.items[Number(key.slice('yAxis['.length, -1))] : undefined;
+	if (axis === undefined) return !axes.known;
+	const type = readFact(config, [...axis.segments, 'type'], isString);
+	return type.known ? type.value === 'logarithmic' : type.reason !== 'unset';
+}
+
+/**
+ * A bar's base: its `threshold`. With `null` the bars grow from the axis minimum, which the tick
+ * algorithm fits to the data and the plot size: `layout`. A logarithmic axis has no zero; a threshold
+ * outside its range is moved to its minimum (`getThreshold`): not modelled.
+ */
+function baseOf(config: unknown, item: Item, type: Fact<string>, valueAxis: Fact<string>): Fact<number> {
+	const at = `${item.path}.threshold`;
+	if (!type.known || KINDS[type.value] !== 'bar') return unknown(at, type.known ? 'inapplicable' : type.reason);
+	if (!valueAxis.known) return unknown(at, valueAxis.reason);
+	if (maybeLog(config, valueAxis.value)) return unknown(at, 'inapplicable');
+	const threshold = seriesOption(config, item, type.value, { name: 'threshold', is: isThreshold, fallback: THRESHOLD });
+	if (!threshold.known) return threshold;
+	return threshold.value === null ? unknown(threshold.path, 'layout') : (threshold as Fact<number>);
+}
+
 type Layout = Pick<SeriesSemantics, 'coordinateSystem' | 'orientation' | 'valueAxis' | 'stacking'>;
 
 const none = (item: Item, reason: UnknownFact['reason']): Layout => ({
@@ -124,12 +176,14 @@ function layoutOf(config: unknown, item: Item, type: Fact<string>, chart: ChartL
 
 export function seriesOf(config: unknown, item: Item, chart: ChartLayout, color: Fact<string>): SeriesSemantics {
 	const type = typeOf(config, item);
+	const layout = layoutOf(config, item, type, chart);
 	return {
 		path: item.path,
 		type,
 		kind: type.known ? { ...type, value: KINDS[type.value] ?? 'other' } : type,
 		name: readFact(config, [...item.segments, 'name'], isString),
-		...layoutOf(config, item, type, chart),
+		...layout,
+		base: baseOf(config, item, type, layout.valueAxis),
 		color,
 		shades: shadesOf(config, color),
 		values: valuesOf(config, item, type)
