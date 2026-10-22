@@ -26,7 +26,11 @@ const PREMISES = {
 	VIS_REVERSED_VALUE_AXIS: ({ valueAxes }) => valueAxes.some(({ reversed }) => reversed),
 	VIS_DUAL_AXIS: ({ valueAxes }) => new Set(valueAxes.map(({ id }) => id)).size >= 2,
 	// A pie that does not show its values as given: a slice drawn for a negative value, or one left out.
-	VIS_PIE_NEGATIVE: ({ pieMisdrawn }) => pieMisdrawn
+	VIS_PIE_NEGATIVE: ({ pieMisdrawn }) => pieMisdrawn,
+	// A drawn title whose text appears nowhere in the config: the library supplied it.
+	VIS_PLACEHOLDER_TEXT: ({ title, valueAxes, config }) =>
+		[title, ...valueAxes.map((axis) => axis.title)].some((text) => text !== '' && !JSON.stringify(config).includes(JSON.stringify(text))),
+	VIS_VALUE_AXIS_UNTITLED: ({ title, valueAxes }) => title === '' && valueAxes.some((axis) => axis.title === '')
 };
 
 function checkPremises(findings, built, where) {
@@ -40,10 +44,12 @@ function builtChartjs(config) {
 	try {
 		const metas = chart.data.datasets.map((_, index) => chart.getDatasetMeta(index));
 		const cartesian = metas.filter(({ vScale }) => vScale !== undefined);
-		const axis = ({ vScale }) => ({ id: vScale.id, min: vScale.min, max: vScale.max, log: vScale.type === 'logarithmic', reversed: vScale.options.reverse === true });
+		const drawn = ({ display, text }) => (display ? [text].flat().join(' ') : '');
+		const axis = ({ vScale }) => ({ id: vScale.id, min: vScale.min, max: vScale.max, log: vScale.type === 'logarithmic', reversed: vScale.options.reverse === true, title: drawn(vScale.options.title) });
 		const arcs = metas.filter(({ type }) => type === 'pie' || type === 'doughnut');
 		const pieMisdrawn = arcs.some((meta) => meta._parsed.some((value, index) => value < 0 && meta.data[index].circumference > 0));
-		return { bars: cartesian.filter(({ type }) => type === 'bar').map(axis), valueAxes: cartesian.map(axis), pieMisdrawn };
+		const title = drawn(chart.options.plugins.title);
+		return { bars: cartesian.filter(({ type }) => type === 'bar').map(axis), valueAxes: cartesian.map(axis), pieMisdrawn, title, config };
 	} finally {
 		chart.destroy();
 	}
@@ -62,25 +68,28 @@ function builtEcharts(option) {
 				const system = model.coordinateSystem;
 				const axis = system.getOtherAxis(system.getBaseAxis());
 				const [min, max] = axis.scale.getExtent();
-				return { type: model.subType, id: `${axis.dim}${String(axis.model.componentIndex)}`, min, max, log: axis.type === 'log', reversed: axis.inverse === true };
+				const title = axis.model.get('show') === false ? '' : (axis.model.get('name') ?? '');
+				return { type: model.subType, id: `${axis.dim}${String(axis.model.componentIndex)}`, min, max, log: axis.type === 'log', reversed: axis.inverse === true, title };
 			});
 		// echarts filters negative pie values out before drawing (`negativeDataFilter`).
 		const pies = chart.getModel().getSeries().filter((model) => model.subType === 'pie');
 		const pieMisdrawn = pies.some((model) => model.getData().count() < model.getRawData().count());
-		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn };
+		const component = chart.getModel().getComponent('title');
+		const title = component === undefined || component.get('show') === false ? '' : (component.get('text') ?? '');
+		return { bars: measured.filter(({ type }) => type === 'bar'), valueAxes: measured, pieMisdrawn, title, config: option };
 	} finally {
 		chart.dispose();
 	}
 }
 
 /** The y axes Highcharts built for its series (recorded by the page runner). */
-function builtHighcharts({ series, yAxes }) {
+function builtHighcharts({ series, yAxes, title }, config) {
 	const measured = series
 		.filter(({ yAxis }) => yAxis !== null)
 		.map(({ type, yAxis }) => ({ type, id: yAxis, ...yAxes[yAxis] }));
 	// Highcharts leaves negative pie points out (`isValid`: `y >= 0`).
 	const pieMisdrawn = series.some(({ type, points }) => type === 'pie' && points.some(({ y, valid }) => y !== null && y < 0 && !valid));
-	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured, pieMisdrawn };
+	return { bars: measured.filter(({ type }) => type === 'column' || type === 'bar'), valueAxes: measured, pieMisdrawn, title, config };
 }
 
 const run = (config, render) => verdictOf(render(copyPlain(config)));
@@ -121,6 +130,6 @@ test('quality rules, highcharts: every contract chart renders, gets its findings
 			findings,
 			entry.name
 		);
-		checkPremises(findings, builtHighcharts(outcomes[index].observed), entry.name);
+		checkPremises(findings, builtHighcharts(outcomes[index].observed, config), entry.name);
 	});
 });

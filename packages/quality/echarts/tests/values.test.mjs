@@ -32,7 +32,11 @@ test('arrays and data routed from a dataset are not read yet', () => {
 });
 
 test('a negative value in a pie is reported where it is', () => {
-	const codes = (option) => analyze(option).diagnostics.map((d) => `${d.code} ${d.path}`);
+	// Only the rule under test: the label rules fire on these bare configs too.
+	const codes = (option) =>
+		analyze(option)
+			.diagnostics.filter((d) => d.code === 'VIS_PIE_NEGATIVE')
+			.map((d) => `${d.code} ${d.path}`);
 	assert.deepEqual(
 		codes({
 			series: [

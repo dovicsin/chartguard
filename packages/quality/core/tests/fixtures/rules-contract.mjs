@@ -5,21 +5,10 @@
  * runtime and checks the premise of each finding on what the runtime built (the bars' axis range
  * excludes zero, the axis is logarithmic or reversed, two value axes are in use).
  */
-const LABELS = ['Q1', 'Q2'];
-const cjBars = (data, scale, extra = {}) => ({
-	type: 'bar',
-	data: { labels: LABELS, datasets: [{ label: 'Sales', data }] },
-	options: { scales: { y: scale }, ...extra }
-});
-const ecBars = (data, yAxis) => ({ xAxis: { type: 'category', data: LABELS }, yAxis, series: [{ type: 'bar', data }] });
-const hcBars = (data, yAxis) => ({
-	chart: { type: 'column' },
-	xAxis: { categories: LABELS },
-	yAxis,
-	series: [{ data }]
-});
+import { cjBars, ecBars, hcBars, LABELS } from './charts.mjs';
+import { LABEL_CASES } from './labels-cases.mjs';
 
-export const RULES_CONTRACT = [
+const CASES = [
 	{
 		name: 'bars on an axis starting above zero',
 		chartjs: { config: cjBars([60, 70], { min: 50 }), findings: ['VIS_BAR_BASELINE $.options.scales.y.min'] },
@@ -200,14 +189,31 @@ export const RULES_CONTRACT = [
 		},
 		echarts: { config: { series: [{ type: 'pie', data: [3, 0, 2] }] }, findings: [] },
 		highcharts: { config: { series: [{ type: 'pie', data: [3, 0, 2] }] }, findings: [] }
-	},
-	{
-		name: 'an empty title',
-		chartjs: {
-			config: { ...cjBars([1, 2], {}), options: { plugins: { title: { display: true, text: '' } } } },
-			findings: ['VIS_EMPTY_TITLE $.options.plugins.title.text']
-		},
-		echarts: { config: { ...ecBars([1, 2], {}), title: { text: '' } }, findings: ['VIS_EMPTY_TITLE $.title.text'] },
-		highcharts: { config: { ...hcBars([1, 2], {}), title: { text: '' } }, findings: ['VIS_EMPTY_TITLE $.title.text'] }
 	}
 ];
+
+/**
+ * Every case that is not about labels gets the titles a real chart has (a chart title, and a title on
+ * each y axis): without them, the label rules would add their findings to every case.
+ */
+const TITLE = 'Quarterly sales';
+const yTitled = (yAxis) =>
+	Array.isArray(yAxis) ? yAxis.map(yTitled) : { ...yAxis, title: { text: 'Units', ...yAxis?.title } };
+const TITLED = {
+	chartjs: (config) => ({
+		...config,
+		options: { ...config.options, plugins: { title: { display: true, text: TITLE }, ...config.options?.plugins } }
+	}),
+	echarts: (option) => ({ title: { text: TITLE }, ...option }),
+	highcharts: (config) => ({ title: { text: TITLE }, ...config, yAxis: yTitled(config.yAxis ?? {}) })
+};
+
+export const RULES_CONTRACT = [...CASES, ...LABEL_CASES].map((entry) =>
+	entry.labels === true
+		? entry
+		: Object.fromEntries(
+				Object.entries(entry).map(([key, value]) =>
+					key in TITLED ? [key, { ...value, config: TITLED[key](value.config) }] : [key, value]
+				)
+			)
+);

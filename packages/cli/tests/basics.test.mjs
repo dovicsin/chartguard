@@ -38,7 +38,11 @@ test('quality json output is tagged with its mode, is advisory and points at the
 	assert.equal(report.valid, undefined);
 	assert.deepEqual(
 		report.diagnostics.map((d) => [d.code, d.path]),
-		[['VIS_BAR_BASELINE', '$.options.scales.y.min']]
+		[
+			['VIS_BAR_BASELINE', '$.options.scales.y.min'],
+			// The example has no titles: nothing says what is measured.
+			['VIS_VALUE_AXIS_UNTITLED', '$.options.scales.y.title.text']
+		]
 	);
 	const text = await run(['quality', '--library', 'chartjs', '--file', example('chartjs-quality.json')]);
 	assert.match(text.out, /advisory/);

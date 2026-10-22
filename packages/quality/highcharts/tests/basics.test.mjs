@@ -4,13 +4,21 @@ import test from 'node:test';
 import { checkPackagePointers } from '../../core/tests/pointers.mjs';
 import { analyze, normalize } from '../dist/index.js';
 
-const codes = (config) => analyze(config).diagnostics.map((d) => `${d.code} ${d.path}`);
+/** The label rules (CG-05-04 part 3) fire on most bare test configs; they have tests of their own. */
+const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED']);
+const codes = (config) =>
+	analyze(config)
+		.diagnostics.filter((d) => !LABELS.has(d.code))
+		.map((d) => `${d.code} ${d.path}`);
 const brief = (fact) =>
 	fact.known ? `${String(fact.value)} ${fact.source} ${fact.path}` : `? ${fact.reason} ${fact.path}`;
 
-test('an empty config is an advisory report; the default title is "Chart title"', () => {
+test('an empty config draws the placeholder "Chart title": it is the only finding', () => {
 	assert.equal(analyze({}).library, 'highcharts');
-	assert.deepEqual(analyze({}).diagnostics, []);
+	assert.deepEqual(
+		analyze({}).diagnostics.map((d) => `${d.code} ${d.path}`),
+		['VIS_PLACEHOLDER_TEXT $.title.text']
+	);
 	assert.equal(brief(normalize({}).title.text), 'Chart title default $.title.text');
 });
 
@@ -142,4 +150,20 @@ test('stacking resolves through the series, plotOptions for its type and plotOpt
 });
 
 test('every runtime default points at the line of the pinned highcharts that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 7));
+	assert.equal(checkPackagePointers(import.meta.url), 8));
+
+test('titles: null hides a title; a y axis without text takes lang.yAxisTitle, else "Values"; an implicit y axis is read', () => {
+	const hidden = normalize({ title: { text: null }, yAxis: { title: { text: null } } });
+	assert.deepEqual(
+		[brief(hidden.title.text), brief(hidden.title.shown)],
+		[' config $.title.text', 'false config $.title.text']
+	);
+	const y = (config) => brief(normalize(config).axes.find(({ key }) => key === 'yAxis[0]').title.text);
+	assert.equal(y({ yAxis: {} }), 'Values default $.yAxis.title.text');
+	assert.equal(y({ lang: { yAxisTitle: 'Units' }, yAxis: {} }), 'Units config $.lang.yAxisTitle');
+	assert.equal(y({}), 'Values default $.yAxis.title.text');
+	assert.equal(
+		brief(normalize({}).axes.find(({ key }) => key === 'xAxis[0]').title.text),
+		'? unset $.xAxis.title.text'
+	);
+});

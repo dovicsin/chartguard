@@ -4,7 +4,12 @@ import test from 'node:test';
 import { checkPackagePointers } from '../../core/tests/pointers.mjs';
 import { analyze, normalize } from '../dist/index.js';
 
-const codes = (config) => analyze(config).diagnostics.map((d) => `${d.code} ${d.path}`);
+/** The label rules (CG-05-04 part 3) fire on most bare test configs; they have tests of their own. */
+const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED']);
+const codes = (config) =>
+	analyze(config)
+		.diagnostics.filter((d) => !LABELS.has(d.code))
+		.map((d) => `${d.code} ${d.path}`);
 const brief = (fact) =>
 	fact.known ? `${String(fact.value)} ${fact.source} ${fact.path}` : `? ${fact.reason} ${fact.path}`;
 
@@ -83,7 +88,7 @@ test('axes: every configured scale and every scale a dataset uses, with quoted k
 		options: { scales: { x: { title: { text: ['Month', '2026'] } }, y: { min: 10, max: 'a' } } }
 	});
 	assert.deepEqual(
-		axes.map(({ key, path, min, max, title }) => [key, path, brief(min), brief(max), brief(title)]),
+		axes.map(({ key, path, min, max, title }) => [key, path, brief(min), brief(max), brief(title.text)]),
 		[
 			[
 				'x',
@@ -97,14 +102,14 @@ test('axes: every configured scale and every scale a dataset uses, with quoted k
 				'$.options.scales.y',
 				'10 config $.options.scales.y.min',
 				'? shape $.options.scales.y.max',
-				'? unset $.options.scales.y.title.text'
+				' default $.options.scales.y.title.text'
 			],
 			[
 				'y-right',
 				'$.options.scales["y-right"]',
 				'? unset $.options.scales["y-right"].min',
 				'? unset $.options.scales["y-right"].max',
-				'? unset $.options.scales["y-right"].title.text'
+				' default $.options.scales["y-right"].title.text'
 			]
 		]
 	);
@@ -153,4 +158,4 @@ test('getters are never run and leave their facts unknown', () => {
 });
 
 test('every runtime default points at the line of the pinned chart.js that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 15));
+	assert.equal(checkPackagePointers(import.meta.url), 17));

@@ -23,6 +23,8 @@ Rules claim nothing on an unknown fact. Rules about an author's choice fire only
 | `reversed-value-axis` | `VIS_REVERSED_VALUE_AXIS` | warning | a value axis the config reverses |
 | `dual-axis` | `VIS_DUAL_AXIS` | info | series of one orientation measured on two value axes |
 | `pie-negative` | `VIS_PIE_NEGATIVE` | warning | a negative value in a pie series (drawn as a positive slice or left out) |
+| `placeholder-text` | `VIS_PLACEHOLDER_TEXT` | warning | a chart or value-axis title drawn with the library's placeholder text (Highcharts "Chart title", "Values") |
+| `value-axis-untitled` | `VIS_VALUE_AXIS_UNTITLED` | info | a value axis whose title, and the chart's, are known to show nothing |
 | `empty-title` | `VIS_EMPTY_TITLE` | info | a title the config sets to blank text, unless it is known to be hidden |
 
 Findings are advisory. A chart's purpose is not in its config, so every finding asks the reader to verify; each rule's `limits` say where it can be wrong.

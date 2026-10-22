@@ -55,6 +55,9 @@ export function axisType(config: unknown, direction: Direction, index: number): 
 	return { known: true, value, path: own.path, source: 'default', pointer: AXIS_TYPE };
 }
 
+/** An axis is shown, and its name empty, unless set. */
+const SHOWN: Default<boolean> = { value: true, pointer: 'echarts@6.1.0 dist/echarts.js:48470 show: true,' };
+const NAME: Default<string> = { value: '', pointer: "echarts@6.1.0 dist/echarts.js:48476 name: ''," };
 const INVERSE: Default<boolean> = { value: false, pointer: 'echarts@6.1.0 dist/echarts.js:48474 inverse: false,' };
 const SCALE_TYPES: Readonly<Record<string, ScaleType>> = {
 	value: 'linear',
@@ -84,7 +87,11 @@ export function axesOf(config: unknown): AxisSemantics[] {
 				min: boundOf(config, [...axis.segments, 'min']),
 				max: boundOf(config, [...axis.segments, 'max']),
 				reversed: readFact(config, [...axis.segments, 'inverse'], isBoolean, INVERSE),
-				title: readFact(config, [...axis.segments, 'name'], isString)
+				// The name is drawn with the axis: hidden with it (`show: false`).
+				title: {
+					text: readFact(config, [...axis.segments, 'name'], isString, NAME),
+					shown: readFact(config, [...axis.segments, 'show'], isBoolean, SHOWN)
+				}
 			};
 		});
 	});

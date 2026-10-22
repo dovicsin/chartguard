@@ -95,7 +95,7 @@ const axis = (key, min, extra = {}) => ({
 	min,
 	max: none('$.max'),
 	reversed: none('$.reversed'),
-	title: none('$.title'),
+	title: { text: none('$.title'), shown: none('$.shown') },
 	...extra
 });
 const chart = ({ items = [], axes = [], text = none('$.title.text'), shown = none('$.title.show') } = {}) => ({

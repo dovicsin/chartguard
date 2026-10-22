@@ -58,7 +58,11 @@ test('shapes not read yet, custom parsing and getters leave the values unknown',
 });
 
 test('a negative value in a pie or doughnut is reported where it is', () => {
-	const codes = (config) => analyze(config).diagnostics.map((d) => `${d.code} ${d.path}`);
+	// Only the rule under test: the label rules fire on these bare configs too.
+	const codes = (config) =>
+		analyze(config)
+			.diagnostics.filter((d) => d.code === 'VIS_PIE_NEGATIVE')
+			.map((d) => `${d.code} ${d.path}`);
 	assert.deepEqual(codes(dataset([3, -1, 2], {}, 'doughnut')), ['VIS_PIE_NEGATIVE $.data.datasets[0].data[1]']);
 	assert.deepEqual(codes(dataset([3, 0, 2], {}, 'pie')), []);
 	assert.deepEqual(codes(dataset([3, -1, 2], {}, 'bar')), []);

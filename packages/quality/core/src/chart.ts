@@ -60,10 +60,10 @@ export interface AxisSemantics {
 	readonly max: Fact<number | 'data'>;
 	/** Values grow towards the origin of the screen direction (down, or left). */
 	readonly reversed: Fact<boolean>;
-	readonly title: Fact<string>;
+	readonly title: TitleSemantics;
 }
 
-/** The chart's title: its text and whether it is shown. */
+/** A title (of the chart or an axis): its text and whether it is shown. */
 export interface TitleSemantics {
 	readonly text: Fact<string>;
 	readonly shown: Fact<boolean>;

@@ -4,7 +4,12 @@ import test from 'node:test';
 
 import { analyze, normalize } from '../dist/index.js';
 
-const codes = (config) => analyze(config).diagnostics.map((d) => `${d.code} ${d.path}`);
+/** The label rules (CG-05-04 part 3) fire on most bare test configs; they have tests of their own. */
+const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED']);
+const codes = (config) =>
+	analyze(config)
+		.diagnostics.filter((d) => !LABELS.has(d.code))
+		.map((d) => `${d.code} ${d.path}`);
 const brief = (fact) =>
 	fact.known ? `${String(fact.value)} ${fact.source} ${fact.path}` : `? ${fact.reason} ${fact.path}`;
 const first = (config) => normalize(config).series.items[0];
@@ -151,4 +156,19 @@ test('stacking: the value scale says so, else a dataset stack stacks, else none'
 		brief(first({ type: 'pie', data: { datasets: [{ data: [1] }] } }).stacking),
 		'? inapplicable $.data.datasets[0].stack'
 	);
+});
+
+test('scale titles: hidden and empty unless set; text may be lines', () => {
+	const title = (scale) => {
+		const { text, shown } = normalize(bars({}, { scales: { y: scale } })).axes.find(({ key }) => key === 'y').title;
+		return [brief(text), brief(shown)];
+	};
+	assert.deepEqual(title({}), [
+		' default $.options.scales.y.title.text',
+		'false default $.options.scales.y.title.display'
+	]);
+	assert.deepEqual(title({ title: { display: true, text: ['Units', 'k'] } }), [
+		'Units k config $.options.scales.y.title.text',
+		'true config $.options.scales.y.title.display'
+	]);
 });

@@ -77,6 +77,18 @@ export const SOURCES = {
 		venue: 'Applied Cognitive Psychology 5(1)',
 		year: 1991
 	},
+	few2012: {
+		authors: 'Few',
+		title: 'Show Me the Numbers: Designing Tables and Graphs to Enlighten (2nd edition)',
+		venue: 'Analytics Press',
+		year: 2012
+	},
+	wcag22Labels: {
+		authors: 'W3C',
+		title: 'Web Content Accessibility Guidelines (WCAG) 2.2, Success Criterion 2.4.6 Headings and Labels',
+		venue: 'W3C Recommendation',
+		year: 2023
+	},
 	wcag22: {
 		authors: 'W3C',
 		title: 'Web Content Accessibility Guidelines (WCAG) 2.2, Success Criterion 1.1.1 Non-text Content',

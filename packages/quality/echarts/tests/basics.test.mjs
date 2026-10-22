@@ -4,7 +4,12 @@ import test from 'node:test';
 import { checkPackagePointers } from '../../core/tests/pointers.mjs';
 import { analyze, normalize } from '../dist/index.js';
 
-const codes = (config) => analyze(config).diagnostics.map((d) => `${d.code} ${d.path}`);
+/** The label rules (CG-05-04 part 3) fire on most bare test configs; they have tests of their own. */
+const LABELS = new Set(['VIS_PLACEHOLDER_TEXT', 'VIS_VALUE_AXIS_UNTITLED']);
+const codes = (config) =>
+	analyze(config)
+		.diagnostics.filter((d) => !LABELS.has(d.code))
+		.map((d) => `${d.code} ${d.path}`);
 const brief = (fact) =>
 	fact.known ? `${String(fact.value)} ${fact.source} ${fact.path}` : `? ${fact.reason} ${fact.path}`;
 const CATEGORY = { xAxis: { type: 'category', data: ['a'] } };
@@ -116,11 +121,11 @@ test('area and stacking: areaStyle draws an area; a non-empty stack stacks', () 
 test('axes: both directions, keyed by index, at the path they are configured', () => {
 	const { axes } = normalize({ xAxis: { data: ['a'], name: 'Day' }, yAxis: [{ min: 3, max: 'dataMax' }, {}] });
 	assert.deepEqual(
-		axes.map(({ key, path, min, max, title }) => [key, path, brief(min), brief(max), brief(title)]),
+		axes.map(({ key, path, min, max, title }) => [key, path, brief(min), brief(max), brief(title.text)]),
 		[
 			['xAxis[0]', '$.xAxis', '? unset $.xAxis.min', '? unset $.xAxis.max', 'Day config $.xAxis.name'],
-			['yAxis[0]', '$.yAxis[0]', '3 config $.yAxis[0].min', 'data config $.yAxis[0].max', '? unset $.yAxis[0].name'],
-			['yAxis[1]', '$.yAxis[1]', '? unset $.yAxis[1].min', '? unset $.yAxis[1].max', '? unset $.yAxis[1].name']
+			['yAxis[0]', '$.yAxis[0]', '3 config $.yAxis[0].min', 'data config $.yAxis[0].max', ' default $.yAxis[0].name'],
+			['yAxis[1]', '$.yAxis[1]', '? unset $.yAxis[1].min', '? unset $.yAxis[1].max', ' default $.yAxis[1].name']
 		]
 	);
 });
@@ -163,4 +168,16 @@ test('findings point at the ECharts option that triggered them', () => {
 });
 
 test('every runtime default points at the line of the pinned echarts that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 9));
+	assert.equal(checkPackagePointers(import.meta.url), 12));
+
+test('titles: no title draws none; an axis name is shown with its axis', () => {
+	const { title, axes } = normalize({ xAxis: { data: ['a'], show: false, name: 'Day' }, yAxis: {} });
+	assert.deepEqual([brief(title.text), brief(title.shown)], [' default $.title.text', 'true default $.title.show']);
+	assert.deepEqual(
+		axes.map(({ title: { text, shown } }) => [brief(text), brief(shown)]),
+		[
+			['Day config $.xAxis.name', 'false config $.xAxis.show'],
+			[' default $.yAxis.name', 'true default $.yAxis.show']
+		]
+	);
+});

@@ -8,7 +8,7 @@ interface AxisSemantics {
     readonly min: Fact<number | 'data'>;
     readonly max: Fact<number | 'data'>;
     readonly reversed: Fact<boolean>;
-    readonly title: Fact<string>;
+    readonly title: TitleSemantics;
 }
 
 ### ChartSemantics

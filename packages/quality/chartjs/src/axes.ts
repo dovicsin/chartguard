@@ -35,6 +35,15 @@ const BY_AXIS: Readonly<Record<string, Partial<Record<Axis, Default<string>>>>> 
 	},
 	radar: { r: { value: 'radialLinear', pointer: "chart.js@4.5.1 dist/chart.js:2402 type: 'radialLinear'" } }
 };
+/** A scale title is hidden and empty unless set (`title: { display: false, text: '' }`). */
+const TITLE_SHOWN: Default<boolean> = {
+	value: false,
+	pointer: 'chart.js@4.5.1 dist/chunks/helpers.dataset.js:956 display: false,'
+};
+const TITLE_TEXT: Default<string | string[]> = {
+	value: '',
+	pointer: "chart.js@4.5.1 dist/chunks/helpers.dataset.js:957 text: '',"
+};
 const REVERSE: Default<boolean> = {
 	value: false,
 	pointer: 'chart.js@4.5.1 dist/chunks/helpers.dataset.js:934 reverse: false,'
@@ -93,7 +102,10 @@ function axisOf(config: unknown, key: string, axis: Axis | undefined): AxisSeman
 		min: readFact(config, [...path, 'min'], isNumber),
 		max: readFact(config, [...path, 'max'], isNumber),
 		reversed: readFact(config, [...path, 'reverse'], isBoolean, REVERSE),
-		title: asText(readFact(config, [...path, 'title', 'text'], isText))
+		title: {
+			text: asText(readFact(config, [...path, 'title', 'text'], isText, TITLE_TEXT)),
+			shown: readFact(config, [...path, 'title', 'display'], isBoolean, TITLE_SHOWN)
+		}
 	};
 }
 
