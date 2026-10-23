@@ -1,4 +1,10 @@
-import type { Extension, NodeSchema, SchemaManifest, VariantSpec } from '@chartguard/config-core';
+import {
+	type Extension,
+	ExtensionError,
+	type NodeSchema,
+	type SchemaManifest,
+	type VariantSpec
+} from '@chartguard/config-core';
 
 /**
  * A Chart.js controller a plugin registers (`Chart.register(FunnelController)`), described by the
@@ -52,7 +58,8 @@ function property(node: NodeSchema | undefined, key: string): NodeSchema {
 /**
  * A controller's chart config: the built-in one it extends, whose datasets default to the controller's
  * own dataset type (the runtime reads an untyped dataset's controller from the chart type), with the
- * controller's chart options added. New nodes only: the built-in schema is shared and never changed.
+ * controller's chart options added; one it redefines is redefined for its own chart type only (A32).
+ * New nodes only: the built-in schema is shared and never changed.
  */
 function controllerConfig(config: NodeSchema, dataset: NodeSchema, options: NodeSchema | undefined): NodeSchema {
 	const data = property(config, 'data');
@@ -70,12 +77,26 @@ function controllerConfig(config: NodeSchema, dataset: NodeSchema, options: Node
 	return { ...config, properties: { ...config.properties, data: newData, options: withOptions } };
 }
 
+const isObjectSchema = (value: unknown): value is NodeSchema =>
+	typeof value === 'object' && value !== null && (value as { kind?: unknown }).kind === 'object';
+
+/** Why a controller's chart options are refused: they must be an object schema, or nothing would be added (K13). */
+function optionsProblem(id: string, name: string, options: unknown): string | undefined {
+	return options === undefined || isObjectSchema(options)
+		? undefined
+		: `${id}: controller "${name}" options must be an object schema`;
+}
+
 /** The resolved extensions with each controller's chart variant completed from its dataset variant and options. */
 export function withControllers(manifest: SchemaManifest, extensions: readonly ChartjsExtension[]): SchemaManifest {
 	const resolved = manifest.extensions;
 	const charts = resolved?.variants.get(CHARTS);
 	const datasets = resolved?.variants.get(DATASETS);
 	if (resolved === undefined || charts === undefined || datasets === undefined) return manifest;
+	const problems = extensions.flatMap(({ id, controllers: own = {} }) =>
+		Object.entries(own).flatMap(([name, { options }]) => optionsProblem(id, name, options) ?? [])
+	);
+	if (problems.length > 0) throw new ExtensionError(problems);
 	const controllers = new Map(extensions.flatMap(({ controllers: own = {} }) => Object.entries(own)));
 	const completed = new Map(
 		[...charts].map(([name, config]) => {

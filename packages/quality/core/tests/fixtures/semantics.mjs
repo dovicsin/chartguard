@@ -26,6 +26,7 @@ export const axis = (key, min, extra = {}) => ({
 	max: none('$.max'),
 	fit: none('$.fit'),
 	unit: none('$.unit'),
+	panel: fact('plot', '$.panel', 'default'),
 	reversed: none('$.reversed'),
 	title: { text: none('$.title'), shown: none('$.shown') },
 	...extra

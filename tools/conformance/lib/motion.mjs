@@ -12,11 +12,20 @@ export function chartjsMotion(chart, user) {
 	const config = new Config(copyPlain(user));
 	const datasets = config.data.datasets;
 	if (datasets.length === 0) return undefined;
-	const scopes = config.getOptionScopes(datasets[0], config.datasetAnimationScopeKeys(datasets[0].type ?? config.type, 'default'));
+	const scopes = config.getOptionScopes(
+		datasets[0],
+		config.datasetAnimationScopeKeys(datasets[0].type ?? config.type, 'default')
+	);
 	const resolved = config.createResolver(scopes, {});
 	if (resolved.animation === false) return { endless: false, longest: 0 };
-	const entries = [resolved.animation, ...Object.keys(resolved.animations ?? {}).map((name) => resolved.animations[name])];
-	return { endless: entries.some((entry) => entry.loop === true), longest: Math.max(0, ...entries.map((entry) => entry.duration ?? 0)) };
+	const entries = [
+		resolved.animation,
+		...Object.keys(resolved.animations ?? {}).map((name) => resolved.animations[name])
+	];
+	return {
+		endless: entries.some((entry) => entry.loop === true),
+		longest: Math.max(0, ...entries.map((entry) => entry.duration ?? 0))
+	};
 }
 
 /** Whether any element of a rendered echarts chart has an animator that loops. */
@@ -33,6 +42,9 @@ function loops(chart) {
 /** echarts: endless is a looping animator in the rendered chart; longest the resolved animation duration. */
 export function echartsMotion(chart) {
 	const model = chart.getModel();
-	const durations = model.get('animation') === false ? [0] : [model.get('animationDuration'), ...model.getSeries().map((series) => series.get('animationDuration'))];
+	const durations =
+		model.get('animation') === false
+			? [0]
+			: [model.get('animationDuration'), ...model.getSeries().map((series) => series.get('animationDuration'))];
 	return { endless: loops(chart), longest: Math.max(...durations) };
 }

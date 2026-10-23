@@ -11,6 +11,7 @@ const NAME_LENGTH = 120;
 const NAME_PREFIX = 80;
 const NAME_FLAGS = ts.TypeFormatFlags.NoTruncation;
 /** Platform objects (CanvasGradient, HTMLElement, …) are checked only as "some object". */
+/** An object TypeScript's library declares: opaque; a platform class adds `host`, which a plain object never is. */
 const HOST_OBJECT = { kind: 'object', additional: 'open', properties: {} };
 /**
  * TypeScript's global function interfaces declare no call signature, so they would pass for
@@ -207,13 +208,26 @@ export class TypeEmitter {
 		return true;
 	}
 
-	/** DOM and other platform objects are opaque, also when wrapped in a generic such as `DeepPartial<T>`. */
-	isHostType(type) {
-		const declarations = type.getSymbol()?.declarations ?? [];
-		if (declarations.some((declaration) => this.program.isSourceFileDefaultLibrary(declaration.getSourceFile())))
-			return true;
+	/**
+	 * What TypeScript's default library declares a type to be, also when wrapped in a generic such as
+	 * `DeepPartial<T>`: `{ host: name }` for a platform class (an interface with a global constructor:
+	 * `Date`, `CanvasGradient`, `HTMLElement`), `{}` for an options dictionary it declares (`Intl.
+	 * NumberFormatOptions`), opaque either way since the library's own types are no pinned source (D5);
+	 * undefined for anything else. A mapped type (`Partial<T>`, `Pick`, `Omit`, `Record`) is declared
+	 * there too, as an anonymous type literal, but it is an object with the properties it maps (D3, D6).
+	 */
+	libraryType(type) {
+		const symbol = type.getSymbol();
+		const declared = (symbol?.declarations ?? []).some((declaration) =>
+			this.program.isSourceFileDefaultLibrary(declaration.getSourceFile())
+		);
+		const named = symbol !== undefined && (symbol.flags & (ts.SymbolFlags.Interface | ts.SymbolFlags.Class)) !== 0;
+		if (declared && named) {
+			const constructed = (symbol.flags & (ts.SymbolFlags.Variable | ts.SymbolFlags.Class)) !== 0;
+			return constructed ? { host: symbol.name } : {};
+		}
 		const [wrapped, ...rest] = type.aliasTypeArguments ?? [];
-		return wrapped !== undefined && rest.length === 0 && this.isHostType(wrapped);
+		return wrapped !== undefined && rest.length === 0 ? this.libraryType(wrapped) : undefined;
 	}
 
 	emitObjectLike(type) {
@@ -223,7 +237,8 @@ export class TypeEmitter {
 		if (this.checker.isArrayType(type) || this.checker.isTupleType(type)) return this.emitArray(type);
 		const unwrapped = this.emitUnwrapped(type);
 		if (unwrapped !== undefined) return unwrapped;
-		if (this.isHostType(type)) return this.reference(type, () => HOST_OBJECT);
+		const library = this.libraryType(type);
+		if (library !== undefined) return this.reference(type, () => ({ ...HOST_OBJECT, ...library }));
 		return this.reference(type);
 	}
 

@@ -76,7 +76,10 @@ test('series are discriminated by type in the runtime series registry; a series 
 	const types = series.anyOf.map((member) => resolve(member).properties.type.node.value);
 	assert.equal(new Set(types).size, types.length);
 	// Declared required, but the runtime takes chart.type, as the declarations' UnknownSeriesOptions says.
-	assert.deepEqual(series.anyOf.filter((member) => resolve(member).properties.type.required !== undefined), []);
+	assert.deepEqual(
+		series.anyOf.filter((member) => resolve(member).properties.type.required !== undefined),
+		[]
+	);
 	for (const type of ['line', 'bar', 'pie', 'sankey', 'candlestick', 'map']) assert.ok(types.includes(type), type);
 });
 
@@ -92,12 +95,20 @@ test('runtime facts the demos rely on are applied, each citing its runtime line'
 	assert.equal(definitions.DataMappingOptionsObject.additional, 'open');
 	const plotOptions = resolve(option.properties.plotOptions.node);
 	const anySeries = resolve(plotOptions.properties.series.node);
-	for (const key of ['borderRadius', 'center', 'pointPadding', 'depth', 'neckWidth']) assert.ok(Object.hasOwn(anySeries.properties, key), key);
-	const line = resolve(resolve(resolve(option.properties.series.node).items).anyOf.find((member) => resolve(member).properties.type.node.value === 'line'));
+	for (const key of ['borderRadius', 'center', 'pointPadding', 'depth', 'neckWidth'])
+		assert.ok(Object.hasOwn(anySeries.properties, key), key);
+	const line = resolve(
+		resolve(resolve(option.properties.series.node).items).anyOf.find(
+			(member) => resolve(member).properties.type.node.value === 'line'
+		)
+	);
 	const point = line.properties.data.node.items.anyOf;
 	assert.ok(point.some((member) => member.kind === 'number') && point.some((member) => member.kind === 'null'));
 	assert.ok(point.some((member) => member.kind === 'array' && member.items.kind === 'unknown'));
-	assert.deepEqual(definitions.XAxisLabelsOptions.properties.rotation.node.anyOf.at(-1), { kind: 'literal', value: 'auto' });
+	assert.deepEqual(definitions.XAxisLabelsOptions.properties.rotation.node.anyOf.at(-1), {
+		kind: 'literal',
+		value: 'auto'
+	});
 });
 
 test('deprecations come from the declarations only: a notice, never a rename (Highcharts does not rename at runtime)', () => {
@@ -105,5 +116,8 @@ test('deprecations come from the declarations only: a notice, never a rename (Hi
 		node.kind === 'object' ? Object.values(node.properties).flatMap((property) => property.deprecated ?? []) : []
 	);
 	assert.ok(deprecations.length > 50, String(deprecations.length));
-	assert.deepEqual(deprecations.filter((deprecation) => deprecation.renameTo !== undefined), []);
+	assert.deepEqual(
+		deprecations.filter((deprecation) => deprecation.renameTo !== undefined),
+		[]
+	);
 });

@@ -20,7 +20,11 @@ test('allowed explanations follow the contract rule, plus environment and out-of
 	assert.deepEqual(allowedExplanations(ran([], 'accepted')), []);
 	assert.deepEqual(allowedExplanations(ran(['error CFG_TYPE $.a'], 'accepted')), ['Type contract:']);
 	assert.deepEqual(allowedExplanations(ran(['warning CFG_UNKNOWN_KEY $.a'], 'rejected')), ['Unresolved:']);
-	assert.deepEqual(allowedExplanations(ran([], 'complained')), ['False negative (CG-', 'Environment:', 'Out of scope:']);
+	assert.deepEqual(allowedExplanations(ran([], 'complained')), [
+		'False negative (CG-',
+		'Environment:',
+		'Out of scope:'
+	]);
 });
 
 test('sandbox objects are rebuilt in this realm; functions, dates, typed arrays and cycles survive', () => {
@@ -64,7 +68,10 @@ test('the docs Utils stand-in keeps the documented shapes', () => {
 test('quiet: rendered silently with no error and no warning but a certain advisory; noise never is', () => {
 	const outcome = (findings, runtime = 'accepted') => ({ status: 'ran', runtime, findings });
 	assert.equal(isQuiet(outcome([])), true);
-	assert.equal(isQuiet(outcome(['info CFG_AMBIGUOUS $.a', 'warning CFG_DEPRECATED $.b', 'warning CFG_INEFFECTIVE $.c'])), true);
+	assert.equal(
+		isQuiet(outcome(['info CFG_AMBIGUOUS $.a', 'warning CFG_DEPRECATED $.b', 'warning CFG_INEFFECTIVE $.c'])),
+		true
+	);
 	assert.equal(isQuiet(outcome(['warning CFG_UNKNOWN_KEY $.a'])), false);
 	assert.equal(isQuiet(outcome(['error CFG_TYPE $.a'])), false);
 	assert.equal(isQuiet(outcome(['warning CFG_DEPRECATED $.a'], 'complained')), false);

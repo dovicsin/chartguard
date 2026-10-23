@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-e0946fde44f355be26bfc11e771b6690ad9886f07536f1d05193fc363721a1d4",
+	"digest": "sha256-9aa39099dc5553818985c2dcb7a631daa3836a978d3da1e03fbedf030196ed11",
 	"sources": {
 		"echarts": {
 			"kind": "npm-package",
@@ -1819,7 +1819,8 @@
 		"Date": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "Date"
 		},
 		"OptionDataItemObject<OptionDataValue>": {
 			"kind": "object",
@@ -4579,17 +4580,20 @@
 		"HTMLImageElement": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "HTMLImageElement"
 		},
 		"HTMLCanvasElement": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "HTMLCanvasElement"
 		},
 		"HTMLVideoElement": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "HTMLVideoElement"
 		},
 		"SVGPatternObject": {
 			"kind": "object",
@@ -4857,14 +4861,27 @@
 			}
 		},
 		"SVGVNodeAttrs": {
-			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"kind": "record",
+			"values": {
+				"kind": "union",
+				"anyOf": [
+					{
+						"kind": "boolean"
+					},
+					{
+						"kind": "string"
+					},
+					{
+						"kind": "number"
+					}
+				]
+			}
 		},
 		"Node": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "Node"
 		},
 		"TitleTextStyleOption": {
 			"kind": "object",
@@ -16925,8 +16942,106 @@
 		},
 		"TooltipBoxLayoutOption": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/types/dist/shared.d.ts:8027"
+					}
+				]
+			},
+			"properties": {
+				"left": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7606"
+							}
+						]
+					}
+				},
+				"right": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7604"
+							}
+						]
+					}
+				},
+				"top": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7603"
+							}
+						]
+					}
+				},
+				"bottom": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7605"
+							}
+						]
+					}
+				}
+			}
 		},
 		"(string | number)[] | TooltipBuiltinPosition | TooltipPositionCallback | TooltipBoxLayoutOption": {
 			"kind": "union",
@@ -68993,9 +69108,28 @@
 			}
 		},
 		"Partial<Dictionary<DisplayState>>": {
-			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"kind": "record",
+			"values": {
+				"kind": "union",
+				"anyOf": [
+					{
+						"kind": "literal",
+						"value": "emphasis"
+					},
+					{
+						"kind": "literal",
+						"value": "select"
+					},
+					{
+						"kind": "literal",
+						"value": "blur"
+					},
+					{
+						"kind": "literal",
+						"value": "normal"
+					}
+				]
+			}
 		},
 		"ToolboxDataViewFeatureOption": {
 			"kind": "object",
@@ -75083,7 +75217,8 @@
 		"HTMLElement": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "HTMLElement"
 		},
 		"AxisPointerOption": {
 			"kind": "object",
@@ -92617,25 +92752,8 @@
 					"node": {
 						"kind": "array",
 						"items": {
-							"kind": "union",
-							"anyOf": [
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentGroupOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentZRPathOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentImageOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentTextOption"
-								}
-							]
+							"kind": "ref",
+							"ref": "GraphicComponentElementOption"
 						}
 					},
 					"provenance": {
@@ -93010,25 +93128,8 @@
 					"node": {
 						"kind": "array",
 						"items": {
-							"kind": "union",
-							"anyOf": [
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentGroupOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentZRPathOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentImageOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentTextOption"
-								}
-							]
+							"kind": "ref",
+							"ref": "GraphicComponentElementOption"
 						}
 					},
 					"provenance": {
@@ -93129,25 +93230,8 @@
 				},
 				"parentOption": {
 					"node": {
-						"kind": "union",
-						"anyOf": [
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentGroupOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentZRPathOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentImageOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentTextOption"
-							}
-						]
+						"kind": "ref",
+						"ref": "GraphicComponentElementOption"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -93997,7 +94081,8 @@
 				},
 				"type": {
 					"node": {
-						"kind": "string"
+						"kind": "ref",
+						"ref": "GraphicShapeType"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -94005,6 +94090,10 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12309"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/graphic.js:742"
 							}
 						]
 					}
@@ -94069,25 +94158,8 @@
 				},
 				"parentOption": {
 					"node": {
-						"kind": "union",
-						"anyOf": [
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentGroupOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentZRPathOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentImageOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentTextOption"
-							}
-						]
+						"kind": "ref",
+						"ref": "GraphicComponentElementOption"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -94103,25 +94175,8 @@
 					"node": {
 						"kind": "array",
 						"items": {
-							"kind": "union",
-							"anyOf": [
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentGroupOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentZRPathOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentImageOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentTextOption"
-								}
-							]
+							"kind": "ref",
+							"ref": "GraphicComponentElementOption"
 						}
 					},
 					"provenance": {
@@ -107711,17 +107766,20 @@
 		"CanvasGradient": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "CanvasGradient"
 		},
 		"CanvasPattern": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "CanvasPattern"
 		},
 		"SVGElement": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "SVGElement"
 		},
 		"Group": {
 			"kind": "object",
@@ -116491,25 +116549,8 @@
 				},
 				"parentOption": {
 					"node": {
-						"kind": "union",
-						"anyOf": [
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentGroupOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentZRPathOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentImageOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentTextOption"
-							}
-						]
+						"kind": "ref",
+						"ref": "GraphicComponentElementOption"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -116525,25 +116566,8 @@
 					"node": {
 						"kind": "array",
 						"items": {
-							"kind": "union",
-							"anyOf": [
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentGroupOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentZRPathOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentImageOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentTextOption"
-								}
-							]
+							"kind": "ref",
+							"ref": "GraphicComponentElementOption"
 						}
 					},
 					"provenance": {
@@ -119717,25 +119741,8 @@
 				},
 				"parentOption": {
 					"node": {
-						"kind": "union",
-						"anyOf": [
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentGroupOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentZRPathOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentImageOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentTextOption"
-							}
-						]
+						"kind": "ref",
+						"ref": "GraphicComponentElementOption"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -119751,25 +119758,8 @@
 					"node": {
 						"kind": "array",
 						"items": {
-							"kind": "union",
-							"anyOf": [
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentGroupOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentZRPathOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentImageOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentTextOption"
-								}
-							]
+							"kind": "ref",
+							"ref": "GraphicComponentElementOption"
 						}
 					},
 					"provenance": {
@@ -120884,6 +120874,335 @@
 								"pointer": "echarts/types/dist/shared.d.ts:3048"
 							}
 						]
+					}
+				},
+				"textStrokeWidth": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:133"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textStrokeWidth is an echarts 4 style; use lineWidth instead.",
+						"replacement": "lineWidth"
+					}
+				},
+				"textAlign": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "left"
+							},
+							{
+								"kind": "literal",
+								"value": "center"
+							},
+							{
+								"kind": "literal",
+								"value": "right"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:134"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textAlign is an echarts 4 style; use align instead.",
+						"replacement": "align"
+					}
+				},
+				"textVerticalAlign": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "top"
+							},
+							{
+								"kind": "literal",
+								"value": "middle"
+							},
+							{
+								"kind": "literal",
+								"value": "bottom"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:135"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textVerticalAlign is an echarts 4 style; use verticalAlign instead.",
+						"replacement": "verticalAlign"
+					}
+				},
+				"textLineHeight": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:136"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textLineHeight is an echarts 4 style; use lineHeight instead.",
+						"replacement": "lineHeight"
+					}
+				},
+				"textWidth": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:137"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textWidth is an echarts 4 style; use width instead.",
+						"replacement": "width"
+					}
+				},
+				"textHeight": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:138"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textHeight is an echarts 4 style; use height instead.",
+						"replacement": "height"
+					}
+				},
+				"textBackgroundColor": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "ref",
+								"ref": "{ image: string | ImageLike; }~2"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:139"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textBackgroundColor is an echarts 4 style; use backgroundColor instead.",
+						"replacement": "backgroundColor"
+					}
+				},
+				"textPadding": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:140"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textPadding is an echarts 4 style; use padding instead.",
+						"replacement": "padding"
+					}
+				},
+				"textBorderColor": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:141"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textBorderColor is an echarts 4 style; use borderColor instead.",
+						"replacement": "borderColor"
+					}
+				},
+				"textBorderWidth": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:142"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textBorderWidth is an echarts 4 style; use borderWidth instead.",
+						"replacement": "borderWidth"
+					}
+				},
+				"textBorderRadius": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:143"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textBorderRadius is an echarts 4 style; use borderRadius instead.",
+						"replacement": "borderRadius"
+					}
+				},
+				"textBoxShadowColor": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:144"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textBoxShadowColor is an echarts 4 style; use shadowColor instead.",
+						"replacement": "shadowColor"
+					}
+				},
+				"textBoxShadowBlur": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:145"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textBoxShadowBlur is an echarts 4 style; use shadowBlur instead.",
+						"replacement": "shadowBlur"
+					}
+				},
+				"textBoxShadowOffsetX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:146"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textBoxShadowOffsetX is an echarts 4 style; use shadowOffsetX instead.",
+						"replacement": "shadowOffsetX"
+					}
+				},
+				"textBoxShadowOffsetY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/styleCompat.js:147"
+							}
+						]
+					},
+					"deprecated": {
+						"message": "textBoxShadowOffsetY is an echarts 4 style; use shadowOffsetY instead.",
+						"replacement": "shadowOffsetY"
 					}
 				}
 			}
@@ -122623,8 +122942,1910 @@
 		},
 		"Omit<GraphicComponentZRPathOption, \"clipPath\">": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/types/dist/shared.d.ts:12360"
+					}
+				]
+			},
+			"properties": {
+				"silent": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1307"
+							}
+						]
+					}
+				},
+				"cursor": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1442"
+							}
+						]
+					}
+				},
+				"type": {
+					"node": {
+						"kind": "ref",
+						"ref": "GraphicShapeType"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12309"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/graphic.js:742"
+							}
+						]
+					}
+				},
+				"id": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12310"
+							}
+						]
+					}
+				},
+				"name": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12311"
+							}
+						]
+					}
+				},
+				"z": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1438"
+							}
+						]
+					}
+				},
+				"zlevel": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1440"
+							}
+						]
+					}
+				},
+				"left": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7606"
+							}
+						]
+					}
+				},
+				"right": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7604"
+							}
+						]
+					}
+				},
+				"top": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7603"
+							}
+						]
+					}
+				},
+				"bottom": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7605"
+							}
+						]
+					}
+				},
+				"x": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:932"
+							}
+						]
+					}
+				},
+				"y": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:933"
+							}
+						]
+					}
+				},
+				"tooltip": {
+					"node": {
+						"kind": "ref",
+						"ref": "CommonTooltipOption<unknown>"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12338"
+							}
+						]
+					}
+				},
+				"originX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:941"
+							}
+						]
+					}
+				},
+				"originY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:942"
+							}
+						]
+					}
+				},
+				"anchorX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:939"
+							}
+						]
+					}
+				},
+				"anchorY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:940"
+							}
+						]
+					}
+				},
+				"rotation": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:938"
+							}
+						]
+					}
+				},
+				"scaleX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:934"
+							}
+						]
+					}
+				},
+				"scaleY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:935"
+							}
+						]
+					}
+				},
+				"skewX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:936"
+							}
+						]
+					}
+				},
+				"skewY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:937"
+							}
+						]
+					}
+				},
+				"ignore": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1306"
+							}
+						]
+					}
+				},
+				"textConfig": {
+					"node": {
+						"kind": "ref",
+						"ref": "ElementTextConfig"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12336"
+							}
+						]
+					}
+				},
+				"draggable": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "literal",
+								"value": "vertical"
+							},
+							{
+								"kind": "literal",
+								"value": "horizontal"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1310"
+							}
+						]
+					}
+				},
+				"onclick": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1253"
+							}
+						]
+					}
+				},
+				"ondblclick": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1254"
+							}
+						]
+					}
+				},
+				"onmousewheel": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1258"
+							}
+						]
+					}
+				},
+				"onmouseout": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1256"
+							}
+						]
+					}
+				},
+				"onmouseup": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1260"
+							}
+						]
+					}
+				},
+				"onmousedown": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1259"
+							}
+						]
+					}
+				},
+				"onmousemove": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1257"
+							}
+						]
+					}
+				},
+				"oncontextmenu": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1261"
+							}
+						]
+					}
+				},
+				"ondrag": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1262"
+							}
+						]
+					}
+				},
+				"ondragstart": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1263"
+							}
+						]
+					}
+				},
+				"ondragend": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1264"
+							}
+						]
+					}
+				},
+				"ondragenter": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1265"
+							}
+						]
+					}
+				},
+				"ondragleave": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1266"
+							}
+						]
+					}
+				},
+				"ondragover": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1267"
+							}
+						]
+					}
+				},
+				"ondrop": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1268"
+							}
+						]
+					}
+				},
+				"z2": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12345"
+							}
+						]
+					}
+				},
+				"invisible": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1437"
+							}
+						]
+					}
+				},
+				"shape": {
+					"node": {
+						"kind": "ref",
+						"ref": "Dictionary<any> & TransitionOptionMixin<Dictionary<any> | undefined>"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12361"
+							}
+						]
+					}
+				},
+				"style": {
+					"node": {
+						"kind": "ref",
+						"ref": "PathStyleProps & TransitionOptionMixin<PathStyleProps>"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12362"
+							}
+						]
+					}
+				},
+				"textContent": {
+					"node": {
+						"kind": "ref",
+						"ref": "Omit<GraphicComponentTextOption, \"clipPath\">"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12335"
+							}
+						]
+					}
+				},
+				"parentId": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12312"
+							}
+						]
+					}
+				},
+				"parentOption": {
+					"node": {
+						"kind": "ref",
+						"ref": "GraphicComponentElementOption"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12313"
+							}
+						]
+					}
+				},
+				"children": {
+					"node": {
+						"kind": "array",
+						"items": {
+							"kind": "ref",
+							"ref": "GraphicComponentElementOption"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12314"
+							}
+						]
+					}
+				},
+				"hv": {
+					"node": {
+						"kind": "array",
+						"items": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12315"
+							}
+						]
+					}
+				},
+				"bounding": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "all"
+							},
+							{
+								"kind": "literal",
+								"value": "raw"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12328"
+							}
+						]
+					}
+				},
+				"info": {
+					"node": {
+						"kind": "ref",
+						"ref": "GraphicExtraElementInfo"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12333"
+							}
+						]
+					}
+				},
+				"$action": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "merge"
+							},
+							{
+								"kind": "literal",
+								"value": "replace"
+							},
+							{
+								"kind": "literal",
+								"value": "remove"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12337"
+							}
+						]
+					}
+				},
+				"enterAnimation": {
+					"node": {
+						"kind": "ref",
+						"ref": "AnimationOption$1"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12339"
+							}
+						]
+					}
+				},
+				"updateAnimation": {
+					"node": {
+						"kind": "ref",
+						"ref": "AnimationOption$1"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12340"
+							}
+						]
+					}
+				},
+				"leaveAnimation": {
+					"node": {
+						"kind": "ref",
+						"ref": "AnimationOption$1"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12341"
+							}
+						]
+					}
+				},
+				"keyframeAnimation": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "ref",
+								"ref": "ElementKeyframeAnimationOption<PathProps>"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "ref",
+									"ref": "ElementKeyframeAnimationOption<PathProps>"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12363"
+							}
+						]
+					}
+				},
+				"transition": {
+					"node": {
+						"kind": "ref",
+						"ref": "\"silent\" | \"cursor\" | \"progressive\" | \"name\" | \"z\" | \"zlevel\" | \"all\" | \"x\" | \"y…#08ade7e240"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:3043"
+							}
+						]
+					}
+				},
+				"enterFrom": {
+					"node": {
+						"kind": "ref",
+						"ref": "PathProps"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:3044"
+							}
+						]
+					}
+				},
+				"leaveTo": {
+					"node": {
+						"kind": "ref",
+						"ref": "PathProps"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:3045"
+							}
+						]
+					}
+				}
+			}
+		},
+		"Omit<GraphicComponentTextOption, \"clipPath\">": {
+			"kind": "object",
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/types/dist/shared.d.ts:12370"
+					}
+				]
+			},
+			"properties": {
+				"silent": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1307"
+							}
+						]
+					}
+				},
+				"cursor": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1442"
+							}
+						]
+					}
+				},
+				"type": {
+					"node": {
+						"kind": "literal",
+						"value": "text"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12371"
+							}
+						]
+					}
+				},
+				"id": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12310"
+							}
+						]
+					}
+				},
+				"name": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12311"
+							}
+						]
+					}
+				},
+				"z": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1438"
+							}
+						]
+					}
+				},
+				"zlevel": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1440"
+							}
+						]
+					}
+				},
+				"left": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7606"
+							}
+						]
+					}
+				},
+				"right": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7604"
+							}
+						]
+					}
+				},
+				"top": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7603"
+							}
+						]
+					}
+				},
+				"bottom": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7605"
+							}
+						]
+					}
+				},
+				"x": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:932"
+							}
+						]
+					}
+				},
+				"y": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:933"
+							}
+						]
+					}
+				},
+				"tooltip": {
+					"node": {
+						"kind": "ref",
+						"ref": "CommonTooltipOption<unknown>"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12338"
+							}
+						]
+					}
+				},
+				"originX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:941"
+							}
+						]
+					}
+				},
+				"originY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:942"
+							}
+						]
+					}
+				},
+				"anchorX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:939"
+							}
+						]
+					}
+				},
+				"anchorY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:940"
+							}
+						]
+					}
+				},
+				"rotation": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:938"
+							}
+						]
+					}
+				},
+				"scaleX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:934"
+							}
+						]
+					}
+				},
+				"scaleY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:935"
+							}
+						]
+					}
+				},
+				"skewX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:936"
+							}
+						]
+					}
+				},
+				"skewY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:937"
+							}
+						]
+					}
+				},
+				"ignore": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1306"
+							}
+						]
+					}
+				},
+				"draggable": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "literal",
+								"value": "vertical"
+							},
+							{
+								"kind": "literal",
+								"value": "horizontal"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1310"
+							}
+						]
+					}
+				},
+				"onclick": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1253"
+							}
+						]
+					}
+				},
+				"ondblclick": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1254"
+							}
+						]
+					}
+				},
+				"onmousewheel": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1258"
+							}
+						]
+					}
+				},
+				"onmouseout": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1256"
+							}
+						]
+					}
+				},
+				"onmouseup": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1260"
+							}
+						]
+					}
+				},
+				"onmousedown": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1259"
+							}
+						]
+					}
+				},
+				"onmousemove": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1257"
+							}
+						]
+					}
+				},
+				"oncontextmenu": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1261"
+							}
+						]
+					}
+				},
+				"ondrag": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1262"
+							}
+						]
+					}
+				},
+				"ondragstart": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1263"
+							}
+						]
+					}
+				},
+				"ondragend": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1264"
+							}
+						]
+					}
+				},
+				"ondragenter": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1265"
+							}
+						]
+					}
+				},
+				"ondragleave": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1266"
+							}
+						]
+					}
+				},
+				"ondragover": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1267"
+							}
+						]
+					}
+				},
+				"ondrop": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1268"
+							}
+						]
+					}
+				},
+				"z2": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12345"
+							}
+						]
+					}
+				},
+				"invisible": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1437"
+							}
+						]
+					}
+				},
+				"style": {
+					"node": {
+						"kind": "ref",
+						"ref": "TextStyleProps & TransitionOptionMixin<TextStyleProps>"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12372"
+							}
+						]
+					}
+				},
+				"parentId": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12312"
+							}
+						]
+					}
+				},
+				"parentOption": {
+					"node": {
+						"kind": "ref",
+						"ref": "GraphicComponentElementOption"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12313"
+							}
+						]
+					}
+				},
+				"children": {
+					"node": {
+						"kind": "array",
+						"items": {
+							"kind": "ref",
+							"ref": "GraphicComponentElementOption"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12314"
+							}
+						]
+					}
+				},
+				"hv": {
+					"node": {
+						"kind": "array",
+						"items": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12315"
+							}
+						]
+					}
+				},
+				"bounding": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "all"
+							},
+							{
+								"kind": "literal",
+								"value": "raw"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12328"
+							}
+						]
+					}
+				},
+				"info": {
+					"node": {
+						"kind": "ref",
+						"ref": "GraphicExtraElementInfo"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12333"
+							}
+						]
+					}
+				},
+				"$action": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "merge"
+							},
+							{
+								"kind": "literal",
+								"value": "replace"
+							},
+							{
+								"kind": "literal",
+								"value": "remove"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12337"
+							}
+						]
+					}
+				},
+				"enterAnimation": {
+					"node": {
+						"kind": "ref",
+						"ref": "AnimationOption$1"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12339"
+							}
+						]
+					}
+				},
+				"updateAnimation": {
+					"node": {
+						"kind": "ref",
+						"ref": "AnimationOption$1"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12340"
+							}
+						]
+					}
+				},
+				"leaveAnimation": {
+					"node": {
+						"kind": "ref",
+						"ref": "AnimationOption$1"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12341"
+							}
+						]
+					}
+				},
+				"keyframeAnimation": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "ref",
+								"ref": "ElementKeyframeAnimationOption<TextProps>"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "ref",
+									"ref": "ElementKeyframeAnimationOption<TextProps>"
+								}
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:12373"
+							}
+						]
+					}
+				},
+				"transition": {
+					"node": {
+						"kind": "ref",
+						"ref": "\"silent\" | \"cursor\" | \"progressive\" | \"name\" | \"z\" | \"zlevel\" | \"all\" | \"x\" | \"y…#c4155bacc2"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:3043"
+							}
+						]
+					}
+				},
+				"enterFrom": {
+					"node": {
+						"kind": "ref",
+						"ref": "TextProps"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:3044"
+							}
+						]
+					}
+				},
+				"leaveTo": {
+					"node": {
+						"kind": "ref",
+						"ref": "TextProps"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:3045"
+							}
+						]
+					}
+				}
+			}
 		},
 		"\"silent\" | \"cursor\" | \"progressive\" | \"name\" | \"z\" | \"zlevel\" | \"x\" | \"y\" | \"ori…#8fc6ac7db7": {
 			"kind": "union",
@@ -123165,1261 +125386,6 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:1127"
-							}
-						]
-					}
-				},
-				"rectHover": {
-					"node": {
-						"kind": "boolean"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1414"
-							}
-						]
-					}
-				},
-				"progressive": {
-					"node": {
-						"kind": "boolean"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1415"
-							}
-						]
-					}
-				},
-				"incremental": {
-					"node": {
-						"kind": "union",
-						"anyOf": [
-							{
-								"kind": "boolean"
-							},
-							{
-								"kind": "number"
-							}
-						]
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1416"
-							}
-						]
-					}
-				},
-				"ignoreCoarsePointer": {
-					"node": {
-						"kind": "boolean"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1417"
-							}
-						]
-					}
-				},
-				"batch": {
-					"node": {
-						"kind": "boolean"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1418"
-							}
-						]
-					}
-				},
-				"invisible": {
-					"node": {
-						"kind": "boolean"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1419"
-							}
-						]
-					}
-				},
-				"name": {
-					"node": {
-						"kind": "string"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1271"
-							}
-						]
-					}
-				},
-				"ignore": {
-					"node": {
-						"kind": "boolean"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1272"
-							}
-						]
-					}
-				},
-				"isGroup": {
-					"node": {
-						"kind": "boolean"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1273"
-							}
-						]
-					}
-				},
-				"draggable": {
-					"node": {
-						"kind": "union",
-						"anyOf": [
-							{
-								"kind": "boolean"
-							},
-							{
-								"kind": "literal",
-								"value": "vertical"
-							},
-							{
-								"kind": "literal",
-								"value": "horizontal"
-							}
-						]
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1274"
-							}
-						]
-					}
-				},
-				"silent": {
-					"node": {
-						"kind": "boolean"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1275"
-							}
-						]
-					}
-				},
-				"ignoreHostSilent": {
-					"node": {
-						"kind": "boolean"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1276"
-							}
-						]
-					}
-				},
-				"ignoreClip": {
-					"node": {
-						"kind": "boolean"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1277"
-							}
-						]
-					}
-				},
-				"globalScaleRatio": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1278"
-							}
-						]
-					}
-				},
-				"textConfig": {
-					"node": {
-						"kind": "ref",
-						"ref": "ElementTextConfig"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1279"
-							}
-						]
-					}
-				},
-				"textContent": {
-					"node": {
-						"kind": "ref",
-						"ref": "ZRText"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1280"
-							}
-						]
-					}
-				},
-				"clipPath": {
-					"node": {
-						"kind": "ref",
-						"ref": "Path<PathProps>"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1281"
-							}
-						]
-					}
-				},
-				"drift": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1282"
-							}
-						]
-					}
-				},
-				"extra": {
-					"node": {
-						"kind": "ref",
-						"ref": "Dictionary<unknown>"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1283"
-							}
-						]
-					}
-				},
-				"anid": {
-					"node": {
-						"kind": "string"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1284"
-							}
-						]
-					}
-				},
-				"onclick": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1253"
-							}
-						]
-					}
-				},
-				"ondblclick": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1254"
-							}
-						]
-					}
-				},
-				"onmouseover": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1255"
-							}
-						]
-					}
-				},
-				"onmouseout": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1256"
-							}
-						]
-					}
-				},
-				"onmousemove": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1257"
-							}
-						]
-					}
-				},
-				"onmousewheel": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1258"
-							}
-						]
-					}
-				},
-				"onmousedown": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1259"
-							}
-						]
-					}
-				},
-				"onmouseup": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1260"
-							}
-						]
-					}
-				},
-				"oncontextmenu": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1261"
-							}
-						]
-					}
-				},
-				"ondrag": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1262"
-							}
-						]
-					}
-				},
-				"ondragstart": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1263"
-							}
-						]
-					}
-				},
-				"ondragend": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1264"
-							}
-						]
-					}
-				},
-				"ondragenter": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1265"
-							}
-						]
-					}
-				},
-				"ondragleave": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1266"
-							}
-						]
-					}
-				},
-				"ondragover": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1267"
-							}
-						]
-					}
-				},
-				"ondrop": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1268"
-							}
-						]
-					}
-				},
-				"x": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:932"
-							}
-						]
-					}
-				},
-				"y": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:933"
-							}
-						]
-					}
-				},
-				"originX": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:941"
-							}
-						]
-					}
-				},
-				"originY": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:942"
-							}
-						]
-					}
-				},
-				"anchorX": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:939"
-							}
-						]
-					}
-				},
-				"anchorY": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:940"
-							}
-						]
-					}
-				},
-				"rotation": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:938"
-							}
-						]
-					}
-				},
-				"scaleX": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:934"
-							}
-						]
-					}
-				},
-				"scaleY": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:935"
-							}
-						]
-					}
-				},
-				"skewX": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:936"
-							}
-						]
-					}
-				},
-				"skewY": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:937"
-							}
-						]
-					}
-				}
-			}
-		},
-		"Omit<GraphicComponentTextOption, \"clipPath\">": {
-			"kind": "object",
-			"additional": "open",
-			"properties": {}
-		},
-		"\"silent\" | \"cursor\" | \"progressive\" | \"name\" | \"z\" | \"zlevel\" | \"x\" | \"y\" | \"ori…#0f270ad71b": {
-			"kind": "union",
-			"anyOf": [
-				{
-					"kind": "literal",
-					"value": "silent"
-				},
-				{
-					"kind": "literal",
-					"value": "cursor"
-				},
-				{
-					"kind": "literal",
-					"value": "progressive"
-				},
-				{
-					"kind": "literal",
-					"value": "name"
-				},
-				{
-					"kind": "literal",
-					"value": "z"
-				},
-				{
-					"kind": "literal",
-					"value": "zlevel"
-				},
-				{
-					"kind": "literal",
-					"value": "x"
-				},
-				{
-					"kind": "literal",
-					"value": "y"
-				},
-				{
-					"kind": "literal",
-					"value": "originX"
-				},
-				{
-					"kind": "literal",
-					"value": "originY"
-				},
-				{
-					"kind": "literal",
-					"value": "anchorX"
-				},
-				{
-					"kind": "literal",
-					"value": "anchorY"
-				},
-				{
-					"kind": "literal",
-					"value": "rotation"
-				},
-				{
-					"kind": "literal",
-					"value": "scaleX"
-				},
-				{
-					"kind": "literal",
-					"value": "scaleY"
-				},
-				{
-					"kind": "literal",
-					"value": "skewX"
-				},
-				{
-					"kind": "literal",
-					"value": "skewY"
-				},
-				{
-					"kind": "literal",
-					"value": "ignore"
-				},
-				{
-					"kind": "literal",
-					"value": "textConfig"
-				},
-				{
-					"kind": "literal",
-					"value": "draggable"
-				},
-				{
-					"kind": "literal",
-					"value": "onclick"
-				},
-				{
-					"kind": "literal",
-					"value": "ondblclick"
-				},
-				{
-					"kind": "literal",
-					"value": "onmousewheel"
-				},
-				{
-					"kind": "literal",
-					"value": "onmouseout"
-				},
-				{
-					"kind": "literal",
-					"value": "onmouseup"
-				},
-				{
-					"kind": "literal",
-					"value": "onmousedown"
-				},
-				{
-					"kind": "literal",
-					"value": "onmousemove"
-				},
-				{
-					"kind": "literal",
-					"value": "oncontextmenu"
-				},
-				{
-					"kind": "literal",
-					"value": "ondrag"
-				},
-				{
-					"kind": "literal",
-					"value": "ondragstart"
-				},
-				{
-					"kind": "literal",
-					"value": "ondragend"
-				},
-				{
-					"kind": "literal",
-					"value": "ondragenter"
-				},
-				{
-					"kind": "literal",
-					"value": "ondragleave"
-				},
-				{
-					"kind": "literal",
-					"value": "ondragover"
-				},
-				{
-					"kind": "literal",
-					"value": "ondrop"
-				},
-				{
-					"kind": "literal",
-					"value": "z2"
-				},
-				{
-					"kind": "literal",
-					"value": "invisible"
-				},
-				{
-					"kind": "literal",
-					"value": "onmouseover"
-				},
-				{
-					"kind": "literal",
-					"value": "incremental"
-				},
-				{
-					"kind": "literal",
-					"value": "style"
-				},
-				{
-					"kind": "literal",
-					"value": "drift"
-				},
-				{
-					"kind": "literal",
-					"value": "textContent"
-				},
-				{
-					"kind": "literal",
-					"value": "clipPath"
-				},
-				{
-					"kind": "literal",
-					"value": "isGroup"
-				},
-				{
-					"kind": "literal",
-					"value": "ignoreHostSilent"
-				},
-				{
-					"kind": "literal",
-					"value": "ignoreClip"
-				},
-				{
-					"kind": "literal",
-					"value": "globalScaleRatio"
-				},
-				{
-					"kind": "literal",
-					"value": "extra"
-				},
-				{
-					"kind": "literal",
-					"value": "anid"
-				},
-				{
-					"kind": "literal",
-					"value": "culling"
-				},
-				{
-					"kind": "literal",
-					"value": "rectHover"
-				},
-				{
-					"kind": "literal",
-					"value": "ignoreCoarsePointer"
-				},
-				{
-					"kind": "literal",
-					"value": "batch"
-				},
-				{
-					"kind": "literal",
-					"value": "onload"
-				}
-			]
-		},
-		"\"silent\" | \"cursor\" | \"progressive\" | \"name\" | \"z\" | \"zlevel\" | \"all\" | \"x\" | \"y…#818867a7e8": {
-			"kind": "union",
-			"anyOf": [
-				{
-					"kind": "literal",
-					"value": "silent"
-				},
-				{
-					"kind": "literal",
-					"value": "cursor"
-				},
-				{
-					"kind": "literal",
-					"value": "progressive"
-				},
-				{
-					"kind": "literal",
-					"value": "name"
-				},
-				{
-					"kind": "literal",
-					"value": "z"
-				},
-				{
-					"kind": "literal",
-					"value": "zlevel"
-				},
-				{
-					"kind": "literal",
-					"value": "all"
-				},
-				{
-					"kind": "literal",
-					"value": "x"
-				},
-				{
-					"kind": "literal",
-					"value": "y"
-				},
-				{
-					"kind": "literal",
-					"value": "originX"
-				},
-				{
-					"kind": "literal",
-					"value": "originY"
-				},
-				{
-					"kind": "literal",
-					"value": "anchorX"
-				},
-				{
-					"kind": "literal",
-					"value": "anchorY"
-				},
-				{
-					"kind": "literal",
-					"value": "rotation"
-				},
-				{
-					"kind": "literal",
-					"value": "scaleX"
-				},
-				{
-					"kind": "literal",
-					"value": "scaleY"
-				},
-				{
-					"kind": "literal",
-					"value": "skewX"
-				},
-				{
-					"kind": "literal",
-					"value": "skewY"
-				},
-				{
-					"kind": "literal",
-					"value": "ignore"
-				},
-				{
-					"kind": "literal",
-					"value": "textConfig"
-				},
-				{
-					"kind": "literal",
-					"value": "draggable"
-				},
-				{
-					"kind": "literal",
-					"value": "onclick"
-				},
-				{
-					"kind": "literal",
-					"value": "ondblclick"
-				},
-				{
-					"kind": "literal",
-					"value": "onmousewheel"
-				},
-				{
-					"kind": "literal",
-					"value": "onmouseout"
-				},
-				{
-					"kind": "literal",
-					"value": "onmouseup"
-				},
-				{
-					"kind": "literal",
-					"value": "onmousedown"
-				},
-				{
-					"kind": "literal",
-					"value": "onmousemove"
-				},
-				{
-					"kind": "literal",
-					"value": "oncontextmenu"
-				},
-				{
-					"kind": "literal",
-					"value": "ondrag"
-				},
-				{
-					"kind": "literal",
-					"value": "ondragstart"
-				},
-				{
-					"kind": "literal",
-					"value": "ondragend"
-				},
-				{
-					"kind": "literal",
-					"value": "ondragenter"
-				},
-				{
-					"kind": "literal",
-					"value": "ondragleave"
-				},
-				{
-					"kind": "literal",
-					"value": "ondragover"
-				},
-				{
-					"kind": "literal",
-					"value": "ondrop"
-				},
-				{
-					"kind": "literal",
-					"value": "z2"
-				},
-				{
-					"kind": "literal",
-					"value": "invisible"
-				},
-				{
-					"kind": "literal",
-					"value": "onmouseover"
-				},
-				{
-					"kind": "literal",
-					"value": "incremental"
-				},
-				{
-					"kind": "literal",
-					"value": "style"
-				},
-				{
-					"kind": "literal",
-					"value": "drift"
-				},
-				{
-					"kind": "literal",
-					"value": "textContent"
-				},
-				{
-					"kind": "literal",
-					"value": "clipPath"
-				},
-				{
-					"kind": "literal",
-					"value": "isGroup"
-				},
-				{
-					"kind": "literal",
-					"value": "ignoreHostSilent"
-				},
-				{
-					"kind": "literal",
-					"value": "ignoreClip"
-				},
-				{
-					"kind": "literal",
-					"value": "globalScaleRatio"
-				},
-				{
-					"kind": "literal",
-					"value": "extra"
-				},
-				{
-					"kind": "literal",
-					"value": "anid"
-				},
-				{
-					"kind": "literal",
-					"value": "culling"
-				},
-				{
-					"kind": "literal",
-					"value": "rectHover"
-				},
-				{
-					"kind": "literal",
-					"value": "ignoreCoarsePointer"
-				},
-				{
-					"kind": "literal",
-					"value": "batch"
-				},
-				{
-					"kind": "literal",
-					"value": "onload"
-				},
-				{
-					"kind": "array",
-					"items": {
-						"kind": "ref",
-						"ref": "\"silent\" | \"cursor\" | \"progressive\" | \"name\" | \"z\" | \"zlevel\" | \"x\" | \"y\" | \"ori…#0f270ad71b"
-					}
-				}
-			]
-		},
-		"ImageProps": {
-			"kind": "object",
-			"additional": "closed",
-			"provenance": {
-				"confidence": "authoritative",
-				"sources": [
-					{
-						"source": "echarts",
-						"pointer": "echarts/types/dist/shared.d.ts:1004"
-					}
-				]
-			},
-			"properties": {
-				"style": {
-					"node": {
-						"kind": "ref",
-						"ref": "ImageStyleProps"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1005"
-							}
-						]
-					}
-				},
-				"onload": {
-					"node": {
-						"kind": "function"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1006"
-							}
-						]
-					}
-				},
-				"zlevel": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1409"
-							}
-						]
-					}
-				},
-				"z": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1410"
-							}
-						]
-					}
-				},
-				"z2": {
-					"node": {
-						"kind": "number"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1411"
-							}
-						]
-					}
-				},
-				"culling": {
-					"node": {
-						"kind": "boolean"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1412"
-							}
-						]
-					}
-				},
-				"cursor": {
-					"node": {
-						"kind": "string"
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "echarts",
-								"pointer": "echarts/types/dist/shared.d.ts:1413"
 							}
 						]
 					}
@@ -125755,6 +126721,1256 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:853"
+							}
+						]
+					}
+				},
+				"zlevel": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1409"
+							}
+						]
+					}
+				},
+				"z": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1410"
+							}
+						]
+					}
+				},
+				"z2": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1411"
+							}
+						]
+					}
+				},
+				"culling": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1412"
+							}
+						]
+					}
+				},
+				"cursor": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1413"
+							}
+						]
+					}
+				},
+				"rectHover": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1414"
+							}
+						]
+					}
+				},
+				"progressive": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1415"
+							}
+						]
+					}
+				},
+				"incremental": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1416"
+							}
+						]
+					}
+				},
+				"ignoreCoarsePointer": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1417"
+							}
+						]
+					}
+				},
+				"batch": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1418"
+							}
+						]
+					}
+				},
+				"invisible": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1419"
+							}
+						]
+					}
+				},
+				"name": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1271"
+							}
+						]
+					}
+				},
+				"ignore": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1272"
+							}
+						]
+					}
+				},
+				"isGroup": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1273"
+							}
+						]
+					}
+				},
+				"draggable": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "boolean"
+							},
+							{
+								"kind": "literal",
+								"value": "vertical"
+							},
+							{
+								"kind": "literal",
+								"value": "horizontal"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1274"
+							}
+						]
+					}
+				},
+				"silent": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1275"
+							}
+						]
+					}
+				},
+				"ignoreHostSilent": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1276"
+							}
+						]
+					}
+				},
+				"ignoreClip": {
+					"node": {
+						"kind": "boolean"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1277"
+							}
+						]
+					}
+				},
+				"globalScaleRatio": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1278"
+							}
+						]
+					}
+				},
+				"textConfig": {
+					"node": {
+						"kind": "ref",
+						"ref": "ElementTextConfig"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1279"
+							}
+						]
+					}
+				},
+				"textContent": {
+					"node": {
+						"kind": "ref",
+						"ref": "ZRText"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1280"
+							}
+						]
+					}
+				},
+				"clipPath": {
+					"node": {
+						"kind": "ref",
+						"ref": "Path<PathProps>"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1281"
+							}
+						]
+					}
+				},
+				"drift": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1282"
+							}
+						]
+					}
+				},
+				"extra": {
+					"node": {
+						"kind": "ref",
+						"ref": "Dictionary<unknown>"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1283"
+							}
+						]
+					}
+				},
+				"anid": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1284"
+							}
+						]
+					}
+				},
+				"onclick": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1253"
+							}
+						]
+					}
+				},
+				"ondblclick": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1254"
+							}
+						]
+					}
+				},
+				"onmouseover": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1255"
+							}
+						]
+					}
+				},
+				"onmouseout": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1256"
+							}
+						]
+					}
+				},
+				"onmousemove": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1257"
+							}
+						]
+					}
+				},
+				"onmousewheel": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1258"
+							}
+						]
+					}
+				},
+				"onmousedown": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1259"
+							}
+						]
+					}
+				},
+				"onmouseup": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1260"
+							}
+						]
+					}
+				},
+				"oncontextmenu": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1261"
+							}
+						]
+					}
+				},
+				"ondrag": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1262"
+							}
+						]
+					}
+				},
+				"ondragstart": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1263"
+							}
+						]
+					}
+				},
+				"ondragend": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1264"
+							}
+						]
+					}
+				},
+				"ondragenter": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1265"
+							}
+						]
+					}
+				},
+				"ondragleave": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1266"
+							}
+						]
+					}
+				},
+				"ondragover": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1267"
+							}
+						]
+					}
+				},
+				"ondrop": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1268"
+							}
+						]
+					}
+				},
+				"x": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:932"
+							}
+						]
+					}
+				},
+				"y": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:933"
+							}
+						]
+					}
+				},
+				"originX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:941"
+							}
+						]
+					}
+				},
+				"originY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:942"
+							}
+						]
+					}
+				},
+				"anchorX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:939"
+							}
+						]
+					}
+				},
+				"anchorY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:940"
+							}
+						]
+					}
+				},
+				"rotation": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:938"
+							}
+						]
+					}
+				},
+				"scaleX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:934"
+							}
+						]
+					}
+				},
+				"scaleY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:935"
+							}
+						]
+					}
+				},
+				"skewX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:936"
+							}
+						]
+					}
+				},
+				"skewY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:937"
+							}
+						]
+					}
+				}
+			}
+		},
+		"\"silent\" | \"cursor\" | \"progressive\" | \"name\" | \"z\" | \"zlevel\" | \"x\" | \"y\" | \"ori…#0f270ad71b": {
+			"kind": "union",
+			"anyOf": [
+				{
+					"kind": "literal",
+					"value": "silent"
+				},
+				{
+					"kind": "literal",
+					"value": "cursor"
+				},
+				{
+					"kind": "literal",
+					"value": "progressive"
+				},
+				{
+					"kind": "literal",
+					"value": "name"
+				},
+				{
+					"kind": "literal",
+					"value": "z"
+				},
+				{
+					"kind": "literal",
+					"value": "zlevel"
+				},
+				{
+					"kind": "literal",
+					"value": "x"
+				},
+				{
+					"kind": "literal",
+					"value": "y"
+				},
+				{
+					"kind": "literal",
+					"value": "originX"
+				},
+				{
+					"kind": "literal",
+					"value": "originY"
+				},
+				{
+					"kind": "literal",
+					"value": "anchorX"
+				},
+				{
+					"kind": "literal",
+					"value": "anchorY"
+				},
+				{
+					"kind": "literal",
+					"value": "rotation"
+				},
+				{
+					"kind": "literal",
+					"value": "scaleX"
+				},
+				{
+					"kind": "literal",
+					"value": "scaleY"
+				},
+				{
+					"kind": "literal",
+					"value": "skewX"
+				},
+				{
+					"kind": "literal",
+					"value": "skewY"
+				},
+				{
+					"kind": "literal",
+					"value": "ignore"
+				},
+				{
+					"kind": "literal",
+					"value": "textConfig"
+				},
+				{
+					"kind": "literal",
+					"value": "draggable"
+				},
+				{
+					"kind": "literal",
+					"value": "onclick"
+				},
+				{
+					"kind": "literal",
+					"value": "ondblclick"
+				},
+				{
+					"kind": "literal",
+					"value": "onmousewheel"
+				},
+				{
+					"kind": "literal",
+					"value": "onmouseout"
+				},
+				{
+					"kind": "literal",
+					"value": "onmouseup"
+				},
+				{
+					"kind": "literal",
+					"value": "onmousedown"
+				},
+				{
+					"kind": "literal",
+					"value": "onmousemove"
+				},
+				{
+					"kind": "literal",
+					"value": "oncontextmenu"
+				},
+				{
+					"kind": "literal",
+					"value": "ondrag"
+				},
+				{
+					"kind": "literal",
+					"value": "ondragstart"
+				},
+				{
+					"kind": "literal",
+					"value": "ondragend"
+				},
+				{
+					"kind": "literal",
+					"value": "ondragenter"
+				},
+				{
+					"kind": "literal",
+					"value": "ondragleave"
+				},
+				{
+					"kind": "literal",
+					"value": "ondragover"
+				},
+				{
+					"kind": "literal",
+					"value": "ondrop"
+				},
+				{
+					"kind": "literal",
+					"value": "z2"
+				},
+				{
+					"kind": "literal",
+					"value": "invisible"
+				},
+				{
+					"kind": "literal",
+					"value": "onmouseover"
+				},
+				{
+					"kind": "literal",
+					"value": "incremental"
+				},
+				{
+					"kind": "literal",
+					"value": "style"
+				},
+				{
+					"kind": "literal",
+					"value": "drift"
+				},
+				{
+					"kind": "literal",
+					"value": "textContent"
+				},
+				{
+					"kind": "literal",
+					"value": "clipPath"
+				},
+				{
+					"kind": "literal",
+					"value": "isGroup"
+				},
+				{
+					"kind": "literal",
+					"value": "ignoreHostSilent"
+				},
+				{
+					"kind": "literal",
+					"value": "ignoreClip"
+				},
+				{
+					"kind": "literal",
+					"value": "globalScaleRatio"
+				},
+				{
+					"kind": "literal",
+					"value": "extra"
+				},
+				{
+					"kind": "literal",
+					"value": "anid"
+				},
+				{
+					"kind": "literal",
+					"value": "culling"
+				},
+				{
+					"kind": "literal",
+					"value": "rectHover"
+				},
+				{
+					"kind": "literal",
+					"value": "ignoreCoarsePointer"
+				},
+				{
+					"kind": "literal",
+					"value": "batch"
+				},
+				{
+					"kind": "literal",
+					"value": "onload"
+				}
+			]
+		},
+		"\"silent\" | \"cursor\" | \"progressive\" | \"name\" | \"z\" | \"zlevel\" | \"all\" | \"x\" | \"y…#818867a7e8": {
+			"kind": "union",
+			"anyOf": [
+				{
+					"kind": "literal",
+					"value": "silent"
+				},
+				{
+					"kind": "literal",
+					"value": "cursor"
+				},
+				{
+					"kind": "literal",
+					"value": "progressive"
+				},
+				{
+					"kind": "literal",
+					"value": "name"
+				},
+				{
+					"kind": "literal",
+					"value": "z"
+				},
+				{
+					"kind": "literal",
+					"value": "zlevel"
+				},
+				{
+					"kind": "literal",
+					"value": "all"
+				},
+				{
+					"kind": "literal",
+					"value": "x"
+				},
+				{
+					"kind": "literal",
+					"value": "y"
+				},
+				{
+					"kind": "literal",
+					"value": "originX"
+				},
+				{
+					"kind": "literal",
+					"value": "originY"
+				},
+				{
+					"kind": "literal",
+					"value": "anchorX"
+				},
+				{
+					"kind": "literal",
+					"value": "anchorY"
+				},
+				{
+					"kind": "literal",
+					"value": "rotation"
+				},
+				{
+					"kind": "literal",
+					"value": "scaleX"
+				},
+				{
+					"kind": "literal",
+					"value": "scaleY"
+				},
+				{
+					"kind": "literal",
+					"value": "skewX"
+				},
+				{
+					"kind": "literal",
+					"value": "skewY"
+				},
+				{
+					"kind": "literal",
+					"value": "ignore"
+				},
+				{
+					"kind": "literal",
+					"value": "textConfig"
+				},
+				{
+					"kind": "literal",
+					"value": "draggable"
+				},
+				{
+					"kind": "literal",
+					"value": "onclick"
+				},
+				{
+					"kind": "literal",
+					"value": "ondblclick"
+				},
+				{
+					"kind": "literal",
+					"value": "onmousewheel"
+				},
+				{
+					"kind": "literal",
+					"value": "onmouseout"
+				},
+				{
+					"kind": "literal",
+					"value": "onmouseup"
+				},
+				{
+					"kind": "literal",
+					"value": "onmousedown"
+				},
+				{
+					"kind": "literal",
+					"value": "onmousemove"
+				},
+				{
+					"kind": "literal",
+					"value": "oncontextmenu"
+				},
+				{
+					"kind": "literal",
+					"value": "ondrag"
+				},
+				{
+					"kind": "literal",
+					"value": "ondragstart"
+				},
+				{
+					"kind": "literal",
+					"value": "ondragend"
+				},
+				{
+					"kind": "literal",
+					"value": "ondragenter"
+				},
+				{
+					"kind": "literal",
+					"value": "ondragleave"
+				},
+				{
+					"kind": "literal",
+					"value": "ondragover"
+				},
+				{
+					"kind": "literal",
+					"value": "ondrop"
+				},
+				{
+					"kind": "literal",
+					"value": "z2"
+				},
+				{
+					"kind": "literal",
+					"value": "invisible"
+				},
+				{
+					"kind": "literal",
+					"value": "onmouseover"
+				},
+				{
+					"kind": "literal",
+					"value": "incremental"
+				},
+				{
+					"kind": "literal",
+					"value": "style"
+				},
+				{
+					"kind": "literal",
+					"value": "drift"
+				},
+				{
+					"kind": "literal",
+					"value": "textContent"
+				},
+				{
+					"kind": "literal",
+					"value": "clipPath"
+				},
+				{
+					"kind": "literal",
+					"value": "isGroup"
+				},
+				{
+					"kind": "literal",
+					"value": "ignoreHostSilent"
+				},
+				{
+					"kind": "literal",
+					"value": "ignoreClip"
+				},
+				{
+					"kind": "literal",
+					"value": "globalScaleRatio"
+				},
+				{
+					"kind": "literal",
+					"value": "extra"
+				},
+				{
+					"kind": "literal",
+					"value": "anid"
+				},
+				{
+					"kind": "literal",
+					"value": "culling"
+				},
+				{
+					"kind": "literal",
+					"value": "rectHover"
+				},
+				{
+					"kind": "literal",
+					"value": "ignoreCoarsePointer"
+				},
+				{
+					"kind": "literal",
+					"value": "batch"
+				},
+				{
+					"kind": "literal",
+					"value": "onload"
+				},
+				{
+					"kind": "array",
+					"items": {
+						"kind": "ref",
+						"ref": "\"silent\" | \"cursor\" | \"progressive\" | \"name\" | \"z\" | \"zlevel\" | \"x\" | \"y\" | \"ori…#0f270ad71b"
+					}
+				}
+			]
+		},
+		"ImageProps": {
+			"kind": "object",
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/types/dist/shared.d.ts:1004"
+					}
+				]
+			},
+			"properties": {
+				"style": {
+					"node": {
+						"kind": "ref",
+						"ref": "ImageStyleProps"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1005"
+							}
+						]
+					}
+				},
+				"onload": {
+					"node": {
+						"kind": "function"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:1006"
 							}
 						]
 					}
@@ -128254,25 +130470,8 @@
 					"node": {
 						"kind": "array",
 						"items": {
-							"kind": "union",
-							"anyOf": [
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentGroupOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentZRPathOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentImageOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentTextOption"
-								}
-							]
+							"kind": "ref",
+							"ref": "GraphicComponentElementOption"
 						}
 					},
 					"provenance": {
@@ -128373,25 +130572,8 @@
 				},
 				"parentOption": {
 					"node": {
-						"kind": "union",
-						"anyOf": [
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentGroupOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentZRPathOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentImageOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentTextOption"
-							}
-						]
+						"kind": "ref",
+						"ref": "GraphicComponentElementOption"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -129256,7 +131438,8 @@
 				},
 				"type": {
 					"node": {
-						"kind": "string"
+						"kind": "ref",
+						"ref": "GraphicShapeType"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -129264,6 +131447,10 @@
 							{
 								"source": "echarts",
 								"pointer": "echarts/types/dist/shared.d.ts:12309"
+							},
+							{
+								"source": "echarts",
+								"pointer": "echarts/lib/util/graphic.js:742"
 							}
 						]
 					}
@@ -129328,25 +131515,8 @@
 				},
 				"parentOption": {
 					"node": {
-						"kind": "union",
-						"anyOf": [
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentGroupOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentZRPathOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentImageOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentTextOption"
-							}
-						]
+						"kind": "ref",
+						"ref": "GraphicComponentElementOption"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -129362,25 +131532,8 @@
 					"node": {
 						"kind": "array",
 						"items": {
-							"kind": "union",
-							"anyOf": [
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentGroupOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentZRPathOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentImageOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentTextOption"
-								}
-							]
+							"kind": "ref",
+							"ref": "GraphicComponentElementOption"
 						}
 					},
 					"provenance": {
@@ -130360,25 +132513,8 @@
 				},
 				"parentOption": {
 					"node": {
-						"kind": "union",
-						"anyOf": [
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentGroupOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentZRPathOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentImageOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentTextOption"
-							}
-						]
+						"kind": "ref",
+						"ref": "GraphicComponentElementOption"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -130394,25 +132530,8 @@
 					"node": {
 						"kind": "array",
 						"items": {
-							"kind": "union",
-							"anyOf": [
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentGroupOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentZRPathOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentImageOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentTextOption"
-								}
-							]
+							"kind": "ref",
+							"ref": "GraphicComponentElementOption"
 						}
 					},
 					"provenance": {
@@ -131970,25 +134089,8 @@
 				},
 				"parentOption": {
 					"node": {
-						"kind": "union",
-						"anyOf": [
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentGroupOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentZRPathOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentImageOption"
-							},
-							{
-								"kind": "ref",
-								"ref": "GraphicComponentTextOption"
-							}
-						]
+						"kind": "ref",
+						"ref": "GraphicComponentElementOption"
 					},
 					"provenance": {
 						"confidence": "authoritative",
@@ -132004,25 +134106,8 @@
 					"node": {
 						"kind": "array",
 						"items": {
-							"kind": "union",
-							"anyOf": [
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentGroupOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentZRPathOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentImageOption"
-								},
-								{
-									"kind": "ref",
-									"ref": "GraphicComponentTextOption"
-								}
-							]
+							"kind": "ref",
+							"ref": "GraphicComponentElementOption"
 						}
 					},
 					"provenance": {
@@ -132273,7 +134358,29 @@
 					"kind": "ref",
 					"ref": "GraphicComponentTextOption & { mainType?: \"graphic\" | undefined; }"
 				}
-			]
+			],
+			"discriminator": "type",
+			"extensible": true,
+			"selectWhen": [
+				{
+					"test": "truthy",
+					"property": "elements",
+					"variant": 0
+				}
+			],
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/component/graphic/install.js:68"
+					},
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/component/graphic/GraphicView.js:311"
+					}
+				]
+			}
 		},
 		"GraphicComponentLooseOption | GraphicComponentLooseOption[]": {
 			"kind": "union",
@@ -132305,7 +134412,29 @@
 						"ref": "GraphicComponentLooseOption"
 					}
 				}
-			]
+			],
+			"discriminator": "type",
+			"extensible": true,
+			"selectWhen": [
+				{
+					"test": "truthy",
+					"property": "elements",
+					"variant": 0
+				}
+			],
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/component/graphic/install.js:68"
+					},
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/component/graphic/GraphicView.js:311"
+					}
+				]
+			}
 		},
 		"LineSeriesOption$1": {
 			"kind": "object",
@@ -158777,7 +160906,8 @@
 		"Dictionary<number[]>": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "Array"
 		},
 		"MapDataItemOption": {
 			"kind": "object",
@@ -214351,8 +216481,280 @@
 		},
 		"GlobalTextStyleOption": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/types/dist/shared.d.ts:7857"
+					}
+				]
+			},
+			"properties": {
+				"color": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7822"
+							}
+						]
+					}
+				},
+				"fontStyle": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "literal",
+								"value": "normal"
+							},
+							{
+								"kind": "literal",
+								"value": "italic"
+							},
+							{
+								"kind": "literal",
+								"value": "oblique"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7823"
+							}
+						]
+					}
+				},
+				"fontWeight": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "literal",
+								"value": "normal"
+							},
+							{
+								"kind": "literal",
+								"value": "bold"
+							},
+							{
+								"kind": "literal",
+								"value": "bolder"
+							},
+							{
+								"kind": "literal",
+								"value": "lighter"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7824"
+							}
+						]
+					}
+				},
+				"fontFamily": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7825"
+							}
+						]
+					}
+				},
+				"fontSize": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "string"
+							},
+							{
+								"kind": "number"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7826"
+							}
+						]
+					}
+				},
+				"textBorderColor": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7847"
+							}
+						]
+					}
+				},
+				"textBorderWidth": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7848"
+							}
+						]
+					}
+				},
+				"textShadowColor": {
+					"node": {
+						"kind": "string"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7852"
+							}
+						]
+					}
+				},
+				"textShadowBlur": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7851"
+							}
+						]
+					}
+				},
+				"textShadowOffsetX": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7853"
+							}
+						]
+					}
+				},
+				"textShadowOffsetY": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7854"
+							}
+						]
+					}
+				},
+				"opacity": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7830"
+							}
+						]
+					}
+				},
+				"textBorderType": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							},
+							{
+								"kind": "literal",
+								"value": "solid"
+							},
+							{
+								"kind": "literal",
+								"value": "dotted"
+							},
+							{
+								"kind": "literal",
+								"value": "dashed"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7849"
+							}
+						]
+					}
+				},
+				"textBorderDashOffset": {
+					"node": {
+						"kind": "number"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "echarts",
+								"pointer": "echarts/types/dist/shared.d.ts:7850"
+							}
+						]
+					}
+				}
+			}
 		},
 		"BarSeriesOption$1.itemStyle<compat>": {
 			"kind": "object",
@@ -214806,6 +217208,87 @@
 					}
 				}
 			}
+		},
+		"GraphicComponentElementOption": {
+			"kind": "union",
+			"anyOf": [
+				{
+					"kind": "ref",
+					"ref": "GraphicComponentGroupOption"
+				},
+				{
+					"kind": "ref",
+					"ref": "GraphicComponentZRPathOption"
+				},
+				{
+					"kind": "ref",
+					"ref": "GraphicComponentImageOption"
+				},
+				{
+					"kind": "ref",
+					"ref": "GraphicComponentTextOption"
+				}
+			],
+			"discriminator": "type",
+			"extensible": true,
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/component/graphic/install.js:68"
+					},
+					{
+						"source": "echarts",
+						"pointer": "echarts/lib/component/graphic/GraphicView.js:311"
+					}
+				]
+			}
+		},
+		"GraphicShapeType": {
+			"kind": "union",
+			"anyOf": [
+				{
+					"kind": "literal",
+					"value": "circle"
+				},
+				{
+					"kind": "literal",
+					"value": "ellipse"
+				},
+				{
+					"kind": "literal",
+					"value": "sector"
+				},
+				{
+					"kind": "literal",
+					"value": "ring"
+				},
+				{
+					"kind": "literal",
+					"value": "polygon"
+				},
+				{
+					"kind": "literal",
+					"value": "polyline"
+				},
+				{
+					"kind": "literal",
+					"value": "rect"
+				},
+				{
+					"kind": "literal",
+					"value": "line"
+				},
+				{
+					"kind": "literal",
+					"value": "bezierCurve"
+				},
+				{
+					"kind": "literal",
+					"value": "arc"
+				}
+			]
 		}
 	},
 	"root": {

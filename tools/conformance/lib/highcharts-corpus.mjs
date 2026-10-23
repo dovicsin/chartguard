@@ -77,7 +77,9 @@ function demoDocument({ code, page }) {
 	const external = sources.filter((_, index) => local[index] === undefined);
 	if (external.length > 0) return { external };
 	const scripts = local.map((src) => `<script src="${src}"></script>`).join('');
-	return { html: `<!doctype html><meta charset="utf-8">${inline(PROBE)}${scripts}${inline(WRAP)}${page.replace(PAGE_SCRIPT, '')}${inline(code)}` };
+	return {
+		html: `<!doctype html><meta charset="utf-8">${inline(PROBE)}${scripts}${inline(WRAP)}${page.replace(PAGE_SCRIPT, '')}${inline(code)}`
+	};
 }
 
 /** Runs in the parent page: one iframe per demo, one after the other, then the outcomes as text. */
@@ -111,7 +113,8 @@ const runDemo = (html) => new Promise((resolve) => {
 async function validatorBundle() {
 	const { outputFiles } = await build({
 		stdin: {
-			contents: "import { createValidator } from '@chartguard/config-highcharts'; globalThis.chartguardCreateValidator = createValidator;",
+			contents:
+				"import { createValidator } from '@chartguard/config-highcharts'; globalThis.chartguardCreateValidator = createValidator;",
 			resolveDir: ROOT,
 			loader: 'js'
 		},
@@ -124,16 +127,27 @@ async function validatorBundle() {
 }
 
 function outcomeOf(path, prepared, ran) {
-	if (prepared.external !== undefined) return { path, status: 'not-run', reason: `loads ${prepared.external.join(', ')}` };
+	if (prepared.external !== undefined)
+		return { path, status: 'not-run', reason: `loads ${prepared.external.join(', ')}` };
 	if (ran.charts === 0) return { path, status: 'not-run', reason: ran.threw ?? 'no chart was created' };
-	return { path, status: 'ran', runtime: verdictOf(ran), findings: ran.findings, threw: ran.threw, messages: ran.messages };
+	return {
+		path,
+		status: 'ran',
+		runtime: verdictOf(ran),
+		findings: ran.findings,
+		threw: ran.threw,
+		messages: ran.messages
+	};
 }
 
 /** Writes the corpus page, the validator bundle and the artifact next to each other; returns the page URL. */
 async function writePage(directory, prepared) {
 	writeFileSync(join(directory, 'validator.js'), await validatorBundle());
 	writeFileSync(join(directory, 'artifact.js'), `globalThis.chartguardArtifact = ${readFileSync(ARTIFACT, 'utf8')};`);
-	const demos = JSON.stringify(prepared.flatMap(({ html }) => (html === undefined ? [] : [html]))).replaceAll('<', '\\u003c');
+	const demos = JSON.stringify(prepared.flatMap(({ html }) => (html === undefined ? [] : [html]))).replaceAll(
+		'<',
+		'\\u003c'
+	);
 	const page = `<!doctype html><meta charset="utf-8"><body><pre id="outcomes"></pre><script src="validator.js"></script><script src="artifact.js"></script><script>const DEMOS = ${demos};${RUNNER}</script>`;
 	writeFileSync(join(directory, 'index.html'), page);
 	return pathToFileURL(join(directory, 'index.html')).href;
@@ -160,7 +174,9 @@ export async function runHighchartsCorpus(corpusPath) {
 	try {
 		const ran = reported(await dumpDom(await writePage(directory, prepared), { offline: true, virtualTime: 600_000 }));
 		let next = 0;
-		return corpus.files.map(({ path }, index) => outcomeOf(path, prepared[index], prepared[index].html === undefined ? undefined : ran[next++]));
+		return corpus.files.map(({ path }, index) =>
+			outcomeOf(path, prepared[index], prepared[index].html === undefined ? undefined : ran[next++])
+		);
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
 	}

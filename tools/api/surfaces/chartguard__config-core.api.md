@@ -118,11 +118,13 @@ interface NodeSchema {
     readonly extensionPoint?: string;
     readonly inferred?: true;
     readonly nullAsAbsent?: boolean;
+    readonly host?: string;
     readonly values?: NodeSchema;
     readonly anyOf?: readonly NodeSchema[];
     readonly discriminator?: string;
     readonly defaultVariant?: number;
     readonly defaultWhen?: readonly DefaultChoice[];
+    readonly selectWhen?: readonly DefaultChoice[];
     readonly defaultFrom?: DefaultFrom;
     readonly extensible?: boolean;
     readonly registry?: RegistryRef;
@@ -138,6 +140,7 @@ interface ObjectNode extends NodeBase {
     readonly additional: Openness;
     readonly extensionPoint?: string;
     readonly nullAsAbsent?: boolean;
+    readonly host?: string;
     readonly includes?: readonly string[];
 }
 
@@ -278,6 +281,7 @@ interface UnionNode extends NodeBase {
     readonly defaultVariant?: number;
     readonly defaultWhen?: readonly DefaultRule[];
     readonly defaultFrom?: DefaultFrom;
+    readonly selectWhen?: readonly DefaultRule[];
     readonly extensible?: boolean;
     readonly registry?: RegistryRef;
     readonly extensionPoint?: string;

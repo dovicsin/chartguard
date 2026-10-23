@@ -7,13 +7,19 @@
 				"scripts/tests/*.test.mjs",
 				"tools/schema-generator/tests/*.test.mjs",
 				"tools/conformance/tests/*.test.mjs",
-				"tools/shared/tests/*.test.mjs"
+				"tools/shared/tests/*.test.mjs",
+				"tools/api/*.mjs",
+				"tools/api/tests/*.test.mjs",
+				"tools/docs/*.mjs",
+				"tools/docs/tests/*.test.mjs"
 			],
 			"project": [
 				"scripts/**/*.mjs",
 				"tools/schema-generator/**/*.mjs",
 				"tools/conformance/**/*.mjs",
-				"tools/shared/**/*.mjs"
+				"tools/shared/**/*.mjs",
+				"tools/api/**/*.mjs",
+				"tools/docs/**/*.mjs"
 			]
 		},
 		"packages/schema-generator": {

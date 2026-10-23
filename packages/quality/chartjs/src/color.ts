@@ -8,7 +8,8 @@ import {
 	type Listed,
 	type PathSegment,
 	readFact,
-	unknown
+	unknown,
+	type UnknownFact
 } from '@chartguard/quality-core';
 
 const isSet = (value: unknown): value is unknown => value !== undefined && typeof value !== 'function';
@@ -83,8 +84,26 @@ function colorsDefined(config: unknown, datasets: Listed<Item>): Fact<boolean> {
  * anything, Chart.js's own `rgba(0,0,0,0.1)`. Without any colour in the config the Colors plugin
  * decides, if it is registered: not modelled. Per-point colours (arrays) are not modelled either.
  */
+/**
+ * Whether the Colors plugin may paint over every colour: `forceOverride` skips its test for colours in
+ * the config (dist/chart.js:7428), unless the plugin is turned off. Whether it is registered is not in
+ * the config, so then no dataset colour is known (K7). Undefined when it cannot override them.
+ */
+function forcedOver(config: unknown): UnknownFact | undefined {
+	const at = ['options', 'plugins', 'colors'];
+	const enabled = readFact(config, [...at, 'enabled'], isSet);
+	if (enabled.known && enabled.value === false) return undefined;
+	const force = readFact(config, [...at, 'forceOverride'], isSet);
+	if (!force.known) return force.reason === 'unset' ? undefined : force;
+	return force.value === false || force.value === undefined || force.value === null
+		? undefined
+		: unknown(force.path, 'unmodelled');
+}
+
 export function colorOf(config: unknown, item: Item, type: Fact<string>, datasets: Listed<Item>): Fact<string> {
 	if (!type.known) return unknown(`${item.path}.backgroundColor`, type.reason);
+	const forced = forcedOver(config);
+	if (forced !== undefined) return unknown(`${item.path}.backgroundColor`, forced.reason);
 	const by = COLORED_BY[type.value];
 	if (by === undefined) return unknown(`${item.path}.backgroundColor`, 'unmodelled');
 	const at = (path: readonly PathSegment[]): Fact<unknown> => readFact(config, [...path, by.key], isSet);

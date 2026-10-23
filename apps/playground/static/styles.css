@@ -44,7 +44,9 @@ body {
 	margin: 0;
 	background: var(--bg);
 	color: var(--text);
-	font: 14px/1.45 system-ui, sans-serif;
+	font:
+		14px/1.45 system-ui,
+		sans-serif;
 }
 
 .bar {

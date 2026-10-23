@@ -25,6 +25,30 @@ export const UNKNOWN_CASES = [
 		highcharts: { config: { ...hcBars([60, 70], {}), plotOptions: { column: { threshold: null } } }, findings: [] }
 	},
 	{
+		name: 'unknown: a y axis minimum Highcharts rounds down to a tick the plot size decides',
+		rule: 'bar-baseline',
+		kind: 'unknown',
+		// With data from 60 to 100 the tick below 5 is 0: Highcharts draws the columns from zero (H7).
+		highcharts: { config: hcBars([60, 100], { min: 5 }), findings: [] }
+	},
+	{
+		name: 'unknown: a fitted range without the series the legend hides',
+		rule: 'bar-baseline',
+		kind: 'unknown',
+		// echarts fits the axis to the bars alone (60 to 70); the hidden line's values are not modelled (K11).
+		echarts: {
+			config: {
+				...ecBars([60, 70], { scale: true }),
+				series: [
+					{ type: 'bar', data: [60, 70] },
+					{ type: 'line', name: 'Low', data: [1, 2] }
+				],
+				legend: { selected: { Low: false } }
+			},
+			findings: []
+		}
+	},
+	{
 		name: 'unknown: a logarithmic scale type behind a getter',
 		rule: 'bar-log-scale',
 		kind: 'unknown',
@@ -107,6 +131,25 @@ export const UNKNOWN_CASES = [
 		}
 	},
 	{
+		name: 'unknown: colours the Colors plugin forces over, whether or not it is registered',
+		rule: 'same-color-series',
+		kind: 'unknown',
+		chartjs: {
+			config: {
+				type: 'bar',
+				data: {
+					labels: LABELS,
+					datasets: [
+						{ label: 'A', data: [1, 2], backgroundColor: '#ff0000' },
+						{ label: 'B', data: [2, 3], backgroundColor: '#f00' }
+					]
+				},
+				options: { plugins: { colors: { forceOverride: true } } }
+			},
+			findings: []
+		}
+	},
+	{
 		name: 'unknown: light series on a page that shows through, its background not declared',
 		rule: 'low-contrast-series',
 		kind: 'unknown',
@@ -127,110 +170,6 @@ export const UNKNOWN_CASES = [
 				...hcBars([1, 2], {}),
 				chart: { type: 'column', backgroundColor: 'transparent' },
 				series: [{ data: [1, 2], color: '#eeeeee' }]
-			},
-			findings: []
-		}
-	},
-	{
-		name: 'unknown: a y axis title from a language text of a shape not read',
-		rule: 'placeholder-text',
-		kind: 'unknown',
-		labels: true,
-		highcharts: { config: { ...hcBars([1, 2], {}), title: { text: 'Sales' }, lang: { yAxisTitle: 5 } }, findings: [] }
-	},
-	{
-		name: 'unknown: whether a scale title is displayed, behind a getter',
-		rule: 'value-axis-untitled',
-		kind: 'unknown',
-		labels: true,
-		chartjs: { config: cjBars([1, 2], { title: getter('display', false, { text: 'Units' }) }), findings: [] }
-	},
-	{
-		name: 'unknown: a title text behind a getter',
-		rule: 'empty-title',
-		kind: 'unknown',
-		labels: true,
-		chartjs: {
-			config: cjBars(
-				[1, 2],
-				{ title: { display: true, text: 'Units' } },
-				{ plugins: { title: getter('text', '', { display: true }) } }
-			),
-			findings: []
-		}
-	},
-	{
-		name: 'unknown: a canvas whose page is not declared, aria behind a getter',
-		rule: 'data-not-described',
-		kind: 'unknown',
-		access: true,
-		chartjs: { config: cjBars([1, 2], {}), findings: [] },
-		echarts: {
-			config: { ...ecBars([1, 2], { name: 'Units' }), title: { text: 'Sales' }, aria: getter('enabled', false) },
-			findings: []
-		}
-	},
-	{
-		name: 'unknown: a keyboard switch of a shape not read',
-		rule: 'keyboard-disabled',
-		kind: 'unknown',
-		access: true,
-		highcharts: {
-			config: {
-				...hcBars([1, 2], { title: { text: 'Units' } }),
-				title: { text: 'Sales' },
-				accessibility: { keyboardNavigation: { enabled: 'no' } }
-			},
-			findings: []
-		}
-	},
-	{
-		name: 'unknown: animation durations decided by functions',
-		rule: 'long-motion',
-		kind: 'unknown',
-		chartjs: { config: cjBars([1, 2], {}, { animation: { duration: () => 6000 } }), findings: [] },
-		echarts: { config: { ...ecBars([1, 2], { name: 'Units' }), animationDuration: () => 6000 }, findings: [] }
-	},
-	{
-		name: 'unknown: a percent axis label format with a placeholder not read',
-		rule: 'percent-without-unit',
-		kind: 'unknown',
-		highcharts: {
-			config: {
-				chart: { type: 'column' },
-				xAxis: { categories: LABELS },
-				yAxis: { title: { text: 'Share of sales' }, labels: { format: 'Share {pos}' } },
-				plotOptions: { series: { stacking: 'percent' } },
-				series: [{ data: [60, 70] }, { data: [40, 30] }]
-			},
-			findings: []
-		}
-	}
-];
-
-/** Counterexamples the first parts left out (CG-05-05 completes every rule). */
-export const MORE_COUNTEREXAMPLES = [
-	{
-		name: 'counterexample: lines on a logarithmic axis',
-		rule: 'bar-log-scale',
-		kind: 'counterexample',
-		chartjs: { config: line(cjBars([10, 1000], { type: 'logarithmic' })), findings: [] },
-		echarts: {
-			config: { ...ecBars([10, 1000], { type: 'log' }), series: [{ type: 'line', data: [10, 1000] }] },
-			findings: []
-		},
-		highcharts: { config: { ...hcBars([10, 1000], { type: 'logarithmic' }), chart: { type: 'line' } }, findings: [] }
-	},
-	{
-		name: 'counterexample: Highcharts keyboard navigation turned on',
-		rule: 'keyboard-disabled',
-		kind: 'counterexample',
-		access: true,
-		highcharts: {
-			config: {
-				...hcBars([1, 2], { title: { text: 'Units' } }),
-				title: { text: 'Sales' },
-				accessibility: { keyboardNavigation: { enabled: true } }
 			},
 			findings: []
 		}

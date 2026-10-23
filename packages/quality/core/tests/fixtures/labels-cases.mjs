@@ -81,6 +81,26 @@ export const LABEL_CASES = [
 		}
 	},
 	{
+		name: 'counterexample: a y axis title switched off draws no placeholder',
+		rule: 'placeholder-text',
+		kind: 'counterexample',
+		labels: true,
+		highcharts: {
+			config: { ...hcBars([1, 2], { title: { enabled: false } }), title: { text: 'Quarterly sales' } },
+			findings: []
+		}
+	},
+	{
+		name: 'counterexample: a hidden y axis draws no title',
+		rule: 'placeholder-text',
+		kind: 'counterexample',
+		labels: true,
+		highcharts: {
+			config: { ...hcBars([1, 2], { visible: false }), title: { text: 'Quarterly sales' } },
+			findings: []
+		}
+	},
+	{
 		name: 'no title names the quantity: neither the chart nor its value axis',
 		rule: 'value-axis-untitled',
 		kind: 'triggers',

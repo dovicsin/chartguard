@@ -7,7 +7,11 @@ import type { Example } from './examples.js';
  * Text that may come from the user's config (keys inside messages, paths) is only ever assigned
  * through `textContent`; nothing here parses HTML.
  */
-function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text = ''): HTMLElementTagNameMap[K] {
+function element<K extends keyof HTMLElementTagNameMap>(
+	tag: K,
+	className: string,
+	text = ''
+): HTMLElementTagNameMap[K] {
 	const node = document.createElement(tag);
 	node.className = className;
 	node.textContent = text;

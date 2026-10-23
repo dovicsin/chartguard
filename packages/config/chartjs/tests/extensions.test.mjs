@@ -96,6 +96,29 @@ test('a controller adds a chart type and a dataset type, both inheriting from th
 	assert.deepEqual(findings(validate, funnel({ data: [1] })), ['warning CFG_UNKNOWN_VARIANT $.type']);
 });
 
+test('a controller redefines an option for its own chart type only; the built-in it extends keeps its own (K13, A32)', () => {
+	const validator = withExtensions([
+		{ id: 'x', controllers: { funnel: { extends: 'bar', options: s.object({ indexAxis: s.number() }) } } }
+	]);
+	assert.deepEqual(
+		findings(validator, { type: 'funnel', data: { datasets: [{ data: [1] }] }, options: { indexAxis: 2 } }),
+		[]
+	);
+	assert.deepEqual(
+		findings(validator, { type: 'bar', data: { datasets: [{ data: [1] }] }, options: { indexAxis: 2 } }),
+		['error CFG_TYPE $.options.indexAxis']
+	);
+	// Options that are not an object schema would add nothing: refused at setup.
+	assert.throws(
+		() => withExtensions([{ id: 'x', controllers: { funnel: { extends: 'bar', options: s.number() } } }]),
+		(error) => {
+			assert.ok(error instanceof ExtensionError);
+			assert.deepEqual(error.problems, ['x: controller "funnel" options must be an object schema']);
+			return true;
+		}
+	);
+});
+
 test('a controller must extend a built-in type, and its registration is the controllers registry', () => {
 	assert.throws(
 		() => withExtensions([{ id: 'x', controllers: { funnel: { extends: 'pyramid' } } }]),

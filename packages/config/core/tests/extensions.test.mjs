@@ -122,6 +122,30 @@ test('an option or variant that is not a schema is refused at setup, not met dur
 	);
 });
 
+test('an extension of the wrong shape is refused as a setup error, never a raw TypeError, never silently (K14)', () => {
+	const problemsOf = (extensions) => {
+		try {
+			withExtensions(manifest(), extensions);
+		} catch (error) {
+			assert.ok(error instanceof ExtensionError, String(error));
+			return error.problems;
+		}
+		return [];
+	};
+	assert.deepEqual(problemsOf([{ id: 'x', options: { 'demo.plugins': null } }]), [
+		'x: the options at demo.plugins must be an object of schemas by name'
+	]);
+	assert.deepEqual(problemsOf([{ id: 'x', options: 5 }]), ['x: options must be an object of extension points']);
+	assert.deepEqual(problemsOf([{ id: 'x', options: [] }]), ['x: options must be an object of extension points']);
+	assert.deepEqual(problemsOf([{ id: 'x', variants: null }]), ['x: variants must be an object of registries']);
+	assert.deepEqual(problemsOf([{ id: 'x', variants: { demo: 'cloud' } }]), [
+		'x: the variants of demo must be an object of schemas by name'
+	]);
+	assert.deepEqual(problemsOf([null]), ['an extension must be an object with a non-empty id']);
+	assert.deepEqual(problemsOf([{ id: 'x' }]), []);
+	assert.deepEqual(problemsOf({ id: 'x' }), ['extensions must be a list']);
+});
+
 test("a named extension option wins over the point's catch-all values schema", () => {
 	const base = manifest();
 	const plugins = { ...s.object({}, { additional: 'allow' }), values: s.boolean(), extensionPoint: 'demo.plugins' };

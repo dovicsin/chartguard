@@ -52,7 +52,10 @@ test('generation is byte-identical across separate processes', () => {
 		return JSON.parse(child.stdout);
 	};
 	const first = run();
-	assert.deepEqual(first, LIBRARIES.map((library) => sha256(committed(library))));
+	assert.deepEqual(
+		first,
+		LIBRARIES.map((library) => sha256(committed(library)))
+	);
 	assert.deepEqual(run(), first);
 });
 
@@ -69,7 +72,10 @@ function sample(names = { Options: 'Options', Line: 'Line', Bar: 'Bar' }) {
 		sources: {},
 		definitions: {
 			[names.Options]: object({ width: prop({ kind: 'number' }), title: prop({ kind: 'string' }, { required: true }) }),
-			[names.Line]: object({ type: prop({ kind: 'literal', value: 'line' }), options: prop({ kind: 'ref', ref: names.Options }) }),
+			[names.Line]: object({
+				type: prop({ kind: 'literal', value: 'line' }),
+				options: prop({ kind: 'ref', ref: names.Options })
+			}),
 			[names.Bar]: object({ type: prop({ kind: 'literal', value: 'bar' }) })
 		},
 		root: {
@@ -177,10 +183,7 @@ test('option names are data, never IR fields: options named includes, provenance
 	const after = structuredClone(before);
 	for (const name of ['includes', 'provenance', 'docs', 'kind', 'ref'])
 		after.definitions.Options.properties[name] = prop({ kind: 'string' });
-	assert.deepEqual(
-		diffArtifacts(before, before),
-		[]
-	);
+	assert.deepEqual(diffArtifacts(before, before), []);
 	assert.deepEqual(
 		diffArtifacts(before, after).map(({ kind, path }) => `${kind} ${path}`),
 		['docs', 'includes', 'kind', 'provenance', 'ref'].map((name) => `property-changed $<type=line>.options.${name}`)

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { normalize } from '../dist/index.js';
+import { analyze, normalize } from '../dist/index.js';
 
 const colors = (config) =>
 	normalize(config).series.items.map(({ color }) =>
@@ -58,4 +58,31 @@ test('shades and background: a colour is the same in both schemes; the canvas ba
 		['#f00', '#f00']
 	);
 	assert.deepEqual(chart.background, { known: false, path: '$', reason: 'page' });
+});
+
+test('with the Colors plugin forcing its palette, no dataset colour is known: whether it is registered is not in the config (K7)', () => {
+	const twice = (plugins) => ({
+		type: 'bar',
+		data: {
+			labels: ['a'],
+			datasets: [
+				{ label: 'A', data: [1], backgroundColor: '#ff0000' },
+				{ label: 'B', data: [2], backgroundColor: '#f00' }
+			]
+		},
+		options: { plugins }
+	});
+	const seriesColors = (config) =>
+		normalize(config).series.items.map(({ color }) => (color.known ? color.value : `? ${color.reason}`));
+	assert.deepEqual(seriesColors(twice({})), ['#ff0000', '#f00']);
+	assert.deepEqual(seriesColors(twice({ colors: { forceOverride: true } })), ['? unmodelled', '? unmodelled']);
+	// Turned off, the plugin forces nothing.
+	assert.deepEqual(seriesColors(twice({ colors: { forceOverride: true, enabled: false } })), ['#ff0000', '#f00']);
+	assert.deepEqual(
+		seriesColors(twice({ colors: Object.defineProperty({}, 'forceOverride', { get: () => true, enumerable: true }) })),
+		['? accessor', '? accessor']
+	);
+	const same = (config) => analyze(config).diagnostics.filter(({ code }) => code === 'VIS_SAME_COLOR_SERIES').length;
+	assert.equal(same(twice({})), 1);
+	assert.equal(same(twice({ colors: { forceOverride: true } })), 0);
 });

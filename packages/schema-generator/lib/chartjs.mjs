@@ -128,10 +128,52 @@ function datasetUnions(emitter, datasetVariants, { registry, provenance }) {
 }
 
 /**
+ * `toFont` (dist/chunks/helpers.dataset.js) reads a font's `size` with `parseInt` when it is a string,
+ * and tests `style` against its own pattern (`unset`, `oblique 10deg` are styles too): a string is
+ * a size, and any string a style the runtime decides itself (A6: runtime-handled values are accepted).
+ */
+const FONT_FACTS = {
+	size: { file: 'dist/chunks/helpers.dataset.js', pattern: 'size = parseInt(size, 10);' },
+	style: { file: 'dist/chunks/helpers.dataset.js', pattern: "if (style && !('' + style).match(FONT_STYLE)) {" }
+};
+const STRING = { kind: 'string' };
+
+/** `node` also accepting a string; a scriptable value widens inside its callback-or-value union. */
+function withString(node) {
+	if (node.kind === 'scriptable') return { ...node, value: withString(node.value) };
+	if (node.kind === 'union') return { ...node, anyOf: [...node.anyOf, STRING] };
+	return { kind: 'union', anyOf: [node, STRING] };
+}
+
+/** Every font definition (its own `size` and `family`) with the facts of `toFont`, each citing its line. */
+function withFontFacts(root, definitions) {
+	const cite = (fact) => ({
+		source: SOURCE_ID,
+		pointer: runtimeProvenance(root, { sourceId: SOURCE_ID, packageName: 'chart.js' }, fact).sources[0].pointer
+	});
+	const next = { ...definitions };
+	for (const [name, definition] of Object.entries(definitions)) {
+		const properties = definition.properties ?? {};
+		if (properties.size === undefined || properties.family === undefined) continue;
+		const widened = Object.fromEntries(
+			Object.entries(FONT_FACTS)
+				.filter(([key]) => properties[key] !== undefined)
+				.map(([key, fact]) => {
+					const property = properties[key];
+					const provenance = { ...property.provenance, sources: [...property.provenance.sources, cite(fact)] };
+					return [key, { ...property, node: withString(property.node), provenance }];
+				})
+		);
+		next[name] = { ...definition, properties: { ...properties, ...widened } };
+	}
+	return next;
+}
+
+/**
  * What the declarations leave out, read from the runtime: element options in every scope the
  * runtime reads them from, open per-property animations, built-in plugin options that take effect
  * only when the plugin is registered, the plugin extension point; then every option value becomes
- * scriptable.
+ * scriptable, and fonts take what `toFont` handles.
  */
 function withRuntimeFacts(root, definitions, configNames) {
 	const scopes = planOptionScopes(root, definitions, configNames);
@@ -150,7 +192,7 @@ function withRuntimeFacts(root, definitions, configNames) {
 	for (const name of pluginDefinitions(definitions, configNames))
 		next[name] = { ...next[name], extensionPoint: 'chartjs.plugins' };
 	makeOptionsScriptable(next, configNames);
-	return next;
+	return withFontFacts(root, next);
 }
 
 export function generateChartjs(root, pin) {

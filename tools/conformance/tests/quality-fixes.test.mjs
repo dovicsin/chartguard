@@ -51,7 +51,11 @@ const confirmed = (result) => new Set(result.diagnostics.filter(isConfirmedError
 function fixesOf(report) {
 	const edits = new Map();
 	for (const finding of everything(report))
-		if (finding.fix !== undefined) edits.set(editKey(finding.fix), { fix: finding.fix, resolves: [...(edits.get(editKey(finding.fix))?.resolves ?? []), finding] });
+		if (finding.fix !== undefined)
+			edits.set(editKey(finding.fix), {
+				fix: finding.fix,
+				resolves: [...(edits.get(editKey(finding.fix))?.resolves ?? []), finding]
+			});
 	return [...edits.values()];
 }
 
@@ -74,7 +78,11 @@ function checkFix({ library, config, options }, { fix, resolves }, where) {
 /** The fixed rules whose premise the runtime must no longer show: those the fix removes every finding of. */
 function cleared(report, resolves) {
 	const codes = new Set(resolves.map(({ code }) => code));
-	return [...codes].filter((code) => everything(report).filter((finding) => finding.code === code).length === resolves.filter((finding) => finding.code === code).length);
+	return [...codes].filter(
+		(code) =>
+			everything(report).filter((finding) => finding.code === code).length ===
+			resolves.filter((finding) => finding.code === code).length
+	);
 }
 
 /** Before a fix the premise of each cleared rule holds; after it, it does not (it must be measured both times). */
@@ -101,7 +109,9 @@ const CASES = RULES_CONTRACT.flatMap((entry) =>
 /** Every finding the adapters report or suppress on the contract cases. */
 const FINDINGS = RULES_CONTRACT.flatMap((entry) =>
 	Object.keys(LIBRARIES).flatMap((key) =>
-		entry[key] === undefined ? [] : everything(LIBRARIES[key].analyze(entry[key].config, entry[key].options)).map((finding) => ({ entry, finding }))
+		entry[key] === undefined
+			? []
+			: everything(LIBRARIES[key].analyze(entry[key].config, entry[key].options)).map((finding) => ({ entry, finding }))
 	)
 );
 
@@ -112,41 +122,63 @@ test('a fix is offered only for a rule whose catalog entry offers one, and every
 		assert.deepEqual([finding.fix.kind, finding.fix.path], ['set-option', finding.path]);
 		offered.add(finding.code);
 	}
-	assert.deepEqual([...OFFERED].filter((code) => !offered.has(code)), []);
+	assert.deepEqual(
+		[...OFFERED].filter((code) => !offered.has(code)),
+		[]
+	);
 });
 
-for (const { entry, library, config, options, report, fix, resolves } of CASES.filter((item) => item.library !== 'highcharts'))
+for (const { entry, library, config, options, report, fix, resolves } of CASES.filter(
+	(item) => item.library !== 'highcharts'
+))
 	test(`quality fixes, ${library}: ${entry.name}: ${fix.path} = ${JSON.stringify(fix.value)}`, () => {
 		const where = `${entry.name} ${fix.path}`;
 		const after = checkFix({ library, config, options }, { fix, resolves }, where);
 		assert.equal(verdictOf(LIBRARIES[library].render(copyPlain(after))), 'accepted', where);
 		// echarts' description needs a DOM; it is measured for the examples, in Chrome.
-		const codes = cleared(report, resolves).filter((code) => !(library === 'echarts' && code === 'VIS_DATA_NOT_DESCRIBED'));
+		const codes = cleared(report, resolves).filter(
+			(code) => !(library === 'echarts' && code === 'VIS_DATA_NOT_DESCRIBED')
+		);
 		const built = library === 'chartjs' ? builtChartjs : builtEcharts;
 		const args = (input) => (library === 'chartjs' ? [input, options] : [input, undefined, options]);
 		checkPremises(codes, built(...args(config)), built(...args(after)), where);
 	});
 
-test('quality fixes, highcharts: every fix on the corpus renders, resolves its findings and clears its premise', browser, async () => {
-	const cases = CASES.filter(({ library }) => library === 'highcharts').map((item) => ({
-		...item,
-		after: checkFix(item, item, `${item.entry.name} ${item.fix.path}`)
-	}));
-	const outcomes = await runHighcharts(cases.flatMap(({ config, after }) => [{ config }, { config: after }]));
-	cases.forEach(({ entry, fix, report, resolves, config, after, options }, index) => {
-		const [before, fixed] = [outcomes[2 * index], outcomes[2 * index + 1]];
-		const where = `${entry.name} ${fix.path}`;
-		assert.equal(verdictOf(fixed), 'accepted', `${where}: ${JSON.stringify(fixed.messages)}`);
-		checkPremises(cleared(report, resolves), builtHighcharts(before.observed, config, options), builtHighcharts(fixed.observed, after, options), where);
-	});
-});
+test(
+	'quality fixes, highcharts: every fix on the corpus renders, resolves its findings and clears its premise',
+	browser,
+	async () => {
+		const cases = CASES.filter(({ library }) => library === 'highcharts').map((item) => ({
+			...item,
+			after: checkFix(item, item, `${item.entry.name} ${item.fix.path}`)
+		}));
+		const outcomes = await runHighcharts(cases.flatMap(({ config, after }) => [{ config }, { config: after }]));
+		cases.forEach(({ entry, fix, report, resolves, config, after, options }, index) => {
+			const [before, fixed] = [outcomes[2 * index], outcomes[2 * index + 1]];
+			const where = `${entry.name} ${fix.path}`;
+			assert.equal(verdictOf(fixed), 'accepted', `${where}: ${JSON.stringify(fixed.messages)}`);
+			checkPremises(
+				cleared(report, resolves),
+				builtHighcharts(before.observed, config, options),
+				builtHighcharts(fixed.observed, after, options),
+				where
+			);
+		});
+	}
+);
 
 test('the before/after examples: one per fixable rule and library that can express it, each exactly what the adapter reports and applies', () => {
-	const expressible = { 'data-not-described': ['echarts', 'highcharts'], 'keyboard-disabled': ['highcharts'], 'percent-without-unit': ['highcharts'] };
+	const expressible = {
+		'data-not-described': ['echarts', 'highcharts'],
+		'keyboard-disabled': ['highcharts'],
+		'percent-without-unit': ['highcharts']
+	};
 	for (const { id, fix } of RULE_CATALOG) {
 		const libraries = fix.offered ? (expressible[id] ?? Object.keys(LIBRARIES)) : [];
 		assert.deepEqual(
-			EXAMPLES.filter(({ rule }) => rule === id).map(({ library }) => library).sort(),
+			EXAMPLES.filter(({ rule }) => rule === id)
+				.map(({ library }) => library)
+				.sort(),
 			[...libraries].sort(),
 			id
 		);
@@ -154,8 +186,15 @@ test('the before/after examples: one per fixable rule and library that can expre
 	for (const { name, rule, library, before, findings, after } of EXAMPLES) {
 		assert.equal(name, `${rule}.${library}.json`);
 		const report = LIBRARIES[library].analyze(before);
-		assert.deepEqual(report.diagnostics.map(({ code, path, fix }) => ({ code, path, fix })), findings, name);
-		assert.ok(findings.some(({ code }) => code === CODE_OF.get(rule)), name);
+		assert.deepEqual(
+			report.diagnostics.map(({ code, path, fix }) => ({ code, path, fix })),
+			findings,
+			name
+		);
+		assert.ok(
+			findings.some(({ code }) => code === CODE_OF.get(rule)),
+			name
+		);
 		const edits = fixesOf(report);
 		assert.equal(edits.length, 1, `${name}: one edit`);
 		assert.deepEqual(checkFix({ library, config: before }, edits[0], name), after, name);
@@ -164,8 +203,11 @@ test('the before/after examples: one per fixable rule and library that can expre
 });
 
 test('the examples on the runtimes: before draws what the rule is about, after does not', browser, async () => {
-	for (const { name, library, before, after, findings } of EXAMPLES.filter((example) => example.library !== 'highcharts')) {
-		for (const config of [before, after]) assert.equal(verdictOf(LIBRARIES[library].render(copyPlain(config))), 'accepted', name);
+	for (const { name, library, before, after, findings } of EXAMPLES.filter(
+		(example) => example.library !== 'highcharts'
+	)) {
+		for (const config of [before, after])
+			assert.equal(verdictOf(LIBRARIES[library].render(copyPlain(config))), 'accepted', name);
 		const codes = [...new Set(findings.map(({ code }) => code))];
 		if (library === 'chartjs') checkPremises(codes, builtChartjs(before), builtChartjs(after), name);
 		else {
@@ -175,10 +217,13 @@ test('the examples on the runtimes: before draws what the rule is about, after d
 		}
 	}
 	const highcharts = EXAMPLES.filter((example) => example.library === 'highcharts');
-	const outcomes = await runHighcharts(highcharts.flatMap(({ before, after }) => [{ config: before }, { config: after }]));
+	const outcomes = await runHighcharts(
+		highcharts.flatMap(({ before, after }) => [{ config: before }, { config: after }])
+	);
 	highcharts.forEach(({ name, before, after, findings }, index) => {
 		const [drawn, fixed] = [outcomes[2 * index], outcomes[2 * index + 1]];
-		for (const outcome of [drawn, fixed]) assert.equal(verdictOf(outcome), 'accepted', `${name}: ${JSON.stringify(outcome.messages)}`);
+		for (const outcome of [drawn, fixed])
+			assert.equal(verdictOf(outcome), 'accepted', `${name}: ${JSON.stringify(outcome.messages)}`);
 		const codes = [...new Set(findings.map(({ code }) => code))];
 		checkPremises(codes, builtHighcharts(drawn.observed, before), builtHighcharts(fixed.observed, after), name);
 	});

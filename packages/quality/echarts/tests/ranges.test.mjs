@@ -56,6 +56,36 @@ test('a fitted range claims nothing where the config does not ask for it or the 
 	assert.equal(fit(bars([20, 60], { scale: true, splitNumber: 2 })), '? unmodelled $.yAxis.scale');
 });
 
+test('a series a legend may hide is not in the data range: echarts filters it out before the axis fits (K11)', () => {
+	const low = { type: 'line', name: 'Low', data: [1, 2] };
+	const withLegend = (legend) => bars([60, 70], { scale: true }, { more: [low], root: { legend } });
+	assert.equal(fit(withLegend({})), 'included config $.yAxis.scale');
+	assert.equal(fit(withLegend({ selected: { Low: true, Other: false } })), 'included config $.yAxis.scale');
+	assert.equal(fit(withLegend({ selected: { Low: false } })), '? unmodelled $.yAxis.scale');
+	// Any legend that leaves it unselected hides it, with any falsy value.
+	assert.equal(fit(withLegend([{}, { selected: { Low: 0 } }])), '? unmodelled $.yAxis.scale');
+	// A single-select legend shows one series only.
+	assert.equal(fit(withLegend({ selectedMode: 'single' })), '? unmodelled $.yAxis.scale');
+	assert.equal(fit(withLegend({ selectedMode: true })), 'included config $.yAxis.scale');
+	// A series without a name is listed as `series\0` and its index.
+	const unnamed = bars(
+		[60, 70],
+		{ scale: true },
+		{ more: [{ type: 'line', data: [1, 2] }], root: { legend: { selected: { 'series\u00001': false, Low: false } } } }
+	);
+	assert.equal(fit(unnamed), '? unmodelled $.yAxis.scale');
+	assert.equal(
+		fit({ ...unnamed, legend: { selected: { 'series\u00000': true, Low: false } } }),
+		'included config $.yAxis.scale'
+	);
+	const hidden = Object.defineProperty({}, 'Low', { get: () => false, enumerable: true });
+	assert.equal(fit(withLegend({ selected: hidden })), '? accessor $.yAxis.scale');
+	assert.equal(
+		fit(withLegend(Object.defineProperty({}, 'selected', { get: () => ({}), enumerable: true }))),
+		'? accessor $.yAxis.scale'
+	);
+});
+
 test('base: bars grow from the startValue of their value axis, zero by default; reported once per axis', () => {
 	const bases = (config) => normalize(config).series.items.map(({ base }) => brief(base));
 	assert.deepEqual(bases(bars([60])), ['0 default $.yAxis.startValue']);

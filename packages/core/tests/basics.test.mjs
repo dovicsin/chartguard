@@ -100,3 +100,15 @@ test('a path reads back into the keys and indices keySegment wrote', async () =>
 	for (const malformed of ['series', '$.', '$[x]', '$.a..b', '$["unterminated]'])
 		assert.equal(pathSegments(malformed), undefined, malformed);
 });
+
+test('only the one spelling keySegment writes is a path: never a thrown error, never a second name for a place (K15)', async () => {
+	const { pathSegments } = await import('../dist/index.js');
+	// An escape JSON does not know, or a raw control character: not a path, not a SyntaxError.
+	for (const malformed of [String.raw`$["\x"]`, String.raw`$["\u12"]`, `$["a${'\u0001'}"]`])
+		assert.equal(pathSegments(malformed), undefined, malformed);
+	// `[01]` and `[1]` would name one place twice; so would `["a"]` and `.a`, or an escaped spelling.
+	for (const second of ['$[01]', '$[00]', '$["a"]', String.raw`$["\u0061 b"]`, '$[9007199254740993]'])
+		assert.equal(pathSegments(second), undefined, second);
+	assert.deepEqual(pathSegments('$[0][10]["a b"]'), [0, 10, 'a b']);
+	assert.deepEqual(pathSegments(String.raw`$["\u0001"]`), ['\u0001']);
+});

@@ -8,7 +8,11 @@ export const SCALE_CASES = [
 		kind: 'triggers',
 		chartjs: { config: cjBars([60, 70], { min: 50 }), findings: ['VIS_BAR_BASELINE $.options.scales.y.min'] },
 		echarts: { config: ecBars([60, 70], { min: 50 }), findings: ['VIS_BAR_BASELINE $.yAxis.min'] },
-		highcharts: { config: hcBars([60, 70], { min: 50 }), findings: ['VIS_BAR_BASELINE $.yAxis.min'] }
+		// Highcharts rounds a y axis bound to a tick unless startOnTick is off (H7).
+		highcharts: {
+			config: hcBars([60, 70], { min: 50, startOnTick: false }),
+			findings: ['VIS_BAR_BASELINE $.yAxis.min']
+		}
 	},
 	{
 		name: 'counterexample: a negative minimum keeps zero in range, bars start from zero',
@@ -24,7 +28,10 @@ export const SCALE_CASES = [
 		kind: 'triggers',
 		chartjs: { config: cjBars([-60, -70], { max: -50 }), findings: ['VIS_BAR_BASELINE $.options.scales.y.max'] },
 		echarts: { config: ecBars([-60, -70], { max: -50 }), findings: ['VIS_BAR_BASELINE $.yAxis.max'] },
-		highcharts: { config: hcBars([-60, -70], { max: -50 }), findings: ['VIS_BAR_BASELINE $.yAxis.max'] }
+		highcharts: {
+			config: hcBars([-60, -70], { max: -50, endOnTick: false }),
+			findings: ['VIS_BAR_BASELINE $.yAxis.max']
+		}
 	},
 	{
 		name: 'bars on an axis starting at the data minimum',
@@ -33,12 +40,22 @@ export const SCALE_CASES = [
 		echarts: { config: ecBars([60, 70], { min: 'dataMin' }), findings: ['VIS_BAR_BASELINE $.yAxis.min'] }
 	},
 	{
+		name: 'counterexample: an axis starting at the data minimum, below zero: the bars grow from zero',
+		rule: 'bar-baseline',
+		kind: 'counterexample',
+		// A fix to `min: 0` would cut the negative bar off (H8).
+		echarts: { config: ecBars([-5, 10], { min: 'dataMin' }), findings: [] }
+	},
+	{
 		name: 'counterexample: a line on an axis starting above zero',
 		rule: 'bar-baseline',
 		kind: 'counterexample',
 		chartjs: { config: { ...cjBars([60, 70], { min: 50 }), type: 'line' }, findings: [] },
 		echarts: { config: { ...ecBars([60, 70], { min: 50 }), series: [{ type: 'line', data: [60, 70] }] }, findings: [] },
-		highcharts: { config: { ...hcBars([60, 70], { min: 50 }), chart: { type: 'line' } }, findings: [] }
+		highcharts: {
+			config: { ...hcBars([60, 70], { min: 50, startOnTick: false }), chart: { type: 'line' } },
+			findings: []
+		}
 	},
 	{
 		name: 'bars on a logarithmic axis',
@@ -128,6 +145,52 @@ export const SCALE_CASES = [
 		}
 	},
 	{
+		name: 'counterexample: two value axes, each in a panel of its own',
+		rule: 'dual-axis',
+		kind: 'counterexample',
+		// The layout the rule's message asks for: separate panels sharing the index axis (H9).
+		chartjs: {
+			config: {
+				type: 'bar',
+				data: {
+					labels: LABELS,
+					datasets: [
+						{ label: 'Revenue', data: [5, 7] },
+						{ type: 'line', label: 'Margin', data: [20, 25], yAxisID: 'y1' }
+					]
+				},
+				options: { scales: { y: { stack: 'panels' }, y1: { stack: 'panels', offset: true } } }
+			},
+			findings: []
+		},
+		echarts: {
+			config: {
+				grid: [{ bottom: '55%' }, { top: '55%' }],
+				xAxis: [
+					{ type: 'category', data: LABELS, gridIndex: 0 },
+					{ type: 'category', data: LABELS, gridIndex: 1 }
+				],
+				yAxis: [{ gridIndex: 0 }, { gridIndex: 1 }],
+				series: [
+					{ type: 'bar', data: [5, 7] },
+					{ type: 'line', data: [20, 25], xAxisIndex: 1, yAxisIndex: 1 }
+				]
+			},
+			findings: []
+		},
+		highcharts: {
+			config: {
+				xAxis: { categories: LABELS },
+				yAxis: [{ height: '45%' }, { top: '55%', height: '45%', offset: 0 }],
+				series: [
+					{ type: 'column', data: [5, 7] },
+					{ type: 'line', data: [20, 25], yAxis: 1 }
+				]
+			},
+			findings: []
+		}
+	},
+	{
 		name: 'counterexample: two series on one value axis',
 		rule: 'dual-axis',
 		kind: 'counterexample',
@@ -156,55 +219,5 @@ export const SCALE_CASES = [
 			},
 			findings: []
 		}
-	},
-	{
-		name: 'a negative value in a pie',
-		rule: 'pie-negative',
-		kind: 'triggers',
-		chartjs: {
-			config: { type: 'pie', data: { labels: ['a', 'b', 'c'], datasets: [{ data: [3, -1, 2] }] } },
-			findings: ['VIS_PIE_NEGATIVE $.data.datasets[0].data[1]']
-		},
-		echarts: {
-			config: {
-				series: [
-					{
-						type: 'pie',
-						data: [
-							{ name: 'a', value: 3 },
-							{ name: 'b', value: -1 },
-							{ name: 'c', value: 2 }
-						]
-					}
-				]
-			},
-			findings: ['VIS_PIE_NEGATIVE $.series[0].data[1].value']
-		},
-		highcharts: {
-			config: {
-				series: [
-					{
-						type: 'pie',
-						data: [
-							['a', 3],
-							['b', -1],
-							['c', 2]
-						]
-					}
-				]
-			},
-			findings: ['VIS_PIE_NEGATIVE $.series[0].data[1][1]']
-		}
-	},
-	{
-		name: 'counterexample: a pie of positive values and a zero',
-		rule: 'pie-negative',
-		kind: 'counterexample',
-		chartjs: {
-			config: { type: 'pie', data: { labels: ['a', 'b', 'c'], datasets: [{ data: [3, 0, 2] }] } },
-			findings: []
-		},
-		echarts: { config: { series: [{ type: 'pie', data: [3, 0, 2] }] }, findings: [] },
-		highcharts: { config: { series: [{ type: 'pie', data: [3, 0, 2] }] }, findings: [] }
 	}
 ];

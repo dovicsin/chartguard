@@ -147,3 +147,68 @@ test('tiers are checked: an unknown tier is an artifact problem, an authoritativ
 		'$.root.properties.a.provenance: unknown confidence "sure"'
 	]);
 });
+
+test('a member of a nested or merged union keeps its tier: the finding is as strong as the weakest member it rests on (H5)', () => {
+	const run = (root, value) =>
+		validateConfig(value, { library: 't', version: '1', coverage: 'partial', source: 't', root }).diagnostics.map(
+			(d) => `${d.severity} ${d.confidence} ${d.code} ${d.path}`
+		);
+	const likely = { kind: 'union', anyOf: [s.string(['top', 'bottom'])], inferred: true };
+	// A likely nested union flattened into its parent stays likely.
+	assert.deepEqual(run({ kind: 'union', anyOf: [likely, s.number()] }, 'middle'), ['warning inferred CFG_ENUM $']);
+	assert.deepEqual(run({ kind: 'union', anyOf: [likely, s.number()] }, true), ['warning inferred CFG_TYPE $']);
+	// Merged same-kind members: a likely one makes the merged enum likely.
+	const merged = { kind: 'union', anyOf: [{ ...s.string(['top']), inferred: true }, s.string(['left'])] };
+	assert.deepEqual(run(merged, 'middle'), ['warning inferred CFG_ENUM $']);
+	const arrays = { kind: 'union', anyOf: [{ ...s.array(s.number()), inferred: true }, s.array(s.string())] };
+	assert.deepEqual(run(arrays, [true]), ['warning inferred CFG_TYPE $[0]']);
+	// A mismatch rests on every member's kind.
+	assert.deepEqual(run({ kind: 'union', anyOf: [{ ...s.number(), inferred: true }, s.string()] }, true), [
+		'warning inferred CFG_TYPE $'
+	]);
+	// Authoritative members alone stay confirmed.
+	assert.deepEqual(run({ kind: 'union', anyOf: [s.string(['top']), s.number()] }, 'middle'), [
+		'error certain CFG_ENUM $'
+	]);
+	// A confirmed wide member never subsumes a likely narrow one, nested or not.
+	const wide = s.object({ a: { kind: 'union', anyOf: [s.number(), s.string()] } });
+	const narrow = { kind: 'union', anyOf: [s.object({ a: s.number() })], inferred: true };
+	assert.deepEqual(run({ kind: 'union', anyOf: [wide, s.object({ a: s.number() })] }, { a: true }), [
+		'error certain CFG_TYPE $.a'
+	]);
+	assert.deepEqual(run({ kind: 'union', anyOf: [wide, narrow] }, { a: true }), ['info unknown CFG_AMBIGUOUS $']);
+});
+
+test('a likely wrapper the lowering adds around a recursive reference keeps its tier once nested (H5, A31)', () => {
+	// The reference to Tree is reached while Tree is lowered: its tier is a one-member union around it.
+	const Tree = closed({
+		kind: prop({
+			kind: 'union',
+			anyOf: [
+				{ kind: 'literal', value: 'leaf' },
+				{ kind: 'literal', value: 'node' }
+			]
+		}),
+		child: prop({ kind: 'union', anyOf: [{ kind: 'ref', ref: 'Tree', provenance: tier('derived') }, { kind: 'null' }] })
+	});
+	const { manifest } = lowerArtifact(artifact({ kind: 'ref', ref: 'Tree' }, { definitions: { Tree } }));
+	assert.deepEqual(report(manifest, { kind: 'leaf', child: { kind: 'x' } }), [
+		'warning inferred CFG_ENUM $.child.kind'
+	]);
+	assert.deepEqual(report(manifest, { kind: 'leaf', child: null }), []);
+});
+
+test('a plugin handler on a nested union is kept on the member it covers', () => {
+	const handledBy = { id: 'runtime', name: 'title', enforced: true };
+	const handled = { kind: 'union', anyOf: [s.object({ text: s.string() })], handledBy };
+	const root = { kind: 'union', anyOf: [handled, s.number()] };
+	const result = validateConfig(
+		{ text: 'a' },
+		{ library: 't', version: '1', coverage: 'partial', source: 't', root },
+		{ registries: { runtime: { names: [], complete: true } } }
+	);
+	assert.deepEqual(
+		result.diagnostics.map((d) => `${d.code} ${d.path}`),
+		['CFG_UNREGISTERED $']
+	);
+});

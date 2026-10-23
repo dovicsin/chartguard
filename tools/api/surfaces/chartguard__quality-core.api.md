@@ -15,6 +15,7 @@ interface AxisSemantics {
     readonly max: Fact<number | 'data'>;
     readonly fit: Fact<ZeroFit>;
     readonly unit: Fact<string>;
+    readonly panel: Fact<string>;
     readonly reversed: Fact<boolean>;
     readonly title: TitleSemantics;
 }

@@ -1,5 +1,7 @@
 import ts from 'typescript';
 
+import { unwrapped } from './literals.js';
+
 export type Binding = 'const' | 'let' | 'var';
 
 /** `const` and `using` bindings cannot be reassigned; their initializer is their value for the whole program. */
@@ -15,10 +17,10 @@ function isVarScope(node: ts.Node): boolean {
 }
 
 /** `eval(…)` and `(eval)(…)` are direct; `(0, eval)(…)` is not and runs in the global scope. */
-function isDirectEval(node: ts.Node): boolean {
+export function isDirectEval(node: ts.Node): boolean {
 	if (!ts.isCallExpression(node)) return false;
-	let callee: ts.Expression = node.expression;
-	while (ts.isParenthesizedExpression(callee)) callee = callee.expression;
+	// `(eval)(…)` and `(eval as any)(…)` are emitted as `eval(…)`; `(0, eval)(…)` is a comma expression.
+	const callee = unwrapped(node.expression);
 	return ts.isIdentifier(callee) && callee.text === 'eval';
 }
 

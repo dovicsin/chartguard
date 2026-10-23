@@ -53,6 +53,20 @@ const REVERSE: Default<boolean> = {
 	pointer: 'chart.js@4.5.1 dist/chunks/helpers.dataset.js:934 reverse: false,'
 };
 
+/**
+ * Scales without a `stack` share the chart area; scales with one are laid out in bands, one after the
+ * other (`buildStacks`, which skips a box without a stack): each such scale is a panel of its own.
+ */
+const UNSTACKED: Default<string> = {
+	value: 'chart',
+	pointer: 'chart.js@4.5.1 dist/chart.js:2923 if (!stack || !STATIC_POSITIONS.includes(pos)) {'
+};
+
+function panelOf(config: unknown, path: readonly string[], key: string): Fact<string> {
+	const stack = readFact(config, [...path, 'stack'], isString, UNSTACKED);
+	return stack.known && stack.source === 'config' ? { ...stack, value: `stack:${stack.value}:${key}` } : stack;
+}
+
 /** A linear scale labels its ticks with plain numbers unless a callback formats them. */
 const NUMERIC: Default<string> = {
 	value: '',
@@ -123,6 +137,7 @@ function axisOf(config: unknown, key: string, axis: Axis | undefined, chart: Dat
 		max: readFact(config, [...path, 'max'], isNumber),
 		fit: fitOf(config, key, scale, chart),
 		unit: unitOf(config, path, scale),
+		panel: panelOf(config, path, key),
 		reversed: readFact(config, [...path, 'reverse'], isBoolean, REVERSE),
 		title: {
 			text: asText(readFact(config, [...path, 'title', 'text'], isText, TITLE_TEXT)),

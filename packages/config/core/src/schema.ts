@@ -84,6 +84,8 @@ export interface NodeSchema {
 	readonly inferred?: true;
 	/** Object: a `null` optional property counts as absent (the runtime reads options with `pick()`, Highcharts). */
 	readonly nullAsAbsent?: boolean;
+	/** A platform object of this class; a plain object is never one (see `ObjectNode.host`). */
+	readonly host?: string;
 	/** Object: schema for keys not listed in `properties` (a record of caller-chosen keys). */
 	readonly values?: NodeSchema;
 	/** Union members; a value is checked against the member matching its runtime kind. */
@@ -94,6 +96,8 @@ export interface NodeSchema {
 	readonly defaultVariant?: number;
 	/** Union: conditional defaults for an absent discriminator; the first rule that passes wins. */
 	readonly defaultWhen?: readonly DefaultChoice[];
+	/** Union: rules applied before the discriminator; the first that passes selects its variant. */
+	readonly selectWhen?: readonly DefaultChoice[];
 	/** Union: when no `defaultWhen` rule passes, the variant a value elsewhere in the config names. */
 	readonly defaultFrom?: DefaultFrom;
 	/** Union: unknown discriminator values may be registered by plugins, so they are not errors. */

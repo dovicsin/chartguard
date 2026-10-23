@@ -19,12 +19,14 @@ interface Cursor {
 	readonly depth: number;
 	/** A schema fact on the way here is not authoritative: findings below are likely, not confirmed (CG-02-07). */
 	readonly inferred: boolean;
+	/** The unions already choosing a variant for the value here: one reached again would choose without end (H6). */
+	readonly choosing?: ReadonlySet<NodeSchema>;
 }
 
 const ROOT: Cursor = { path: '$', depth: 0, inferred: false };
 
-function descend(cursor: Cursor, segment: string): Cursor {
-	return { ...cursor, path: `${cursor.path}${segment}`, depth: cursor.depth + 1 };
+function descend({ path, depth, inferred }: Cursor, segment: string): Cursor {
+	return { path: `${path}${segment}`, depth: depth + 1, inferred };
 }
 
 /** The cursor at `schema`: inferred from there on when the schema's own facts are. */
@@ -72,14 +74,46 @@ export class ConfigWalker {
 	walk(value: unknown, schema: NodeSchema, from: Cursor = ROOT): void {
 		if (from.depth === 0) this.root = value;
 		const cursor = at(from, schema);
-		if (this.stops(cursor) || this.unhandled(schema, cursor)) return;
+		if (this.skips(value, schema, cursor)) return;
 		if (schema.kind === 'union') {
-			const context = { registries: this.registries, root: this.root, extensions: this.manifest.extensions };
-			this.walkUnion(value, selectVariant(value, schema, context), cursor);
+			this.select(value, schema, cursor);
 			return;
 		}
 		if (schema.kind === 'any' || !this.matchesShape(value, schema, cursor)) return;
 		if (isContainer(value)) this.walkContainer(value, schema, cursor);
+	}
+
+	/**
+	 * A value not checked here: in an incomplete input `undefined` is what could not be extracted,
+	 * unknown and never a wrong type (A2); past the limits; or an option whose handler is missing.
+	 */
+	private skips(value: unknown, schema: NodeSchema, cursor: Cursor): boolean {
+		if (value === undefined && this.options.incomplete === true) return true;
+		return this.stops(cursor) || this.unhandled(schema, cursor);
+	}
+
+	/** The union member that applies, walked; a claim resting on a likely member is likely (H5). */
+	private select(value: unknown, union: NodeSchema, cursor: Cursor): void {
+		if (cursor.choosing?.has(union) === true) {
+			this.report(
+				cursor,
+				inconclusive(
+					'CFG_AMBIGUOUS',
+					cursor.path,
+					'The schema chooses this variant in a loop; its contents are not checked.'
+				)
+			);
+			return;
+		}
+		const context = { registries: this.registries, root: this.root, extensions: this.manifest.extensions };
+		const selection = selectVariant(value, union, context);
+		// Only a union chosen as the variant is walked again for the same value.
+		const again = selection.kind === 'variant' && selection.schema.kind === 'union';
+		this.walkUnion(value, selection, {
+			...cursor,
+			...(again ? { choosing: new Set(cursor.choosing).add(union) } : {}),
+			...(selection.inferred === true ? { inferred: true } : {})
+		});
 	}
 
 	private walkUnion(value: unknown, selection: Selection, cursor: Cursor): void {

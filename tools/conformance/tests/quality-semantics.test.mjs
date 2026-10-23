@@ -19,17 +19,43 @@ import { runHighcharts } from '../lib/highcharts.mjs';
 const known = (fact) => (fact.known ? fact.value : undefined);
 
 for (const entry of SEMANTICS_CONTRACT)
-	for (const [library, normalize] of [['chartjs', normalizeChartjs], ['echarts', normalizeEcharts], ['highcharts', normalizeHighcharts]])
-		test(`quality semantics, ${library}: ${entry.name}`, () => assert.deepEqual(summarize(normalize(entry[library])), entry.semantics));
+	for (const [library, normalize] of [
+		['chartjs', normalizeChartjs],
+		['echarts', normalizeEcharts],
+		['highcharts', normalizeHighcharts]
+	])
+		test(`quality semantics, ${library}: ${entry.name}`, () =>
+			assert.deepEqual(summarize(normalize(entry[library])), entry.semantics));
 
 /** Chart.js configs whose scale binding has a runtime rule of its own, beyond the contract. */
 const CHARTJS_BINDINGS = [
 	{ type: 'bar', data: { datasets: [{ data: [1] }] }, options: { scales: { y1: { position: 'right' } } } },
-	{ type: 'bar', data: { datasets: [{ data: [1] }] }, options: { scales: { amount: { axis: 'y' }, top: { position: 'top' } } } },
-	{ type: 'bar', data: { datasets: [{ data: [1] }, { data: [2], yAxisID: 'money' }] }, options: { scales: { money: {} } } },
+	{
+		type: 'bar',
+		data: { datasets: [{ data: [1] }] },
+		options: { scales: { amount: { axis: 'y' }, top: { position: 'top' } } }
+	},
+	{
+		type: 'bar',
+		data: { datasets: [{ data: [1] }, { data: [2], yAxisID: 'money' }] },
+		options: { scales: { money: {} } }
+	},
 	{ type: 'bar', data: { datasets: [{ data: [1], yAxisID: 'first' }, { data: [2] }] } },
-	{ type: 'bar', data: { datasets: [{ data: [1], indexAxis: 'y' }, { data: [2] }] }, options: { scales: { x: { stacked: true } } } },
-	{ type: 'line', data: { datasets: [{ data: [1], stack: 'a' }, { data: [2], fill: 'origin' }] }, options: { elements: { line: { fill: false } } } },
+	{
+		type: 'bar',
+		data: { datasets: [{ data: [1], indexAxis: 'y' }, { data: [2] }] },
+		options: { scales: { x: { stacked: true } } }
+	},
+	{
+		type: 'line',
+		data: {
+			datasets: [
+				{ data: [1], stack: 'a' },
+				{ data: [2], fill: 'origin' }
+			]
+		},
+		options: { elements: { line: { fill: false } } }
+	},
 	{ type: 'radar', data: { labels: ['a'], datasets: [{ data: [1] }] } }
 ];
 
@@ -42,9 +68,11 @@ test('Chart.js: every known binding, orientation, stacking and area is what the 
 				const meta = chart.getDatasetMeta(index);
 				const where = `${JSON.stringify(config)} dataset ${String(index)}`;
 				if (valueAxis.known) assert.equal(valueAxis.value, meta.vScale.id, where);
-				if (orientation.known) assert.equal(orientation.value, meta.iScale.axis === 'x' ? 'vertical' : 'horizontal', where);
+				if (orientation.known)
+					assert.equal(orientation.value, meta.iScale.axis === 'x' ? 'vertical' : 'horizontal', where);
 				if (stacking.known) assert.equal(stacking.value, meta._stacked ? 'stacked' : 'none', where);
-				if (known(kind) === 'area' || known(kind) === 'line') assert.equal(known(kind) === 'area', meta.dataset.options.fill !== false, where);
+				if (known(kind) === 'area' || known(kind) === 'line')
+					assert.equal(known(kind) === 'area', meta.dataset.options.fill !== false, where);
 			});
 		} finally {
 			chart.destroy();
@@ -53,7 +81,14 @@ test('Chart.js: every known binding, orientation, stacking and area is what the 
 });
 
 const ECHARTS_CASES = [
-	{ xAxis: [{ type: 'category', data: ['a'] }], yAxis: [{}, { id: 'right' }], series: [{ type: 'line', yAxisId: 'right', data: [1] }, { type: 'bar', stack: '', data: [1] }] },
+	{
+		xAxis: [{ type: 'category', data: ['a'] }],
+		yAxis: [{}, { id: 'right' }],
+		series: [
+			{ type: 'line', yAxisId: 'right', data: [1] },
+			{ type: 'bar', stack: '', data: [1] }
+		]
+	},
 	{ xAxis: { data: ['a'] }, yAxis: {}, series: [{ type: 'line', areaStyle: null, data: [1] }] },
 	{ xAxis: {}, yAxis: { data: ['a'] }, series: [{ type: 'bar', data: [1] }] }
 ];
@@ -81,7 +116,8 @@ const builtEcharts = (model) => ({
 function agree({ kind, coordinateSystem, orientation, valueAxis, stacking }, built, where) {
 	for (const [name, fact] of Object.entries({ coordinateSystem, orientation, valueAxis, stacking }))
 		if (fact.known) assert.equal(fact.value, built[name], `${where} ${name}`);
-	if (known(kind) === 'area' || known(kind) === 'line') assert.equal(known(kind) === 'area', built.area, `${where} kind`);
+	if (known(kind) === 'area' || known(kind) === 'line')
+		assert.equal(known(kind) === 'area', built.area, `${where} kind`);
 }
 
 test('ECharts: every known binding, orientation, stacking and area is what the runtime builds', () => {
@@ -91,7 +127,9 @@ test('ECharts: every known binding, orientation, stacking and area is what the r
 		try {
 			chart.setOption(copyPlain(option));
 			const models = chart.getModel().getSeries();
-			series.items.forEach((semantics, index) => agree(semantics, builtEcharts(models[index]), `${JSON.stringify(option)} series ${String(index)}`));
+			series.items.forEach((semantics, index) =>
+				agree(semantics, builtEcharts(models[index]), `${JSON.stringify(option)} series ${String(index)}`)
+			);
 		} finally {
 			chart.dispose();
 		}
@@ -99,9 +137,22 @@ test('ECharts: every known binding, orientation, stacking and area is what the r
 });
 
 const HIGHCHARTS_CASES = [
-	{ chart: { inverted: false }, series: [{ type: 'line', data: [1] }, { type: 'bar', data: [2] }] },
+	{
+		chart: { inverted: false },
+		series: [
+			{ type: 'line', data: [1] },
+			{ type: 'bar', data: [2] }
+		]
+	},
 	{ chart: { polar: true }, series: [{ type: 'column', data: [1, 2] }] },
-	{ yAxis: [{}, { id: 'r' }], plotOptions: { column: { stacking: 'percent' } }, series: [{ type: 'column', yAxis: 'r', data: [1] }, { type: 'line', data: [2] }] }
+	{
+		yAxis: [{}, { id: 'r' }],
+		plotOptions: { column: { stacking: 'percent' } },
+		series: [
+			{ type: 'column', yAxis: 'r', data: [1] },
+			{ type: 'line', data: [2] }
+		]
+	}
 ];
 const browser = { skip: browserSkipReason() ?? false };
 
@@ -111,13 +162,16 @@ test('Highcharts: every known binding, orientation and stacking is what the char
 	configs.forEach((config, position) => {
 		const { observed, threw } = outcomes[position];
 		assert.equal(threw, undefined);
-		normalizeHighcharts(config).series.items.forEach(({ valueAxis, orientation, stacking, coordinateSystem }, index) => {
-			const built = observed.series[index];
-			const where = `${JSON.stringify(config)} series ${String(index)}`;
-			if (coordinateSystem.known) assert.equal(coordinateSystem.value === 'polar', observed.polar, where);
-			if (orientation.known) assert.equal(orientation.value === 'horizontal', observed.inverted, where);
-			if (valueAxis.known) assert.equal(valueAxis.value, `yAxis[${String(built.yAxis)}]`, where);
-			if (stacking.known) assert.equal(stacking.value, { normal: 'stacked', percent: 'percent' }[built.stacking] ?? 'none', where);
-		});
+		normalizeHighcharts(config).series.items.forEach(
+			({ valueAxis, orientation, stacking, coordinateSystem }, index) => {
+				const built = observed.series[index];
+				const where = `${JSON.stringify(config)} series ${String(index)}`;
+				if (coordinateSystem.known) assert.equal(coordinateSystem.value === 'polar', observed.polar, where);
+				if (orientation.known) assert.equal(orientation.value === 'horizontal', observed.inverted, where);
+				if (valueAxis.known) assert.equal(valueAxis.value, `yAxis[${String(built.yAxis)}]`, where);
+				if (stacking.known)
+					assert.equal(stacking.value, { normal: 'stacked', percent: 'percent' }[built.stacking] ?? 'none', where);
+			}
+		);
 	});
 });

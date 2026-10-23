@@ -22,8 +22,11 @@ class SyntaxProblem extends Error {
 	}
 }
 
-const WHITESPACE = /\s/;
-const SCALAR = /^(?:"(?:[^"\\\u0000-\u001f]|\\.)*"|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)/;
+/** JSON whitespace: space, tab, line feed and carriage return only, not every Unicode space (H13). */
+const WHITESPACE = /[ \t\n\r]/;
+/** A string with only the escapes JSON knows, a number, `true`, `false` or `null`. */
+const SCALAR =
+	/^(?:"(?:[^"\\\u0000-\u001f]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)/;
 
 /** A strict JSON reader that keeps the position of every value; it reports the first syntax error. */
 class Reader {
@@ -122,7 +125,9 @@ export function parseJson(text: string): Parsed {
  */
 export function pathSegments(path: string): (string | number)[] {
 	const segments: (string | number)[] = [];
-	for (const [, key, index, quoted] of path.slice(1).matchAll(/\.([A-Za-z_$][\w$]*)|\[(\d+)(?:\.\.\d+)?\]|\[("(?:[^"\\]|\\.)*")\]/g)) {
+	for (const [, key, index, quoted] of path
+		.slice(1)
+		.matchAll(/\.([A-Za-z_$][\w$]*)|\[(\d+)(?:\.\.\d+)?\]|\[("(?:[^"\\]|\\.)*")\]/g)) {
 		if (index !== undefined) segments.push(Number(index));
 		else segments.push(quoted === undefined ? (key ?? '') : (JSON.parse(quoted) as string));
 	}

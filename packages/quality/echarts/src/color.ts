@@ -34,9 +34,26 @@ function paletteOf(config: unknown): Fact<readonly KnownFact<string>[]> {
 	};
 }
 
-/** A series' own colour, `itemStyle.color` (the style path of bar, line and scatter series alike). */
+/**
+ * Where a series type keeps the colour the palette would give it (`visualStyleAccessPath`, and the key
+ * its `visualDrawType` maps to): `itemStyle.color` by default; a lines or parallel series' `lineStyle`
+ * (dist/echarts.js:69261, :64299), a boxplot's border (`visualDrawType = 'stroke'`, :67243) (K8).
+ */
+const OWN_COLOR: Readonly<Record<string, readonly string[]>> = {
+	lines: ['lineStyle', 'color'],
+	parallel: ['lineStyle', 'color'],
+	boxplot: ['itemStyle', 'borderColor']
+};
+
+/** A series' own colour, where its type keeps it; a type that cannot be read is not known. */
 function ownColor(config: unknown, item: Item): Fact<unknown> {
-	return readFact(config, [...item.segments, 'itemStyle', 'color'], isSet);
+	const type = readFact(config, [...item.segments, 'type'], isString);
+	if (!type.known)
+		return unknown(
+			formatPath([...item.segments, 'itemStyle', 'color']),
+			type.reason === 'unset' ? 'unmodelled' : type.reason
+		);
+	return readFact(config, [...item.segments, ...(OWN_COLOR[type.value] ?? ['itemStyle', 'color'])], isSet);
 }
 
 /** A series' own palette (`series.color`, a list or one colour): its first colour. */

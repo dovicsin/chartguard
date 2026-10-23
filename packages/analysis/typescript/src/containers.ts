@@ -43,7 +43,7 @@ class ObjectReader {
 	add(property: ts.ObjectLiteralElementLike): void {
 		if (ts.isSpreadAssignment(property)) this.spread(property);
 		else if (ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property)) this.named(property);
-		else this.unknownKeys(property, 'expression');
+		else this.member(property);
 	}
 
 	result(node: ts.ObjectLiteralExpression): Decoded {
@@ -51,15 +51,34 @@ class ObjectReader {
 		return { value: this.target, complete: this.complete, trace: { node, entries: this.entries, ...open } };
 	}
 
-	/** A method, an accessor or a computed key: some key may exist that this reader does not know. */
+	/** Some key may exist that this reader does not know. */
 	private unknownKeys(property: ts.Node, reason: UnknownReason): void {
 		this.complete = false;
 		this.open = { node: property, reason };
 	}
 
+	/**
+	 * A method or an accessor: its key holds a function or a getter, not a value read here, and it
+	 * replaces what an earlier property set under that key (A9). With a computed name it may be any key.
+	 */
+	private member(property: ts.ObjectLiteralElementLike): void {
+		const key = property.name === undefined ? undefined : staticKey(property.name);
+		if (key === undefined) this.restart(property, 'computed-key');
+		else this.forget(key);
+		this.unknownKeys(property, 'expression');
+	}
+
+	/** A key replaced by something unknown: neither its value nor its trace is known any more. */
+	private forget(key: string): void {
+		Reflect.deleteProperty(this.target, key);
+		this.entries.delete(key);
+	}
+
 	private named(property: ts.PropertyAssignment | ts.ShorthandPropertyAssignment): void {
 		const key = staticKey(property.name);
 		if (key === undefined) {
+			// A computed key may be any key: everything written before it may be replaced (A9).
+			this.restart(property, 'computed-key');
 			this.unknownKeys(property, 'computed-key');
 			return;
 		}
@@ -91,10 +110,10 @@ class ObjectReader {
 		}
 	}
 
-	private restart(property: ts.SpreadAssignment): void {
+	private restart(property: ts.Node, reason: UnknownReason = 'spread'): void {
 		this.target = freshRecord();
 		this.entries = new Map();
-		this.open = { node: property, reason: 'spread' };
+		this.open = { node: property, reason };
 	}
 }
 

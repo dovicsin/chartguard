@@ -84,23 +84,29 @@ test('wrongly typed or dynamic facts stay unknown', () => {
 });
 
 test('findings point at the Highcharts option; horizontal bar charts measure on the y axis too', () => {
-	assert.deepEqual(codes({ chart: { type: 'bar' }, yAxis: { min: 2 }, title: { text: '' }, series: [{ data: [1] }] }), [
-		'VIS_BAR_BASELINE $.yAxis.min',
-		'VIS_EMPTY_TITLE $.title.text'
-	]);
+	assert.deepEqual(
+		codes({
+			chart: { type: 'bar' },
+			yAxis: { min: 2, startOnTick: false },
+			title: { text: '' },
+			series: [{ data: [1] }]
+		}),
+		['VIS_BAR_BASELINE $.yAxis.min', 'VIS_EMPTY_TITLE $.title.text']
+	);
 	assert.deepEqual(
 		codes({
 			chart: { type: 'column' },
-			yAxis: [{ min: 0 }, { id: 'r', min: 5 }],
+			yAxis: [{ min: 0 }, { id: 'r', min: 5, startOnTick: false }],
 			series: [{}, { type: 'line', yAxis: 'r' }]
 		}),
 		['VIS_DUAL_AXIS $.series[1].yAxis']
 	);
-	assert.deepEqual(codes({ yAxis: [{ min: 0 }, { min: 5 }], series: [{ type: 'column', yAxis: 1 }] }), [
-		'VIS_BAR_BASELINE $.yAxis[1].min'
-	]);
+	assert.deepEqual(
+		codes({ yAxis: [{ min: 0 }, { min: 5, startOnTick: false }], series: [{ type: 'column', yAxis: 1 }] }),
+		['VIS_BAR_BASELINE $.yAxis[1].min']
+	);
 	// The default title is not an empty one; no bar series, no baseline claim.
-	assert.deepEqual(codes({ chart: { type: 'column' }, yAxis: { min: 2 } }), []);
+	assert.deepEqual(codes({ chart: { type: 'column' }, yAxis: { min: 2, startOnTick: false } }), []);
 });
 
 test("coordinate system and orientation are the chart's: polar from chart.polar; inverted by chart.inverted or by any bar series", () => {
@@ -155,7 +161,7 @@ test('stacking resolves through the series, plotOptions for its type and plotOpt
 });
 
 test('every runtime default points at the line of the pinned highcharts that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 31));
+	assert.equal(checkPackagePointers(import.meta.url), 32));
 
 test('titles: null hides a title; a y axis without text takes lang.yAxisTitle, else "Values"; an implicit y axis is read', () => {
 	const hidden = normalize({ title: { text: null }, yAxis: { title: { text: null } } });

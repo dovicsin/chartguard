@@ -1,6 +1,7 @@
 import { isRecord } from '@chartguard/core';
 
-import { checkUnionOptions, isNonEmpty, LITERAL_TYPES } from './check-union.js';
+import { checkUnionOptions, isNonEmpty, LITERAL_TYPES, selectedByRule } from './check-union.js';
+import { loopingDefaults, shapeless } from './founded.js';
 import { checkHeader, checkSources, quote, type Report } from './header.js';
 import { CONFIDENCE_TIERS, NODE_KINDS, OPENNESS, type SchemaArtifact } from './types.js';
 
@@ -23,11 +24,15 @@ function isHandler(value: unknown): boolean {
 	);
 }
 
-/** A member's discriminator property must be a literal (or a union of literals) so it can select the member. */
-function hasLiteralDiscriminator(member: Node, key: string): boolean {
+/**
+ * A member's discriminator property must be a literal (or a union of literals, also one stored as a
+ * definition and referenced) so it can select the member.
+ */
+function hasLiteralDiscriminator(member: Node, key: string, definitions: Record<string, unknown>): boolean {
 	const properties = member['properties'];
 	const property = isRecord(properties) ? properties[key] : undefined;
-	const node = isRecord(property) ? property['node'] : undefined;
+	const declared = isRecord(property) ? property['node'] : undefined;
+	const node = isRecord(declared) && declared['kind'] === 'ref' ? definitions[String(declared['ref'])] : declared;
 	if (!isRecord(node)) return false;
 	if (node['kind'] === 'literal') return true;
 	return (
@@ -47,6 +52,8 @@ const CHILD_CHECKS: Partial<Record<string, ChildCheck>> = {
 			checker.report(path, 'nullAsAbsent must be a boolean');
 		if (node['extensionPoint'] !== undefined && !isNonEmpty(node['extensionPoint']))
 			checker.report(path, 'extensionPoint must be a non-empty string');
+		if (node['host'] !== undefined && !isNonEmpty(node['host']))
+			checker.report(path, 'host must be a non-empty class name');
 	},
 	record: (checker, node, path, depth) => {
 		checker.checkNode(node['values'], `${path}.values`, depth + 1);
@@ -60,11 +67,14 @@ const CHILD_CHECKS: Partial<Record<string, ChildCheck>> = {
 	union: (checker, node, path, depth) => {
 		const members = node['anyOf'];
 		if (!Array.isArray(members) || members.length === 0) checker.report(path, 'expected a non-empty anyOf array');
-		else
+		else {
+			const ruled = selectedByRule(node);
 			members.forEach((member, index) => {
 				checker.checkNode(member, `${path}.anyOf[${String(index)}]`, depth + 1);
-				checker.checkDiscriminated(member, node['discriminator'], `${path}.anyOf[${String(index)}]`);
+				if (!ruled.has(index))
+					checker.checkDiscriminated(member, node['discriminator'], `${path}.anyOf[${String(index)}]`);
 			});
+		}
 		checkUnionOptions(checker, node, path, Array.isArray(members) ? members.length : 0);
 	},
 	ref: (checker, node, path) => {
@@ -159,7 +169,7 @@ class NodeChecker {
 		if (typeof key !== 'string') return;
 		const target = isRecord(member) && member['kind'] === 'ref' ? this.definitions[String(member['ref'])] : member;
 		if (!isRecord(target) || target['kind'] !== 'object') return;
-		if (!hasLiteralDiscriminator(target, key))
+		if (!hasLiteralDiscriminator(target, key, this.definitions))
 			this.report(path, `discriminator "${key}" must be a literal property of every object member`);
 	}
 
@@ -212,6 +222,13 @@ export function checkArtifact(value: unknown): ArtifactCheck {
 	const checker = new NodeChecker(report, checkSources(value['sources'], report), definitions);
 	for (const [name, node] of Object.entries(definitions)) checker.checkNode(node, `$.definitions.${name}`, 0);
 	checker.checkNode(value['root'], '$.root', 0);
+	for (const name of shapeless(definitions))
+		report(
+			`$.definitions.${name}`,
+			'never reaches a shape: it refers only to itself or to other definitions without one'
+		);
+	for (const name of loopingDefaults(definitions))
+		report(`$.definitions.${name}`, 'a variant it selects by default or by rule leads back to the union');
 	// Every field was verified above, so the assertion only names the shape.
 	return { artifact: problems.length === 0 ? (value as unknown as SchemaArtifact) : undefined, problems };
 }

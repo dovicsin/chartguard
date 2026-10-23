@@ -46,7 +46,10 @@ export async function runEchartsInBrowser(options) {
 	try {
 		const file = join(directory, 'index.html');
 		const script = `<script src="${pathToFileURL(BUNDLE).href}"></script>`;
-		writeFileSync(file, `<!doctype html><meta charset="utf-8"><body>${script}<pre id="outcomes"></pre><script>const CASES = ${data};${RUNNER}</script>`);
+		writeFileSync(
+			file,
+			`<!doctype html><meta charset="utf-8"><body>${script}<pre id="outcomes"></pre><script>const CASES = ${data};${RUNNER}</script>`
+		);
 		const html = await dumpDom(pathToFileURL(file).href);
 		const found = /<pre id="outcomes">([^<]*)<\/pre>/.exec(html);
 		if (found === null) throw new Error('the echarts page did not report; a script failed to load');

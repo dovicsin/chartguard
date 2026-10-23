@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { lowerArtifact, s, validateConfig } from '../dist/index.js';
+import { checkArtifact, lowerArtifact, s, validateConfig } from '../dist/index.js';
 import { artifact, prop } from './fixtures.mjs';
 
 /** A tree node whose `children` are tree nodes, as echarts' tree and treemap series declare them. */
@@ -110,4 +110,99 @@ test('a walk is bounded in total, not only per container: a huge config is trunc
 		['CFG_TRUNCATED warning']
 	);
 	assert.equal(result.status, 'partial');
+});
+
+/** An object member with a literal `type`, for a discriminated union. */
+const typedObject = (type) => ({
+	kind: 'object',
+	additional: 'closed',
+	properties: { type: prop({ kind: 'literal', value: type }), size: prop({ kind: 'number' }) }
+});
+
+test('a default variant that leads back to its own union is rejected as an artifact and never recurses without end (H6)', () => {
+	// `defaultVariant` picks member 0, the union itself: the walk would choose it again and again.
+	const looping = artifact(
+		{ kind: 'ref', ref: 'Axis' },
+		{
+			definitions: {
+				Axis: {
+					kind: 'union',
+					anyOf: [
+						{ kind: 'ref', ref: 'Axis' },
+						{ kind: 'ref', ref: 'Value' }
+					],
+					discriminator: 'type',
+					defaultVariant: 0
+				},
+				Value: typedObject('value')
+			}
+		}
+	);
+	assert.match(checkArtifact(looping).problems.join('\n'), /\$\.definitions\.Axis: .*leads back to the union/u);
+	// The engine itself never overflows the stack on such a schema: the variant is not decided.
+	const { manifest } = lowerArtifact(looping);
+	assert.deepEqual(findings(manifest, { size: 'x' }), ['CFG_AMBIGUOUS $']);
+	assert.deepEqual(findings(manifest, { type: 'value', size: 'x' }), ['CFG_TYPE $.size']);
+	// Through another union, by a defaultWhen rule, or by a selectWhen rule.
+	const viaOther = artifact(
+		{ kind: 'ref', ref: 'A' },
+		{
+			definitions: {
+				A: {
+					kind: 'union',
+					anyOf: [{ kind: 'ref', ref: 'B' }, typedObject('a')],
+					discriminator: 'type',
+					defaultVariant: 0
+				},
+				B: {
+					kind: 'union',
+					anyOf: [typedObject('b'), { kind: 'ref', ref: 'A' }],
+					discriminator: 'type',
+					defaultWhen: [{ test: 'truthy', property: 'size', variant: 1 }]
+				}
+			}
+		}
+	);
+	assert.match(checkArtifact(viaOther).problems.join('\n'), /leads back to the union/u);
+	assert.deepEqual(findings(lowerArtifact(viaOther).manifest, { size: 1 }), ['CFG_AMBIGUOUS $']);
+});
+
+test('an alias that only refers to itself has no shape: rejected as an artifact, never checked as one (H6)', () => {
+	const alias = artifact(
+		{ kind: 'ref', ref: 'A' },
+		{ definitions: { A: { kind: 'ref', ref: 'B' }, B: { kind: 'ref', ref: 'A' } } }
+	);
+	assert.match(checkArtifact(alias).problems.join('\n'), /\$\.definitions\.A: .*never reaches a shape/u);
+	const self = artifact(
+		{ kind: 'ref', ref: 'U' },
+		{ definitions: { U: { kind: 'union', anyOf: [{ kind: 'ref', ref: 'U' }] } } }
+	);
+	assert.match(checkArtifact(self).problems.join('\n'), /\$\.definitions\.U: .*never reaches a shape/u);
+	// Lowered anyway, it is unknown and lossy: never a confirmed error, never full coverage.
+	for (const looping of [alias, self]) {
+		const { manifest, lossy } = lowerArtifact(looping);
+		assert.equal(manifest.coverage, 'partial');
+		assert.ok(lossy.length > 0);
+		assert.deepEqual(findings(manifest, { a: 1 }), []);
+	}
+	// A recursive union with a shape of its own is well-founded.
+	const list = artifact(
+		{ kind: 'ref', ref: 'L' },
+		{
+			definitions: {
+				L: { kind: 'union', anyOf: [{ kind: 'number' }, { kind: 'array', items: { kind: 'ref', ref: 'L' } }] }
+			}
+		}
+	);
+	assert.deepEqual(checkArtifact(list).problems, []);
+});
+
+test('a hand-built schema whose union is its own only member claims nothing', () => {
+	const union = { kind: 'union', anyOf: [] };
+	union.anyOf.push(union);
+	const manifest = { library: 't', version: '1', coverage: 'full', source: 't', root: union };
+	assert.deepEqual(findings(manifest, { a: 1 }), []);
+	const looping = { kind: 'union', anyOf: [], discriminator: 'type', defaultVariant: 0 };
+	looping.anyOf.push(looping, s.object({ type: s.string(['v']) }));
+	assert.deepEqual(findings({ ...manifest, root: looping }, {}), ['CFG_AMBIGUOUS $']);
 });

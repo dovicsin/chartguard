@@ -21,7 +21,11 @@ import { runAsEntryPoint } from '../shared/entry.mjs';
 export { isRedistributable, LIBRARIES, LOCAL_ARTIFACTS };
 
 /** The adapter package that ships each library's committed artifact. */
-const ADAPTERS = { chartjs: 'packages/config/chartjs', echarts: 'packages/config/echarts', highcharts: 'packages/config/highcharts' };
+const ADAPTERS = {
+	chartjs: 'packages/config/chartjs',
+	echarts: 'packages/config/echarts',
+	highcharts: 'packages/config/highcharts'
+};
 /** The repository root, independent of the directory the command is run from. */
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const MODES = new Set(['write', 'check']);

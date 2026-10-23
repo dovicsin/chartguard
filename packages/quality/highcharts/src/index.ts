@@ -6,6 +6,7 @@ import {
 	type CoordinateSystem,
 	type Default,
 	type Fact,
+	formatPath,
 	isBoolean,
 	isNumber,
 	isString,
@@ -19,7 +20,6 @@ import {
 	review,
 	type ScaleType,
 	type SeriesSemantics,
-	type TitleSemantics,
 	unknown,
 	type UnknownFact,
 	valueOf,
@@ -32,46 +32,58 @@ import { REMEDIES } from './fixes.js';
 import { motionOf } from './motion.js';
 import { FROM_SERIES, seriesOf, seriesOption } from './series.js';
 import { backgroundOf } from './shades.js';
+import { axisTitleOf, chartTitleOf } from './titles.js';
+
+/** The option that rounds each bound out to a tick, by bound. */
+const ON_TICK = { min: 'startOnTick', max: 'endOnTick' } as const;
 
 /**
- * A y axis without a title text takes the language's `yAxisTitle` (`text: this.chart.options.lang.yAxisTitle`,
- * highcharts.src.js:20306), `Values` by default. A global `Highcharts.setOptions` is not in the config.
+ * An axis bound as drawn: a y axis starts and ends on a tick by default (`startOnTick`/`endOnTick`,
+ * highcharts.src.js:18889, :18585), and `trimTicks` then replaces the configured bound by the tick
+ * below (or above) it (`this.min = roundedMin`, :21409), at a tick interval the plot size decides
+ * (`layout`). A bound of zero stays zero; with the rounding off it stays what the config says (H7).
+ * An x axis does not round by default (:17788, :16778).
  */
-const Y_TITLE: Default<string> = {
-	value: 'Values',
-	pointer: "highcharts@13.1.1 highcharts.src.js:5060 yAxisTitle: 'Values',"
-};
-
-/** Highcharts titles: a string, or `null`, the documented way to hide one. */
-const isTitle = (value: unknown): value is string | null => value === null || typeof value === 'string';
-
-/**
- * A title from its text: `null` hides it (no text, not shown); otherwise Highcharts has no switch of
- * its own (a title shows when it has text), so whether it is shown is not modelled.
- */
-function titleOf(text: Fact<string | null>, at: string): TitleSemantics {
-	if (text.known && text.value === null)
-		return { text: { ...text, value: '' }, shown: { known: true, value: false, path: text.path, source: 'config' } };
-	return { text: text as Fact<string>, shown: unknown(at, 'unmodelled') };
-}
-
-/** An axis title text: its own; for y axes, else the chart's `lang.yAxisTitle`, else `Values`. */
-function axisTitle(
+function boundOf(
 	config: unknown,
 	segments: readonly (string | number)[],
-	name: 'xAxis' | 'yAxis'
-): Fact<string | null> {
-	const own = readFact(config, [...segments, 'title', 'text'], isTitle);
-	if (name === 'xAxis' || own.known || own.reason !== 'unset') return own;
-	const lang = readFact(config, ['lang', 'yAxisTitle'], isTitle);
-	if (lang.known || lang.reason !== 'unset') return lang;
-	return { known: true, value: Y_TITLE.value, path: own.path, source: 'default', pointer: Y_TITLE.pointer };
+	name: 'xAxis' | 'yAxis',
+	key: 'min' | 'max'
+): Fact<number> {
+	const bound = readFact(config, [...segments, key], isNumber);
+	if (!bound.known || bound.value === 0) return bound;
+	const rounds = readFact(config, [...segments, ON_TICK[key]], isBoolean);
+	if (!rounds.known && rounds.reason !== 'unset') return unknown(bound.path, rounds.reason);
+	const rounding = rounds.known ? rounds.value : name === 'yAxis';
+	return rounding ? unknown(bound.path, 'layout') : bound;
 }
 
-const TITLE_TEXT: Default<string> = {
-	value: 'Chart title',
-	pointer: "highcharts@13.1.1 highcharts.src.js:5417 text: 'Chart title',"
-};
+/** An axis's place in the plot: a length in pixels or a percentage of the plot. */
+const isLength = (value: unknown): value is number | string => isNumber(value) || isString(value);
+const PANE = ['top', 'height', 'left', 'width'] as const;
+/** Without them an axis spans the whole plot (`options.top ?? chart.plotTop + offsets[0]`, …). */
+const WHOLE_PLOT =
+	'highcharts@13.1.1 highcharts.src.js:21812 chart.plotHeight - offsets[0] + offsets[2]), chart.plotHeight)), top = this.top = Math.round(relativeLength((options.top ?? chart.plotTop + offsets[0]), chart.plotHeight, chart.plotTop)), left = this.left = Math.round(relativeLength((options.left ?? chart.plotLeft + offsets[3]), chart.plotWidth, chart.plotLeft));';
+
+/**
+ * The pane an axis is drawn in: the whole plot, unless `top`, `height`, `left` or `width` place it
+ * (Highcharts Stock panes). Axes placed the same way share one pane; any other placement is a pane
+ * of its own here, even when the boxes overlap: never a claim that two axes share a plot.
+ */
+function panelOf(config: unknown, segments: readonly (string | number)[]): Fact<string> {
+	const facts = PANE.map((key) => readFact(config, [...segments, key], isLength));
+	const unreadable = facts.find((fact): fact is UnknownFact => !fact.known && fact.reason !== 'unset');
+	if (unreadable !== undefined) return unreadable;
+	const placed = facts.filter((fact) => fact.known);
+	const [first] = placed;
+	if (first === undefined)
+		return { known: true, value: 'plot', path: `${formatPath(segments)}.top`, source: 'default', pointer: WHOLE_PLOT };
+	const value = PANE.map((key, index) => {
+		const fact = facts[index];
+		return `${key}=${fact?.known === true ? String(fact.value) : ''}`;
+	}).join(';');
+	return { ...first, value };
+}
 
 const defaultAt = <T>(value: T, path: string): Fact<T> => ({
 	known: true,
@@ -205,12 +217,13 @@ function axesOf(config: unknown, series: Series): AxisSemantics[] {
 			key: `${name}[${String(index)}]`,
 			path: axis.path,
 			scale: scaleOf(config, axis.segments),
-			min: readFact(config, [...axis.segments, 'min'], isNumber),
-			max: readFact(config, [...axis.segments, 'max'], isNumber),
+			min: boundOf(config, axis.segments, name, 'min'),
+			max: boundOf(config, axis.segments, name, 'max'),
 			fit: fitOf(config, `${name}[${String(index)}]`, axis.path, series),
 			unit: unitOf(config, axis.segments),
+			panel: panelOf(config, axis.segments),
 			reversed: readFact(config, [...axis.segments, 'reversed'], isBoolean, name === 'yAxis' ? Y_REVERSED : undefined),
-			title: titleOf(axisTitle(config, axis.segments, name), `${axis.path}.title`)
+			title: axisTitleOf(config, axis.segments, name, `${axis.path}.title`)
 		}));
 	});
 }
@@ -248,7 +261,7 @@ export function normalize(config: unknown): ChartSemantics {
 		: items;
 	return {
 		library: 'highcharts',
-		title: titleOf(readFact(config, ['title', 'text'], isTitle, TITLE_TEXT), '$.title'),
+		title: chartTitleOf(config),
 		series,
 		axes: axesOf(config, { items, semantics: series }),
 		access: accessOf(config),

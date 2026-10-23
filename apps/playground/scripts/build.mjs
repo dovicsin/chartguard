@@ -22,7 +22,11 @@ const FIXTURES = [
 	{ library: 'highcharts', contract: false }
 ].map((entry) => ({ ...entry, directory: join(ROOT, 'packages', 'config', entry.library, 'tests', 'fixtures') }));
 
-const slug = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const slug = (text) =>
+	text
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-|-$/g, '');
 
 async function fixtureModule(directory, file) {
 	return readdirSync(directory).includes(file) ? import(pathToFileURL(join(directory, file)).href) : {};
@@ -33,14 +37,18 @@ async function examplesOf({ library, contract: withContract, directory }) {
 	const { RUNTIME_CONTRACT = [] } = withContract ? await fixtureModule(directory, 'runtime-contract.mjs') : {};
 	// The rules over several options at once have their own table (CG-02-08).
 	const { RULES_CONTRACT = [] } = withContract ? await fixtureModule(directory, 'rules-contract.mjs') : {};
-	const { DEPRECATIONS_CONTRACT = [] } = withContract ? await fixtureModule(directory, 'deprecations-contract.mjs') : {};
+	const { DEPRECATIONS_CONTRACT = [] } = withContract
+		? await fixtureModule(directory, 'deprecations-contract.mjs')
+		: {};
 	const valid = Object.entries(KNOWN_VALID).map(([title, config]) => ({ title, group: 'valid', config }));
-	const contract = [...RUNTIME_CONTRACT, ...RULES_CONTRACT, ...DEPRECATIONS_CONTRACT].map(({ name, config, findings, runtime, why }) => ({
-		title: name,
-		group: 'contract',
-		config,
-		expected: { findings, runtime, ...(why === undefined ? {} : { why }) }
-	}));
+	const contract = [...RUNTIME_CONTRACT, ...RULES_CONTRACT, ...DEPRECATIONS_CONTRACT].map(
+		({ name, config, findings, runtime, why }) => ({
+			title: name,
+			group: 'contract',
+			config,
+			expected: { findings, runtime, ...(why === undefined ? {} : { why }) }
+		})
+	);
 	return [...valid, ...contract]
 		.filter(({ config }) => isJsonSafe(config))
 		.map((example) => ({ id: `${library}:${example.group}:${slug(example.title)}`, library, ...example }));

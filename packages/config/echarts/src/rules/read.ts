@@ -2,12 +2,16 @@ import { type Item, itemsOf, readOwn } from '@chartguard/config-core';
 
 /**
  * A timeline option (`baseOption`, `options`) is merged at runtime from its parts; what one part
- * lacks another may supply, so no rule speaks for a part.
+ * lacks another may supply, so no rule speaks for a part. So is a root with `media`: echarts takes
+ * the root as the base option and merges each matching `media[].option` into it (`hasMedia =
+ * !!rawOption.media`, echarts lib/model/OptionManager.js:263; H10).
  */
 export function isWholeOption(option: unknown): boolean {
 	const base = readOwn(option, 'baseOption');
 	const parts = readOwn(option, 'options');
-	return base.known && parts.known && base.value === undefined && parts.value === undefined;
+	const media = readOwn(option, 'media');
+	const noMedia = media.known && !Boolean(media.value);
+	return base.known && parts.known && base.value === undefined && parts.value === undefined && noMedia;
 }
 
 /** The items of a root option that takes one object or a list (`series`, `xAxis`); undefined when unreadable. */

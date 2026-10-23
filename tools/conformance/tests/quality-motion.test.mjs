@@ -32,18 +32,48 @@ const ECHARTS = [
 	{ ...AXES, series: [{ type: 'effectScatter', data: [1] }] },
 	{ ...AXES, animation: false, series: [{ type: 'effectScatter', data: [1] }] },
 	{ ...AXES, series: [{ type: 'effectScatter', showEffectOn: 'emphasis', data: [1] }] },
-	{ xAxis: { type: 'value' }, yAxis: { type: 'value' }, series: [{ type: 'lines', coordinateSystem: 'cartesian2d', effect: { show: true }, data: [{ coords: [[0, 0], [1, 1]] }] }] },
+	{
+		xAxis: { type: 'value' },
+		yAxis: { type: 'value' },
+		series: [
+			{
+				type: 'lines',
+				coordinateSystem: 'cartesian2d',
+				effect: { show: true },
+				data: [
+					{
+						coords: [
+							[0, 0],
+							[1, 1]
+						]
+					}
+				]
+			}
+		]
+	},
 	{ ...AXES, animationDuration: 6000, series: [{ type: 'bar', animationDuration: 7000, data: [1] }] }
 ];
 const HIGHCHARTS = [
 	{ series: [{ data: [1] }] },
-	{ plotOptions: { series: { animation: { duration: 8000 } } }, series: [{ data: [1] }, { animation: false, data: [1] }] },
-	{ series: [{ animation: true, data: [1] }, { animation: { defer: 10 }, data: [1] }] },
+	{
+		plotOptions: { series: { animation: { duration: 8000 } } },
+		series: [{ data: [1] }, { animation: false, data: [1] }]
+	},
+	{
+		series: [
+			{ animation: true, data: [1] },
+			{ animation: { defer: 10 }, data: [1] }
+		]
+	},
 	// An object merges over the scopes below it: over `false` it has no duration (500 ms), over a duration it keeps it.
 	{ plotOptions: { series: { animation: false } }, series: [{ animation: { defer: 10 }, data: [1] }] },
-	{ plotOptions: { column: { animation: { duration: 6000 } } }, series: [{ type: 'column', animation: { defer: 10 }, data: [1] }] }
+	{
+		plotOptions: { column: { animation: { duration: 6000 } } },
+		series: [{ type: 'column', animation: { defer: 10 }, data: [1] }]
+	}
 ];
-const contract = (library) => RULES_CONTRACT.flatMap((entry) => (entry[library] === undefined ? [] : [entry[library].config]));
+const contract = (library) =>
+	RULES_CONTRACT.flatMap((entry) => (entry[library] === undefined ? [] : [entry[library].config]));
 
 function agree({ endless, longest }, built, where) {
 	if (endless.known) assert.equal(endless.value, built.endless, `${where} endless`);
@@ -81,6 +111,7 @@ test('Highcharts: longest is the longest series animation as Highcharts resolves
 	const outcomes = await runHighcharts(configs.map((config) => ({ config })));
 	configs.forEach((config, index) => {
 		const { longest } = normalizeHighcharts(config).motion;
-		if (longest.known) assert.equal(longest.value, Math.max(0, ...outcomes[index].observed.durations), JSON.stringify(config));
+		if (longest.known)
+			assert.equal(longest.value, Math.max(0, ...outcomes[index].observed.durations), JSON.stringify(config));
 	});
 });

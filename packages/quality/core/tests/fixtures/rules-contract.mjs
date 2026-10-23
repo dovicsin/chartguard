@@ -12,9 +12,11 @@ import { CONTEXT_CASES, SETTING_CASES } from './context-cases.mjs';
 import { CONTRAST_CASES } from './contrast-cases.mjs';
 import { LABEL_CASES } from './labels-cases.mjs';
 import { MOTION_CASES } from './motion-cases.mjs';
+import { PIE_CASES } from './pie-cases.mjs';
 import { RANGE_CASES } from './ranges-cases.mjs';
 import { SCALE_CASES } from './scales-cases.mjs';
-import { MORE_COUNTEREXAMPLES, UNKNOWN_CASES } from './unknown-cases.mjs';
+import { UNKNOWN_CASES } from './unknown-cases.mjs';
+import { MORE_COUNTEREXAMPLES, UNKNOWN_LABEL_CASES } from './unknown-label-cases.mjs';
 
 /**
  * Every case that is not about labels gets the titles a real chart has (a chart title, and a title on
@@ -72,6 +74,7 @@ function realistic(entry) {
 
 export const RULES_CONTRACT = [
 	...SCALE_CASES,
+	...PIE_CASES,
 	...COLOR_CASES,
 	...CONTRAST_CASES,
 	...LABEL_CASES,
@@ -80,6 +83,7 @@ export const RULES_CONTRACT = [
 	...RANGE_CASES,
 	...MORE_COUNTEREXAMPLES,
 	...UNKNOWN_CASES,
+	...UNKNOWN_LABEL_CASES,
 	...CONTEXT_CASES,
 	...SETTING_CASES
 ].map(realistic);

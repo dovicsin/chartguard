@@ -17,6 +17,7 @@ import {
 } from '@chartguard/quality-core';
 
 import { axisType, referredAxis } from './axes.js';
+import { legendHides } from './legend.js';
 import { valuesOf } from './values.js';
 
 /** Each cartesian series type defaults to the grid, at the line of its own default options. */
@@ -156,15 +157,17 @@ export function seriesOf(config: unknown, item: Item, color: Fact<string>): Seri
 	const type = readFact(config, [...item.segments, 'type'], isString);
 	const kind = kindOf(config, item, type);
 	const layout = layoutOf(config, item, type);
+	const name = readFact(config, [...item.segments, 'name'], isString);
+	const hidden = legendHides(config, item, name);
 	return {
 		path: item.path,
 		type,
 		kind,
-		name: readFact(config, [...item.segments, 'name'], isString),
+		name,
 		...layout,
 		base: baseOf(config, item, kind, layout.valueAxis),
 		color,
 		shades: sameShades(color),
-		values: valuesOf(config, item)
+		values: hidden === undefined ? valuesOf(config, item) : unknown(`${item.path}.data`, hidden)
 	};
 }

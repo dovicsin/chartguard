@@ -17,18 +17,22 @@ test('argv that is not a path means "imported", not a crash', () => {
 	assert.deepEqual([child.status, child.stdout, child.stderr], [0, 'false', '']);
 });
 
-test('an entry point whose output is piped into a reader that stops early exits quietly', { skip: process.platform === 'win32' }, async (t) => {
-	const { mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
-	const { tmpdir } = await import('node:os');
-	const { join } = await import('node:path');
-	const directory = mkdtempSync(join(tmpdir(), 'entry-'));
-	t.after(() => rmSync(directory, { recursive: true, force: true }));
-	const script = join(directory, 'noisy.mjs');
-	writeFileSync(
-		script,
-		`import { runAsEntryPoint } from ${JSON.stringify(ENTRY)};
+test(
+	'an entry point whose output is piped into a reader that stops early exits quietly',
+	{ skip: process.platform === 'win32' },
+	async (t) => {
+		const { mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
+		const { tmpdir } = await import('node:os');
+		const { join } = await import('node:path');
+		const directory = mkdtempSync(join(tmpdir(), 'entry-'));
+		t.after(() => rmSync(directory, { recursive: true, force: true }));
+		const script = join(directory, 'noisy.mjs');
+		writeFileSync(
+			script,
+			`import { runAsEntryPoint } from ${JSON.stringify(ENTRY)};
 		await runAsEntryPoint(import.meta.url, () => { for (let i = 0; i < 100000; i++) process.stdout.write('line\\n'); return 0; });`
-	);
-	const child = spawnSync('sh', ['-c', `"${process.execPath}" "${script}" | head -c 1`], { encoding: 'utf8' });
-	assert.equal(child.stderr, '');
-});
+		);
+		const child = spawnSync('sh', ['-c', `"${process.execPath}" "${script}" | head -c 1`], { encoding: 'utf8' });
+		assert.equal(child.stderr, '');
+	}
+);

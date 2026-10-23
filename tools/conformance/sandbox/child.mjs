@@ -17,9 +17,11 @@ import { createUtils } from './chartjs-utils.mjs';
 
 /**
  * Runs one pinned example corpus. Started by lib/sandbox.mjs in a separate process under the
- * Node permission model (read-only file system, no child processes, no workers); inside it each
- * example runs in a fresh `vm` context without `require`, `process`, `fetch` or dynamic import.
- * Prints one JSON array of outcomes on stdout.
+ * Node permission model (read-only file system, no child processes, no workers) with an empty
+ * environment; that process is the boundary. Each example runs in a fresh `vm` context without
+ * `require`, `process`, `fetch` or dynamic import as globals, but a `vm` context is not a security
+ * boundary: through any object handed in (`Chart`) the code reaches this realm's `globalThis`, and
+ * so `process` and the network (K6). Prints one JSON array of outcomes on stdout.
  */
 /**
  * Only a guard against examples that never finish. It must stay far above any honest run under
@@ -33,7 +35,10 @@ const SILENT_CONSOLE = { log() {}, info() {}, warn() {}, error() {}, debug() {} 
 /** Any property, any call, any depth: stands in for `myChart`, `$`, `app` and friends. */
 function inert() {
 	const target = function () {};
-	return new Proxy(target, { get: (_, key) => (key === Symbol.toPrimitive ? () => '' : inert()), apply: () => inert() });
+	return new Proxy(target, {
+		get: (_, key) => (key === Symbol.toPrimitive ? () => '' : inert()),
+		apply: () => inert()
+	});
 }
 
 function evaluate(code, globals) {
@@ -59,7 +64,16 @@ export const LIBRARIES = {
 			const { outputText } = ts.transpileModule(code, {
 				compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS }
 			});
-			const globals = { echarts, myChart: inert(), $: inert(), app: {}, ROOT_PATH: '', CDN_PATH: '', exports: {}, option: undefined };
+			const globals = {
+				echarts,
+				myChart: inert(),
+				$: inert(),
+				app: {},
+				ROOT_PATH: '',
+				CDN_PATH: '',
+				exports: {},
+				option: undefined
+			};
 			const timers = { setTimeout: () => 0, setInterval: () => 0, clearTimeout() {}, clearInterval() {} };
 			return evaluate(outputText, { ...globals, ...timers }).option;
 		},
@@ -81,7 +95,14 @@ export function outcomeOf(library, { path, code }) {
 	const findings = library.validate(config).diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`);
 	const observed = library.render(config);
 	const messages = observed.messages.map(({ text }) => text);
-	return { path, status: 'ran', findings, runtime: verdictOf(observed), ...(observed.threw === undefined ? {} : { threw: observed.threw }), messages };
+	return {
+		path,
+		status: 'ran',
+		findings,
+		runtime: verdictOf(observed),
+		...(observed.threw === undefined ? {} : { threw: observed.threw }),
+		messages
+	};
 }
 
 function main([libraryName, corpusPath]) {

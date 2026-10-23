@@ -8,7 +8,17 @@ import { copyPlain } from './copy.mjs';
 Chart.register(...registerables);
 
 const DAY = 86_400_000;
-const UNIT_MS = { millisecond: 1, second: 1000, minute: 60_000, hour: 3_600_000, day: DAY, week: 7 * DAY, month: 30 * DAY, quarter: 91 * DAY, year: 365 * DAY };
+const UNIT_MS = {
+	millisecond: 1,
+	second: 1000,
+	minute: 60_000,
+	hour: 3_600_000,
+	day: DAY,
+	week: 7 * DAY,
+	month: 30 * DAY,
+	quarter: 91 * DAY,
+	year: 365 * DAY
+};
 
 /**
  * Time scales need a date adapter, which applications install (chartjs-adapter-date-fns, …).
@@ -39,7 +49,8 @@ function fakeContext(canvas) {
 	return new Proxy(
 		{},
 		{
-			get: (_, key) => (key === 'canvas' ? canvas : (methods[key] ?? (state.has(key) ? state.get(key) : () => undefined))),
+			get: (_, key) =>
+				key === 'canvas' ? canvas : (methods[key] ?? (state.has(key) ? state.get(key) : () => undefined)),
 			set: (_, key, value) => {
 				state.set(key, value);
 				return true;
@@ -72,7 +83,6 @@ export function createChartjs(config, { width = 400, height = 300 } = {}) {
 }
 
 const EVERY_REGISTERABLE = registerables.flatMap((group) => (Array.isArray(group) ? group : Object.values(group)));
-
 
 /**
  * Runs `body` against a tree-shaken Chart.js: only `modules` (export names such as `LineController`,

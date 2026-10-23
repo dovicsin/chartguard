@@ -8,7 +8,7 @@ import { analyze } from '../dist/index.js';
 /** The adapter passes the caller's options to the review (CG-05-05). */
 const CONFIG = {
 	chart: { type: 'column', backgroundColor: 'transparent' },
-	yAxis: { min: 50 },
+	yAxis: { min: 50, startOnTick: false },
 	series: [{ data: [60], color: '#eeeeee' }]
 };
 const codes = (report) => report.diagnostics.map(({ code, path }) => `${code} ${path}`);

@@ -202,3 +202,28 @@ test('several files are read together; without --file, --project reads every fil
 	assert.equal((await run(['validate', '--library', 'chartjs', '--file', 'a.json', '--file', 'b.json'])).code, 2);
 	assert.equal((await run(['analyze', '--library', 'chartjs'])).code, 2);
 });
+
+test('a config the code changes however it spells the write, or that comes from a replaced builder, is never confirmed invalid (A37, A1)', async (t) => {
+	const head =
+		'import { Chart } from "chart.js";\nconst config = { type: "bar", data: { datasets: [] }, options: { responsive: "yes" } };\n';
+	const use = 'new Chart(document.createElement("canvas"), config as any);';
+	const sources = {
+		'cast.ts': `${head}(config as any).options.responsive = true;\n${use}`,
+		'destructured.ts': `${head}const { options } = config;\n(options as any).responsive = true;\n${use}`,
+		'evaluated.ts': `${head}eval("config.options.responsive = true");\n${use}`,
+		'replaced.ts':
+			'import { Chart } from "chart.js";\nfunction make(): any { return { type: "bar", data: { datasets: [] }, options: { responsive: "yes" } }; }\n// @ts-ignore\nmake = () => ({});\nnew Chart(document.createElement("canvas"), make());'
+	};
+	const root = sourceProject(t, {
+		'tsconfig.json': '{}',
+		...Object.fromEntries(Object.entries(sources).map(([name, text]) => [`src/${name}`, text]))
+	});
+	for (const name of Object.keys(sources)) {
+		const { code, out } = await run(['analyze', '--library', 'chartjs', '--file', join(root, 'src', name)]);
+		assert.equal(code, 0, `${name}: ${out}`);
+		assert.doesNotMatch(out, /error:/, name);
+	}
+	// Spelled plainly the wrong value is still confirmed.
+	const plain = sourceProject(t, { 'tsconfig.json': '{}', 'src/plain.ts': `${head}${use}` });
+	assert.equal((await run(['analyze', '--library', 'chartjs', '--file', join(plain, 'src/plain.ts')])).code, 1);
+});

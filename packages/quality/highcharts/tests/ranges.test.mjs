@@ -101,3 +101,34 @@ test('percent without unit: percent-stacked bars and areas on an axis whose labe
 	const normal = { ...percent({ title: { text: 'Units' } }), plotOptions: { series: { stacking: 'normal' } } };
 	assert.deepEqual(findings(normal, 'VIS_PERCENT_WITHOUT_UNIT'), []);
 });
+
+test('a y axis bound rounds to a tick (startOnTick, endOnTick): it is the configured value only when they are off, or when it is zero (H7)', () => {
+	const yAxisOf = (config) =>
+		normalize({ chart: { type: 'column' }, series: [{ data: [60, 100] }], ...config }).axes.find(
+			({ key }) => key === 'yAxis[0]'
+		);
+	assert.equal(brief(yAxisOf({}).min), '? unset $.yAxis.min');
+	assert.equal(brief(yAxisOf({ yAxis: { min: 5 } }).min), '? layout $.yAxis.min');
+	assert.equal(brief(yAxisOf({ yAxis: { min: 5, startOnTick: false } }).min), '5 config $.yAxis.min');
+	assert.equal(brief(yAxisOf({ yAxis: { min: 0 } }).min), '0 config $.yAxis.min');
+	assert.equal(brief(yAxisOf({ yAxis: { min: -5 } }).min), '? layout $.yAxis.min');
+	assert.equal(brief(yAxisOf({ yAxis: { max: -50 } }).max), '? layout $.yAxis.max');
+	assert.equal(brief(yAxisOf({ yAxis: { max: -50, endOnTick: false } }).max), '-50 config $.yAxis.max');
+	// Highcharts draws columns from 0 when a minimum of 5 rounds to the tick 0: no claim, no fix.
+	assert.deepEqual(
+		findings({ chart: { type: 'column' }, yAxis: { min: 5 }, series: [{ data: [60, 100] }] }, 'VIS_BAR_BASELINE'),
+		[]
+	);
+	assert.deepEqual(
+		findings(
+			{ chart: { type: 'column' }, yAxis: { min: 5, startOnTick: false }, series: [{ data: [60, 100] }] },
+			'VIS_BAR_BASELINE'
+		),
+		['$.yAxis.min']
+	);
+	// An x axis does not start on a tick by default.
+	assert.equal(
+		brief(normalize({ xAxis: { min: 5 } }).axes.find(({ key }) => key === 'xAxis[0]').min),
+		'5 config $.xAxis.min'
+	);
+});

@@ -18,7 +18,8 @@ export function copyPlain(value, copies = new Map()) {
 	if (Array.isArray(value)) {
 		const copy = [];
 		copies.set(value, copy);
-		for (let index = 0; index < value.length; index++) if (index in value) copy[index] = copyPlain(value[index], copies);
+		for (let index = 0; index < value.length; index++)
+			if (index in value) copy[index] = copyPlain(value[index], copies);
 		copy.length = value.length;
 		return copy;
 	}

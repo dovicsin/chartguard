@@ -71,3 +71,36 @@ test('background: only an opaque backgroundColor; without one, or translucent, o
 		'#123'
 	);
 });
+
+test("a series' own colour is read where its type draws it (lineStyle for lines, borderColor for boxplot): otherwise it takes the next palette colour (K8)", () => {
+	const drawn = (series) =>
+		normalize({ xAxis: { type: 'value' }, yAxis: { type: 'value' }, series }).series.items.map(({ color }) =>
+			color.known ? color.value : `? ${color.reason}`
+		);
+	// A lines series ignores `itemStyle.color` for its colour: it takes the first palette colour, and the bar the second.
+	const linesSeries = { type: 'lines', coordinateSystem: 'cartesian2d', itemStyle: { color: '#123456' }, data: [] };
+	assert.deepEqual(drawn([linesSeries, { type: 'bar', data: [1] }])[1], '#b6d634');
+	// Its own `lineStyle.color` decides it, and the bar takes the first palette colour.
+	assert.deepEqual(
+		drawn([
+			{ ...linesSeries, lineStyle: { color: '#123456' } },
+			{ type: 'bar', data: [1] }
+		])[1],
+		'#5070dd'
+	);
+	// A boxplot's colour is its border colour.
+	assert.deepEqual(
+		drawn([
+			{ type: 'boxplot', itemStyle: { borderColor: '#123456' }, data: [] },
+			{ type: 'bar', data: [1] }
+		])[1],
+		'#5070dd'
+	);
+	assert.deepEqual(
+		drawn([
+			{ type: 'boxplot', itemStyle: { color: '#123456' }, data: [] },
+			{ type: 'bar', data: [1] }
+		])[1],
+		'#b6d634'
+	);
+});

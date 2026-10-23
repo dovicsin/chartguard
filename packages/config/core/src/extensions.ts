@@ -1,3 +1,5 @@
+import { isRecord } from '@chartguard/core';
+
 import {
 	catalogVariantPoint,
 	isSchema,
@@ -94,14 +96,35 @@ function known(keys: Iterable<string>): string {
 	return names.length === 0 ? 'none' : names.join(', ');
 }
 
+/**
+ * The entries of a part of an extension: an absent part has none; anything but a plain object is a
+ * problem, never a raw `TypeError` and never silently nothing (K14).
+ */
+function entriesOf(value: unknown, problem: string, problems: string[]): [string, unknown][] {
+	if (value === undefined) return [];
+	if (isRecord(value)) return Object.entries(value);
+	problems.push(problem);
+	return [];
+}
+
 function addOptions(extension: Extension, catalog: Catalog, owners: Owners, problems: string[]): void {
-	for (const [point, entries] of Object.entries(extension.options ?? {})) {
+	const points = entriesOf(
+		extension.options,
+		`${extension.id}: options must be an object of extension points`,
+		problems
+	);
+	for (const [point, list] of points) {
+		const entries = entriesOf(
+			list,
+			`${extension.id}: the options at ${point} must be an object of schemas by name`,
+			problems
+		);
 		const builtIn = catalog.points.get(point);
 		if (builtIn === undefined) {
 			problems.push(`${extension.id}: no extension point ${point} (known: ${known(catalog.points.keys())})`);
 			continue;
 		}
-		for (const [name, schema] of Object.entries(entries)) {
+		for (const [name, schema] of entries) {
 			if (builtIn.has(name))
 				problems.push(`${extension.id}: "${name}" is a built-in option of ${point} and cannot be replaced`);
 			else if (!isSchema(schema)) problems.push(`${extension.id}: option "${name}" at ${point} is not a schema`);
@@ -111,13 +134,23 @@ function addOptions(extension: Extension, catalog: Catalog, owners: Owners, prob
 }
 
 function addVariants(extension: Extension, catalog: Catalog, owners: Owners, problems: string[]): void {
-	for (const [registry, entries] of Object.entries(extension.variants ?? {})) {
+	const registries = entriesOf(
+		extension.variants,
+		`${extension.id}: variants must be an object of registries`,
+		problems
+	);
+	for (const [registry, list] of registries) {
+		const entries = entriesOf(
+			list,
+			`${extension.id}: the variants of ${registry} must be an object of schemas by name`,
+			problems
+		);
 		const unions = catalog.registries.get(registry);
 		if (unions === undefined) {
 			problems.push(`${extension.id}: no registry ${registry} (known: ${known(catalog.registries.keys())})`);
 			continue;
 		}
-		for (const [name, schema] of Object.entries(entries)) {
+		for (const [name, schema] of entries) {
 			const resolved = resolveVariant(registry, unions, name, schema);
 			if (typeof resolved === 'string') problems.push(`${extension.id}: ${resolved}`);
 			else own(owners, registry, { id: extension.id, name, schema: resolved });
@@ -139,25 +172,45 @@ function tables(owners: Owners, relation: string, problems: string[]): Map<strin
 	return result;
 }
 
+/** Where the extensions' claims are collected. */
+interface Collected {
+	readonly catalog: Catalog;
+	readonly optionOwners: Owners;
+	readonly variantOwners: Owners;
+}
+
+function addAll(
+	list: readonly unknown[],
+	{ catalog, optionOwners, variantOwners }: Collected,
+	problems: string[]
+): void {
+	for (const extension of list) {
+		if (!isRecord(extension)) problems.push('an extension must be an object with a non-empty id');
+		else if (typeof extension['id'] !== 'string' || extension['id'] === '')
+			problems.push('an extension needs a non-empty id');
+		else {
+			// Its parts are checked as they are read: a part of the wrong shape is a problem.
+			const checked = extension as unknown as Extension;
+			addOptions(checked, catalog, optionOwners, problems);
+			addVariants(checked, catalog, variantOwners, problems);
+		}
+	}
+}
+
 /**
  * The manifest with `extensions` added to whatever it already has, checked against the
  * precedence policy (docs/specs/CG-02-05): built-ins cannot be replaced, a name has one owner,
  * only declared points and registries. The schema itself is never copied or changed.
  */
 export function withExtensions(manifest: SchemaManifest, extensions: readonly Extension[]): SchemaManifest {
+	// A caller without types may pass anything.
+	const given: unknown = extensions;
+	if (!Array.isArray(given)) throw new ExtensionError(['extensions must be a list']);
 	const list = [...(manifest.extensions?.list ?? []), ...extensions];
-	const catalog = catalogOf(manifest.root);
 	const problems: string[] = [];
 	const optionOwners: Owners = new Map();
 	const variantOwners: Owners = new Map();
-	for (const extension of list) {
-		if (typeof extension.id !== 'string' || extension.id === '') {
-			problems.push('an extension needs a non-empty id');
-			continue;
-		}
-		addOptions(extension, catalog, optionOwners, problems);
-		addVariants(extension, catalog, variantOwners, problems);
-	}
+	addAll(list, { catalog: catalogOf(manifest.root), optionOwners, variantOwners }, problems);
 	const options = tables(optionOwners, 'at', problems);
 	const variants = tables(variantOwners, 'in', problems);
 	if (problems.length > 0) throw new ExtensionError(problems);

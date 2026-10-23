@@ -54,11 +54,12 @@ const own = (value: unknown, key: string): unknown => {
 };
 
 /**
- * Whether the call sets the series afresh: the chart holds no option yet, `notMerge`, or
- * `replaceMerge` naming `series`. Then echarts looks every series up by its own `type`.
+ * Whether the call sets the series afresh: the chart holds no option yet (`held` is what
+ * `getOption()` returned), `notMerge`, or `replaceMerge` naming `series`. Then echarts looks every
+ * series up by its own `type`.
  */
-function isFresh(chart: EChartsInstance, settings: SetOptionSettings | undefined): boolean {
-	if (chart.getOption() === undefined || settings === true) return true;
+function isFresh(held: unknown, settings: SetOptionSettings | undefined): boolean {
+	if (held === undefined || settings === true) return true;
 	if (!isRecord(settings)) return false;
 	const replaced = settings.replaceMerge;
 	const names = Array.isArray(replaced) ? replaced : [replaced];
@@ -90,15 +91,42 @@ function dropped(path: string): Diagnostic {
 	};
 }
 
-/** The types of the series the chart holds, in order. */
-function existingTypes(chart: EChartsInstance): unknown[] {
-	const series = own(chart.getOption(), 'series');
-	return Array.isArray(series) ? series.map((item) => own(item, 'type')) : [];
+/** The series the chart holds, in order (`held` is what `getOption()` returned). */
+function heldSeries(held: unknown): readonly unknown[] {
+	const series = own(held, 'series');
+	return Array.isArray(series) ? series : [];
 }
 
-/** A merge without `id` or `name`: item i merges into the chart's series i. */
+/** A merge without `id` or `name`: items merge into the chart's series by position. */
 const byIndex = (items: readonly { item: unknown }[]): boolean =>
 	items.every(({ item }) => own(item, 'id') === undefined && own(item, 'name') === undefined);
+
+/** echarts' `isObject`: what a component list keeps; anything else it sets to `null` and skips. */
+const isObjectLike = (value: unknown): boolean =>
+	typeof value === 'function' || (typeof value === 'object' && value !== null);
+
+/** A component echarts made for itself (`isComponentIdInternal`): a merge by position never lands on it. */
+const isInternal = (series: unknown): boolean => {
+	const id = own(series, 'id');
+	return (typeof id === 'string' || typeof id === 'number') && String(id).startsWith('\0_ec_\0');
+};
+
+/**
+ * For each item of the update, the held series it merges into, as echarts maps by position
+ * (`mappingByIndex`, echarts lib/util/model.js:252): each item takes the first series no item took
+ * yet that is not internal; an item that is not an object takes none (:156); past the held series
+ * an item is new (`undefined`). K3.
+ */
+function slots(items: readonly unknown[], held: readonly unknown[]): (number | undefined)[] {
+	const taken = new Set<number>();
+	return items.map((item) => {
+		if (!isObjectLike(item)) return undefined;
+		const free = held.findIndex((series, index) => !taken.has(index) && !isInternal(series));
+		if (free === -1) return undefined;
+		taken.add(free);
+		return free;
+	});
+}
 
 /** The option as the merge applies it: each untyped item with the type of the series it merges into. */
 function merged(option: unknown, types: readonly unknown[]): unknown {
@@ -118,6 +146,24 @@ function merged(option: unknown, types: readonly unknown[]): unknown {
 	);
 }
 
+/** A merge by position: the update typed as it merges, and the untyped items that land on no series. */
+function mergeByIndex(
+	option: unknown,
+	series: readonly { item: unknown; path: string }[],
+	held: unknown
+): { view: unknown; missing: Diagnostic[] } {
+	const existing = heldSeries(held);
+	const landing = slots(
+		series.map(({ item }) => item),
+		existing
+	);
+	const types = landing.map((slot) => (slot === undefined ? undefined : own(existing[slot], 'type')));
+	const missing = series
+		.filter(({ item }, index) => untyped(item) && landing[index] === undefined)
+		.map(({ path }) => dropped(path));
+	return { view: merged(option, types), missing };
+}
+
 /** The guard's options with the registry context of `guard.echarts`, read now. */
 function optionsOf({ options, echarts }: SetOptionGuard): ValidationOptions | undefined {
 	if (echarts === undefined) return options;
@@ -134,6 +180,37 @@ function warn(checked: ValidationResult): void {
 	console.warn(`ChartGuard: ${checked.library} option invalid: ${listed}`);
 }
 
+/**
+ * The option as the call applies it to a chart holding `held` (what `getOption()` returned, read
+ * once: it clones the whole option, K5), validated. A disposed chart (`null`) sets nothing: the
+ * option is checked as a partial one, with no claim about what the chart would drop (K4).
+ */
+function inspect(
+	held: unknown,
+	option: unknown,
+	settings: SetOptionSettings | undefined,
+	guard: SetOptionGuard
+): { checked: ValidationResult; fresh: boolean } {
+	const validator = guard.validator ?? validate;
+	const options = optionsOf(guard);
+	const fresh = held !== null && isFresh(held, settings);
+	const series = itemsAt(own(option, 'series'), '$.series');
+	const based = itemsAt(own(own(option, 'baseOption'), 'series'), '$.baseOption.series');
+	let view = option;
+	let missing: Diagnostic[] = [];
+	if (fresh) missing = [...series, ...based].filter(({ item }) => untyped(item)).map(({ path }) => dropped(path));
+	else if (held !== null && byIndex(series)) ({ view, missing } = mergeByIndex(option, series, held));
+	// A merge update is partial by design: what it leaves out, the chart already has.
+	const checked = validator(view, fresh ? options : { ...options, incomplete: true });
+	return {
+		checked: {
+			...checked,
+			...result(checked.library, checked.schemaVersion, checked.coverage, [...checked.diagnostics, ...missing])
+		},
+		fresh
+	};
+}
+
 /** The option as `chart.setOption(option, settings)` would apply it, validated; nothing is set. */
 export function checkOption(
 	chart: EChartsInstance,
@@ -141,27 +218,7 @@ export function checkOption(
 	settings?: SetOptionSettings,
 	guard: SetOptionGuard = {}
 ): ValidationResult {
-	const validator = guard.validator ?? validate;
-	const options = optionsOf(guard);
-	const fresh = isFresh(chart, settings);
-	const series = itemsAt(own(option, 'series'), '$.series');
-	const based = itemsAt(own(own(option, 'baseOption'), 'series'), '$.baseOption.series');
-	let view = option;
-	let missing: Diagnostic[];
-	if (fresh) missing = [...series, ...based].filter(({ item }) => untyped(item)).map(({ path }) => dropped(path));
-	else if (byIndex(series)) {
-		const types = existingTypes(chart);
-		view = merged(option, types);
-		missing = series
-			.filter(({ item }, index) => untyped(item) && index >= types.length)
-			.map(({ path }) => dropped(path));
-	} else missing = [];
-	// A merge update is partial by design: what it leaves out, the chart already has.
-	const checked = validator(view, fresh ? options : { ...options, incomplete: true });
-	return {
-		...checked,
-		...result(checked.library, checked.schemaVersion, checked.coverage, [...checked.diagnostics, ...missing])
-	};
+	return inspect(chart.getOption(), option, settings, guard).checked;
 }
 
 /**
@@ -174,8 +231,7 @@ export function setOption(
 	settings?: SetOptionSettings,
 	guard: SetOptionGuard = {}
 ): ValidationResult {
-	const fresh = isFresh(chart, settings);
-	const checked = checkOption(chart, option, settings, guard);
+	const { checked, fresh } = inspect(chart.getOption(), option, settings, guard);
 	if (guard.onResult === undefined) warn(checked);
 	else guard.onResult(checked, { fresh });
 	if (guard.block !== true || checked.valid) chart.setOption(option, settings);

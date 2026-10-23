@@ -1,4 +1,5 @@
 import type { AdditionalProperties, EnumValue, NodeSchema, SchemaKind, SchemaManifest } from '../schema.js';
+import { shapeless } from './founded.js';
 import type {
 	ConfidenceTier,
 	IrNode,
@@ -59,7 +60,12 @@ class Lowerer {
 	private readonly incomplete = new Set<NodeSchema>();
 	private readonly lowered = new Map<string, NodeSchema>();
 
-	constructor(private readonly definitions: Readonly<Record<string, IrNode>>) {}
+	/** Definitions that describe no value (H6): lowered as unknown, never as an empty schema. */
+	private readonly shapeless: ReadonlySet<string>;
+
+	constructor(private readonly definitions: Readonly<Record<string, IrNode>>) {
+		this.shapeless = shapeless(definitions);
+	}
 
 	/** One entry per node kind; the mapped type makes a missing kind a compile error. */
 	private readonly lowerings: Lowerings = {
@@ -110,6 +116,7 @@ class Lowerer {
 			...(node.discriminator === undefined ? {} : { discriminator: node.discriminator }),
 			...(node.defaultVariant === undefined ? {} : { defaultVariant: node.defaultVariant }),
 			...(node.defaultWhen === undefined ? {} : { defaultWhen: node.defaultWhen }),
+			...(node.selectWhen === undefined ? {} : { selectWhen: node.selectWhen }),
 			...(node.defaultFrom === undefined ? {} : { defaultFrom: node.defaultFrom }),
 			...(node.extensible === undefined ? {} : { extensible: node.extensible }),
 			...(node.registry === undefined ? {} : { registry: node.registry }),
@@ -139,13 +146,15 @@ class Lowerer {
 			.map(([key]) => key);
 		const nullAsAbsent = node.nullAsAbsent === true ? { nullAsAbsent: true } : {};
 		const point = node.extensionPoint === undefined ? {} : { extensionPoint: node.extensionPoint };
+		const host = node.host === undefined ? {} : { host: node.host };
 		return {
 			kind: 'object',
 			properties,
 			required,
 			additionalProperties: this.additionalOf(node),
 			...nullAsAbsent,
-			...point
+			...point,
+			...host
 		};
 	}
 
@@ -164,7 +173,7 @@ class Lowerer {
 		const known = this.lowered.get(ref);
 		if (known !== undefined) return known;
 		const target = this.definitions[ref];
-		if (target === undefined) return this.approximate(path);
+		if (target === undefined || this.shapeless.has(ref)) return this.approximate(path);
 		const node: Record<string, unknown> = {};
 		const schema = node as unknown as NodeSchema;
 		this.lowered.set(ref, schema);

@@ -28,7 +28,14 @@ test('path segments: keys, indices and hole ranges', () => {
 	assert.deepEqual(pathSegments('$.series[3..9]'), ['series', 3]);
 	assert.deepEqual(pathSegments('$'), []);
 	// Keys that are not identifiers arrive JSON-quoted (config-core keySegment): one path, one place.
-	assert.deepEqual(pathSegments('$.title["te.xt"]["a b"][""]["say \\"hi\\""].$ok_1'), ['title', 'te.xt', 'a b', '', 'say "hi"', '$ok_1']);
+	assert.deepEqual(pathSegments('$.title["te.xt"]["a b"][""]["say \\"hi\\""].$ok_1'), [
+		'title',
+		'te.xt',
+		'a b',
+		'',
+		'say "hi"',
+		'$ok_1'
+	]);
 	const { root } = parseJson('{"title": {"te.xt": 1, "te": {"xt": 2}}}');
 	assert.equal(locate(root, '$.title["te.xt"]').exact, true);
 });
@@ -43,7 +50,8 @@ test('syntax errors are reported with the offset where reading stopped', () => {
 		['{} x', 'Unexpected text after the JSON value', 3],
 		["{'a': 1}", 'Expected a JSON value', 1]
 	];
-	for (const [input, message, offset] of cases) assert.deepEqual(parseJson(input), { ok: false, message, offset }, input);
+	for (const [input, message, offset] of cases)
+		assert.deepEqual(parseJson(input), { ok: false, message, offset }, input);
 });
 
 test('the reader accepts exactly what JSON.parse accepts on common inputs', () => {
@@ -53,4 +61,22 @@ test('the reader accepts exactly what JSON.parse accepts on common inputs', () =
 		assert.equal(parseJson(input).ok, false, input);
 		assert.throws(() => JSON.parse(input), SyntaxError, input);
 	}
+});
+
+test('whitespace and escapes JSON does not accept are syntax errors, never a thrown exception (H13)', () => {
+	// JSON whitespace is space, tab, line feed and carriage return only.
+	for (const space of ['\u00a0', '\ufeff', '\u2028', '\u2029', '\u000b', '\u000c', '\u3000']) {
+		const input = `{${space}"a": 1}`;
+		assert.throws(() => JSON.parse(input), SyntaxError, JSON.stringify(input));
+		const result = parseJson(input);
+		assert.equal(result.ok, false, JSON.stringify(input));
+		assert.equal(result.offset, 1);
+	}
+	// An escape JSON does not know, in a key or a value.
+	for (const input of ['{"\\x": 1}', '{"a": "\\x"}', '["\\u12"]', '["\\\'"]']) {
+		assert.throws(() => JSON.parse(input), SyntaxError, input);
+		assert.equal(parseJson(input).ok, false, input);
+	}
+	for (const input of ['{ "\\/\\b\\f\\n\\r\\t\\u00e9": 1 }', ' \t\r\n[1]\n'])
+		assert.equal(parseJson(input).ok, true, input);
 });

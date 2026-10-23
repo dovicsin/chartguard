@@ -21,6 +21,8 @@ const chart = (yAxis = {}, series = [{ type: 'bar', data: [60, 70] }], extra = {
 test('bar baseline: a bound, dataMin or startValue to 0, scale back to false', () => {
 	assert.deepEqual(fixes(chart({ min: 50 })), ['VIS_BAR_BASELINE $.yAxis.min 50→0']);
 	assert.deepEqual(fixes(chart({ min: 'dataMin' })), ['VIS_BAR_BASELINE $.yAxis.min "dataMin"→0']);
+	// With a negative bar the data minimum is below zero: no finding, and no fix that would hide that bar (H8).
+	assert.deepEqual(fixes(chart({ min: 'dataMin' }, [{ type: 'bar', data: [-5, 3, 10] }])), []);
 	assert.deepEqual(fixes(chart({ scale: true })), ['VIS_BAR_BASELINE $.yAxis.scale true→false']);
 	assert.deepEqual(fixes(chart({ startValue: 20 })), ['VIS_BAR_BASELINE $.yAxis.startValue 20→0']);
 });

@@ -22,13 +22,24 @@ function isDefaultRule(rule: unknown, size: number): boolean {
 	return TEST_SET.has(test) && typeof property === 'string' && property !== '' && isIndexBelow(variant, size);
 }
 
-function checkDefaultWhen(checker: Reporter, rules: unknown, path: string, size: number): void {
+function checkRules(checker: Reporter, node: Node, name: 'defaultWhen' | 'selectWhen', path: string): void {
+	const rules = node[name];
+	const size = Array.isArray(node['anyOf']) ? node['anyOf'].length : 0;
 	if (rules === undefined) return;
 	if (!Array.isArray(rules) || !rules.every((rule) => isDefaultRule(rule, size)))
 		checker.report(
 			path,
-			`defaultWhen must be a list of { test: ${DEFAULT_TESTS.join(' | ')}, property: <name>, variant: <anyOf index> }`
+			`${name} must be a list of { test: ${DEFAULT_TESTS.join(' | ')}, property: <name>, variant: <anyOf index> }`
 		);
+}
+
+/** The members a `selectWhen` rule selects: they are told apart by the rule, not by the discriminator. */
+export function selectedByRule(node: Node): ReadonlySet<number> {
+	const rules = node['selectWhen'];
+	if (!Array.isArray(rules)) return new Set();
+	return new Set(
+		rules.flatMap((rule) => (isRecord(rule) && typeof rule['variant'] === 'number' ? [rule['variant']] : []))
+	);
 }
 
 export const isNonEmpty = (value: unknown): boolean => typeof value === 'string' && value !== '';
@@ -74,7 +85,8 @@ export function checkUnionOptions(checker: Reporter, node: Node, path: string, s
 	const { defaultVariant, extensible, discriminator } = node;
 	if (defaultVariant !== undefined && !isIndexBelow(defaultVariant, size))
 		checker.report(path, 'defaultVariant must index anyOf');
-	checkDefaultWhen(checker, node['defaultWhen'], path, size);
+	checkRules(checker, node, 'defaultWhen', path);
+	checkRules(checker, node, 'selectWhen', path);
 	checkDefaultFrom(checker, node, path);
 	if (extensible !== undefined && typeof extensible !== 'boolean') checker.report(path, 'extensible must be a boolean');
 	checkRegistry(checker, node, path);

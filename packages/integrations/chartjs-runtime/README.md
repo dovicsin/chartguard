@@ -12,10 +12,10 @@ chart.update(); // warns: $.data.datasets[0].borderWidth (Expected number, got s
 ```
 
 - **Creation**: the config is checked as it was passed to `guard` (Chart.js writes default scales into it afterwards), against the running `Chart.version` unless you name one.
-- **Updates**: the chart's own `type`, `data` and `options` are checked before each `update()`, except `options.scales`, which Chart.js merges with its defaults; the result notes this (`CFG_UNCHECKED`) and is `partial`.
+- **Updates**: the chart's own `type`, `data` and `options` are checked before each `update()`, except `options.scales`, which Chart.js merges with its defaults: while they are still the scales the chart was first drawn with, what creation found on them stands; once they change, the result notes that they are not checked (`CFG_UNCHECKED`) and is `partial`. One guarded config may build several charts; each is tracked on its own.
 - **What is registered**: each check reads what `Chart.registry` holds at that moment, plus the inline plugins of the config (`plugins: [Legend]`). On a tree-shaken Chart.js (`Chart.register(...)` instead of `chart.js/auto`), a controller or scale that is not registered is a confirmed `CFG_UNREGISTERED` error (Chart.js would throw), and an option of a plugin that is neither registered nor inline is `CFG_INEFFECTIVE`. `registriesOf(Chart, config.plugins)` gives the same context for your own validation.
 - **Reporting**: `onResult(result, { phase, mode })` receives every result. Without it, a result with confirmed errors is written with `console.warn`; nothing else is logged.
-- **Blocking**: `guard(config, { block: true })` does not draw an invalid config: Chart.js cancels that render or update and keeps what it drew before. Nothing is thrown inside Chart.js.
+- **Blocking**: `guard(config, { block: true })` does not draw an invalid config: an invalid creation is not drawn at any render, the first one included, and an invalid update is cancelled; Chart.js keeps what it drew before. Nothing is thrown inside Chart.js.
 - `validator` replaces the shipped schema (for example `withExtensions([...])` from `@chartguard/config-chartjs`), `options` passes `registries` or `libraryVersion`, `updates: false` checks creation only.
 
 `guard` never changes the config you pass and never runs its getters. To validate before construction and throw instead, use `validateBeforeCreate(config, (checked) => new Chart(canvas, checked))`.

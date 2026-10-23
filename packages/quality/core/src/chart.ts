@@ -97,6 +97,12 @@ export interface AxisSemantics {
 	 * show bare numbers. A function that formats them is `dynamic`.
 	 */
 	readonly unit: Fact<string>;
+	/**
+	 * The plot region the axis spans: axes whose known panels are equal are drawn over one another,
+	 * in one plot; different panels are separate (a grid of their own, a stacked band, a pane), or
+	 * not known to overlap.
+	 */
+	readonly panel: Fact<string>;
 	/** Values grow towards the origin of the screen direction (down, or left). */
 	readonly reversed: Fact<boolean>;
 	readonly title: TitleSemantics;

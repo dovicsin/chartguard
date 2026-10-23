@@ -14,6 +14,7 @@ import { runtimePointer } from './runtime.mjs';
  * - radial axes take `labels.rotation: 'auto'`; organization charts, like every sankey-based
  *   series, take `nodeWidth: 'auto'`; `time.useUTC` is a boolean, as its own documentation says;
  * - `dataMapping` keys are point properties (the declaration is an empty interface that says so);
+ * - a text's `style.width` is read with `pInt`, so a CSS length (`'90px'`) is a width as well as a number;
  * - `plotOptions.series` is merged into every series, so it takes the options of every series type.
  */
 const FACTS = {
@@ -28,7 +29,8 @@ const FACTS = {
 	nodeWidth: { file: 'modules/sankey.src.js', pattern: "if (nodeWidth === 'auto') {" },
 	useUTC: { file: 'highcharts.d.ts', pattern: 'Setting `useUTC` to true is equivalent to setting `time.timezone` to' },
 	dataMapping: { file: 'highcharts.d.ts', pattern: 'export interface DataMappingOptionsObject {}' },
-	plotSeries: { file: 'highcharts.src.js', pattern: 'const options = merge(typeOptions, plotOptions.series,' }
+	plotSeries: { file: 'highcharts.src.js', pattern: 'const options = merge(typeOptions, plotOptions.series,' },
+	cssWidth: { file: 'highcharts.src.js', pattern: 'textWidth = this.textWidth = pInt(styles.width);' }
 };
 
 const ANY_ARRAY = { kind: 'array', items: { kind: 'unknown' } };
@@ -184,6 +186,7 @@ function steps({ optionName, seriesVariants }) {
 		['useUTC', alsoAccepts((defs) => [defs[optionName].properties.time.node.ref], 'useUTC', { kind: 'boolean' })],
 		['dashStyle', dashStyle],
 		['dataMapping', dataMapping],
+		['cssWidth', alsoAccepts(named('CSSObject'), 'width', STRING)],
 		['plotSeries', (defs, source) => anySeries(defs, optionName, source)]
 	];
 }

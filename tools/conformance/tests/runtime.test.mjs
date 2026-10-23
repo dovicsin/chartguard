@@ -60,7 +60,9 @@ for (const { library, run, runModules, validate, valid, contract } of LIBRARIES)
 	for (const entry of contract.filter(({ modules }) => modules !== undefined))
 		test(`${library} tree-shaken findings match the registry the runtime reports: ${entry.name}`, () => {
 			const { registries } = runModules(entry.config, entry.modules);
-			const findings = validate(entry.config, { registries }).diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`);
+			const findings = validate(entry.config, { registries }).diagnostics.map(
+				(d) => `${d.severity} ${d.code} ${d.path}`
+			);
 			assert.deepEqual(findings, entry.findings);
 		});
 
@@ -97,8 +99,16 @@ test('the explanation rule covers every combination', () => {
 });
 
 test('the runners never change the config they are given; the runtimes write into what they receive', () => {
-	const chartjs = { type: 'line', data: { labels: ['a'], datasets: [{ data: [1] }] }, options: { plugins: { tooltip: { callbacks: { label: () => 'x' } } } } };
-	const echarts = { xAxis: { type: 'category', data: ['a'] }, yAxis: { type: 'value' }, series: [{ type: 'line', data: [1] }] };
+	const chartjs = {
+		type: 'line',
+		data: { labels: ['a'], datasets: [{ data: [1] }] },
+		options: { plugins: { tooltip: { callbacks: { label: () => 'x' } } } }
+	};
+	const echarts = {
+		xAxis: { type: 'category', data: ['a'] },
+		yAxis: { type: 'value' },
+		series: [{ type: 'line', data: [1] }]
+	};
 	const snapshot = (value) => JSON.stringify(value);
 	const [beforeChartjs, beforeEcharts] = [snapshot(chartjs), snapshot(echarts)];
 	runChartjs(chartjs);
@@ -110,9 +120,16 @@ test('the runners never change the config they are given; the runtimes write int
 test('an inline Chart.js plugin receives options.plugins.<id>, which the chartjs.plugins extension checks (CG-02-05)', () => {
 	const received = [];
 	const plugin = { id: 'labels', afterInit: (_chart, _args, options) => received.push(options.size) };
-	const config = (size) => ({ type: 'bar', data: { labels: ['a'], datasets: [{ data: [1] }] }, plugins: [plugin], options: { plugins: { labels: { size } } } });
+	const config = (size) => ({
+		type: 'bar',
+		data: { labels: ['a'], datasets: [{ data: [1] }] },
+		plugins: [plugin],
+		options: { plugins: { labels: { size } } }
+	});
 	const findings = (validate, value) => validate(value).diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`);
-	const validate = withChartjsExtensions([{ id: 'labels', options: { 'chartjs.plugins': { labels: s.object({ size: s.number() }) } } }]);
+	const validate = withChartjsExtensions([
+		{ id: 'labels', options: { 'chartjs.plugins': { labels: s.object({ size: s.number() }) } } }
+	]);
 	assert.equal(verdictOf(runChartjs(config(4))), 'accepted');
 	assert.deepEqual(findings(validate, config(4)), []);
 	// The runtime hands the plugin whatever is there: the type is the plugin's contract, which the extension states.
@@ -124,23 +141,38 @@ test('an inline Chart.js plugin receives options.plugins.<id>, which the chartjs
 
 test('a tree-shaken Chart.js run restores every built-in afterwards, even when the body throws', () => {
 	const config = { type: 'bar', data: { labels: ['a'], datasets: [{ data: [1] }] } };
-	assert.throws(() => withChartjsModules(['LineController'], () => { throw new Error('body'); }), { message: 'body' });
+	assert.throws(
+		() =>
+			withChartjsModules(['LineController'], () => {
+				throw new Error('body');
+			}),
+		{ message: 'body' }
+	);
 	assert.equal(verdictOf(runChartjs(config)), 'accepted');
-	assert.throws(() => withChartjsModules(['NotAModule'], () => 0), { message: 'not a chart.js registerable: NotAModule' });
+	assert.throws(() => withChartjsModules(['NotAModule'], () => 0), {
+		message: 'not a chart.js registerable: NotAModule'
+	});
 	assert.equal(verdictOf(runChartjs(config)), 'accepted');
 });
 
 test('a tree-shaken ECharts run rejects what it cannot pass to a child process', () => {
-	assert.throws(() => runEchartsModules({ series: [{ type: 'line', label: { formatter: () => '' } }] }, ['LineChart']), {
-		message: 'a tree-shaken case must be plain JSON'
-	});
+	assert.throws(
+		() => runEchartsModules({ series: [{ type: 'line', label: { formatter: () => '' } }] }, ['LineChart']),
+		{
+			message: 'a tree-shaken case must be plain JSON'
+		}
+	);
 	assert.throws(() => runEchartsModules({}, ['NoSuchChart']), /not an echarts chart or component: NoSuchChart/);
 });
 
 // Highcharts needs a DOM: every case renders in one headless Chrome run, then each is checked.
 const highcharts = { skip: browserSkipReason() ?? false };
 const highchartsCases = [
-	...Object.entries(HIGHCHARTS_VALID).map(([name, config]) => ({ name: `known-valid renders silently: ${name}`, config, runtime: 'accepted' })),
+	...Object.entries(HIGHCHARTS_VALID).map(([name, config]) => ({
+		name: `known-valid renders silently: ${name}`,
+		config,
+		runtime: 'accepted'
+	})),
 	...HIGHCHARTS_CONTRACT.map((entry) => ({ ...entry, name: `runtime contract: ${entry.name}` }))
 ];
 const highchartsOutcomes = highcharts.skip === false ? await runHighcharts(highchartsCases) : [];
@@ -156,12 +188,22 @@ highchartsCases.forEach((entry, index) =>
 	})
 );
 
-test('the Highcharts runner takes plain JSON and module names only, and option text cannot escape the page script', highcharts, async () => {
-	await assert.rejects(runHighcharts([{ config: { series: [{ data: [1], events: { click: () => 0 } }] } }]), {
-		message: 'a Highcharts case must be plain JSON (explicit undefined allowed)'
-	});
-	await assert.rejects(runHighcharts([{ config: {}, modules: ['../../etc/passwd'] }]), { message: 'not a module name: ../../etc/passwd' });
-	await assert.rejects(runHighcharts([{ config: {}, modules: ['no-such-module'] }]), { message: 'not a highcharts file: modules/no-such-module.src.js' });
-	const [escaped] = await runHighcharts([{ config: { title: { text: '</script><script>document.title = 1</script>' }, series: [{ data: [1] }] } }]);
-	assert.equal(verdictOf(escaped), 'accepted', JSON.stringify(escaped));
-});
+test(
+	'the Highcharts runner takes plain JSON and module names only, and option text cannot escape the page script',
+	highcharts,
+	async () => {
+		await assert.rejects(runHighcharts([{ config: { series: [{ data: [1], events: { click: () => 0 } }] } }]), {
+			message: 'a Highcharts case must be plain JSON (explicit undefined allowed)'
+		});
+		await assert.rejects(runHighcharts([{ config: {}, modules: ['../../etc/passwd'] }]), {
+			message: 'not a module name: ../../etc/passwd'
+		});
+		await assert.rejects(runHighcharts([{ config: {}, modules: ['no-such-module'] }]), {
+			message: 'not a highcharts file: modules/no-such-module.src.js'
+		});
+		const [escaped] = await runHighcharts([
+			{ config: { title: { text: '</script><script>document.title = 1</script>' }, series: [{ data: [1] }] } }
+		]);
+		assert.equal(verdictOf(escaped), 'accepted', JSON.stringify(escaped));
+	}
+);

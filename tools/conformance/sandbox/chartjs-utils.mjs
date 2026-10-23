@@ -3,7 +3,20 @@
  * MIT): the same functions and constants the samples call, with a fixed seed and a fixed base
  * date instead of `Date.now()`, and without the luxon / @kurkle/color dependencies.
  */
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS = [
+	'January',
+	'February',
+	'March',
+	'April',
+	'May',
+	'June',
+	'July',
+	'August',
+	'September',
+	'October',
+	'November',
+	'December'
+];
 const COLORS = ['#4dc9f6', '#f67019', '#f53794', '#537bc4', '#acc236', '#166a8f', '#00a950', '#58595b', '#8549ba'];
 const CHART_COLORS = {
 	red: 'rgb(255, 99, 132)',
@@ -82,7 +95,8 @@ export function createUtils(seed = 42) {
 		CHART_COLORS,
 		...random,
 		...dataHelpers(random.rand),
-		months: ({ count = 12, section } = {}) => Array.from({ length: count }, (_, index) => MONTHS[index % 12].substring(0, section)),
+		months: ({ count = 12, section } = {}) =>
+			Array.from({ length: count }, (_, index) => MONTHS[index % 12].substring(0, section)),
 		color: (index) => COLORS[index % COLORS.length],
 		namedColor: (index) => NAMED_COLORS[index % NAMED_COLORS.length],
 		transparentize,

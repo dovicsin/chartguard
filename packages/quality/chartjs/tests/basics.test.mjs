@@ -163,7 +163,7 @@ test('getters are never run and leave their facts unknown', () => {
 });
 
 test('every runtime default points at the line of the pinned chart.js that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 25));
+	assert.equal(checkPackagePointers(import.meta.url), 26));
 
 test('access: a canvas gets its text alternative and keyboard access from the page', () => {
 	const { dataDescribed, keyboard } = normalize({}).access;

@@ -53,9 +53,12 @@ function main(argv) {
 	const before = JSON.parse(baseText(current.path, options));
 	const after = JSON.parse(current.text);
 	const changes = diffArtifacts(before, after);
-	if (options.json) process.stdout.write(`${JSON.stringify({ before: before.digest, after: after.digest, changes }, null, 2)}\n`);
+	if (options.json)
+		process.stdout.write(`${JSON.stringify({ before: before.digest, after: after.digest, changes }, null, 2)}\n`);
 	else {
-		process.stdout.write(`${options.library} ${before.libraryVersion} ${String(before.digest)} -> ${after.libraryVersion} ${after.digest}\n`);
+		process.stdout.write(
+			`${options.library} ${before.libraryVersion} ${String(before.digest)} -> ${after.libraryVersion} ${after.digest}\n`
+		);
 		for (const line of formatDiff(changes)) process.stdout.write(`${line}\n`);
 		process.stdout.write(`${String(changes.length)} change(s)\n`);
 	}

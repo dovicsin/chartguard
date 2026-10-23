@@ -21,6 +21,7 @@ const axis = (axisTitle) => ({
 	max: none('$.M'),
 	fit: none('$.fit'),
 	unit: none('$.unit'),
+	panel: fact('plot', '$.panel', 'default'),
 	reversed: none('$.r'),
 	title: axisTitle
 });

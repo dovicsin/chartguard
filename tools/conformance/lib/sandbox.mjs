@@ -13,16 +13,28 @@ function permissionFlag() {
 }
 
 /**
+ * The child's environment: nothing but where coverage is collected. Example code can reach the
+ * host realm's `process` through any object handed to its `vm` context (K6), so it must find no
+ * tokens or paths there.
+ */
+function emptyEnvironment() {
+	const coverage = process.env.NODE_V8_COVERAGE;
+	return coverage === undefined ? {} : { NODE_V8_COVERAGE: coverage };
+}
+
+/**
  * Runs a pinned upstream example corpus in a separate Node process under the permission model:
- * the repository is readable, nothing is writable, no child processes or workers can be started.
- * Returns undefined when this Node version has no permission model, so upstream example code is
- * never run without isolation.
+ * the repository is readable, nothing is writable, no child processes or workers can be started,
+ * and the environment is empty. The network is not closed (Node's permission model has no switch
+ * for it); the corpora are hash-pinned (E12). Returns undefined when this Node version has no
+ * permission model, so upstream example code is never run without isolation.
  */
 export function runCorpus(library, corpusPath) {
 	const flag = permissionFlag();
 	if (flag === undefined) return undefined;
 	const child = spawnSync(process.execPath, [flag, `--allow-fs-read=${ROOT}`, CHILD, library, corpusPath], {
 		encoding: 'utf8',
+		env: emptyEnvironment(),
 		maxBuffer: 64 * 1024 * 1024,
 		timeout: TIMEOUT_MS
 	});

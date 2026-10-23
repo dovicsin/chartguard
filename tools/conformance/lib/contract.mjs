@@ -27,6 +27,7 @@ export function requiredExplanation({ findings, runtime }) {
 	const warnings = findings.filter((finding) => severityOf(finding) === 'warning');
 	// A warning the runtime echoes with its own warning is agreement, as an error it rejects is.
 	if (warnings.length > 0 && runtime === 'complained') return undefined;
-	if (warnings.length > 0) return ADVISORY.get(new Set(warnings.map(codeOf)).size === 1 ? codeOf(warnings[0]) : '') ?? 'Unresolved:';
+	if (warnings.length > 0)
+		return ADVISORY.get(new Set(warnings.map(codeOf)).size === 1 ? codeOf(warnings[0]) : '') ?? 'Unresolved:';
 	return signalled(runtime) ? 'False negative (CG-' : undefined;
 }

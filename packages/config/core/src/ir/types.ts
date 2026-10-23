@@ -71,6 +71,11 @@ export interface ObjectNode extends NodeBase {
 	/** A `null` optional property counts as absent: the runtime reads options with `pick()`. */
 	readonly nullAsAbsent?: boolean;
 	/**
+	 * A platform object of this class (`Date`, `CanvasGradient`, `HTMLElement`), opaque to the schema.
+	 * A plain object is never one, so in a union it is checked against the plain members.
+	 */
+	readonly host?: string;
+	/**
 	 * Object definitions whose properties this object also accepts (one level; own properties win).
 	 * Lets many objects share a large property set, e.g. Chart.js element options at every scope.
 	 */
@@ -102,6 +107,12 @@ export interface UnionNode extends NodeBase {
 	readonly defaultWhen?: readonly DefaultRule[];
 	/** When no `defaultWhen` rule passes, the variant named by a value elsewhere in the config (`chart.type`). */
 	readonly defaultFrom?: DefaultFrom;
+	/**
+	 * Rules the runtime applies before it reads the discriminator, in order: the first whose property
+	 * passes its test selects `variant` (ECharts `graphic`: with `elements` it is a component, whatever
+	 * its `type`). A member only a rule selects needs no literal discriminator.
+	 */
+	readonly selectWhen?: readonly DefaultRule[];
 	/** The variant registry can be extended (e.g. by plugins), so unknown variants are not errors. */
 	readonly extensible?: boolean;
 	/** The runtime registry the discriminator values live in (`echarts`, prefix `series.`); requires `extensible`. */

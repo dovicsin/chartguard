@@ -2,9 +2,12 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
 /** A Chrome or Chromium binary: `CHROME_PATH`, or the usual Linux locations. */
-const CHROME = [process.env['CHROME_PATH'], '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find(
-	(path) => path !== undefined && existsSync(path)
-);
+const CHROME = [
+	process.env['CHROME_PATH'],
+	'/usr/bin/google-chrome',
+	'/usr/bin/chromium',
+	'/usr/bin/chromium-browser'
+].find((path) => path !== undefined && existsSync(path));
 
 /**
  * Why a browser test cannot run here, or undefined when it can. On CI a missing browser is a
@@ -12,7 +15,8 @@ const CHROME = [process.env['CHROME_PATH'], '/usr/bin/google-chrome', '/usr/bin/
  */
 export function browserSkipReason() {
 	if (CHROME !== undefined) return undefined;
-	if (process.env['CI'] !== undefined) throw new Error('CI must provide Chrome (set CHROME_PATH) for the browser tests');
+	if (process.env['CI'] !== undefined)
+		throw new Error('CI must provide Chrome (set CHROME_PATH) for the browser tests');
 	return 'needs Chrome (set CHROME_PATH)';
 }
 

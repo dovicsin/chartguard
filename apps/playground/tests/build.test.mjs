@@ -21,10 +21,24 @@ test('the bundle: a small entry without schemas, one lazy chunk per library, no 
 		chunks.some((text) => text.includes(locator))
 	);
 	assert.deepEqual(bundled, [true, true, false]);
-	const ours = Object.keys(metafile.inputs).filter((input) => input.startsWith('apps/playground/src/') || input.includes('packages/'));
-	for (const input of ours) assert.doesNotMatch(readFileSync(input, 'utf8'), /\beval\(|new Function\(|innerHTML|insertAdjacentHTML|document\.write/, input);
+	const ours = Object.keys(metafile.inputs).filter(
+		(input) => input.startsWith('apps/playground/src/') || input.includes('packages/')
+	);
+	for (const input of ours)
+		assert.doesNotMatch(
+			readFileSync(input, 'utf8'),
+			/\beval\(|new Function\(|innerHTML|insertAdjacentHTML|document\.write/,
+			input
+		);
 	const html = readFileSync(join(outdir, 'index.html'), 'utf8');
 	assert.match(html, /script-src 'self';/);
 	assert.doesNotMatch(html, /unsafe-eval/);
 	assert.ok(JSON.parse(readFileSync(join(outdir, 'examples.json'), 'utf8')).length > 0);
+});
+
+test('the dev server listens on the loopback interface only, the address it prints (K19)', async () => {
+	const { serveOptions } = await import('../scripts/serve.mjs');
+	const options = serveOptions(8080);
+	assert.equal(options.host, '127.0.0.1');
+	assert.equal(options.port, 8080);
 });

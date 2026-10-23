@@ -65,7 +65,11 @@ for (const { library, expectations, prefix, license, minimumQuiet, run } of CORP
 			assert.match(example.sha256, /^[0-9a-f]{64}$/);
 			// A local corpus is never reviewed in git: its content must still be what the pin hashed.
 			if (example.page !== undefined)
-				assert.deepEqual([sha256(example.code), sha256(example.page)], [example.sha256, example.pageSha256], example.path);
+				assert.deepEqual(
+					[sha256(example.code), sha256(example.page)],
+					[example.sha256, example.pageSha256],
+					example.path
+				);
 		}
 	});
 
@@ -92,7 +96,10 @@ for (const { library, expectations, prefix, license, minimumQuiet, run } of CORP
 		}
 		assert.deepEqual(unexplained, []);
 		const known = new Set(outcomes.map(({ path }) => path));
-		assert.deepEqual([...listed.keys()].filter((path) => !known.has(path)), []);
+		assert.deepEqual(
+			[...listed.keys()].filter((path) => !known.has(path)),
+			[]
+		);
 		// The floor counts quiet examples: an explained, certain deprecation is not noise.
 		assert.ok(outcomes.filter(isQuiet).length >= minimumQuiet);
 	});

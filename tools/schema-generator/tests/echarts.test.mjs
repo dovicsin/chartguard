@@ -64,7 +64,8 @@ test('series is one object or a list, discriminated by type and extensible at bo
 	const element = resolve(list.items);
 	assert.deepEqual([element.discriminator, element.extensible], ['type', true]);
 	const types = element.anyOf.map((member) => resolve(member).properties.type.node.value);
-	for (const builtIn of ['line', 'bar', 'pie', 'scatter', 'custom', 'lines', 'tree', 'chord']) assert.ok(types.includes(builtIn));
+	for (const builtIn of ['line', 'bar', 'pie', 'scatter', 'custom', 'lines', 'tree', 'chord'])
+		assert.ok(types.includes(builtIn));
 });
 
 test('numeric axes accept a boolean boundaryGap, as parseBoundaryGapOption does at runtime', () => {
@@ -116,7 +117,13 @@ test('the visualMap subtype follows the runtime expression rule by rule, citing 
 	assert.equal(subtype(visualMap.defaultVariant), 'continuous');
 	assert.deepEqual(
 		visualMap.defaultWhen.map((rule) => `${rule.test} ${rule.property} ${subtype(rule.variant)}`),
-		['truthy categories piecewise', 'truthy calculable continuous', 'nonEmpty pieces piecewise', 'truthy pieces continuous', 'positive splitNumber piecewise']
+		[
+			'truthy categories piecewise',
+			'truthy calculable continuous',
+			'nonEmpty pieces piecewise',
+			'truthy pieces continuous',
+			'positive splitNumber piecewise'
+		]
 	);
 	assert.match(visualMap.provenance.sources[0].pointer, /^echarts\/lib\/component\/visualMap\/installCommon\.js:\d+$/);
 });
@@ -140,8 +147,11 @@ test('the global Function type is a function, never an open object (D18)', () =>
 });
 
 test('deprecations: the declarations state some, the runtime renames others; only a runtime rename is a safe fix', () => {
-	const seriesItems = resolve(resolve(option.properties.series.node).anyOf.find((member) => resolve(member).kind === 'array').items);
-	const variant = (type) => resolve(seriesItems.anyOf.find((member) => resolve(member).properties.type.node.value === type));
+	const seriesItems = resolve(
+		resolve(option.properties.series.node).anyOf.find((member) => resolve(member).kind === 'array').items
+	);
+	const variant = (type) =>
+		resolve(seriesItems.anyOf.find((member) => resolve(member).properties.type.node.value === type));
 	const pie = variant('pie');
 	assert.deepEqual(pie.properties.clockWise.deprecated, {
 		message: 'clockWise is deprecated; use clockwise instead.',
@@ -149,7 +159,10 @@ test('deprecations: the declarations state some, the runtime renames others; onl
 		renameTo: 'clockwise'
 	});
 	assert.deepEqual(pie.properties.clockWise.node, pie.properties.clockwise.node);
-	assert.match(pie.properties.clockWise.provenance.sources[0].pointer, /^echarts\/lib\/preprocessor\/backwardCompat\.js:\d+$/);
+	assert.match(
+		pie.properties.clockWise.provenance.sources[0].pointer,
+		/^echarts\/lib\/preprocessor\/backwardCompat\.js:\d+$/
+	);
 	const margin = resolve(pie.properties.label.node).properties.margin.deprecated;
 	assert.deepEqual(margin, { message: 'Use `edgeDistance` instead', replacement: 'edgeDistance' });
 	// The bar series owns a copy of its item style with the legacy names; other series do not gain them.

@@ -85,17 +85,25 @@ const MAX_TICKS: Default<number> = {
 	pointer: 'chart.js@4.5.1 dist/chart.js:10298 maxTicksLimit = maxTicksLimit || 11;'
 };
 
-/** The most ticks the scale makes: `maxTicksLimit || 11`, capped; a fractional limit is a count of its own (not modelled). */
+/** Above this many ticks the sizes are not listed one by one: the range is left to the layout. */
+const MOST_LISTED = 1000;
+
+/**
+ * The most ticks the scale makes: `maxTicksLimit || 11`, at least two. The scale's own limit
+ * (`computeTickLimit`, its length over the font's line height) has no cap, so a larger
+ * `maxTicksLimit` is reached on a long scale (K10). A fractional limit is a count of its own (not modelled).
+ */
 function mostTicks(config: unknown, scale: readonly string[]): Fact<number> {
 	const limit = readFact(config, [...scale, 'ticks', 'maxTicksLimit'], isNumber, MAX_TICKS);
 	if (!limit.known) return limit;
 	if (!Number.isInteger(limit.value)) return unknown(limit.path, 'unmodelled');
-	return { ...limit, value: Math.max(2, Math.min(MAX_TICKS.value, limit.value === 0 ? MAX_TICKS.value : limit.value)) };
+	if (limit.value > MOST_LISTED) return unknown(limit.path, 'layout');
+	return { ...limit, value: Math.max(2, limit.value === 0 ? MAX_TICKS.value : limit.value) };
 }
 
 /**
  * The ranges a linear value scale with `beginAtZero: false` can take. Its tick limit depends on the
- * scale's length (`computeTickLimit`, :10373), so every limit from 2 to 11 (or `ticks.maxTicksLimit`)
+ * scale's length (`computeTickLimit`, :10373), so every limit from 2 to 11 (or to `ticks.maxTicksLimit`)
  * is a size the chart can be drawn at; Chart.js widens the range over its layout passes, so the drawn
  * range lies between them. With `bounds: 'data'` the range is the data's.
  */

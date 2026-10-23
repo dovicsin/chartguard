@@ -15,5 +15,11 @@ export const KNOWN_VALID = {
 		xAxis: { categories: ['Q1', 'Q2'] },
 		series: [{ name: 'Revenue', data: [3, 4] }],
 		credits: { enabled: false }
+	},
+	// `null` is the documented way to hide a title (TitleOptions.text: string | null), K12.
+	'titles hidden with null': {
+		title: { text: null },
+		subtitle: { text: null },
+		series: [{ type: 'column', data: [1, 2] }]
 	}
 };

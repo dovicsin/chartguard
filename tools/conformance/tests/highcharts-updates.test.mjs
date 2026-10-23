@@ -14,7 +14,12 @@ const MIXED = { chart: { type: 'column' }, series: [{ type: 'line', id: 'a', dat
 const CASES = [
 	{ name: 'untyped items take the type of the series at their index', create: MIXED, update: { series: [{}, {}] } },
 	{ name: 'items beyond the series are ignored', create: MIXED, update: { series: [{}, {}, {}] } },
-	{ name: 'with oneToOne, items beyond are added with the chart type', create: MIXED, update: { series: [{}, {}, {}] }, oneToOne: true },
+	{
+		name: 'with oneToOne, items beyond are added with the chart type',
+		create: MIXED,
+		update: { series: [{}, {}, {}] },
+		oneToOne: true
+	},
 	{
 		name: "the update's chart type reaches the series without their own type",
 		create: MIXED,

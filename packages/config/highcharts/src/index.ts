@@ -10,8 +10,18 @@ import type { ConfigValidator, ValidationOptions, ValidationResult } from '@char
 
 export { type Extension, ExtensionError } from '@chartguard/config-core';
 
-const toggle = s.object({ enabled: s.boolean() });
-const text = s.object({ text: s.string() });
+/**
+ * Highcharts reads its options with `pick()`, which skips `null` like `undefined`
+ * (highcharts@13.1.1 highcharts.src.js `if (typeof arg !== 'undefined' && arg !== null) {`): a `null`
+ * option is unset, as in the generated schema. `title.text: null` is how a title is hidden (K12).
+ */
+const object = (properties: Parameters<typeof s.object>[0]): ReturnType<typeof s.object> => ({
+	...s.object(properties),
+	nullAsAbsent: true
+});
+
+const toggle = object({ enabled: s.boolean() });
+const text = object({ text: s.string() });
 
 /**
  * Union-typed upstream fields stay open until the schema DSL supports unions (CG-02-01):
@@ -19,7 +29,7 @@ const text = s.object({ text: s.string() });
  */
 const union = s.any;
 
-const series = s.object({
+const series = object({
 	type: s.string(),
 	name: s.string(),
 	data: s.array(s.any()),
@@ -31,8 +41,8 @@ export const manifest: SchemaManifest = {
 	version: '13.x (starter subset)',
 	coverage: 'partial',
 	source: 'manually curated; field types checked against highcharts@13.1.1 TypeScript declarations',
-	root: s.object({
-		chart: s.object({
+	root: object({
+		chart: object({
 			type: s.string(),
 			height: union(), // number | string | null
 			width: union(), // number | string | null

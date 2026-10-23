@@ -41,9 +41,9 @@ test('unknown paths say why: a call, a name, a computed key, a spread, a choice,
 		'const b = { v: 2 };',
 		'const loop = { self: loop };',
 		'const config = {',
+		'\t[key]: 1,',
 		'\tcall: make(),',
 		'\tname: param,',
-		'\t[key]: 1,',
 		'\tchoice: x ? a : b,',
 		'\tlist: [1, dyn()],',
 		'\tloop,',
@@ -54,10 +54,11 @@ test('unknown paths say why: a call, a name, a computed key, a spread, a choice,
 	const unknown = object(source)
 		.paths.filter((fact) => !fact.known)
 		.map((fact) => `${fact.path} ${fact.reason} ${fact.line}`);
+	// The computed key comes first: a computed key may replace any key written before it (A9).
 	assert.deepEqual(unknown, [
-		'$ computed-key 7',
-		'$.call call 5',
-		'$.name name 6',
+		'$ computed-key 5',
+		'$.call call 6',
+		'$.name name 7',
 		'$.choice.v choice 8',
 		'$.list[1] call 9',
 		'$.loop.self cycle 3',

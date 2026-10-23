@@ -1,12 +1,20 @@
 import { isContainer, ownDataProperty } from '@chartguard/core';
 
+import { type Carried, carriedBy, isLikely, withCarried } from './carried.js';
+import { decide } from './decide.js';
 import type { ResolvedExtensions } from './extensions.js';
 import { inheritedValue } from './inherited.js';
-import { isListLike, kindOf } from './kind.js';
+import { isPlainData, kindOf } from './kind.js';
+import { discriminatorOf, discriminatorValues, flatMembers, nestedUnions } from './members.js';
+import { mergeArrays, mergePrimitives } from './merge.js';
 import { type Registration, registration, type Registries } from './registry.js';
-import type { DefaultChoice, DefaultTest, EnumValue, NodeSchema, RegistryRef } from './schema.js';
+import type { EnumValue, NodeSchema, RegistryRef } from './schema.js';
+import { subsumingMember } from './subsume.js';
 
-export type Selection =
+/** A claim the selection makes rests on a member that is only likely: its finding is too (`inferred`, H5). */
+export type Selection = Choice & { readonly inferred?: boolean };
+
+type Choice =
 	| { readonly kind: 'variant'; readonly schema: NodeSchema }
 	| { readonly kind: 'accepted' }
 	| { readonly kind: 'mismatch'; readonly expected: string }
@@ -33,58 +41,6 @@ const AMBIGUOUS: Selection = { kind: 'ambiguous' };
 
 function variant(schema: NodeSchema): Selection {
 	return { kind: 'variant', schema };
-}
-
-const isUnion = (schema: NodeSchema): boolean => schema.kind === 'union';
-
-/**
- * The unions nested in a union that have not been visited yet. Unions may refer to one another
- * through definitions (`A = number | B`, `B = string | A`), so every walk over nested unions visits
- * each one once.
- */
-function nestedUnions(union: NodeSchema, seen: Set<NodeSchema>): NodeSchema[] {
-	seen.add(union);
-	return (union.anyOf ?? []).filter((member) => isUnion(member) && !seen.has(member));
-}
-
-/**
- * Members of nested unions take part directly: a union is a set of alternatives, never a
- * runtime kind of its own, so `A | (B | C)` must accept exactly what `A | B | C` accepts.
- */
-function flatMembers(union: NodeSchema, seen = new Set<NodeSchema>()): NodeSchema[] {
-	if (seen.has(union)) return [];
-	seen.add(union);
-	return (union.anyOf ?? []).flatMap((member) => (isUnion(member) ? flatMembers(member, seen) : [member]));
-}
-
-/** The discriminator of the union itself, or the one every nested union agrees on. */
-function discriminatorOf(union: NodeSchema, seen = new Set<NodeSchema>()): string | undefined {
-	if (union.discriminator !== undefined) return union.discriminator;
-	const nested = nestedUnions(union, seen).map((member) => discriminatorOf(member, seen));
-	const [first] = nested;
-	return nested.length > 0 && nested.every((key) => key === first) ? first : undefined;
-}
-
-/** `undefined`: the runtime decides this value only by coercion (`'3' > 0`), which is never run here. */
-type Decision = boolean | undefined;
-
-function nonEmpty(value: unknown): Decision {
-	if (isListLike(value)) return value.length > 0;
-	return Boolean(value) ? undefined : false;
-}
-
-function positive(value: unknown): Decision {
-	if (typeof value === 'number') return value > 0;
-	return Boolean(value) ? undefined : false;
-}
-
-const TESTS: Readonly<Record<DefaultTest, (value: unknown) => Decision>> = { truthy: Boolean, nonEmpty, positive };
-
-/** An absent property is `undefined`, as the runtime reads it; a getter never runs, so it decides nothing. */
-function decide(rule: DefaultChoice, value: object): Decision {
-	const entry = ownDataProperty(value, rule.property);
-	if (entry.found) return TESTS[rule.test](entry.value);
-	return entry.accessor ? undefined : TESTS[rule.test](undefined);
 }
 
 /** The member a `defaultFrom` names; ambiguous when the value cannot be read or names no member. */
@@ -201,24 +157,6 @@ function isExtensible(union: NodeSchema, seen = new Set<NodeSchema>()): boolean 
 	return union.extensible === true || nestedUnions(union, seen).some((member) => isExtensible(member, seen));
 }
 
-/** Same-kind primitives: any unrestricted member widens to the whole kind, otherwise enums merge. */
-function mergePrimitives(members: readonly NodeSchema[]): NodeSchema {
-	const [first] = members;
-	const kind = first?.kind ?? 'any';
-	if (members.some((member) => member.enum === undefined)) return { kind };
-	return { kind, enum: members.flatMap((member) => member.enum ?? []) };
-}
-
-function mergeArrays(members: readonly NodeSchema[]): NodeSchema {
-	const elements = members.map((member): NodeSchema => member.element ?? { kind: 'any' });
-	return { kind: 'array', element: { kind: 'union', anyOf: elements } };
-}
-
-function discriminatorValues(member: NodeSchema, key: string): readonly EnumValue[] {
-	const properties = member.properties ?? {};
-	return (Object.hasOwn(properties, key) ? properties[key]?.enum : undefined) ?? [];
-}
-
 /** The member an explicit discriminator value selects, as the caller's registry and the schema decide. */
 /** A union whose object members are told apart by the literal values of `key`. */
 interface Discriminated {
@@ -266,25 +204,115 @@ function selectByDiscriminator(
 	return selectExplicit(entry.value, { union, members, key }, { registries, root, extensions });
 }
 
-/** Chooses the union member that applies to a value, without guessing between look-alike objects. */
+/**
+ * A plain object is never a platform object (`host`): when a plain member also fits, the platform
+ * members are left out, so a data item is checked against its own shape (K2). Where only platform
+ * members fit, they stay (a runtime may duck-type them); a class instance may be either.
+ */
+function byPlainness(value: unknown, matching: readonly NodeSchema[]): NodeSchema[] {
+	if (!isPlainData(value)) return [...matching];
+	const plain = matching.filter((member) => member.host === undefined);
+	return plain.length > 0 ? plain : [...matching];
+}
+
+/**
+ * The variant a `selectWhen` rule selects, applied before the discriminator as the runtime does; an
+ * undecidable rule (a getter, a value only coercion decides) leaves the value ambiguous.
+ */
+function selectedByRules(union: NodeSchema, value: object): Selection | undefined {
+	for (const rule of union.selectWhen ?? []) {
+		const decision = decide(rule, value);
+		if (decision === undefined) return AMBIGUOUS;
+		if (decision) return memberAt(union, rule.variant);
+	}
+	return undefined;
+}
+
+/** The members the discriminator chooses among: those a `selectWhen` rule selects are told apart by it. */
+function withoutRuled(union: NodeSchema, members: readonly NodeSchema[]): NodeSchema[] {
+	const ruled = new Set((union.selectWhen ?? []).map(({ variant: index }) => union.anyOf?.[index]));
+	return members.filter((member) => !ruled.has(member));
+}
+
+const subsumers = new WeakMap<NodeSchema, Map<string, NodeSchema | null>>();
+
+/** The member subsuming the others (`subsumingMember`), computed once per union and set of members. */
+function subsumerOf(union: NodeSchema, members: readonly NodeSchema[]): NodeSchema | undefined {
+	const all = flatMembers(union);
+	const key = members.map((member) => all.indexOf(member)).join(',');
+	const known = subsumers.get(union) ?? new Map<string, NodeSchema | null>();
+	subsumers.set(union, known);
+	// Each member as it applies, with the tier the nested unions give it: a likely one is never subsumed by a confirmed one.
+	const carried = carriedBy(union);
+	if (!known.has(key))
+		known.set(key, subsumingMember(members.map((member) => withCarried(member, carried.get(member)))) ?? null);
+	return known.get(key) ?? undefined;
+}
+
+/** Selections that claim the value is wrong: they rest on every member of the union. */
+const CLAIMS: ReadonlySet<Selection['kind']> = new Set([
+	'mismatch',
+	'unknown-variant',
+	'invalid-variant',
+	'unregistered'
+]);
+
+/**
+ * Chooses the union member that applies to a value, without guessing between look-alike objects. A
+ * finding is as strong as the weakest schema fact it rests on: a chosen member keeps the tier and
+ * handler of the nested unions around it, and a claim that the value is wrong is likely when any
+ * member is (H5).
+ */
 export function selectVariant(
 	value: unknown,
 	union: NodeSchema,
 	context: SelectionContext = { registries: new Map(), root: undefined }
 ): Selection {
+	const carried = carriedBy(union);
+	const selection = chooseVariant(value, union, context, carried);
+	if (selection.kind === 'variant') return variant(withCarried(selection.schema, carried.get(selection.schema)));
+	if (!CLAIMS.has(selection.kind) || !flatMembers(union).some((member) => isLikely(member, carried))) return selection;
+	return { ...selection, inferred: true };
+}
+
+/** The object member that applies: a `selectWhen` rule, the discriminator, the only fit, or one subsuming the others. */
+function selectObject(
+	value: object,
+	union: NodeSchema,
+	matching: readonly NodeSchema[],
+	context: SelectionContext
+): Selection {
+	const ruled = selectedByRules(union, value);
+	if (ruled !== undefined) return ruled;
+	if (discriminatorOf(union) !== undefined)
+		return selectByDiscriminator(value, union, withoutRuled(union, matching), context);
+	const [only] = matching;
+	if (matching.length === 1 && only !== undefined) return variant(only);
+	const subsuming = subsumerOf(union, matching);
+	return subsuming === undefined ? AMBIGUOUS : variant(subsuming);
+}
+
+function chooseVariant(
+	value: unknown,
+	union: NodeSchema,
+	context: SelectionContext,
+	carried: ReadonlyMap<NodeSchema, Carried>
+): Selection {
 	const members = flatMembers(union);
-	if (members.some((member) => member.kind === 'any')) return ACCEPTED;
+	// A union with no member of its own (only itself, H6) describes nothing: it claims nothing.
+	if (members.length === 0 || members.some((member) => member.kind === 'any')) return ACCEPTED;
 	const actual = kindOf(value);
-	const matching = members.filter((member) => member.kind === actual);
+	const matching = byPlainness(
+		value,
+		members.filter((member) => member.kind === actual)
+	);
 	const [only] = matching;
 	if (only === undefined)
 		return { kind: 'mismatch', expected: [...new Set(members.map((member) => member.kind))].join(' | ') };
-	if (actual === 'array') return matching.length === 1 ? variant(only) : variant(mergeArrays(matching));
 	// Objects go through the discriminator even when only one member fits: an extensible registry
 	// with a single built-in variant must still treat unknown variants as unresolved, not as errors.
-	if (isContainer(value))
-		return discriminatorOf(union) === undefined && matching.length === 1
-			? variant(only)
-			: selectByDiscriminator(value, union, matching, context);
-	return matching.length === 1 ? variant(only) : variant(mergePrimitives(matching));
+	if (isContainer(value) && actual !== 'array') return selectObject(value, union, matching, context);
+	if (matching.length === 1) return variant(only);
+	const likely = matching.some((member) => isLikely(member, carried));
+	return variant(actual === 'array' ? mergeArrays(matching, likely) : mergePrimitives(matching, likely));
 }

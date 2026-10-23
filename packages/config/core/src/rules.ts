@@ -1,6 +1,6 @@
 import { type Diagnostic, isContainer, ownDataProperty } from '@chartguard/core';
 
-import { isListLike } from './kind.js';
+import { isListLike, isPlainData } from './kind.js';
 import { isHandled, type Registries } from './registry.js';
 
 /**
@@ -34,10 +34,7 @@ const UNKNOWN: Read = { known: false };
  * that inherits data (`Object.create({ a: 1 })`) or a class instance.
  */
 function isPlain(value: object): boolean {
-	if (isListLike(value)) return true;
-	const prototype: unknown = Object.getPrototypeOf(value);
-	if (prototype === null) return true;
-	return isContainer(prototype) && Object.getPrototypeOf(prototype) === null && Object.keys(prototype).length === 0;
+	return isListLike(value) || isPlainData(value);
 }
 
 /**

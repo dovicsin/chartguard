@@ -17,11 +17,12 @@ import { runHighcharts } from '../lib/highcharts.mjs';
  * The value facts against the runtimes (CG-05-04 part 2): every known summary (count, smallest,
  * largest) is what the pinned runtime reads from the same data, before it draws anything.
  */
-const configs = (library) => [...SEMANTICS_CONTRACT, ...RULES_CONTRACT].flatMap((entry) => {
-	const config = entry[library];
-	if (config === undefined) return [];
-	return [{ name: entry.name, config: 'config' in config ? config.config : config }];
-});
+const configs = (library) =>
+	[...SEMANTICS_CONTRACT, ...RULES_CONTRACT].flatMap((entry) => {
+		const config = entry[library];
+		if (config === undefined) return [];
+		return [{ name: entry.name, config: 'config' in config ? config.config : config }];
+	});
 
 /** The summary of the values a runtime read, in the facts' terms. */
 function summary(values) {
@@ -68,7 +69,10 @@ test('ECharts: every known value summary is what the series data holds before fi
 					const model = models[index];
 					const raw = model.getRawData();
 					const system = model.coordinateSystem;
-					const dimension = system?.type === 'cartesian2d' ? raw.mapDimension(system.getOtherAxis(system.getBaseAxis()).dim) : raw.mapDimension('value');
+					const dimension =
+						system?.type === 'cartesian2d'
+							? raw.mapDimension(system.getOtherAxis(system.getBaseAxis()).dim)
+							: raw.mapDimension('value');
 					const values = [];
 					raw.each(dimension, (value) => values.push(value));
 					return values;

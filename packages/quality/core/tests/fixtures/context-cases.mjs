@@ -124,7 +124,7 @@ export const SETTING_CASES = [
 			suppressed: ['VIS_BAR_BASELINE $.yAxis.min']
 		},
 		highcharts: {
-			config: hcBars([60, 70], { min: 50 }),
+			config: hcBars([60, 70], { min: 50, startOnTick: false }),
 			options: {
 				rules: {
 					'bar-baseline': { level: 'info', ignore: [{ path: '$.yAxis', reason: 'A narrow band of stock prices.' }] }

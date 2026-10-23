@@ -13,7 +13,8 @@ const resolveIn = (definitions) => (node) => (node.kind === 'ref' ? definitions[
  * union (`T` → `boolean | T`) keeps its path; collisions are numbered in `canonicalPaths`.
  */
 function memberLabel(union, member, resolve) {
-	const literal = union.discriminator === undefined ? undefined : resolve(member)?.properties?.[union.discriminator]?.node;
+	const literal =
+		union.discriminator === undefined ? undefined : resolve(member)?.properties?.[union.discriminator]?.node;
 	return literal?.kind === 'literal' ? `<${union.discriminator}=${String(literal.value)}>` : '';
 }
 
@@ -108,7 +109,12 @@ function compareProperty(at, old, next, changes) {
 	else if (next === undefined) changes.push({ kind: 'property-removed', path: at, before: old.node });
 	else {
 		if ((old.required === true) !== (next.required === true))
-			changes.push({ kind: 'required-changed', path: at, before: old.required === true, after: next.required === true });
+			changes.push({
+				kind: 'required-changed',
+				path: at,
+				before: old.required === true,
+				after: next.required === true
+			});
 		for (const field of PROPERTY_FIELDS)
 			if (JSON.stringify(old[field]) !== JSON.stringify(next[field]))
 				changes.push({ kind: `${field}-changed`, path: at, before: old[field], after: next[field] });
@@ -119,13 +125,19 @@ function compareProperty(at, old, next, changes) {
 
 function compareObjects(path, before, after, changes) {
 	const keys = new Set([...Object.keys(before.properties), ...Object.keys(after.properties)]);
-	for (const key of [...keys].sort(compareText)) compareProperty(`${path}.${key}`, before.properties[key], after.properties[key], changes);
+	for (const key of [...keys].sort(compareText))
+		compareProperty(`${path}.${key}`, before.properties[key], after.properties[key], changes);
 	if (before.additional !== after.additional)
 		changes.push({ kind: 'openness-changed', path, before: before.additional, after: after.additional });
 	if (JSON.stringify(before.includes ?? []) !== JSON.stringify(after.includes ?? []))
 		changes.push({ kind: 'includes-changed', path, before: before.includes ?? [], after: after.includes ?? [] });
 	if ((before.nullAsAbsent === true) !== (after.nullAsAbsent === true))
-		changes.push({ kind: 'nullAsAbsent-changed', path, before: before.nullAsAbsent === true, after: after.nullAsAbsent === true });
+		changes.push({
+			kind: 'nullAsAbsent-changed',
+			path,
+			before: before.nullAsAbsent === true,
+			after: after.nullAsAbsent === true
+		});
 }
 
 /** A union without its selection fields, which are reported on their own. */

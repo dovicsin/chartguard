@@ -25,9 +25,12 @@ export interface GuardOptions {
 	readonly options?: ValidationOptions;
 	/** Receives every result; without it, a result with confirmed errors is written with `console.warn`. */
 	readonly onResult?: (result: ValidationResult, event: GuardEvent) => void;
-	/** An invalid config is not drawn: Chart.js cancels the creation render or the update. */
+	/**
+	 * An invalid config is not drawn: Chart.js cancels the render. A chart created invalid stays undrawn
+	 * at every render while its scales are those it was created with and the rest is still invalid.
+	 */
 	readonly block?: boolean;
-	/** Validate updates too (default true); creation is always validated. */
+	/** Validate updates too (default true); creation is always validated. Without it, updates are drawn unchecked. */
 	readonly updates?: boolean;
 }
 
@@ -109,10 +112,69 @@ function warn(checked: ValidationResult, { phase }: GuardEvent): void {
 	);
 }
 
-/** The plugin's state for one chart: the snapshot it was created from, and whether that was invalid. */
+/** Whether `path` names the scale options or something inside them (`$.options.scales…`). */
+const onScales = (path: string): boolean =>
+	path === '$.options.scales' || path.startsWith('$.options.scales.') || path.startsWith('$.options.scales[');
+
+/**
+ * Whether two values hold the same options: plain objects and arrays compared by their own data
+ * properties (accessors by identity, never run), anything else by identity. Bounded by `seen` for cycles.
+ */
+function sameOptions(left: unknown, right: unknown, seen = new Set<object>()): boolean {
+	if (Object.is(left, right)) return true;
+	if (!isPlain(left) || !isPlain(right) || Array.isArray(left) !== Array.isArray(right) || seen.has(left)) return false;
+	seen.add(left);
+	const [a, b] = [Object.getOwnPropertyDescriptors(left), Object.getOwnPropertyDescriptors(right)];
+	const keys = Object.keys(a);
+	if (keys.length !== Object.keys(b).length) return false;
+	return keys.every((key) => {
+		const [x, y] = [a[key], b[key]];
+		if (x === undefined || y === undefined) return false;
+		if (!('value' in x) || !('value' in y)) return x.get === y.get && x.set === y.set;
+		return sameOptions(x.value, y.value, seen);
+	});
+}
+
+/** A copy of plain options as they are now (data properties copied, accessors kept and never run), for `sameOptions`. */
+function frozenCopy(value: unknown, copies = new Map<object, unknown>()): unknown {
+	if (!isPlain(value)) return value;
+	const known = copies.get(value);
+	if (known !== undefined) return known;
+	const copy: object = Array.isArray(value)
+		? []
+		: (Object.create(Object.getPrototypeOf(value) as object | null) as object);
+	copies.set(value, copy);
+	for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(value)))
+		Object.defineProperty(
+			copy,
+			key,
+			'value' in descriptor ? { ...descriptor, value: frozenCopy(descriptor.value, copies) } : descriptor
+		);
+	return copy;
+}
+
+/** The scale options a chart renders with (Chart.js merges them into `config.options.scales`). */
+function scalesOf(chart: GuardedChart): unknown {
+	const { options } = chart.config;
+	return isPlain(options) ? Object.getOwnPropertyDescriptor(options, 'scales')?.value : undefined;
+}
+
+/** What the guard knows about one chart: its creation verdict, and the scales it was first rendered with. */
+interface ChartState {
+	readonly created: ValidationResult;
+	/** The scale options as Chart.js resolved them at the first render. */
+	readonly scales?: { readonly value: unknown };
+}
+
+/**
+ * The plugin's state, per chart (CG-04-02, A46): a config may build several charts, and a destroyed
+ * chart's successor is a new chart. Scale options are checked when a chart is created: at an update
+ * Chart.js has merged them with their defaults. While they are still those the chart was first
+ * rendered with, the creation's findings on them stand (with `block`, an invalid chart stays undrawn);
+ * once they changed they are not checked (`CFG_UNCHECKED`), never assumed valid or invalid.
+ */
 class Guard {
-	private rendered = false;
-	private invalidAtCreation = false;
+	private readonly charts = new WeakMap<object, ChartState>();
 	private readonly validator: ConfigValidator;
 	private readonly report: (result: ValidationResult, event: GuardEvent) => void;
 
@@ -156,17 +218,31 @@ class Guard {
 
 	private create(chart: GuardedChart): void {
 		const checked = this.validator(this.created, this.validationOptions(chart));
-		this.invalidAtCreation = !checked.valid;
+		this.charts.set(chart, { created: checked });
 		this.report(checked, { phase: 'create' });
 	}
 
-	/** The first update renders the creation; later ones are the caller's changes. False cancels the render. */
-	private update(chart: GuardedChart, { mode }: { readonly mode?: string }): boolean | undefined {
-		if (!this.rendered) {
-			this.rendered = true;
-			return this.options.block === true && this.invalidAtCreation ? false : undefined;
-		}
-		if (this.options.updates === false) return undefined;
+	/** Records the scales at the chart's first render; whether this is that render. */
+	private firstRender(chart: GuardedChart, state: ChartState): boolean {
+		if (state.scales !== undefined) return false;
+		this.charts.set(chart, { ...state, scales: { value: frozenCopy(scalesOf(chart)) } });
+		return true;
+	}
+
+	/** What is known about the scales at this update: the creation's findings while they are unchanged, else unchecked. */
+	private scaleFindings(chart: GuardedChart, { created, scales }: ChartState): readonly Diagnostic[] {
+		return scales !== undefined && sameOptions(scales.value, scalesOf(chart))
+			? created.diagnostics.filter(({ path }) => onScales(path))
+			: [UNCHECKED];
+	}
+
+	/** False (cancel the render) when blocking and the result is invalid. */
+	private blocks({ valid }: ValidationResult): false | undefined {
+		return this.options.block === true && !valid ? false : undefined;
+	}
+
+	/** The chart's own config at this update, validated, with what is known about its scales. */
+	private checkUpdate(chart: GuardedChart, state: ChartState): ValidationResult {
 		const { type, data, options } = chart.config;
 		const view = {
 			type,
@@ -174,12 +250,25 @@ class Guard {
 			options: options === null || typeof options !== 'object' ? options : withProperty(options, 'scales')
 		};
 		const checked = this.validator(view, this.validationOptions(chart));
-		const noted = {
+		const scales = this.scaleFindings(chart, state);
+		return {
 			...checked,
-			...result(checked.library, checked.schemaVersion, checked.coverage, [...checked.diagnostics, UNCHECKED])
+			...result(checked.library, checked.schemaVersion, checked.coverage, [...checked.diagnostics, ...scales])
 		};
+	}
+
+	/**
+	 * Every render goes through here, the creation's included (in a browser Chart.js renders once on
+	 * attach before its own first update). False cancels the render.
+	 */
+	private update(chart: GuardedChart, { mode }: { readonly mode?: string }): boolean | undefined {
+		const state = this.charts.get(chart);
+		if (state === undefined) return undefined;
+		if (this.firstRender(chart, state)) return this.blocks(state.created);
+		if (this.options.updates === false) return undefined;
+		const noted = this.checkUpdate(chart, state);
 		this.report(noted, { phase: 'update', ...(mode === undefined ? {} : { mode }) });
-		return this.options.block === true && !noted.valid ? false : undefined;
+		return this.blocks(noted);
 	}
 }
 

@@ -156,6 +156,19 @@ test('incomplete input: a missing required key is unresolved and coverage is par
 	assert.equal(validateConfig({ b: 1 }, manifest(root, 'full')).diagnostics[0].severity, 'error');
 });
 
+test('incomplete input: a value that could not be extracted (undefined) is not known, not a wrong type', () => {
+	const root = s.object({ a: s.number() }, { required: ['a'] });
+	// The whole config is unknown (`new Chart(ctx, makeConfig())` with an unreadable builder).
+	assert.deepEqual(validateConfig(undefined, manifest(root, 'full'), { incomplete: true }).diagnostics, []);
+	assert.equal(validateConfig(undefined, manifest(root, 'full'), { incomplete: true }).valid, true);
+	assert.equal(validateConfig(undefined, manifest(root, 'full'), { incomplete: true }).status, 'partial');
+	// Complete input: undefined where an object is required is a wrong type.
+	assert.deepEqual(
+		validateConfig(undefined, manifest(root, 'full')).diagnostics.map((d) => `${d.code} ${d.severity}`),
+		['CFG_TYPE error']
+	);
+});
+
 test('typed arrays are arrays: chart runtimes accept them wherever they take data lists', () => {
 	const points = s.object({ data: s.array(s.number()) });
 	assert.deepEqual(codes(points, { data: new Float32Array([1, 2]) }), []);

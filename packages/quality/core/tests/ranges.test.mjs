@@ -115,3 +115,38 @@ test('zeroFit: excluded when every range leaves zero out, included when none doe
 		'? layout $.y.beginAtZero'
 	);
 });
+
+test('bar baseline: an axis that starts (or ends) at the data cuts the bars only when the data lies above (or below) zero (H8)', () => {
+	const bar = (min, max) => ({
+		...series('bar', fact('y', '$.a')),
+		stacking: fact('none', '$.stack'),
+		values: fact({ count: 2, min: { value: min, path: '$.v0' }, max: { value: max, path: '$.v1' } }, '$.v')
+	});
+	const run = (bounds, item) => codes(review(chart({ items: [item], axes: [axis('y', none('$.y.min'), bounds)] })));
+	assert.deepEqual(run({ min: fact('data', '$.y.min') }, bar(60, 70)), ['VIS_BAR_BASELINE $.y.min']);
+	// Negative data: the axis starts below zero and the bars grow from zero.
+	assert.deepEqual(run({ min: fact('data', '$.y.min') }, bar(-5, 10)), []);
+	assert.deepEqual(run({ min: fact('data', '$.y.min') }, bar(0, 10)), []);
+	assert.deepEqual(run({ max: fact('data', '$.y.max') }, bar(-60, -50)), ['VIS_BAR_BASELINE $.y.max']);
+	assert.deepEqual(run({ max: fact('data', '$.y.max') }, bar(-60, 5)), []);
+	// Values that are not known, or stacked: nothing is claimed.
+	assert.deepEqual(run({ min: fact('data', '$.y.min') }, { ...bar(60, 70), values: none('$.v', 'unmodelled') }), []);
+	assert.deepEqual(run({ min: fact('data', '$.y.min') }, { ...bar(60, 70), stacking: fact('stacked', '$.s') }), []);
+});
+
+test('dual axis: two value axes count only when they span one panel; separate grids, bands or panes are separate charts (H9)', () => {
+	const two = [series('bar', fact('y', '$.a')), series('line', fact('y2', '$.b'))];
+	const run = (first, second) =>
+		codes(
+			review(
+				chart({
+					items: two,
+					axes: [axis('y', none('$.m'), { panel: first }), axis('y2', none('$.m'), { panel: second })]
+				})
+			)
+		);
+	assert.deepEqual(run(fact('plot', '$.p', 'default'), fact('plot', '$.p', 'default')), ['VIS_DUAL_AXIS $.b']);
+	assert.deepEqual(run(fact('grid[0]', '$.p'), fact('grid[1]', '$.p')), []);
+	assert.deepEqual(run(fact('plot', '$.p', 'default'), none('$.p', 'accessor')), []);
+	assert.deepEqual(run(none('$.p', 'dynamic'), fact('plot', '$.p', 'default')), []);
+});

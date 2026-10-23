@@ -1,22 +1,33 @@
 import ts from 'typescript';
 
-import { type Call, type Chain, chainOf, type Step, type Write, type WriteSite, writeSites } from './writes.js';
+import { unwrapped } from './literals.js';
+import {
+	type Call,
+	type Chain,
+	chainOf,
+	passedChains,
+	type Step,
+	unreadableSites,
+	type Write,
+	type WriteSite,
+	writeSites
+} from './writes.js';
 
 /** The declaration a chain starts at, and the path within it. */
 export interface ChainTarget {
 	readonly declaration: ts.Node;
 	readonly path: readonly Step[];
+	/**
+	 * The chain is a destructured or loop binding with no access after it: replacing it rebinds the
+	 * local name and writes nothing it was read from.
+	 */
+	readonly rebinds?: boolean;
+	/** The write lands below `path`, at a key not known (after a rest element or a computed name): it changes the place, never replaces it. */
+	readonly inside?: boolean;
 }
 
 /** How many aliases deep a write is followed (`const a = b.c; const d = a.e; d.f = 1`). */
 const MAX_ALIAS_DEPTH = 8;
-
-function unwrap(node: ts.Expression): ts.Expression {
-	let inner = node;
-	while (ts.isParenthesizedExpression(inner) || ts.isAsExpression(inner) || ts.isSatisfiesExpression(inner))
-		inner = inner.expression;
-	return inner;
-}
 
 /** Where a literal's value at one step may come from: an explicit value, or a spread that copies its own. */
 interface Source {
@@ -79,7 +90,7 @@ interface Reach {
 /** What a spread source shares: an object spread copies `step` itself; an array spread some element, so its contents. */
 function sharedBySpread(literal: ts.Expression, source: Source, path: readonly Step[], reach: Reach): Shared {
 	if (!ts.isArrayLiteralExpression(literal)) return sharedBelow(source.expression, path, { ...reach, replaces: false });
-	const chain = chainOf(unwrap(source.expression));
+	const chain = chainOf(unwrapped(source.expression));
 	return chain === undefined ? [] : [{ chain, rest: [] }];
 }
 
@@ -114,13 +125,25 @@ function sharedByChain(node: ts.Expression, path: readonly Step[], reach: Reach)
  * below them. A spread copies one level: replacing the copy's own property shares nothing.
  */
 function sharedBelow(initializer: ts.Expression, path: readonly Step[], reach: Reach): Shared {
-	const node = unwrap(initializer);
+	const node = unwrapped(initializer);
 	const choices = alternatives(node);
 	if (choices !== undefined) return choices.flatMap((choice) => sharedBelow(choice, path, reach));
 	if (ts.isCallExpression(node)) return sharedByCall(node, path, reach);
-	const [step, ...below] = path;
-	if (step === undefined || !(ts.isObjectLiteralExpression(node) || ts.isArrayLiteralExpression(node)))
+	if (!ts.isObjectLiteralExpression(node) && !ts.isArrayLiteralExpression(node))
 		return sharedByChain(node, path, reach);
+	return sharedInLiteral(node, path, reach);
+}
+
+/** What a written path of an object or array literal shares: the value it holds there, or what a spread copied. */
+function sharedInLiteral(
+	node: ts.ObjectLiteralExpression | ts.ArrayLiteralExpression,
+	path: readonly Step[],
+	reach: Reach
+): Shared {
+	const [step, ...below] = path;
+	// The contents of a literal change (it is handed to a call, a method runs on it): so may everything it embeds (A39).
+	if (step === undefined)
+		return reach.replaces ? sharedByChain(node, path, reach) : passedChains(node).map((chain) => ({ chain, rest: [] }));
 	const sources = ts.isObjectLiteralExpression(node) ? objectSources(node, step.key) : arraySources(node, step);
 	const reachesCopy = below.length > 0 || !reach.replaces;
 	return sources.flatMap((source) => {
@@ -130,16 +153,45 @@ function sharedBelow(initializer: ts.Expression, path: readonly Step[], reach: R
 }
 
 /**
+ * What a write at `path` of a variable shares with other constants: its initializer's, or for a
+ * `for…of` binding, which holds one element of the iterable at a time, any element's. Rebinding the
+ * loop variable itself changes no element.
+ */
+function sharedThrough(declaration: ts.VariableDeclaration, path: readonly Step[], reach: Reach): Shared {
+	const loop = forOfStatement(declaration);
+	if (loop === undefined)
+		return declaration.initializer === undefined ? [] : sharedBelow(declaration.initializer, path, reach);
+	return path.length === 0 && reach.replaces ? [] : sharedBelow(loop.expression, [], { ...reach, replaces: false });
+}
+
+/**
  * Every write of readable code, by the declaration it changes (CG-03-05), including writes through
  * an alias or an embedding (`const opts = config.options; opts.color = …` writes `config.options.color`).
  * Built once, on first use.
+ */
+/** The project files the index reads: those it can trust, and those whose syntax it cannot (A36). */
+export interface IndexedSources {
+	readonly readable: () => readonly ts.SourceFile[];
+	readonly unreadable: () => readonly ts.SourceFile[];
+}
+
+/** A `for (… of iterable)` binding's statement: each element of the iterable is bound to it in turn. */
+function forOfStatement(declaration: ts.VariableDeclaration): ts.ForOfStatement | undefined {
+	const statement = declaration.parent.parent;
+	return ts.isForOfStatement(statement) ? statement : undefined;
+}
+
+/**
+ * Every write of readable code, by the declaration it changes (CG-03-05), including writes through
+ * an alias, a destructured or loop binding, or an embedding (`const opts = config.options;
+ * opts.color = …` writes `config.options.color`), and what unreadable code may write. Built once, on first use.
  */
 export class WriteIndex {
 	private writes: Map<ts.Node, Write[]> | undefined;
 
 	constructor(
-		private readonly sources: () => readonly ts.SourceFile[],
-		private readonly resolve: (chain: Chain) => ChainTarget | undefined,
+		private readonly sources: IndexedSources,
+		private readonly resolve: (chain: Chain) => readonly ChainTarget[],
 		/** Calls that do not change their arguments: chart uses and pure globals. */
 		private readonly exempt: (call: Call) => boolean,
 		private readonly sharesOfCall: (call: ts.CallExpression) => CallResult
@@ -152,10 +204,16 @@ export class WriteIndex {
 
 	private build(): Map<ts.Node, Write[]> {
 		const writes = new Map<ts.Node, Write[]>();
-		for (const file of this.sources())
-			for (const site of writeSites(file, this.exempt)) {
-				const target = this.resolve(site.chain);
-				if (target !== undefined) this.record(writes, target, site, 0);
+		const sites = [
+			...this.sources.readable().flatMap((file) => writeSites(file, this.exempt)),
+			...this.sources.unreadable().flatMap(unreadableSites)
+		];
+		for (const site of sites)
+			for (const target of this.resolve(site.chain)) {
+				if (target.rebinds === true && site.replaces) continue;
+				// Below a computed step the write changes the place it was cut at; it does not replace it.
+				const replaces = site.replaces && site.chain.cut !== true && target.inside !== true;
+				this.record(writes, target, { ...site, replaces }, 0);
 			}
 		return writes;
 	}
@@ -167,15 +225,12 @@ export class WriteIndex {
 		depth: number
 	): void {
 		const list = writes.get(declaration) ?? [];
-		list.push({ path, node: site.node });
+		list.push({ path, node: site.node, replaces: site.replaces });
 		writes.set(declaration, list);
-		if (depth >= MAX_ALIAS_DEPTH || !ts.isVariableDeclaration(declaration) || declaration.initializer === undefined)
-			return;
-		const reach = { replaces: site.replaces, sharesOfCall: this.sharesOfCall };
-		for (const { chain, rest } of sharedBelow(declaration.initializer, path, reach)) {
-			const shared = this.resolve(chain);
-			if (shared !== undefined)
-				this.record(writes, { declaration: shared.declaration, path: [...shared.path, ...rest] }, site, depth + 1);
-		}
+		if (depth >= MAX_ALIAS_DEPTH || !ts.isVariableDeclaration(declaration)) return;
+		const shared = sharedThrough(declaration, path, { replaces: site.replaces, sharesOfCall: this.sharesOfCall });
+		for (const { chain, rest } of shared)
+			for (const target of this.resolve(chain))
+				this.record(writes, { declaration: target.declaration, path: [...target.path, ...rest] }, site, depth + 1);
 	}
 }

@@ -2,7 +2,7 @@ import type { NodeSchema } from './schema.js';
 
 /**
  * A plugin variant (CG-02-05): a schema, or a built-in variant of the same point it extends, with
- * the properties it adds (an added property replaces the built-in one of the same name).
+ * the properties it adds or redefines for itself (the built-in variant is never changed).
  */
 export type VariantSpec = NodeSchema | { readonly extends: string; readonly schema?: NodeSchema };
 
@@ -49,7 +49,12 @@ function withDiscriminator(name: string, schema: unknown, union: VariantUnion): 
 	return { ...schema, properties: { ...schema.properties, [union.discriminator]: literal } };
 }
 
-/** A built-in variant with an extension's properties added: a new node; the built-in is shared and never changed. */
+/**
+ * A built-in variant with an extension's properties added: a new node; the built-in is shared and
+ * never changed. The result is the extension's own variant, so a property it declares is its own,
+ * also one the built-in declares (a plugin dataset reads its `data` its own way); the built-in variant
+ * keeps its own (A32).
+ */
 function inherit(base: NodeSchema, added: unknown, discriminator: string): NodeSchema | string {
 	if (added !== undefined && (!isSchema(added) || added.kind !== 'object')) return 'must be an object schema';
 	const properties = Object.fromEntries(Object.entries(base.properties ?? {}).filter(([key]) => key !== discriminator));

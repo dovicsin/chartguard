@@ -33,5 +33,24 @@ runApp(() => {
 	} catch {
 		threw = true;
 	}
-	return { library: 'chartjs', results, threw, instances: Object.keys(Chart.instances).length };
+	// An invalid scale: Chart.js renders once on attach, once more on creation, and again at an update;
+	// with block none of them is drawn while the scales are those the chart was created with (A46).
+	let scaleDraws = 0;
+	const counter = { id: 'draws', afterDraw: () => void (scaleDraws += 1) };
+	const cut = new Chart(
+		box('canvas') as HTMLCanvasElement,
+		guard(
+			{
+				type: 'line',
+				data: { labels: ['Q1', 'Q2'], datasets: [{ label: 'Sales', data: [3, 5] }] },
+				// A minimum read from an untyped source (a form field): a string where Chart.js wants a number.
+				options: { scales: { y: { type: 'linear', min: '50' as unknown as number } } },
+				plugins: [counter]
+			},
+			options
+		)
+	);
+	cut.update();
+	cut.destroy();
+	return { library: 'chartjs', results, threw, scaleDraws, instances: Object.keys(Chart.instances).length };
 });

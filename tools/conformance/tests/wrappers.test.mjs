@@ -11,7 +11,10 @@ import { Chart } from 'chart.js';
 import * as echarts from 'echarts';
 
 import { guard, registriesOf as chartjsRegistries } from '../../../packages/integrations/chartjs-runtime/dist/index.js';
-import { checkOption, registriesOf as echartsRegistries } from '../../../packages/integrations/echarts-runtime/dist/index.js';
+import {
+	checkOption,
+	registriesOf as echartsRegistries
+} from '../../../packages/integrations/echarts-runtime/dist/index.js';
 import { addSeries, checkUpdate, createChart } from '../../../packages/integrations/highcharts-runtime/dist/index.js';
 import { createChartjs } from '../lib/chartjs.mjs';
 
@@ -28,12 +31,36 @@ const points = (count) => Array.from({ length: count }, (_, index) => index);
 function highchartsChart() {
 	const chart = {
 		options: { chart: { type: 'line' } },
-		series: [{ type: 'line', coll: 'series', userOptions: { type: 'line' }, options: {} }, { type: 'column', coll: 'series', userOptions: {}, options: {} }],
+		series: [
+			{ type: 'line', coll: 'series', userOptions: { type: 'line' }, options: {} },
+			{ type: 'column', coll: 'series', userOptions: {}, options: {} }
+		],
 		get: () => undefined,
 		update() {},
 		addSeries: () => ({})
 	};
 	return { chart, highcharts: { version: '13.1.1', seriesTypes: { line: {}, column: {} }, chart: () => chart } };
+}
+
+/** One server-side echarts chart per option size, holding that option; disposed after the tests. */
+const heldCharts = new Map();
+test.after(() => {
+	for (const chart of heldCharts.values()) chart.dispose();
+});
+const echartsOption = (count) => ({
+	xAxis: { type: 'category', data: points(count) },
+	yAxis: {},
+	series: [{ type: 'line', data: points(count), smooth: true }]
+});
+/** The chart for an update of this size, holding a plain option built afresh: the update itself is never read here. */
+function heldChart(input) {
+	const size = Object.getOwnPropertyDescriptor(input, 'series').value[0].data.length;
+	if (!heldCharts.has(size)) {
+		const chart = echarts.init(null, null, { renderer: 'svg', ssr: true, width: 400, height: 300 });
+		chart.setOption(echartsOption(size));
+		heldCharts.set(size, chart);
+	}
+	return heldCharts.get(size);
 }
 
 /**
@@ -45,7 +72,11 @@ const WRAPPERS = [
 	{
 		name: 'runtime-chartjs guard (creation)',
 		validator: validateChartjs,
-		input: (count) => ({ type: 'line', data: { labels: points(count), datasets: [{ label: 'a', data: points(count), borderWidth: 2 }] }, options: { plugins: { legend: { position: 'top' } } } }),
+		input: (count) => ({
+			type: 'line',
+			data: { labels: points(count), datasets: [{ label: 'a', data: points(count), borderWidth: 2 }] },
+			options: { plugins: { legend: { position: 'top' } } }
+		}),
 		run(input, validator) {
 			const plugin = guard(input, { validator, onResult: () => undefined }).plugins.at(-1);
 			plugin.beforeInit({ constructor: Chart, config: {} });
@@ -54,14 +85,17 @@ const WRAPPERS = [
 	{
 		name: 'runtime-echarts checkOption',
 		validator: validateEcharts,
-		input: (count) => ({ xAxis: { type: 'category', data: points(count) }, yAxis: {}, series: [{ type: 'line', data: points(count), smooth: true }] }),
-		run: (input, validator) => checkOption({ getOption: () => undefined }, input, undefined, { validator, echarts })
+		input: echartsOption,
+		// A live chart already holding an option of the same size: the update merges into it, and the
+		// guard reads what it holds (`getOption()` clones all of it), as an application's update does (K5).
+		run: (input, validator) => checkOption(heldChart(input), input, undefined, { validator, echarts })
 	},
 	{
 		name: 'runtime-highcharts createChart',
 		validator: validateHighcharts,
 		input: (count) => ({ chart: { type: 'column' }, series: [{ type: 'line', data: points(count), lineWidth: 2 }] }),
-		run: (input, validator) => createChart(highchartsChart().highcharts, 'box', input, { validator, onResult: () => undefined })
+		run: (input, validator) =>
+			createChart(highchartsChart().highcharts, 'box', input, { validator, onResult: () => undefined })
 	},
 	{
 		name: 'runtime-highcharts update',
@@ -93,7 +127,9 @@ function deepFreeze(value) {
 /** `value` with an enumerable getter beside every own property of every object and array, calling `onRead` when read. */
 function withGetters(value, onRead) {
 	if (typeof value !== 'object' || value === null) return value;
-	const copy = Array.isArray(value) ? value.map((item) => withGetters(item, onRead)) : Object.fromEntries(Object.entries(value).map(([key, item]) => [key, withGetters(item, onRead)]));
+	const copy = Array.isArray(value)
+		? value.map((item) => withGetters(item, onRead))
+		: Object.fromEntries(Object.entries(value).map(([key, item]) => [key, withGetters(item, onRead)]));
 	return Object.defineProperty(copy, 'planted', { enumerable: true, get: () => (onRead(), 1) });
 }
 
@@ -116,7 +152,8 @@ const reference = () => {
  */
 function fastest(bodies, runs = 15) {
 	const best = bodies.map(() => Number.POSITIVE_INFINITY);
-	for (let run = 0; run < runs; run += 1) bodies.forEach((body, index) => (best[index] = Math.min(best[index], timed(body))));
+	for (let run = 0; run < runs; run += 1)
+		bodies.forEach((body, index) => (best[index] = Math.min(best[index], timed(body))));
 	return best;
 }
 
@@ -207,6 +244,9 @@ test('importing a runtime package changes no global, built-in prototype or conso
 		const same = state() === before.state && methods.every((name, index) => console[name] === before.methods[index]);
 		process.stdout.write(String(same));
 	`;
-	const child = spawnSync(process.execPath, ['--input-type=module', '-e', probe], { encoding: 'utf8', cwd: fileURLToPath(new URL('../../..', import.meta.url)) });
+	const child = spawnSync(process.execPath, ['--input-type=module', '-e', probe], {
+		encoding: 'utf8',
+		cwd: fileURLToPath(new URL('../../..', import.meta.url))
+	});
 	assert.equal(child.stdout, 'true', child.stderr);
 });

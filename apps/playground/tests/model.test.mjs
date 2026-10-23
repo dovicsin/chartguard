@@ -24,13 +24,22 @@ test('a config is parsed, validated and reviewed; the tree locates its values', 
 test('text that is not JSON is never validated or evaluated', () => {
 	const calls = [];
 	const spy = { validate: (config) => calls.push(config), analyze: (config) => calls.push(config) };
-	assert.deepEqual(inspect('{"type": bar}', spy), { kind: 'syntax-error', message: 'Expected a JSON value', offset: 9 });
+	assert.deepEqual(inspect('{"type": bar}', spy), {
+		kind: 'syntax-error',
+		message: 'Expected a JSON value',
+		offset: 9
+	});
 	assert.deepEqual(inspect('globalThis.x = 1', spy).kind, 'syntax-error');
 	assert.deepEqual(calls, []);
 });
 
 test('diagnostics are ordered by severity, keeping the validator order within one', () => {
-	const list = [diagnostic('info', 'A'), diagnostic('error', 'B'), diagnostic('warning', 'C'), diagnostic('error', 'D')];
+	const list = [
+		diagnostic('info', 'A'),
+		diagnostic('error', 'B'),
+		diagnostic('warning', 'C'),
+		diagnostic('error', 'D')
+	];
 	assert.deepEqual(
 		bySeverity(list).map((d) => d.code),
 		['B', 'D', 'C', 'A']
@@ -40,7 +49,10 @@ test('diagnostics are ordered by severity, keeping the validator order within on
 
 test('the schema label names the digest when there is one', () => {
 	assert.equal(schemaLabel({ schemaVersion: '4.5.1' }), '4.5.1');
-	assert.equal(schemaLabel({ schemaVersion: '4.5.1', schemaDigest: `sha256-${'a'.repeat(64)}` }), `4.5.1 · sha256-${'a'.repeat(12)}`);
+	assert.equal(
+		schemaLabel({ schemaVersion: '4.5.1', schemaDigest: `sha256-${'a'.repeat(64)}` }),
+		`4.5.1 · sha256-${'a'.repeat(12)}`
+	);
 });
 
 test('offsets become 1-based lines and columns', () => {

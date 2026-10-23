@@ -19,7 +19,7 @@ const chart = (extra = {}, yAxis = {}) => ({
 });
 
 test('bar baseline: a bound or threshold to 0; log to linear; a reversal off', () => {
-	assert.deepEqual(fixes(chart({}, { min: 50 })), ['VIS_BAR_BASELINE $.yAxis.min 50→0']);
+	assert.deepEqual(fixes(chart({}, { min: 50, startOnTick: false })), ['VIS_BAR_BASELINE $.yAxis.min 50→0']);
 	assert.deepEqual(fixes(chart({ series: [{ data: [60, 70], threshold: 20 }] })), [
 		'VIS_BAR_BASELINE $.series[0].threshold 20→0'
 	]);

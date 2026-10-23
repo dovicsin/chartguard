@@ -99,6 +99,7 @@ const axis = (key, min, extra = {}) => ({
 	max: none('$.max'),
 	fit: none('$.fit'),
 	unit: none('$.unit'),
+	panel: fact('plot', '$.panel', 'default'),
 	reversed: none('$.reversed'),
 	title: { text: none('$.title'), shown: none('$.shown') },
 	...extra
@@ -122,10 +123,12 @@ test('bar baseline: a configured non-zero minimum of an axis a bar series is mea
 });
 
 test('bar baseline: only a range that excludes zero (min above it, max below it, or the data minimum)', () => {
-	const bar = [series('bar', fact('y', '$.a'))];
+	const values = fact({ count: 2, min: { value: 60, path: '$.v0' }, max: { value: 70, path: '$.v1' } }, '$.v');
+	const bar = [{ ...series('bar', fact('y', '$.a')), stacking: fact('none', '$.s'), values }];
 	const run = (extra) => codes(review(chart({ items: bar, axes: [axis('y', none('$.y.min'), extra)] })));
 	// Bars start from zero while zero is in range: a negative minimum truncates nothing.
 	assert.deepEqual(run({ min: fact(-10, '$.y.min') }), []);
+	// The data minimum is 60: the axis starts above zero.
 	assert.deepEqual(run({ min: fact('data', '$.y.min') }), ['VIS_BAR_BASELINE $.y.min']);
 	assert.deepEqual(run({ max: fact(-5, '$.y.max') }), ['VIS_BAR_BASELINE $.y.max']);
 	assert.deepEqual(run({ max: fact(5, '$.y.max') }), []);

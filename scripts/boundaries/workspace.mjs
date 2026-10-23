@@ -53,11 +53,21 @@ function packageViolations(packageDir, policy, entryPoints) {
 }
 
 /** All boundary violations below `<root>/packages` and `<root>/apps`, with paths relative to root. */
-export function checkWorkspace(root, policy) {
+/**
+ * The package directories of the workspace at `root`. None is our defect (a wrong root), never a
+ * workspace that respects every boundary (H11).
+ */
+export function workspacePackages(root) {
 	const packageDirs = ['packages', 'apps']
 		.map((directory) => join(root, directory))
 		.filter((directory) => existsSync(directory))
 		.flatMap((directory) => findPackageDirs(directory));
+	if (packageDirs.length === 0) throw new Error(`no workspace packages under ${root}`);
+	return packageDirs;
+}
+
+export function checkWorkspace(root, policy) {
+	const packageDirs = workspacePackages(root);
 	const entryPoints = publicEntryPoints(packageDirs.map(manifestOf));
 	return packageDirs
 		.flatMap((packageDir) => packageViolations(packageDir, policy, entryPoints))

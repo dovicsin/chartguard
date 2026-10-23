@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-11f5a8d9f7b049af31e07db433a6fee1bd37b4c100a0693b61eb8a47bc0ac502",
+	"digest": "sha256-c19b7f5bb26cfb603c00a836dfb526e5174ed7d3d0a83d9f5aacfac341450965",
 	"sources": {
 		"chartjs": {
 			"kind": "npm-package",
@@ -872,12 +872,14 @@
 		"_DeepPartialObject<HTMLImageElement>": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "HTMLImageElement"
 		},
 		"_DeepPartialObject<HTMLCanvasElement>": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "HTMLCanvasElement"
 		},
 		"false | \"line\" | \"circle\" | \"cross\" | \"crossRot\" | \"dash\" | \"rect\" | \"rectRounde…#598b7095fd": {
 			"kind": "union",
@@ -1336,12 +1338,14 @@
 		"_DeepPartialObject<CanvasGradient>": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "CanvasGradient"
 		},
 		"_DeepPartialObject<CanvasPattern>": {
 			"kind": "object",
 			"additional": "open",
-			"properties": {}
+			"properties": {},
+			"host": "CanvasPattern"
 		},
 		"string | ((ctx: ScriptableContext<\"bar\">, options: AnyObject) => Color | undefin…#ab29395308": {
 			"kind": "union",
@@ -18598,8 +18602,176 @@
 		},
 		"_DeepPartialObject<Partial<FontSpec>>": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/types/utils.d.ts:15"
+					}
+				]
+			},
+			"properties": {
+				"family": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "string"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1787"
+							}
+						]
+					}
+				},
+				"size": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "union",
+							"anyOf": [
+								{
+									"kind": "number"
+								},
+								{
+									"kind": "string"
+								}
+							]
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
+							}
+						]
+					}
+				},
+				"style": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "union",
+							"anyOf": [
+								{
+									"kind": "literal",
+									"value": "normal"
+								},
+								{
+									"kind": "literal",
+									"value": "italic"
+								},
+								{
+									"kind": "literal",
+									"value": "oblique"
+								},
+								{
+									"kind": "literal",
+									"value": "initial"
+								},
+								{
+									"kind": "literal",
+									"value": "inherit"
+								},
+								{
+									"kind": "string"
+								}
+							]
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
+							}
+						]
+					}
+				},
+				"weight": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "union",
+							"anyOf": [
+								{
+									"kind": "null"
+								},
+								{
+									"kind": "number"
+								},
+								{
+									"kind": "literal",
+									"value": "bold"
+								},
+								{
+									"kind": "literal",
+									"value": "normal"
+								},
+								{
+									"kind": "literal",
+									"value": "lighter"
+								},
+								{
+									"kind": "literal",
+									"value": "bolder"
+								}
+							]
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1801"
+							}
+						]
+					}
+				},
+				"lineHeight": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "union",
+							"anyOf": [
+								{
+									"kind": "string"
+								},
+								{
+									"kind": "number"
+								}
+							]
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1806"
+							}
+						]
+					}
+				}
+			}
 		},
 		"_DeepPartialObject<CoreInteractionOptions>": {
 			"kind": "object",
@@ -19163,8 +19335,213 @@
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"bar\">>; }>>": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/types/utils.d.ts:15"
+					}
+				]
+			},
+			"properties": {
+				"autoPadding": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1706"
+							}
+						]
+					}
+				},
+				"padding": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Point>"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Partial<TRBL>>"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1707"
+							}
+						]
+					}
+				}
+			}
+		},
+		"_DeepPartialObject<Point>": {
+			"kind": "object",
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/types/utils.d.ts:15"
+					}
+				]
+			},
+			"properties": {
+				"x": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "union",
+							"anyOf": [
+								{
+									"kind": "null"
+								},
+								{
+									"kind": "number"
+								}
+							]
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/geometric.d.ts:11"
+							}
+						]
+					}
+				},
+				"y": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "union",
+							"anyOf": [
+								{
+									"kind": "null"
+								},
+								{
+									"kind": "number"
+								}
+							]
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/geometric.d.ts:12"
+							}
+						]
+					}
+				}
+			}
+		},
+		"_DeepPartialObject<Partial<TRBL>>": {
+			"kind": "object",
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/types/utils.d.ts:15"
+					}
+				]
+			},
+			"properties": {
+				"top": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "number"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/geometric.d.ts:16"
+							}
+						]
+					}
+				},
+				"right": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "number"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/geometric.d.ts:17"
+							}
+						]
+					}
+				},
+				"bottom": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "number"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/geometric.d.ts:18"
+							}
+						]
+					}
+				},
+				"left": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "number"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/geometric.d.ts:19"
+							}
+						]
+					}
+				}
+			}
 		},
 		"_DeepPartialObject<ElementOptionsByType<\"bar\">>": {
 			"kind": "object",
@@ -22157,6 +22534,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -22166,6 +22546,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
 							}
 						]
 					}
@@ -22196,6 +22580,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -22205,6 +22592,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
 							}
 						]
 					}
@@ -23310,15 +23701,15 @@
 								"kind": "number"
 							},
 							{
-								"kind": "function"
-							},
-							{
 								"kind": "ref",
 								"ref": "_DeepPartialObject<Point>"
 							},
 							{
 								"kind": "ref",
 								"ref": "_DeepPartialObject<Partial<TRBL>>"
+							},
+							{
+								"kind": "function"
 							}
 						]
 					},
@@ -23846,6 +24237,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -23855,6 +24249,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
 							}
 						]
 					}
@@ -23885,6 +24283,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -23894,6 +24295,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
 							}
 						]
 					}
@@ -23965,76 +24370,6 @@
 					}
 				}
 			}
-		},
-		"_DeepPartialObject<Point>": {
-			"kind": "object",
-			"additional": "closed",
-			"provenance": {
-				"confidence": "authoritative",
-				"sources": [
-					{
-						"source": "chartjs",
-						"pointer": "chart.js/dist/types/utils.d.ts:15"
-					}
-				]
-			},
-			"properties": {
-				"x": {
-					"node": {
-						"kind": "scriptable",
-						"value": {
-							"kind": "union",
-							"anyOf": [
-								{
-									"kind": "null"
-								},
-								{
-									"kind": "number"
-								}
-							]
-						}
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "chartjs",
-								"pointer": "chart.js/dist/types/geometric.d.ts:11"
-							}
-						]
-					}
-				},
-				"y": {
-					"node": {
-						"kind": "scriptable",
-						"value": {
-							"kind": "union",
-							"anyOf": [
-								{
-									"kind": "null"
-								},
-								{
-									"kind": "number"
-								}
-							]
-						}
-					},
-					"provenance": {
-						"confidence": "authoritative",
-						"sources": [
-							{
-								"source": "chartjs",
-								"pointer": "chart.js/dist/types/geometric.d.ts:12"
-							}
-						]
-					}
-				}
-			}
-		},
-		"_DeepPartialObject<Partial<TRBL>>": {
-			"kind": "object",
-			"additional": "open",
-			"properties": {}
 		},
 		"_DeepPartialObject<TooltipCallbacks<\"bar\", TooltipModel<\"bar\">, TooltipItem<\"bar\">>>": {
 			"kind": "object",
@@ -25005,8 +25340,259 @@
 		},
 		"_DeepPartialObject<Partial<GridLineOptions>>": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/types/utils.d.ts:15"
+					}
+				]
+			},
+			"properties": {
+				"display": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3019"
+							}
+						]
+					}
+				},
+				"circular": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3023"
+							}
+						]
+					}
+				},
+				"color": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | _DeepPartialObject<CanvasGradient> | _DeepPartialObject<CanvasPattern> …#b08cee9088"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3027"
+							}
+						]
+					}
+				},
+				"lineWidth": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3031"
+							}
+						]
+					}
+				},
+				"drawOnChartArea": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3035"
+							}
+						]
+					}
+				},
+				"drawTicks": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3039"
+							}
+						]
+					}
+				},
+				"tickBorderDash": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "array",
+								"items": {
+									"kind": "number"
+								}
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3043"
+							}
+						]
+					}
+				},
+				"tickBorderDashOffset": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3047"
+							}
+						]
+					}
+				},
+				"tickColor": {
+					"node": {
+						"kind": "ref",
+						"ref": "string | _DeepPartialObject<CanvasGradient> | _DeepPartialObject<CanvasPattern> …#b08cee9088"
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3051"
+							}
+						]
+					}
+				},
+				"tickLength": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "number"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3055"
+							}
+						]
+					}
+				},
+				"tickWidth": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "number"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3059"
+							}
+						]
+					}
+				},
+				"offset": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3063"
+							}
+						]
+					}
+				},
+				"z": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "number"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:3067"
+							}
+						]
+					}
+				}
+			}
 		},
 		"_DeepPartialObject<BorderOptions>": {
 			"kind": "object",
@@ -25369,6 +25955,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -25378,6 +25967,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
 							}
 						]
 					}
@@ -25408,6 +26001,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -25417,6 +26013,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
 							}
 						]
 					}
@@ -26157,6 +26757,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -26166,6 +26769,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
 							}
 						]
 					}
@@ -26196,6 +26803,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -26205,6 +26815,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
 							}
 						]
 					}
@@ -33006,8 +33620,65 @@
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"bubble\">>; }>>": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/types/utils.d.ts:15"
+					}
+				]
+			},
+			"properties": {
+				"autoPadding": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1706"
+							}
+						]
+					}
+				},
+				"padding": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Point>"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Partial<TRBL>>"
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1707"
+							}
+						]
+					}
+				}
+			}
 		},
 		"_DeepPartialObject<AnimationSpec<\"bubble\"> & { onProgress?: ((this: Chart<keyof …#25a82e1b3c": {
 			"kind": "object",
@@ -37030,6 +37701,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -37039,6 +37713,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
 							}
 						]
 					}
@@ -37069,6 +37747,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -37078,6 +37759,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
 							}
 						]
 					}
@@ -39123,8 +39808,65 @@
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"doughnut\">>; }>>": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/types/utils.d.ts:15"
+					}
+				]
+			},
+			"properties": {
+				"autoPadding": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1706"
+							}
+						]
+					}
+				},
+				"padding": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Point>"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Partial<TRBL>>"
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1707"
+							}
+						]
+					}
+				}
+			}
 		},
 		"_DeepPartialObject<AnimationSpec<\"doughnut\"> & { onProgress?: ((this: Chart<keyo…#31605d607e": {
 			"kind": "object",
@@ -42623,6 +43365,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -42632,6 +43377,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
 							}
 						]
 					}
@@ -42662,6 +43411,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -42671,6 +43423,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
 							}
 						]
 					}
@@ -44909,8 +45665,65 @@
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"line\">>; }>>": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/types/utils.d.ts:15"
+					}
+				]
+			},
+			"properties": {
+				"autoPadding": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1706"
+							}
+						]
+					}
+				},
+				"padding": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Point>"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Partial<TRBL>>"
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1707"
+							}
+						]
+					}
+				}
+			}
 		},
 		"_DeepPartialObject<ElementOptionsByType<\"line\">>": {
 			"kind": "object",
@@ -48320,6 +49133,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -48329,6 +49145,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
 							}
 						]
 					}
@@ -48359,6 +49179,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -48368,6 +49191,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
 							}
 						]
 					}
@@ -50413,8 +51240,65 @@
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"pie\">>; }>>": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/types/utils.d.ts:15"
+					}
+				]
+			},
+			"properties": {
+				"autoPadding": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1706"
+							}
+						]
+					}
+				},
+				"padding": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Point>"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Partial<TRBL>>"
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1707"
+							}
+						]
+					}
+				}
+			}
 		},
 		"_DeepPartialObject<AnimationSpec<\"pie\"> & { onProgress?: ((this: Chart<keyof Cha…#1868e2ed0b": {
 			"kind": "object",
@@ -54313,6 +55197,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -54322,6 +55209,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
 							}
 						]
 					}
@@ -54352,6 +55243,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -54361,6 +55255,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
 							}
 						]
 					}
@@ -56308,8 +57206,65 @@
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"polarArea\">>; }>>": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/types/utils.d.ts:15"
+					}
+				]
+			},
+			"properties": {
+				"autoPadding": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1706"
+							}
+						]
+					}
+				},
+				"padding": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Point>"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Partial<TRBL>>"
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1707"
+							}
+						]
+					}
+				}
+			}
 		},
 		"_DeepPartialObject<AnimationSpec<\"polarArea\"> & { onProgress?: ((this: Chart<key…#1f2bd09a48": {
 			"kind": "object",
@@ -60208,6 +61163,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -60217,6 +61175,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
 							}
 						]
 					}
@@ -60247,6 +61209,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -60256,6 +61221,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
 							}
 						]
 					}
@@ -61528,6 +62497,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -61537,6 +62509,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
 							}
 						]
 					}
@@ -61567,6 +62543,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -61576,6 +62555,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
 							}
 						]
 					}
@@ -64026,8 +65009,65 @@
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"radar\">>; }>>": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/types/utils.d.ts:15"
+					}
+				]
+			},
+			"properties": {
+				"autoPadding": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1706"
+							}
+						]
+					}
+				},
+				"padding": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Point>"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Partial<TRBL>>"
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1707"
+							}
+						]
+					}
+				}
+			}
 		},
 		"_DeepPartialObject<ElementOptionsByType<\"radar\">>": {
 			"kind": "object",
@@ -67368,6 +68408,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -67377,6 +68420,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
 							}
 						]
 					}
@@ -67407,6 +68454,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -67416,6 +68466,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
 							}
 						]
 					}
@@ -69675,8 +70729,65 @@
 		},
 		"_DeepPartialObject<Partial<{ autoPadding: boolean; padding: Scriptable<Padding, ScriptableContext<\"scatter\">>; }>>": {
 			"kind": "object",
-			"additional": "open",
-			"properties": {}
+			"additional": "closed",
+			"provenance": {
+				"confidence": "authoritative",
+				"sources": [
+					{
+						"source": "chartjs",
+						"pointer": "chart.js/dist/types/utils.d.ts:15"
+					}
+				]
+			},
+			"properties": {
+				"autoPadding": {
+					"node": {
+						"kind": "scriptable",
+						"value": {
+							"kind": "boolean"
+						}
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1706"
+							}
+						]
+					}
+				},
+				"padding": {
+					"node": {
+						"kind": "union",
+						"anyOf": [
+							{
+								"kind": "number"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Point>"
+							},
+							{
+								"kind": "ref",
+								"ref": "_DeepPartialObject<Partial<TRBL>>"
+							},
+							{
+								"kind": "function"
+							}
+						]
+					},
+					"provenance": {
+						"confidence": "authoritative",
+						"sources": [
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/types/index.d.ts:1707"
+							}
+						]
+					}
+				}
+			}
 		},
 		"_DeepPartialObject<AnimationSpec<\"scatter\"> & { onProgress?: ((this: Chart<keyof…#70e048d8c3": {
 			"kind": "object",
@@ -73541,6 +74652,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -73550,6 +74664,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1792"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1587"
 							}
 						]
 					}
@@ -73580,6 +74698,9 @@
 							},
 							{
 								"kind": "function"
+							},
+							{
+								"kind": "string"
 							}
 						]
 					},
@@ -73589,6 +74710,10 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1797"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chunks/helpers.dataset.js:1590"
 							}
 						]
 					}

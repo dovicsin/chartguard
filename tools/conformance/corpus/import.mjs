@@ -40,7 +40,12 @@ async function importCorpus(library, retrieved) {
 		const code = source.extract(original);
 		if (code === undefined) continue;
 		const page = source.page === undefined ? undefined : await raw(source.page(path));
-		files.push({ path, sha256: sha256(original), code, ...(page === undefined ? {} : { page, pageSha256: sha256(page) }) });
+		files.push({
+			path,
+			sha256: sha256(original),
+			code,
+			...(page === undefined ? {} : { page, pageSha256: sha256(page) })
+		});
 	}
 	const notice = source.noticePath === undefined ? undefined : await raw(source.noticePath);
 	return {

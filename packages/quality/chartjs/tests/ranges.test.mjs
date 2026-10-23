@@ -43,6 +43,10 @@ test('the tick limit and bounds are read: maxTicksLimit caps the sizes, bounds d
 	assert.equal(fit(bars([15, 30], { beginAtZero: false, ticks: { maxTicksLimit: 1 } })), `included config ${ASKED}`);
 	assert.equal(fit(bars([15, 30], { beginAtZero: false, ticks: { maxTicksLimit: 3 } })), `? layout ${ASKED}`);
 	assert.equal(fit(bars([5, 70], { beginAtZero: false, bounds: 'data' })), `excluded config ${ASKED}`);
+	// A limit above 11 is not capped (`min(maxTicksLimit, computeTickLimit())`): a long scale draws 50
+	// ticks of step 2 from 2, where 11 ticks start at 0 (K10).
+	assert.equal(fit(bars([3, 100], { beginAtZero: false })), `included config ${ASKED}`);
+	assert.equal(fit(bars([3, 100], { beginAtZero: false, ticks: { maxTicksLimit: 50 } })), `? layout ${ASKED}`);
 	assert.equal(
 		fit(bars([30, 100], { beginAtZero: false, ticks: { maxTicksLimit: 5.5 } })),
 		'? unmodelled $.options.scales.y.ticks.maxTicksLimit'

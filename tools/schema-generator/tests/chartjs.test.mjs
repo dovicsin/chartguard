@@ -29,7 +29,8 @@ test('definition names are bounded, unique and never truncated into collisions',
 test('platform object types are shared definitions, not thousands of inline copies', () => {
 	const inlineOpen = (node) => {
 		if (node === null || typeof node !== 'object') return 0;
-		const own = node.kind === 'object' && node.additional === 'open' && Object.keys(node.properties).length === 0 ? 1 : 0;
+		const own =
+			node.kind === 'object' && node.additional === 'open' && Object.keys(node.properties).length === 0 ? 1 : 0;
 		return own + Object.values(node).reduce((sum, child) => sum + inlineOpen(child), 0);
 	};
 	const nested = Object.values(artifact.definitions).reduce(
@@ -42,7 +43,27 @@ test('platform object types are shared definitions, not thousands of inline copi
 	);
 	assert.ok(gradient.length > 0);
 	for (const name of gradient)
-		assert.deepEqual(artifact.definitions[name], { kind: 'object', additional: 'open', properties: {} });
+		assert.deepEqual(artifact.definitions[name], {
+			kind: 'object',
+			additional: 'open',
+			properties: {},
+			host: 'CanvasGradient'
+		});
+});
+
+test("an empty open definition is only an object TypeScript's library declares: a platform class or an options dictionary, never a mapped type (D3, D6)", () => {
+	const empty = Object.entries(artifact.definitions)
+		.filter(
+			([, node]) => node.kind === 'object' && node.additional === 'open' && Object.keys(node.properties).length === 0
+		)
+		.map(([name, node]) => `${name} ${node.host ?? '-'}`);
+	assert.deepEqual(empty.sort(), [
+		'_DeepPartialObject<CanvasGradient> CanvasGradient',
+		'_DeepPartialObject<CanvasPattern> CanvasPattern',
+		'_DeepPartialObject<HTMLCanvasElement> HTMLCanvasElement',
+		'_DeepPartialObject<HTMLImageElement> HTMLImageElement',
+		'_DeepPartialObject<NumberFormatOptions> -'
+	]);
 });
 
 test('the artifact is well-formed and pinned to the verified upstream package', () => {
@@ -91,7 +112,9 @@ test('scale unions are extensible, datasets inherit the chart type, runtime-defa
 
 test('every option value under options is scriptable; discriminators stay literal', () => {
 	const options = resolve(artifact.definitions.Config_line.properties.options.node);
-	const title = resolve(resolve(options.properties.plugins.node).properties.title.node).anyOf.map(resolve).find((member) => member.kind === 'object');
+	const title = resolve(resolve(options.properties.plugins.node).properties.title.node)
+		.anyOf.map(resolve)
+		.find((member) => member.kind === 'object');
 	assert.equal(title.properties.text.node.kind, 'scriptable');
 	assert.equal(options.properties.responsive.node.kind, 'scriptable');
 	assert.equal(artifact.definitions.Config_line.properties.type.node.kind, 'literal');
@@ -104,7 +127,10 @@ test('a built-in plugin entry may be a boolean: getOpts disables it with false a
 	const plugins = resolve(options.properties.plugins.node);
 	for (const id of ['legend', 'tooltip', 'title', 'subtitle', 'decimation', 'filler', 'colors']) {
 		const members = resolve(plugins.properties[id].node).anyOf.map(resolve);
-		assert.ok(members.some((member) => member.kind === 'boolean'), id);
+		assert.ok(
+			members.some((member) => member.kind === 'boolean'),
+			id
+		);
 	}
 });
 
@@ -139,15 +165,29 @@ test('chart, dataset and scale types name the runtime registry they are looked u
 
 test('element options are accepted in every scope the runtime reads them from, citing the resolver', () => {
 	const scope = artifact.definitions.ElementOptionsInScope;
-	for (const name of ['radius', 'pointRadius', 'hoverRadius', 'pointHoverRadius', 'fill', 'tension', 'backgroundColor', 'arcBorderWidth'])
+	for (const name of [
+		'radius',
+		'pointRadius',
+		'hoverRadius',
+		'pointHoverRadius',
+		'fill',
+		'tension',
+		'backgroundColor',
+		'arcBorderWidth'
+	])
 		assert.ok(Object.hasOwn(scope.properties, name), name);
 	const pointers = scope.properties.radius.provenance.sources.map(({ pointer }) => pointer);
 	assert.ok(pointers.some((pointer) => /^chart\.js\/dist\/chart\.js:\d+$/.test(pointer)));
 	const options = resolve(artifact.definitions.Config_line.properties.options.node);
 	assert.deepEqual(options.includes, ['ElementOptionsInScope']);
-	const dataset = resolve(resolve(resolve(artifact.definitions.Config_line.properties.data.node).properties.datasets.node).items);
-	for (const member of dataset.anyOf) assert.deepEqual(artifact.definitions[member.ref].includes, ['ElementOptionsInScope']);
-	const animation = resolve(options.properties.animation.node).anyOf.map(resolve).filter((member) => member.kind === 'object');
+	const dataset = resolve(
+		resolve(resolve(artifact.definitions.Config_line.properties.data.node).properties.datasets.node).items
+	);
+	for (const member of dataset.anyOf)
+		assert.deepEqual(artifact.definitions[member.ref].includes, ['ElementOptionsInScope']);
+	const animation = resolve(options.properties.animation.node)
+		.anyOf.map(resolve)
+		.filter((member) => member.kind === 'object');
 	assert.ok(animation.length > 0 && animation.every((member) => member.additional === 'open'));
 });
 

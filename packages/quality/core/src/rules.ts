@@ -1,8 +1,9 @@
 import { dataNotDescribed, keyboardDisabled } from './access.js';
 import { type QualityRule, rule, SOURCES } from './catalog.js';
-import type { AxisSemantics } from './chart.js';
+import type { AxisSemantics, ChartSemantics } from './chart.js';
 import { lowContrastSeries, sameColorSeries } from './colors.js';
 import { valueOf } from './facts.js';
+import { dataRange } from './fit.js';
 import { emptyTitle, placeholderText, valueAxisUntitled } from './labels.js';
 import { CARTESIAN, configured, measuredAxes } from './measure.js';
 import { longMotion } from './motion.js';
@@ -15,10 +16,25 @@ import { percentWithoutUnit } from './units.js';
  * other than zero (Chart.js `base`, ECharts `startValue`, Highcharts `threshold`).
  */
 
+/**
+ * Where an axis bound set to the data (`'data'`, ECharts `dataMin`/`dataMax`) lies: at the smallest
+ * (or largest) value of the series on the axis. Undefined when those values are not known (H8).
+ */
+function dataBound(chart: ChartSemantics, axis: AxisSemantics, end: 0 | 1): number | undefined {
+	const range = dataRange(chart.series, axis.key, axis.path);
+	return range.known ? range.value[end] : undefined;
+}
+
+/** A bound as a number: the configured one, or for `'data'` the data's own bound (unknown when the data is). */
+function boundValue(chart: ChartSemantics, axis: AxisSemantics, end: 0 | 1): number | undefined {
+	const bound = configured(end === 0 ? axis.min : axis.max);
+	return bound === 'data' ? dataBound(chart, axis, end) : bound;
+}
+
 /** The finding on an axis: a range the config sets, or one fitted to the data, that leaves zero out. */
-function cutAxis(axis: AxisSemantics): { path: string; message: string } | undefined {
-	const [min, max] = [configured(axis.min), configured(axis.max)];
-	if (min === 'data' || (typeof min === 'number' && min > 0))
+function cutAxis(chart: ChartSemantics, axis: AxisSemantics): { path: string; message: string } | undefined {
+	const [min, max] = [boundValue(chart, axis, 0), boundValue(chart, axis, 1)];
+	if (min !== undefined && min > 0)
 		return {
 			path: axis.min.path,
 			message:
@@ -63,7 +79,7 @@ const barBaseline = rule(
 	(chart, report) => {
 		const measured = measuredAxes(chart, ['bar']).filter(({ axis }) => configured(axis.scale) !== 'log');
 		const axes = measured.flatMap(({ axis }) => {
-			const cut = cutAxis(axis);
+			const cut = cutAxis(chart, axis);
 			return cut === undefined ? [] : [report(cut.path, cut.message)];
 		});
 		// A base the config sets, once per place it is set (an ECharts axis `startValue` serves all its bars).
@@ -165,15 +181,20 @@ const dualAxis = rule(
 		evidence: [SOURCES.isenberg2011],
 		limits: [
 			'Quantities in different units need different scales; separate panels sharing the index axis show them without implying a relation.',
-			'Only bindings that are known count: a series whose axis is not known is not compared.'
+			'Only bindings that are known count: a series whose axis is not known is not compared.',
+			'Only axes known to span one panel count: axes in separate panels (Chart.js scales in a `stack`, ECharts grids, Highcharts axes placed with `top`/`height`) are separate charts; axes placed differently are never assumed to overlap.'
 		]
 	},
 	(chart, report) => {
-		// Two axes count only for series known to share an orientation (both vertical, or both horizontal).
+		// Two axes count only for series known to share an orientation (both vertical, or both horizontal),
+		// on axes known to span one panel: axes in separate grids, bands or panes are separate charts (H9).
 		const [first, ...rest] = measuredAxes(chart, CARTESIAN);
 		const orientation = first === undefined ? undefined : valueOf(first.by.orientation);
+		const panel = first === undefined ? undefined : valueOf(first.axis.panel);
 		const second =
-			orientation === undefined ? undefined : rest.find(({ by }) => valueOf(by.orientation) === orientation);
+			orientation === undefined || panel === undefined
+				? undefined
+				: rest.find(({ by, axis }) => valueOf(by.orientation) === orientation && valueOf(axis.panel) === panel);
 		return second === undefined
 			? []
 			: [

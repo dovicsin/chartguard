@@ -2,6 +2,8 @@ import { isContainer, isRecord, keySegment, ownDataProperty } from '@chartguard/
 import ts from 'typescript';
 
 import type { Decoded } from './decoded.js';
+import { unwrapped } from './literals.js';
+import { isDirectEval } from './scope.js';
 import { traceWithout } from './trace.js';
 
 /** One step of a property chain: `.name`, `['name']` or `[0]`. */
@@ -15,6 +17,8 @@ export interface Step {
 export interface Write {
 	readonly path: readonly Step[];
 	readonly node: ts.Node;
+	/** The value at `path` is replaced (an assignment), not changed inside. */
+	readonly replaces: boolean;
 }
 
 /**
@@ -33,6 +37,8 @@ export interface Chain {
 	readonly root: ts.Identifier;
 	/** Each access with its static step; a computed step ends the chain, so nothing after it is listed. */
 	readonly accesses: readonly { readonly node: ts.AccessExpression; readonly step: Step }[];
+	/** A computed step was cut away: the chain names its root's contents, at any key (`ns[name]`). */
+	readonly cut?: boolean;
 }
 
 const MUTATORS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
@@ -51,17 +57,18 @@ function stepOf(node: ts.AccessExpression): Step | undefined {
 /** The chain `expression` reads, from its root name; undefined when it does not start at a name. */
 export function chainOf(expression: ts.Expression): Chain | undefined {
 	const accesses: { node: ts.AccessExpression; step: Step }[] = [];
-	let node = expression;
-	while (ts.isParenthesizedExpression(node) || ts.isNonNullExpression(node)) node = node.expression;
+	let cut = false;
+	let node = unwrapped(expression);
 	while (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
 		const step = stepOf(node);
 		// A computed step: what is below it is unknown, so the chain is cut above it.
-		if (step === undefined) accesses.length = 0;
-		else accesses.unshift({ node, step });
-		node = node.expression;
-		while (ts.isParenthesizedExpression(node) || ts.isNonNullExpression(node)) node = node.expression;
+		if (step === undefined) {
+			accesses.length = 0;
+			cut = true;
+		} else accesses.unshift({ node, step });
+		node = unwrapped(node.expression);
 	}
-	return ts.isIdentifier(node) ? { root: node, accesses } : undefined;
+	return ts.isIdentifier(node) ? { root: node, accesses, cut } : undefined;
 }
 
 const isAssignment = (kind: ts.SyntaxKind): boolean =>
@@ -97,9 +104,7 @@ export type Call = ts.CallExpression | ts.NewExpression;
 
 /** The chains an argument hands over: itself, or what the literals it builds hold (spreads share nested objects). */
 export function passedChains(argument: ts.Expression): Chain[] {
-	let node = argument;
-	while (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isSatisfiesExpression(node))
-		node = node.expression;
+	const node = unwrapped(argument);
 	const chain = chainOf(node);
 	if (chain !== undefined) return [chain];
 	if (ts.isArrayLiteralExpression(node))
@@ -138,10 +143,90 @@ export function isPureCall(call: Call, program: ts.Program): boolean {
 	return pure && isGlobal(callee.expression);
 }
 
+/** The names a binding declares: an identifier, or every identifier of a destructuring pattern. */
+function boundNames(name: ts.BindingName): ts.Identifier[] {
+	if (ts.isIdentifier(name)) return [name];
+	return name.elements.flatMap((element) => (ts.isBindingElement(element) ? boundNames(element.name) : []));
+}
+
+/** The names visible at the top level of a file: its own declarations and what it imports. */
+function topLevelNames(file: ts.SourceFile): ts.Identifier[] {
+	return file.statements.flatMap((statement) => {
+		if (ts.isVariableStatement(statement))
+			return statement.declarationList.declarations.flatMap((declaration) => boundNames(declaration.name));
+		if ((ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) && statement.name !== undefined)
+			return [statement.name];
+		if (ts.isImportEqualsDeclaration(statement)) return [statement.name];
+		return ts.isImportDeclaration(statement) ? importedNames(statement) : [];
+	});
+}
+
+/** The local names an import declaration binds. */
+function importedNames({ importClause }: ts.ImportDeclaration): ts.Identifier[] {
+	if (importClause === undefined || importClause.phaseModifier === ts.SyntaxKind.TypeKeyword) return [];
+	const bindings = importClause.namedBindings;
+	const own = importClause.name === undefined ? [] : [importClause.name];
+	if (bindings === undefined) return own;
+	if (ts.isNamespaceImport(bindings)) return [...own, bindings.name];
+	return [...own, ...bindings.elements.filter((element) => !element.isTypeOnly).map((element) => element.name)];
+}
+
+/**
+ * What code that cannot be read may do to a name: change its contents, and replace it when the
+ * binding allows it (a `let`, a `var`, a function; never a `const` or an import).
+ */
+const everythingAbout = (root: ts.Identifier, node: ts.Node, reassignable: boolean): WriteSite[] => [
+	...(reassignable ? [{ chain: { root, accesses: [] }, node, replaces: true }] : []),
+	{ chain: { root, accesses: [] }, node, replaces: false }
+];
+
+/** Whether a top-level name's binding can be assigned to: not a `const`, `using`, class or import. */
+function isReassignable(name: ts.Identifier): boolean {
+	const declaration = name.parent;
+	if (ts.isFunctionDeclaration(declaration)) return true;
+	let node: ts.Node = declaration;
+	while (ts.isBindingElement(node) || ts.isObjectBindingPattern(node) || ts.isArrayBindingPattern(node))
+		node = node.parent;
+	return ts.isVariableDeclaration(node) && (node.parent.flags & (ts.NodeFlags.Const | ts.NodeFlags.Using)) === 0;
+}
+
+/**
+ * Whether a `with` body may set a property of its object by a bare name: it assigns, updates or
+ * deletes through a bare name, calls a method on one, declares a function (which runs later, in the
+ * object's scope), or evaluates code.
+ */
+function writesThroughNames(body: ts.Statement): boolean {
+	const bare = (written: ts.Expression | undefined): boolean => {
+		const chain = written === undefined ? undefined : chainOf(written);
+		return chain !== undefined;
+	};
+	const visit = (node: ts.Node): boolean =>
+		ts.isFunctionLike(node) ||
+		isDirectEval(node) ||
+		bare(writtenByOperator(node)) ||
+		bare(writtenByCall(node)) ||
+		(ts.forEachChild(node, visit) ?? false);
+	return visit(body);
+}
+
+/**
+ * Writes code may make that its syntax does not spell (A34): a direct `eval` may assign anything it
+ * can see, every name at the top level of its file included; a `with` body may set any property of
+ * its object by a bare name.
+ */
+function dynamicSites(node: ts.Node, file: ts.SourceFile): WriteSite[] {
+	if (isDirectEval(node))
+		return topLevelNames(file).flatMap((root) => everythingAbout(root, node, isReassignable(root)));
+	if (!ts.isWithStatement(node) || !writesThroughNames(node.statement)) return [];
+	const chain = chainOf(node.expression);
+	return chain === undefined ? [] : [{ chain, node, replaces: false }];
+}
+
 /**
  * Every write site in `file` with the chain it writes (CG-03-05): assignments, updates, `delete`,
- * method calls on a chain (the receiver) and `Object.assign`-like calls (the first argument).
- * Only syntax is read here; which constant a chain starts at is the caller's to resolve.
+ * method calls on a chain (the receiver), `Object.assign`-like calls (the first argument), and what a
+ * direct `eval` or a `with` body may write. Only syntax is read here; which constant a chain starts
+ * at is the caller's to resolve.
  */
 export function writeSites(file: ts.SourceFile, exempt: (call: Call) => boolean): WriteSite[] {
 	const sites: WriteSite[] = [];
@@ -152,6 +237,7 @@ export function writeSites(file: ts.SourceFile, exempt: (call: Call) => boolean)
 	const visit = (node: ts.Node): void => {
 		add(writtenByOperator(node), node, true);
 		add(writtenByCall(node), node, false);
+		sites.push(...dynamicSites(node, file));
 		// A callee that is not a chart use may change what it is given (CG-03-06).
 		if ((ts.isCallExpression(node) || ts.isNewExpression(node)) && !exempt(node))
 			for (const chain of (node.arguments ?? []).flatMap(passedChains)) sites.push({ chain, node, replaces: false });
@@ -159,6 +245,17 @@ export function writeSites(file: ts.SourceFile, exempt: (call: Call) => boolean)
 	};
 	visit(file);
 	return sites;
+}
+
+/**
+ * What a file whose syntax cannot be trusted may write (A36): every name it imports, replaced or
+ * changed inside. Nothing it does is read, so all of it is unknown.
+ */
+export function unreadableSites(file: ts.SourceFile): WriteSite[] {
+	return file.statements
+		.filter(ts.isImportDeclaration)
+		.flatMap(importedNames)
+		.flatMap((root) => everythingAbout(root, root, false));
 }
 
 function emptied(value: unknown): unknown {
@@ -182,8 +279,28 @@ function without(value: unknown, path: readonly Step[]): unknown {
 	return value;
 }
 
+/** The value at `path`, when every step is an own data property; `missing` when one is not. */
+function valueAt(value: unknown, path: readonly Step[]): { readonly value: unknown } | 'missing' {
+	let current = value;
+	for (const { key } of path) {
+		if (!isContainer(current)) return 'missing';
+		const entry = ownDataProperty(current, key);
+		if (!entry.found) return 'missing';
+		current = entry.value;
+	}
+	return { value: current };
+}
+
+/** A change inside a primitive changes nothing: a string, number or boolean has no contents to write. */
+function changesNothing(value: unknown, { path, replaces }: Write): boolean {
+	if (replaces) return false;
+	const found = valueAt(value, path);
+	return found !== 'missing' && found.value !== undefined && !isContainer(found.value);
+}
+
 /** A decoded constant with every written path left out, unknown from the write site; any write makes it incomplete (CG-03-05). */
-export function withoutWritten(decoded: Decoded, writes: readonly Write[]): Decoded {
+export function withoutWritten(decoded: Decoded, all: readonly Write[]): Decoded {
+	const writes = all.filter((write) => !changesNothing(decoded.value, write));
 	if (writes.length === 0) return decoded;
 	let { value, trace } = decoded;
 	for (const { path, node } of writes) {

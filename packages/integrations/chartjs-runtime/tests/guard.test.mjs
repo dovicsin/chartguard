@@ -95,24 +95,72 @@ test('an update is validated from the live chart, without the scales Chart.js me
 	assert.ok(draws() > drawn);
 });
 
-test('an unchanged known-valid chart updates without a warning; only the unchecked scales are noted', (t) => {
+test('an unchanged known-valid chart updates without a warning: its scales stand as checked at creation', (t) => {
 	for (const [name, config] of Object.entries(KNOWN_VALID)) {
 		const { chart, results } = guarded(structuredCloneable(config));
 		t.after(() => chart.destroy());
 		chart.update();
 		const { result } = results.at(-1);
+		const created = results[0].result.diagnostics.filter(({ path }) => path.startsWith('$.options.scales'));
 		assert.deepEqual(
 			findings(result),
-			findings(validate(withoutScales(config), { libraryVersion: Chart.version })),
+			[
+				...findings(validate(withoutScales(config), { libraryVersion: Chart.version })),
+				...findings({ diagnostics: created })
+			],
 			name
 		);
 		assert.deepEqual(
-			result.diagnostics.filter((d) => d.code === 'CFG_UNCHECKED').map((d) => [d.path, d.severity, d.confidence]),
-			[['$.options.scales', 'info', 'unknown']],
+			result.diagnostics.filter((d) => d.code === 'CFG_UNCHECKED'),
+			[],
 			name
 		);
-		assert.equal(result.status, 'partial', name);
 	}
+});
+
+test('with block, a chart created with an invalid scale stays undrawn at every update while its scales are unchanged (A46)', (t) => {
+	const { chart, results, draws } = guarded(bar({ scales: { y: { type: 'linear', min: '50' } } }), { block: true });
+	t.after(() => chart.destroy());
+	assert.deepEqual(findings(results[0].result), ['error CFG_TYPE $.options.scales.y.min']);
+	assert.equal(draws(), 0);
+	// Another render of the same chart (a browser renders once on attach, then once more on creation) or a data change.
+	chart.update('attach');
+	chart.data.datasets[0].data = [2];
+	chart.update();
+	assert.equal(draws(), 0);
+	assert.deepEqual(findings(results.at(-1).result), ['error CFG_TYPE $.options.scales.y.min']);
+	assert.equal(results.at(-1).result.valid, false);
+	// Once the scales change they cannot be checked at an update: not claimed invalid, noted unchecked.
+	chart.options.scales.y.min = 0;
+	chart.update();
+	assert.ok(draws() > 0);
+	assert.deepEqual(
+		results
+			.at(-1)
+			.result.diagnostics.filter(({ code }) => code === 'CFG_UNCHECKED')
+			.map(({ path }) => path),
+		['$.options.scales']
+	);
+});
+
+test('the state is per chart: a second chart, or one recreated after destroy, from the same guarded config is checked on its own (A46)', (t) => {
+	const results = [];
+	let draws = 0;
+	const counter = { id: 'draws', afterDraw: () => (draws += 1) };
+	const config = guard(
+		{ ...bar({ scales: { y: { type: 'linear', min: '50' } } }), plugins: [counter] },
+		{ block: true, onResult: (result, event) => results.push(event.phase) }
+	);
+	const first = createChartjs(config);
+	first.update();
+	first.destroy();
+	const second = createChartjs(config);
+	t.after(() => second.destroy());
+	second.update();
+	const third = createChartjs(config);
+	t.after(() => third.destroy());
+	assert.equal(draws, 0);
+	assert.deepEqual(results, ['create', 'update', 'create', 'update', 'create']);
 });
 
 test('updates can be left unchecked, and a validator with extensions replaces the shipped one', (t) => {

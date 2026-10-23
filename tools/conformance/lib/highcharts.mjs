@@ -74,7 +74,7 @@ for (const options of CASES.map(revive)) {
 			polar: chart.polar === true,
 			// A column's base is where it grows from (its threshold as the options merge, kept within the axis); \`fromZero\` when that is where zero is.
 			series: chart.series.map((series) => ({ type: series.type, yAxis: series.yAxis ? series.yAxis.index : null, stacking: series.options.stacking ?? null, color: typeof series.color === 'string' ? series.color : null, fromZero: typeof series.translatedThreshold === 'number' ? Math.abs(series.translatedThreshold - series.yAxis.translate(0, 0, 1, 0, 1)) < 0.5 : null, threshold: series.options.threshold ?? null, points: series.points.map((point) => ({ y: point.y ?? null, valid: point.isValid() })) })),
-			yAxes: chart.yAxis.map((axis) => ({ min: axis.min, max: axis.max, reversed: axis.reversed === true, log: axis.logarithmic !== undefined, title: axis.axisTitle?.textStr ?? '', percent: axis.stacking?.usePercentage === true, labels: (axis.tickPositions ?? []).map((position) => axis.ticks[position]?.label?.textStr ?? '') })),
+			yAxes: chart.yAxis.map((axis) => ({ horiz: axis.horiz === true, top: axis.top, left: axis.left, len: axis.len, min: axis.min, max: axis.max, reversed: axis.reversed === true, log: axis.logarithmic !== undefined, title: axis.axisTitle?.textStr ?? '', percent: axis.stacking?.usePercentage === true, labels: (axis.tickPositions ?? []).flatMap((position) => { const text = axis.ticks[position]?.label?.textStr; return text === undefined ? [] : [String(text)]; }) })),
 			title: chart.title?.textStr ?? '',
 			// What assistive technology gets: labelled data points, and anything taking keyboard focus.
 			access: {
@@ -107,7 +107,10 @@ function page(configs, modules, runner) {
 	const scripts = ['highcharts.src.js', ...modules.map((name) => `modules/${name}.src.js`)].map(scriptFor);
 	// An explicit `undefined` travels as a marker the page turns back into `undefined`; `<` is
 	// escaped so no option text can close the script element.
-	const data = JSON.stringify(configs, (_, value) => (value === undefined ? { [UNDEFINED]: true } : value)).replaceAll('<', '\\u003c');
+	const data = JSON.stringify(configs, (_, value) => (value === undefined ? { [UNDEFINED]: true } : value)).replaceAll(
+		'<',
+		'\\u003c'
+	);
 	const marker = JSON.stringify(UNDEFINED);
 	return `<!doctype html><meta charset="utf-8"><body>${scripts.join('')}<pre id="outcomes"></pre><script>const UNDEFINED = ${marker}; const CASES = ${data};${runner}</script>`;
 }
@@ -198,7 +201,8 @@ document.getElementById('outcomes').textContent = encodeURIComponent(JSON.string
  */
 export function runHighchartsUpdates(cases) {
 	for (const { create, update } of cases)
-		if (!isJsonOrUndefined(create) || !isJsonOrUndefined(update)) throw new Error('a Highcharts update case must be plain JSON');
+		if (!isJsonOrUndefined(create) || !isJsonOrUndefined(update))
+			throw new Error('a Highcharts update case must be plain JSON');
 	const mark = (item, index) => ({ ...item, data: [UPDATE_MARK + index] });
 	const marked = cases.map(({ update, ...rest }) => {
 		const items = update.series;
@@ -215,7 +219,8 @@ export function runHighchartsUpdates(cases) {
  */
 export async function runHighcharts(cases) {
 	for (const { config } of cases)
-		if (!isJsonOrUndefined(config)) throw new Error('a Highcharts case must be plain JSON (explicit undefined allowed)');
+		if (!isJsonOrUndefined(config))
+			throw new Error('a Highcharts case must be plain JSON (explicit undefined allowed)');
 	const groups = new Map();
 	cases.forEach(({ modules = [] }, index) => {
 		const key = [...ALWAYS, ...modules].join(' ');

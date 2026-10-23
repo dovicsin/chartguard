@@ -30,8 +30,12 @@ const CODE_OF = new Map(RULE_CATALOG.map(({ id, code }) => [id, code]));
  * whatever is drawn), and rules the case's settings turn off (they do not run).
  */
 function unclaimed(entry, options) {
-	const off = Object.entries(options?.rules ?? {}).filter(([, setting]) => setting === 'off' || setting?.level === 'off');
-	return new Set([...(entry.kind === 'unknown' ? [entry.rule] : []), ...off.map(([id]) => id)].map((id) => CODE_OF.get(id)));
+	const off = Object.entries(options?.rules ?? {}).filter(
+		([, setting]) => setting === 'off' || setting?.level === 'off'
+	);
+	return new Set(
+		[...(entry.kind === 'unknown' ? [entry.rule] : []), ...off.map(([id]) => id)].map((id) => CODE_OF.get(id))
+	);
 }
 
 /** Each premise holds exactly when its rule reported or suppressed a finding (a suppressed finding is still a claim). */
@@ -54,8 +58,13 @@ function checkReport(entry, library, analyze) {
 	const report = analyze(config, options);
 	const brief = ({ code, path }) => `${code} ${path}`;
 	assert.deepEqual(report.diagnostics.map(brief), findings, entry.name);
-	assert.deepEqual(report.suppressed.map(({ diagnostic }) => brief(diagnostic)), suppressed, entry.name);
-	if (severity !== undefined) for (const { severity: reported } of report.diagnostics) assert.equal(reported, severity, entry.name);
+	assert.deepEqual(
+		report.suppressed.map(({ diagnostic }) => brief(diagnostic)),
+		suppressed,
+		entry.name
+	);
+	if (severity !== undefined)
+		for (const { severity: reported } of report.diagnostics) assert.equal(reported, severity, entry.name);
 }
 
 const run = (config, render) => verdictOf(render(copyPlain(config)));
@@ -66,7 +75,10 @@ const isJson = (value) => isDeepStrictEqual(JSON.parse(JSON.stringify(value)), c
 const browser = { skip: browserSkipReason() ?? false };
 // What assistive technology gets from echarts needs a DOM: every echarts case that is plain JSON also runs in headless Chrome.
 const echartsEntries = RULES_CONTRACT.filter((entry) => entry.echarts !== undefined && isJson(entry.echarts.config));
-const echartsAccess = browser.skip === false ? await runEchartsInBrowser(echartsEntries.map((entry) => copyPlain(entry.echarts.config))) : [];
+const echartsAccess =
+	browser.skip === false
+		? await runEchartsInBrowser(echartsEntries.map((entry) => copyPlain(entry.echarts.config)))
+		: [];
 
 for (const entry of RULES_CONTRACT) {
 	if (entry.chartjs !== undefined)
@@ -88,12 +100,20 @@ for (const entry of RULES_CONTRACT) {
 
 const highcharts = RULES_CONTRACT.filter((entry) => entry.highcharts !== undefined);
 
-test('quality rules, highcharts: every contract chart renders, gets its findings, and their premises hold', browser, async () => {
-	const outcomes = await runHighcharts(highcharts.map((entry) => ({ config: entry.highcharts.config })));
-	highcharts.forEach((entry, index) => {
-		const { config, options } = entry.highcharts;
-		assert.equal(verdictOf(outcomes[index]), 'accepted', `${entry.name}: ${JSON.stringify(outcomes[index].messages)}`);
-		checkReport(entry, 'highcharts', analyzeHighcharts);
-		checkPremises(entry, 'highcharts', builtHighcharts(outcomes[index].observed, config, options));
-	});
-});
+test(
+	'quality rules, highcharts: every contract chart renders, gets its findings, and their premises hold',
+	browser,
+	async () => {
+		const outcomes = await runHighcharts(highcharts.map((entry) => ({ config: entry.highcharts.config })));
+		highcharts.forEach((entry, index) => {
+			const { config, options } = entry.highcharts;
+			assert.equal(
+				verdictOf(outcomes[index]),
+				'accepted',
+				`${entry.name}: ${JSON.stringify(outcomes[index].messages)}`
+			);
+			checkReport(entry, 'highcharts', analyzeHighcharts);
+			checkPremises(entry, 'highcharts', builtHighcharts(outcomes[index].observed, config, options));
+		});
+	}
+);

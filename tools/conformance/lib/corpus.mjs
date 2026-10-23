@@ -52,7 +52,8 @@ export function isQuiet(outcome) {
 export function allowedExplanations(outcome) {
 	if (outcome.status !== 'ran') return ['Environment:'];
 	const required = requiredExplanation(outcome);
-	if (required !== undefined) return required === 'False negative (CG-' ? [required, 'Environment:', 'Out of scope:'] : [required];
+	if (required !== undefined)
+		return required === 'False negative (CG-' ? [required, 'Environment:', 'Out of scope:'] : [required];
 	if (outcome.runtime !== 'complained') return [];
 	// What our findings would need on an example the runtime accepts, then: the runtime's complaint
 	// is ours (`Agreement:`), or comes from the page, not the options (`Environment:`).

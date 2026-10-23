@@ -8,6 +8,18 @@ import { fileURLToPath } from 'node:url';
 import { SOURCES } from '../../tools/conformance/corpus/sources.mjs';
 import { corpusFile } from '../../tools/conformance/lib/corpus.mjs';
 import { isRedistributable } from '../../tools/schema-generator/generate.mjs';
+import {
+	argvScript,
+	codeNames,
+	entryWork,
+	fileUrlText,
+	jsonRoundTrips,
+	nodeModulesPaths,
+	recordCasts,
+	resultFields,
+	rewritesFiles,
+	scriptsAmong
+} from './syntax-guards.mjs';
 
 /**
  * Mechanical guards for defect classes this codebase has already shipped once.
@@ -31,31 +43,28 @@ const sources = (directory, extensions = ['.ts', '.mjs']) =>
 		text: readFileSync(path, 'utf8')
 	}));
 
-const offenders = (entries, pattern) => entries.filter(({ text }) => pattern.test(text)).map(({ path }) => path);
+const outsideTests = (entries) => entries.filter(({ path }) => !path.split(sep).includes('tests'));
 
 test('R1 layering: @chartguard/core knows no diagnostic code of any other package', () => {
-	assert.deepEqual(offenders(sources('packages/core/src'), /\b(CFG|VIS|AST)_[A-Z_]+\b/), []);
+	assert.deepEqual(codeNames(sources('packages/core/src')), []);
 });
 
 test('R2 single source of truth: only core/result.ts derives valid and status', () => {
-	// The whitespace lives inside the lookahead, so backtracking cannot slip past the type name.
-	const literal = /\b(valid|status):(?!\s*(boolean|ValidationStatus)\b)/;
 	const entries = sources('packages').filter(
 		({ path }) => path.split(sep).includes('src') && !path.endsWith(join('core', 'src', 'result.ts'))
 	);
-	assert.deepEqual(offenders(entries, literal), []);
+	assert.deepEqual(resultFields(entries), []);
 });
 
 test('R3 portability: main-module detection compares resolved paths, never URL text', () => {
-	assert.deepEqual(offenders(sources('scripts').concat(sources('tools'), sources('packages')), /file:\/\/\$\{/), []);
+	assert.deepEqual(fileUrlText(outsideTests([...sources('scripts'), ...sources('tools'), ...sources('packages')])), []);
 });
 
 test('R4 hooks only check: no git hook rewrites or re-stages files', () => {
-	for (const { path, text } of sources('.husky', ['pre-commit', 'pre-push']))
-		assert.doesNotMatch(text, /fix|--write|update-index|git add/, path);
 	const { scripts } = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-	for (const name of ['precommit', 'prepush'])
-		assert.doesNotMatch(scripts[name], /fix-|--write|--fix|update-index/, name);
+	for (const { path, text } of sources('.husky', ['pre-commit', 'pre-push']))
+		assert.equal(rewritesFiles(text, scripts), false, path);
+	for (const name of ['precommit', 'prepush']) assert.equal(rewritesFiles(scripts[name], scripts), false, name);
 });
 
 test('R5 one engines policy: every workspace package declares the root Node range', () => {
@@ -121,23 +130,37 @@ test('R7 shipped files are tracked: every non-build entry in a package `files` l
 });
 
 test('R9 tool entry points go through runAsEntryPoint, which tolerates a closed stdout pipe', () => {
-	const entries = [...sources('tools'), ...sources('apps')].filter(
-		({ path }) => path !== join('tools', 'shared', 'entry.mjs') && !path.split(sep).includes('tests')
+	const modules = (directory) => sources(directory, ['.mjs']);
+	const all = [...modules('tools'), ...modules('apps'), ...modules('scripts'), ...modules('packages')];
+	const candidates = outsideTests([...modules('tools'), ...modules('apps'), ...modules('scripts')]).filter(
+		({ path }) => path !== join('tools', 'shared', 'entry.mjs')
 	);
-	assert.deepEqual(offenders(entries, /\bisEntryPoint\(/), []);
+	const scripts = scriptsAmong(candidates, all);
+	// The repository's own scripts are found: build, test, the boundary check, the generators.
+	for (const script of ['build.mjs', 'test.mjs', 'check-boundaries.mjs'])
+		assert.ok(
+			scripts.some(({ path }) => path === join('scripts', script)),
+			script
+		);
+	assert.deepEqual(entryWork(scripts), []);
 });
 
 test('R10 runtime facts are read from the pinned package through one helper that cites the line (D16)', () => {
+	// The generators read facts from the pinned packages; the conformance harness only loads them to run.
 	const allowed = new Set(['runtime.mjs', 'lock.mjs'].map((file) => join('packages', 'schema-generator', 'lib', file)));
-	const readers = [...sources('tools'), ...sources('packages/schema-generator', ['.mjs'])].filter(
-		({ path }) => !allowed.has(path) && !path.split(sep).includes('tests')
-	);
-	assert.deepEqual(offenders(readers, /['"]node_modules['"]\s*,/), []);
+	const readers = outsideTests([
+		...sources('tools/schema-generator'),
+		...sources('tools/docs'),
+		...sources('tools/api'),
+		...sources('packages/schema-generator', ['.mjs'])
+	]).filter(({ path }) => !allowed.has(path));
+	assert.ok(readers.length >= 20, 'the generator sources are found');
+	assert.deepEqual(nodeModulesPaths(readers), []);
 });
 
 test('R11 a value handed to another process is checked structurally, not by a JSON round trip that drops functions (E20)', () => {
 	const code = [...sources('tools'), ...sources('apps'), ...sources('packages')];
-	assert.deepEqual(offenders(code, /JSON\.stringify\(\s*JSON\.parse\(/), []);
+	assert.deepEqual(jsonRoundTrips(code), []);
 });
 
 /** Schema artifacts (`irVersion` + `library`) among JSON files, with whether their upstream license allows shipping them. */
@@ -213,7 +236,7 @@ test('R13 cross-option rules read the config only through readOwn/itemsOf, never
 		...sources('packages/config/core/src').filter(({ path }) => path.endsWith('rules.ts'))
 	];
 	assert.ok(rules.length >= 5, 'the rule sources are found');
-	assert.deepEqual(offenders(rules, /\bas\s+(Record<|\{\s*\[)/), []);
+	assert.deepEqual(recordCasts(rules), []);
 });
 
 test('R8 entry points: process.argv[1] is resolved only by the guarded helpers, never at import time unguarded', () => {
@@ -221,5 +244,5 @@ test('R8 entry points: process.argv[1] is resolved only by the guarded helpers, 
 	const entries = [...sources('tools'), ...sources('scripts'), ...sources('packages')].filter(
 		({ path }) => !allowed.has(path) && !path.split(sep).includes('tests')
 	);
-	assert.deepEqual(offenders(entries, /realpathSync\(\s*(invokedPath|process\.argv)/), []);
+	assert.deepEqual(argvScript(entries), []);
 });

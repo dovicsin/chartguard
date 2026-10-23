@@ -4,7 +4,10 @@
 	"include": [
 		"packages/**/dist/**/*.js",
 		"scripts/boundaries/**/*.mjs",
+		"packages/schema-generator/lib/**/*.mjs",
 		"tools/schema-generator/lib/**/*.mjs",
+		"tools/api/**/*.mjs",
+		"tools/docs/**/*.mjs",
 		"tools/conformance/lib/**/*.mjs",
 		"tools/shared/**/*.mjs",
 		"apps/playground/dist/{locate,model,examples,selftest}.js"

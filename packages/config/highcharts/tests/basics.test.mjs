@@ -18,6 +18,11 @@ test('closed primitive fields are still confirmed errors', () => {
 		result.diagnostics.map((d) => `${d.code} ${d.path}`),
 		['CFG_TYPE $.credits.enabled', 'CFG_TYPE $.series[0].name']
 	);
+	// `null` is unset (`pick()`), any other non-string title is still wrong (K12).
+	assert.deepEqual(
+		validate({ title: { text: 5 }, subtitle: { text: null } }).diagnostics.map((d) => `${d.code} ${d.path}`),
+		['CFG_TYPE $.title.text']
+	);
 });
 
 test('schema version tracks the 13.x line', () => assert.match(validate({}).schemaVersion, /^13\.x/));

@@ -19,7 +19,12 @@ test('the console is captured during the render and restored afterwards, also af
 			{ channel: 'error', text: 'broken' }
 		]
 	});
-	assert.equal(observe(() => { throw 'text'; }).threw, 'text');
+	assert.equal(
+		observe(() => {
+			throw 'text';
+		}).threw,
+		'text'
+	);
 	assert.equal(console.warn, warn);
 	assert.equal(console.error, error);
 });

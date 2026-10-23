@@ -159,6 +159,22 @@ test('a timeline option (baseOption / options) is merged at runtime: the rules m
 	assert.deepEqual(ruled({ options: [{ series: [heatmap] }] }), []);
 });
 
+test('a root option with media is merged at runtime with the matching media options: no claim on the root alone (H10)', () => {
+	// echarts takes the root as the base option and merges each matching `media[].option` into it.
+	assert.deepEqual(ruled({ series: [heatmap], media: [{ query: { maxWidth: 500 }, option: { visualMap: {} } }] }), []);
+	assert.deepEqual(
+		ruled({
+			legend: { data: ['Small'] },
+			series: [{ type: 'line', data: [1] }],
+			media: [{ option: { series: [{ name: 'Small' }] } }]
+		}),
+		[]
+	);
+	assert.deepEqual(ruled({ series: [heatmap], media: Object.defineProperty({}, 'length', { get: () => 1 }) }), []);
+	// A falsy media is none (`hasMedia = !!rawOption.media`): the rules apply.
+	assert.equal(ruled({ series: [heatmap], media: null }).length > 0, true);
+});
+
 test('incomplete input (static extraction) turns rule errors into unresolved warnings', () => {
 	assert.deepEqual(
 		validate({ series: [heatmap] }, { incomplete: true })

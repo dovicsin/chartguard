@@ -12,3 +12,17 @@ export function kindOf(value: unknown): string {
 	if (isListLike(value)) return 'array';
 	return typeof value;
 }
+
+/**
+ * A plain object of any realm (an iframe, a vm context): its prototype is null or a root prototype
+ * with no enumerable members of its own, never an object that inherits data (`Object.create({ a: 1 })`),
+ * a class instance or a platform object. Lists are not plain objects.
+ */
+export function isPlainData(value: unknown): boolean {
+	if (typeof value !== 'object' || value === null || isListLike(value)) return false;
+	const prototype: unknown = Object.getPrototypeOf(value);
+	if (prototype === null) return true;
+	return (
+		typeof prototype === 'object' && Object.getPrototypeOf(prototype) === null && Object.keys(prototype).length === 0
+	);
+}

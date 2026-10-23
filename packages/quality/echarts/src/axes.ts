@@ -101,6 +101,21 @@ function unitOf(config: unknown, segments: readonly (string | number)[], type: F
 	return { ...formatter, value: formatter.value.replace(VALUE, '').trim() };
 }
 
+/**
+ * The grid an axis is drawn in: the one its `gridIndex` or `gridId` names, else the first (the same
+ * referral as a series' axis, `useDefault`). Axes in different grids are separate charts.
+ */
+function panelOf(config: unknown, segments: readonly (string | number)[]): Fact<string> {
+	const byIndex = readFact(config, [...segments, 'gridIndex'], isIndex, FIRST_AXIS);
+	const byId = readFact(config, [...segments, 'gridId'], isString);
+	if (!byId.known && byId.reason !== 'unset') return byId;
+	if (!byId.known) return byIndex.known ? { ...byIndex, value: `grid[${String(byIndex.value)}]` } : byIndex;
+	const grids = itemsAt(config, ['grid'], { single: true });
+	if (!grids.known) return unknown(byId.path, grids.reason);
+	const index = grids.items.findIndex((grid) => readPath(grid.value, ['id']) === byId.value);
+	return index < 0 ? unknown(byId.path, 'unmodelled') : { ...byId, value: `grid[${String(index)}]` };
+}
+
 export function axesOf(config: unknown, series: Listed<SeriesSemantics>): AxisSemantics[] {
 	return (['x', 'y'] as const).flatMap((direction) => {
 		const axes = axisItems(config, direction);
@@ -116,6 +131,7 @@ export function axesOf(config: unknown, series: Listed<SeriesSemantics>): AxisSe
 				max: boundOf(config, [...axis.segments, 'max']),
 				fit: fitOf(config, { item: axis, key, type }, series),
 				unit: unitOf(config, axis.segments, type),
+				panel: panelOf(config, axis.segments),
 				reversed: readFact(config, [...axis.segments, 'inverse'], isBoolean, INVERSE),
 				// The name is drawn with the axis: hidden with it (`show: false`).
 				title: {

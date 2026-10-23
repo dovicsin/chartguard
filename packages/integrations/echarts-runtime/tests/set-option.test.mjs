@@ -115,3 +115,56 @@ test('without onResult only a result with confirmed errors is warned; onResult s
 	setOption(chart, LINE, true, { onResult: (_, event) => events.push(event) });
 	assert.deepEqual(events, [{ fresh: false }, { fresh: true }]);
 });
+
+test('a merge maps items to series as echarts does: an item that is not an object takes no series (K3)', (t) => {
+	const { chart } = chartFor(t, {
+		...AXES,
+		series: [
+			{ type: 'line', data: [1] },
+			{ type: 'bar', data: [2] }
+		]
+	});
+	// `null` is skipped: the next item merges into the first series, the line, not the bar. (The schema
+	// still reports the `null` item itself, which echarts ignores.)
+	const update = { series: [null, { smooth: 'yes' }] };
+	assert.deepEqual(errors(checkOption(chart, update)), ['CFG_TYPE $.series[0]', 'CFG_TYPE $.series[1].smooth']);
+	chart.setOption(update);
+	assert.deepEqual(
+		chart.getOption().series.map(({ type, smooth }) => [type, smooth]),
+		[
+			['line', 'yes'],
+			['bar', undefined]
+		]
+	);
+	// A bar option merged into the line series would be a line option the runtime ignores; checked as a line.
+	assert.deepEqual(
+		errors(checkOption(chart, { series: [0, 'x', { barWidth: true }] })).filter((line) => !/\[[01]\]$/u.test(line)),
+		[]
+	);
+	// Items beyond the series the chart has, after skipped ones, are new: without a type they are dropped.
+	assert.deepEqual(errors(checkOption(chart, { series: [null, {}, {}, {}] })), [
+		'CFG_TYPE $.series[0]',
+		'CFG_REQUIRED $.series[3].type'
+	]);
+});
+
+test('a disposed chart sets nothing: no claim that a series is dropped (K4)', (t) => {
+	const { chart } = chartFor(t, LINE);
+	chart.dispose();
+	t.mock.method(globalThis.console, 'warn', () => undefined);
+	assert.equal(chart.getOption(), null);
+	const result = checkOption(chart, { series: [{ data: [2] }, { data: [3] }] });
+	assert.deepEqual(errors(result), []);
+	assert.deepEqual(errors(setOption(chart, { series: [{ smooth: 'yes', type: 'line' }] }, undefined, quiet)), [
+		'CFG_TYPE $.series[0].smooth'
+	]);
+});
+
+test('the chart option is read once per call: getOption clones all of it (K5)', (t) => {
+	const { chart } = chartFor(t, LINE);
+	const reads = t.mock.method(chart, 'getOption');
+	setOption(chart, { series: [{ data: [2] }] }, undefined, quiet);
+	assert.equal(reads.mock.callCount(), 1);
+	checkOption(chart, { series: [{ data: [2] }] });
+	assert.equal(reads.mock.callCount(), 2);
+});

@@ -13,7 +13,8 @@ const fileOf = (packageName) => join(SURFACES, `${packageName.replace('@', '').r
 /** Each published package's current surface text, by package. */
 export function currentSurfaces() {
 	const byPackage = new Map();
-	for (const entry of publishedEntryPoints(ROOT)) byPackage.set(entry.packageName, [...(byPackage.get(entry.packageName) ?? []), entry]);
+	for (const entry of publishedEntryPoints(ROOT))
+		byPackage.set(entry.packageName, [...(byPackage.get(entry.packageName) ?? []), entry]);
 	return new Map([...byPackage].map(([packageName, entries]) => [packageName, surfaceText(entries)]));
 }
 
@@ -40,7 +41,9 @@ async function main([command = 'check']) {
 	if (command === 'write') return write(surfaces);
 	const differs = [...surfaces].map(([packageName, text]) => report(packageName, text)).some(Boolean);
 	if (differs)
-		process.stdout.write('The public API changed: review the lines above, choose the version bump, then run `npm run api:write`.\n');
+		process.stdout.write(
+			'The public API changed: review the lines above, choose the version bump, then run `npm run api:write`.\n'
+		);
 	return differs ? 1 : 0;
 }
 

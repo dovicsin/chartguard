@@ -2,7 +2,8 @@ import ts from 'typescript';
 
 import { type Decoded, known } from './decoded.js';
 
-type TransparentWrapper = ts.ParenthesizedExpression | ts.AsExpression | ts.SatisfiesExpression | ts.TypeAssertion;
+type TransparentWrapper =
+	ts.ParenthesizedExpression | ts.AsExpression | ts.SatisfiesExpression | ts.TypeAssertion | ts.NonNullExpression;
 
 type NegativeNumber = ts.PrefixUnaryExpression & { readonly operand: ts.NumericLiteral };
 
@@ -12,14 +13,25 @@ const KEYWORD_LITERALS: ReadonlyMap<ts.SyntaxKind, Decoded> = new Map([
 	[ts.SyntaxKind.NullKeyword, known(null)]
 ]);
 
-/** Syntax that changes only the static type, never the runtime value. */
+/**
+ * Syntax that changes only the static type, never the runtime value: parentheses, `as`, `satisfies`,
+ * `<T>` and the non-null `!`. The one definition every reader of expressions unwraps with (A37).
+ */
 export function isTransparentWrapper(node: ts.Expression): node is TransparentWrapper {
 	return (
 		ts.isParenthesizedExpression(node) ||
 		ts.isAsExpression(node) ||
 		ts.isSatisfiesExpression(node) ||
-		ts.isTypeAssertionExpression(node)
+		ts.isTypeAssertionExpression(node) ||
+		ts.isNonNullExpression(node)
 	);
+}
+
+/** The expression under every transparent wrapper: what runs. */
+export function unwrapped(node: ts.Expression): ts.Expression {
+	let inner = node;
+	while (isTransparentWrapper(inner)) inner = inner.expression;
+	return inner;
 }
 
 function isNegativeNumber(node: ts.Expression): node is NegativeNumber {
