@@ -17,5 +17,7 @@ export const echartsRenderer: Renderer = {
 	dispose() {
 		chart?.dispose();
 		chart = undefined;
-	}
+	},
+	// `init` returns the instance before `setOption` can throw, so `dispose` always reaches it.
+	stray: () => 0
 };

@@ -16,9 +16,31 @@ import { SOURCES } from './sources.mjs';
 const RAW = 'https://raw.githubusercontent.com';
 const API = 'https://api.github.com';
 
-async function text(url) {
-	const response = await fetch(url);
-	if (!response.ok) throw new Error(`${url}: HTTP ${String(response.status)}`);
+/** The hosts a GitHub token is sent to, over https only: never to another host. */
+const GITHUB_HOSTS = new Set(['api.github.com', 'raw.githubusercontent.com']);
+
+function headersFor(url, token) {
+	const { protocol, host } = new URL(url);
+	return token && protocol === 'https:' && GITHUB_HOSTS.has(host) ? { authorization: `Bearer ${token}` } : {};
+}
+
+/** Why GitHub refused a request, when its rate limit did: the limit is per IP without a token. */
+function limitNote(response, token) {
+	const limited =
+		response.status === 429 || (response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0');
+	if (!limited) return '';
+	return token
+		? ": GitHub's rate limit for this token is reached; retry after its reset"
+		: ": GitHub's rate limit for unauthenticated requests (shared by every hosted runner) is reached; set GITHUB_TOKEN";
+}
+
+/**
+ * The body at `url`. `GITHUB_TOKEN`, when set (CI passes the workflow token), authenticates the
+ * requests to GitHub, whose limit for unauthenticated ones is per IP address.
+ */
+export async function text(url, { token = process.env['GITHUB_TOKEN'], fetch: get = fetch } = {}) {
+	const response = await get(url, { headers: headersFor(url, token) });
+	if (!response.ok) throw new Error(`${url}: HTTP ${String(response.status)}${limitNote(response, token)}`);
 	return response.text();
 }
 

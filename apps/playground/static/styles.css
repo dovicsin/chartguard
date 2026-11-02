@@ -85,8 +85,15 @@ body {
 	border-radius: 6px;
 }
 
+/* A width of its own, never the longest example title's: the header keeps one layout across libraries. */
+.bar__field--wide {
+	flex: 0 1 480px;
+	min-width: min(360px, 100%);
+}
+
 .bar__field--wide select {
-	min-width: min(360px, 70vw);
+	width: 100%;
+	min-width: 0;
 }
 
 .layout {

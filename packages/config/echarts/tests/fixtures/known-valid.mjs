@@ -63,8 +63,14 @@ export const KNOWN_VALID = {
 		]
 	},
 	radar: {
-		radar: { indicator: [{ name: 'Sales', max: 6500 }] },
-		series: [{ type: 'radar', data: [{ value: [4200], name: 'Allocated Budget' }] }]
+		radar: {
+			indicator: [
+				{ name: 'Sales', max: 6500 },
+				{ name: 'Marketing', max: 16000 },
+				{ name: 'Support', max: 30000 }
+			]
+		},
+		series: [{ type: 'radar', data: [{ value: [4200, 3000, 20000], name: 'Allocated Budget' }] }]
 	},
 	heatmap: {
 		grid: { height: '50%', top: '10%' },
@@ -98,13 +104,30 @@ export const KNOWN_VALID = {
 	},
 	treemap: { series: [{ type: 'treemap', data: [{ name: 'A', value: 10, children: [{ name: 'Aa', value: 4 }] }] }] },
 	'single-series-object': {
-		series: { type: 'sankey', emphasis: { focus: 'adjacency' }, data: [{ name: 'a' }], links: [] }
+		series: {
+			type: 'sankey',
+			emphasis: { focus: 'adjacency' },
+			data: [{ name: 'a' }, { name: 'b' }],
+			links: [{ source: 'a', target: 'b', value: 1 }]
+		}
 	},
 	'time-axis-boolean-boundary-gap': {
 		tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
 		xAxis: { type: 'time', boundaryGap: false },
 		yAxis: { type: 'value', boundaryGap: [0, '100%'] },
-		series: [{ type: 'line', smooth: true, symbol: 'none', areaStyle: {}, data: [[1, 2]] }]
+		series: [
+			{
+				type: 'line',
+				smooth: true,
+				symbol: 'none',
+				areaStyle: {},
+				data: [
+					['2024-01-01', 2],
+					['2024-02-01', 5],
+					['2024-03-01', 3]
+				]
+			}
+		]
 	},
 	'mark-line-point': {
 		xAxis: { type: 'category', data: ['a'] },
@@ -157,7 +180,17 @@ export const KNOWN_VALID = {
 		options: [{ series: [{ data: [1] }] }]
 	},
 	media: {
-		baseOption: { series: [{ type: 'pie' }] },
+		baseOption: {
+			series: [
+				{
+					type: 'pie',
+					data: [
+						{ name: 'a', value: 3 },
+						{ name: 'b', value: 1 }
+					]
+				}
+			]
+		},
 		media: [{ query: { maxWidth: 500 }, option: { series: [{ radius: [20, '50%'] }] } }]
 	},
 	'multiple-grids': {

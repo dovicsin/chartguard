@@ -11,6 +11,8 @@ export interface RuntimeOutcome {
 export interface Renderer {
 	render(container: HTMLElement, config: unknown): void;
 	dispose(): void;
+	/** How many charts the runtime still holds besides the one shown; a draw that throws must leave none. */
+	stray(): number;
 }
 
 type Channel = 'warn' | 'error';

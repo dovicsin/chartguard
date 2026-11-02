@@ -30,4 +30,7 @@ jobs:
       - run: npm ci
       # The Highcharts demos may not be committed (license); each run imports them at the pinned commit.
       - run: npm run conformance:import -- highcharts
+        env:
+          # GitHub limits unauthenticated API calls per IP, which every hosted runner shares (HTTP 403).
+          GITHUB_TOKEN: ${{ github.token }}
       - run: npm run check

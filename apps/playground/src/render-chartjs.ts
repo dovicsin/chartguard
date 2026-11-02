@@ -18,10 +18,18 @@ export const chartjsRenderer: Renderer = {
 		this.dispose();
 		const canvas = document.createElement('canvas');
 		container.replaceChildren(canvas);
-		chart = new Chart(canvas, structuredClone(config) as ChartConfiguration);
+		try {
+			chart = new Chart(canvas, structuredClone(config) as ChartConfiguration);
+		} catch (error) {
+			// The constructor registers the chart and its resize listeners before its first update
+			// throws; left alive, that chart updates again on the next resize and throws uncaught.
+			Chart.getChart(canvas)?.destroy();
+			throw error;
+		}
 	},
 	dispose() {
 		chart?.destroy();
 		chart = undefined;
-	}
+	},
+	stray: () => Object.values(Chart.instances).filter((instance) => instance !== chart).length
 };

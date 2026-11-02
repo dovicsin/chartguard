@@ -50,13 +50,54 @@ test('examples come from the runtime-verified fixtures of every library, with un
 
 test('self-test comparison: valid examples must be quiet, contract examples must match exactly', () => {
 	const valid = { id: 'v', library: 'chartjs', title: 'v', group: 'valid', config: {} };
-	assert.deepEqual(compare(valid, { findings: ['info CFG_AMBIGUOUS $'], runtime: 'accepted' }), []);
-	assert.deepEqual(compare(valid, { findings: ['warning CFG_UNKNOWN_KEY $.a'], runtime: 'accepted' }), [
-		'findings ["warning CFG_UNKNOWN_KEY $.a"] != "no warning or error"'
+	assert.deepEqual(
+		compare(valid, { findings: ['info CFG_AMBIGUOUS $'], runtime: 'accepted', uncaught: [], stray: undefined }),
+		[]
+	);
+	assert.deepEqual(
+		compare(valid, { findings: ['warning CFG_UNKNOWN_KEY $.a'], runtime: 'accepted', uncaught: [], stray: undefined }),
+		['findings ["warning CFG_UNKNOWN_KEY $.a"] != "no warning or error"']
+	);
+	assert.deepEqual(compare(valid, { findings: [], runtime: 'complained', uncaught: [], stray: undefined }), [
+		'runtime complained != accepted'
 	]);
-	assert.deepEqual(compare(valid, { findings: [], runtime: 'complained' }), ['runtime complained != accepted']);
-	assert.deepEqual(compare(valid, { findings: [], runtime: undefined }), []);
+	assert.deepEqual(compare(valid, { findings: [], runtime: undefined, uncaught: [], stray: undefined }), []);
 	const contract = { ...valid, group: 'contract', expected: { findings: ['error CFG_TYPE $.a'], runtime: 'accepted' } };
-	assert.deepEqual(compare(contract, { findings: ['error CFG_TYPE $.a'], runtime: 'accepted' }), []);
-	assert.equal(compare(contract, { findings: [], runtime: 'rejected' }).length, 2);
+	assert.deepEqual(
+		compare(contract, { findings: ['error CFG_TYPE $.a'], runtime: 'accepted', uncaught: [], stray: undefined }),
+		[]
+	);
+	assert.equal(compare(contract, { findings: [], runtime: 'rejected', uncaught: [], stray: undefined }).length, 2);
+});
+
+test('self-test comparison: an error the page did not catch is a problem of any example, whatever its verdict', () => {
+	const contract = {
+		id: 'c',
+		library: 'chartjs',
+		title: 'c',
+		group: 'contract',
+		config: {},
+		expected: { findings: [], runtime: 'rejected' }
+	};
+	assert.deepEqual(
+		compare(contract, { findings: [], runtime: 'rejected', uncaught: ['"x" is not a registered scale.'], stray: 0 }),
+		['uncaught error: "x" is not a registered scale.']
+	);
+	const valid = { id: 'v', library: 'highcharts', title: 'v', group: 'valid', config: {} };
+	assert.equal(compare(valid, { findings: [], runtime: undefined, uncaught: ['boom'], stray: undefined }).length, 1);
+});
+
+test('self-test comparison: a chart the runtime still holds besides the one shown is a problem', () => {
+	const contract = {
+		id: 'c',
+		library: 'chartjs',
+		title: 'c',
+		group: 'contract',
+		config: {},
+		expected: { findings: [], runtime: 'rejected' }
+	};
+	assert.deepEqual(compare(contract, { findings: [], runtime: 'rejected', uncaught: [], stray: 1 }), [
+		'the runtime still holds 1 chart(s) the page does not show'
+	]);
+	assert.deepEqual(compare(contract, { findings: [], runtime: 'rejected', uncaught: [], stray: 0 }), []);
 });

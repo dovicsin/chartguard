@@ -13,7 +13,7 @@ export const KNOWN_VALID = {
 		type: 'line',
 		data: {
 			labels: ['Jan', 'Feb'],
-			datasets: [{ data: [65, 59], fill: false, borderColor: 'rgb(75, 192, 192)', tension: 0.1 }]
+			datasets: [{ label: 'Visitors', data: [65, 59], fill: false, borderColor: 'rgb(75, 192, 192)', tension: 0.1 }]
 		}
 	},
 	'doughnut with string cutout': {
@@ -26,21 +26,41 @@ export const KNOWN_VALID = {
 	'mixed bar and line': {
 		type: 'bar',
 		data: {
+			labels: ['Q1', 'Q2'],
 			datasets: [
-				{ type: 'bar', data: [10, 20] },
-				{ type: 'line', data: [5, 15], tension: 0.4, pointRadius: 0 }
+				{ type: 'bar', label: 'Revenue', data: [10, 20] },
+				{ type: 'line', label: 'Costs', data: [5, 15], tension: 0.4, pointRadius: 0 }
 			]
 		}
 	},
 	'time scale with string bounds': {
 		type: 'line',
-		data: { datasets: [{ data: [{ x: '2024-01-01', y: 1 }] }] },
+		data: {
+			datasets: [
+				{
+					label: 'Orders',
+					data: [
+						{ x: '2024-01-01', y: 1 },
+						{ x: '2024-03-01', y: 3 }
+					]
+				}
+			]
+		},
 		options: { scales: { x: { type: 'time', min: '2024-01-01', time: { unit: 'month' } } } }
 	},
 	'object data with parsing keys': {
 		type: 'bar',
 		data: {
-			datasets: [{ data: [{ id: 'a', nested: { value: 1 } }], parsing: { xAxisKey: 'id', yAxisKey: 'nested.value' } }]
+			datasets: [
+				{
+					label: 'Score',
+					data: [
+						{ id: 'a', nested: { value: 1 } },
+						{ id: 'b', nested: { value: 3 } }
+					],
+					parsing: { xAxisKey: 'id', yAxisKey: 'nested.value' }
+				}
+			]
 		}
 	},
 	'scriptable options': {
@@ -50,12 +70,12 @@ export const KNOWN_VALID = {
 	},
 	'third-party plugin namespace': {
 		type: 'bar',
-		data: { datasets: [] },
+		data: { labels: ['a', 'b'], datasets: [{ label: 'Count', data: [2, 4] }] },
 		options: { plugins: { datalabels: { color: '#fff' }, annotation: { annotations: {} } } }
 	},
 	'radar with radial scale': {
 		type: 'radar',
-		data: { labels: ['A', 'B', 'C'], datasets: [{ data: [1, 2, 3] }] },
+		data: { labels: ['A', 'B', 'C'], datasets: [{ label: 'Skill', data: [1, 2, 3] }] },
 		options: { scales: { r: { min: 0, suggestedMax: 5, angleLines: { display: false } } } }
 	},
 	'inline plugin object': {

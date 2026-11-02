@@ -144,18 +144,47 @@ async function selectLibrary(id: string, exampleId?: string): Promise<void> {
 }
 
 /**
+ * Resolves after the timers a draw started have run (Chart.js updates a chart it has just attached
+ * once more from a timer): an order of events, never a time limit. Headless Chrome with virtual
+ * time renders no frames, so nothing here waits for one.
+ */
+const settled = (): Promise<void> =>
+	new Promise((resolve) => {
+		setTimeout(resolve, 0);
+	});
+
+/** Every error the page does not catch from now on, in order: the self-test takes them per example. */
+function uncaughtErrors(): string[] {
+	const errors: string[] = [];
+	window.addEventListener('error', (event) => {
+		errors.push(event.message);
+	});
+	window.addEventListener('unhandledrejection', (event) => {
+		errors.push(String(event.reason));
+	});
+	return errors;
+}
+
+/** The validator findings and the runtime verdict the page shows now. */
+function shown(): { findings: string[]; runtime: RuntimeOutcome['verdict'] | undefined } {
+	const diagnostics = inspection?.kind === 'checked' ? inspection.validation.diagnostics : [];
+	return { findings: diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`), runtime: lastOutcome?.verdict };
+}
+
+/**
  * `?selftest`: show every example in turn and compare what the page shows with what the fixtures
- * pin; the JSON report lands in `#selftest` for apps/playground/tests/browser.test.mjs.
+ * pin, and every error the page left uncaught while it showed it; the JSON report lands in
+ * `#selftest` for apps/playground/tests/browser.test.mjs.
  */
 async function selfTest(): Promise<void> {
+	const uncaught = uncaughtErrors();
 	const report: SelfTestEntry[] = [];
 	for (const library of LIBRARIES) {
 		await selectLibrary(library.id);
 		for (const example of examples.filter((candidate) => candidate.library === library.id)) {
 			showExample(example.id);
-			const diagnostics = inspection?.kind === 'checked' ? inspection.validation.diagnostics : [];
-			const findings = diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`);
-			const observed = { findings, runtime: lastOutcome?.verdict };
+			await settled();
+			const observed = { ...shown(), uncaught: uncaught.splice(0), stray: active?.renderer?.stray() };
 			report.push({ id: example.id, ...observed, problems: compare(example, observed) });
 		}
 	}
