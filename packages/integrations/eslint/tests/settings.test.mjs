@@ -113,7 +113,7 @@ test('settings that cannot be used stop the lint with every problem listed', () 
 				'settings.chartguard.registries: must be an object of registries',
 				'settings.chartguard.extensions.chartjs: must be a list of extensions',
 				'settings.chartguard.patterns: must be a list of patterns',
-				'settings.chartguard.other: unknown key (libraryVersion, registries, extensions, patterns)'
+				'settings.chartguard.other: unknown key (libraryVersion, registries, extensions, patterns, quality)'
 			])
 				assert.ok(error.message.includes(problem), `${problem}\n${error.message}`);
 			return true;
@@ -127,10 +127,6 @@ test('a refused extension or pattern is a setup error naming the setting, never 
 	assert.throws(
 		() => lintWith({ extensions: { chartjs: [twice] } }),
 		/settings\.chartguard\.extensions\.chartjs: Extensions refused:\ntwice: "legend" is a built-in option/u
-	);
-	assert.throws(
-		() => lintWith({ extensions: { highcharts: [{ id: 'x', variants: {} }] } }),
-		/settings\.chartguard\.extensions\.highcharts: the curated Highcharts subset has no extension points/u
 	);
 	assert.throws(() => lintWith({ patterns: [{ id: 'p' }] }), /settings\.chartguard\.patterns: /u);
 	// A setting for a library the file does not use is still checked: it is wrong in every file.

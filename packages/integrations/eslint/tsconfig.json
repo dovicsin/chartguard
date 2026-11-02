@@ -2,7 +2,8 @@
 	"extends": "../../../tsconfig.base.json",
 	"compilerOptions": {
 		"rootDir": "./src",
-		"outDir": "./dist"
+		"outDir": "./dist",
+		"types": ["node"]
 	},
 	"include": ["src/**/*.ts"],
 	"references": [
@@ -20,6 +21,18 @@
 		},
 		{
 			"path": "../../config/highcharts"
+		},
+		{
+			"path": "../../quality/chartjs"
+		},
+		{
+			"path": "../../quality/echarts"
+		},
+		{
+			"path": "../../quality/highcharts"
+		},
+		{
+			"path": "../../schema-generator"
 		}
 	]
 }

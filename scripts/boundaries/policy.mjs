@@ -46,9 +46,11 @@ export const POLICY = {
 	[QUALITY_CORE]: rule({ internal: [CORE] }),
 	/** Runs anywhere; only the `./project` entry (and the tsconfig reading it uses) reads a project from disk (CG-03-02). */
 	[ANALYSIS]: rule({ internal: [CORE], external: ['typescript'], node: ['src/project.ts', 'src/tsconfig.ts'] }),
+	/** Runs where ESLint runs, in Node: it reads what the linted file's project installs (CG-06-03 part 2). */
 	'@chartguard/eslint-plugin': rule({
-		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, ANALYSIS],
-		peer: ['eslint']
+		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, ANALYSIS, SCHEMA_GENERATOR],
+		peer: ['eslint'],
+		node: true
 	}),
 	/** Reads a chart library's declarations and runtime files from a project; never imports or runs them. */
 	[SCHEMA_GENERATOR]: rule({ internal: [CONFIG_CORE], external: ['typescript'], node: true }),

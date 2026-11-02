@@ -10,15 +10,22 @@ import plugin from '../dist/index.js';
 /** The plugin object, its recommended flat config and how the rules meet ESLint (CG-06-03 part 1). */
 const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
-test('the plugin names itself as its package does and offers exactly its two rules', () => {
+test('the plugin names itself as its package does and offers exactly its three rules', () => {
 	assert.deepEqual(plugin.meta, { name: manifest.name, version: manifest.version });
-	assert.deepEqual(Object.keys(plugin.rules).sort(), ['config-warnings', 'valid-config']);
+	assert.deepEqual(Object.keys(plugin.rules).sort(), ['chart-quality', 'config-warnings', 'valid-config']);
 	for (const rule of Object.values(plugin.rules)) {
-		assert.equal(rule.meta.type, 'problem');
 		assert.equal(typeof rule.meta.docs.description, 'string');
 		assert.deepEqual(rule.meta.schema, []);
-		assert.equal(rule.meta.fixable, undefined);
 	}
+	const offers = Object.fromEntries(
+		Object.entries(plugin.rules).map(([name, { meta }]) => [name, [meta.type, meta.fixable, meta.hasSuggestions]])
+	);
+	// Only the runtime's own renames are fixes; a quality edit changes the drawing and is only offered.
+	assert.deepEqual(offers, {
+		'valid-config': ['problem', undefined, undefined],
+		'config-warnings': ['problem', 'code', undefined],
+		'chart-quality': ['suggestion', undefined, true]
+	});
 });
 
 test('recommended: errors fail, warnings warn, through ESLint itself', () => {

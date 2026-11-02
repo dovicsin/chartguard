@@ -2,39 +2,111 @@ import type { ChartLibrary } from '@chartguard/analysis-typescript';
 import * as chartjs from '@chartguard/config-chartjs';
 import * as echarts from '@chartguard/config-echarts';
 import * as highcharts from '@chartguard/config-highcharts';
-import type { ConfigValidator } from '@chartguard/core';
+import type { ConfigValidator, QualityReport } from '@chartguard/core';
+import * as qualityChartjs from '@chartguard/quality-chartjs';
+import * as qualityEcharts from '@chartguard/quality-echarts';
+import * as qualityHighcharts from '@chartguard/quality-highcharts';
 
-import { type ChartGuardSettings, LIBRARIES, SettingsError } from './settings.js';
+import { builtSchema, findInstall, notInstalled } from './install.js';
+import { type ChartGuardSettings, SettingsError } from './settings.js';
 
-interface Adapter {
-	readonly validate: ConfigValidator;
-	/** Absent for the curated Highcharts subset: it has no extension points (CG-02-05). */
-	readonly withExtensions?: (extensions: readonly never[]) => ConfigValidator;
-	readonly ExtensionError: new (problems: readonly string[]) => Error;
-}
+type ExtensionErrorClass = new (problems: readonly string[]) => Error;
 
-const ADAPTERS: Readonly<Record<ChartLibrary, Adapter>> = { chartjs, echarts, highcharts };
-
-/** One library's validator with the extensions the settings give it; a refused extension names its setting (C6). */
-function validatorOf(library: ChartLibrary, extensions: readonly unknown[] | undefined): ConfigValidator {
-	const adapter = ADAPTERS[library];
-	if (extensions === undefined) return adapter.validate;
-	const setting = `settings.chartguard.extensions.${library}`;
-	if (adapter.withExtensions === undefined)
-		throw new SettingsError([`${setting}: the curated Highcharts subset has no extension points`]);
+/** A validator built with extensions; a refused extension is named by its setting (C6). */
+function extended(
+	library: ChartLibrary,
+	ExtensionError: ExtensionErrorClass,
+	build: () => ConfigValidator
+): ConfigValidator {
 	try {
-		return adapter.withExtensions(extensions as readonly never[]);
+		return build();
 	} catch (error) {
-		if (error instanceof adapter.ExtensionError) throw new SettingsError([`${setting}: ${error.message}`]);
+		if (error instanceof ExtensionError)
+			throw new SettingsError([`settings.chartguard.extensions.${library}: ${error.message}`]);
 		throw error;
 	}
 }
 
-/**
- * Every library's validator for these settings, built at once: a wrong extension is wrong in every
- * file, whichever libraries the file uses.
- */
-export function validatorsFor(settings: ChartGuardSettings): Readonly<Record<ChartLibrary, ConfigValidator>> {
-	const entries = LIBRARIES.map((library) => [library, validatorOf(library, settings.extensions[library])] as const);
-	return Object.fromEntries(entries) as Record<ChartLibrary, ConfigValidator>;
+/** A shipped validator with the extensions the settings give it; built at once, as they are wrong in every file. */
+function shipped(
+	adapter: typeof chartjs | typeof echarts,
+	library: ChartLibrary,
+	extensions: readonly unknown[] | undefined
+): ConfigValidator {
+	if (extensions === undefined) return adapter.validate;
+	return extended(library, adapter.ExtensionError, () => adapter.withExtensions(extensions as never[]));
 }
+
+/** A built Highcharts schema with the extensions; a schema that does not load is the user's to rebuild. */
+function fromBuilt(path: string, text: string, extensions: readonly unknown[]): ConfigValidator {
+	let artifact: unknown;
+	try {
+		artifact = JSON.parse(text);
+	} catch (error) {
+		throw new SettingsError([
+			`${path} cannot be used: ${(error as Error).message}\nRebuild it: chartguard schema build --library highcharts`
+		]);
+	}
+	return extended('highcharts', highcharts.ExtensionError, () =>
+		highcharts.createValidator(artifact, { extensions: extensions as never[] })
+	);
+}
+
+/**
+ * The validators one ESLint settings object asks for (CG-06-03 part 2). Chart.js and ECharts ship
+ * their schemas; Highcharts' full schema cannot ship (license), so a file is checked with the schema
+ * built for exactly the version its project installs, else the curated subset, as in the CLI.
+ */
+export class Validators {
+	private readonly chartjs: ConfigValidator;
+	private readonly echarts: ConfigValidator;
+	/** Built Highcharts validators by schema path, kept while the file on disk is the same. */
+	private readonly built = new Map<string, { readonly stamp: string; readonly validate: ConfigValidator }>();
+
+	constructor(private readonly settings: ChartGuardSettings) {
+		this.chartjs = shipped(chartjs, 'chartjs', settings.extensions.chartjs);
+		this.echarts = shipped(echarts, 'echarts', settings.extensions.echarts);
+	}
+
+	/** The version a file's configs are validated for: as named, or with `"auto"` the one its project installs. */
+	versionFor(library: ChartLibrary, fileName: string): string | undefined {
+		const named = this.settings.libraryVersion[library];
+		if (named !== 'auto') return named;
+		const install = findInstall(library, fileName);
+		if (install !== undefined) return install.version;
+		throw new SettingsError([
+			`settings.chartguard.libraryVersion.${library}: "auto", but ${notInstalled(library, fileName)}; name the version`
+		]);
+	}
+
+	validatorFor(library: ChartLibrary, fileName: string): ConfigValidator {
+		if (library !== 'highcharts') return this[library];
+		const install = findInstall(library, fileName);
+		const schema = install === undefined ? undefined : builtSchema(library, install);
+		if (schema === undefined) return this.curated();
+		const known = this.built.get(schema.path);
+		if (known?.stamp === schema.stamp) return known.validate;
+		const validate = fromBuilt(schema.path, schema.read(), this.settings.extensions.highcharts ?? []);
+		this.built.set(schema.path, { stamp: schema.stamp, validate });
+		return validate;
+	}
+
+	/** The curated subset, which refuses extensions rather than drop them. */
+	private curated(): ConfigValidator {
+		if (this.settings.extensions.highcharts === undefined) return highcharts.validate;
+		throw new SettingsError([
+			'settings.chartguard.extensions.highcharts: the curated Highcharts subset has no extension points; build the full schema: chartguard schema build --library highcharts'
+		]);
+	}
+}
+
+type Review = (config: unknown, options?: ChartGuardSettings['quality']) => QualityReport;
+
+const QUALITY: Readonly<Record<ChartLibrary, Review>> = {
+	chartjs: qualityChartjs.analyze,
+	echarts: qualityEcharts.analyze,
+	highcharts: qualityHighcharts.analyze
+};
+
+/** The quality review of one library's configs (advisory, CG-05). */
+export const reviewOf = (library: ChartLibrary): Review => QUALITY[library];

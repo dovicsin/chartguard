@@ -1,28 +1,53 @@
 import type { ESLint, Linter, Rule } from 'eslint';
 
-import { analysisOf, type Finding } from './analysis.js';
+import { analysisOf, type RuleName } from './analysis.js';
+import { fixer } from './edits.js';
 
 /**
- * ESLint 9 flat-config plugin (CG-06-03 part 1): the chart configs a file hands to Chart.js,
- * ECharts or Highcharts, read without running anything and validated, each finding at the range
- * that wrote its value. `valid-config` reports errors, `config-warnings` warnings; info findings are
- * no claim. No fixes yet.
+ * ESLint 9 flat-config plugin (CG-06-03): the chart configs a file hands to Chart.js, ECharts or
+ * Highcharts, read without running anything, each finding at the range that wrote its value.
+ * `valid-config` reports the validator's errors, `config-warnings` its warnings (with the runtime's
+ * own renames as fixes), `chart-quality` the advisory quality warnings (with their verified edits as
+ * suggestions, never applied without the user). Info findings are no claim.
  */
 export const meta = { name: '@chartguard/eslint-plugin', version: '0.1.0' };
 
-/** A rule reporting the findings of one severity; both share one analysis per file. */
-function findingsRule(severity: Finding['severity'], description: string): Rule.RuleModule {
+/** What a rule declares beyond its description: the edits it may offer. */
+type Offers = Pick<Rule.RuleMetaData, 'fixable' | 'hasSuggestions'>;
+
+/** A rule reporting its own findings; the rules share one analysis per file. */
+function findingsRule(rule: RuleName, description: string, offers: Offers = {}): Rule.RuleModule {
 	return {
-		meta: { type: 'problem', docs: { description }, schema: [], messages: { finding: '{{text}}' } },
+		meta: {
+			type: rule === 'chart-quality' ? 'suggestion' : 'problem',
+			docs: { description },
+			schema: [],
+			messages: { finding: '{{text}}', edit: '{{text}}' },
+			...offers
+		},
 		create(context) {
 			const { sourceCode } = context;
 			// Another language (JSON, CSS) has no ESTree Program: nothing here reads it.
 			if ((sourceCode.ast as { type?: unknown }).type !== 'Program') return {};
 			return {
 				Program() {
-					for (const finding of analysisOf(sourceCode, context.settings, context.filename))
-						if (finding.severity === severity)
-							context.report({ loc: finding.loc, messageId: 'finding', data: { text: finding.message } });
+					for (const finding of analysisOf(sourceCode, context.settings, context.filename)) {
+						if (finding.rule !== rule) continue;
+						const { fix, suggestion } = finding;
+						context.report({
+							loc: finding.loc,
+							messageId: 'finding',
+							data: { text: finding.message },
+							...(fix === undefined ? {} : { fix: fixer(fix) }),
+							...(suggestion === undefined
+								? {}
+								: {
+										suggest: [
+											{ messageId: 'edit', data: { text: suggestion.description }, fix: fixer(suggestion.edit) }
+										]
+									})
+						});
+					}
 				}
 			};
 		}
@@ -31,12 +56,18 @@ function findingsRule(severity: Finding['severity'], description: string): Rule.
 
 export const rules = {
 	'valid-config': findingsRule(
-		'error',
+		'valid-config',
 		'Chart configs handed to Chart.js, ECharts or Highcharts hold no value the runtime rejects or misreads.'
 	),
 	'config-warnings': findingsRule(
-		'warning',
-		'Chart configs carry no unknown key, deprecated option or value without effect.'
+		'config-warnings',
+		'Chart configs carry no unknown key, deprecated option or value without effect.',
+		{ fixable: 'code' }
+	),
+	'chart-quality': findingsRule(
+		'chart-quality',
+		'Chart configs avoid what misleads or excludes readers (advisory: depends on context).',
+		{ hasSuggestions: true }
 	)
 };
 
@@ -48,7 +79,11 @@ interface Plugin extends ESLint.Plugin {
 
 const recommended: Linter.Config = {
 	name: 'chartguard/recommended',
-	rules: { 'chartguard/valid-config': 'error', 'chartguard/config-warnings': 'warn' }
+	rules: {
+		'chartguard/valid-config': 'error',
+		'chartguard/config-warnings': 'warn',
+		'chartguard/chart-quality': 'warn'
+	}
 };
 
 const plugin: Plugin = { meta, rules, configs: { recommended } };
