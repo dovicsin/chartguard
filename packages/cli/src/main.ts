@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-
 import { COMMAND_HANDLERS } from './commands.js';
 import { InputError } from './errors.js';
 import { EXIT_FAILURE, EXIT_OK, EXIT_USAGE } from './exit-codes.js';
@@ -8,18 +6,10 @@ import { type Io, processIo } from './io.js';
 import { printJson } from './report.js';
 import { schemaCommand } from './schema.js';
 import { USAGE, USAGE_HINT } from './usage.js';
+import { cliVersion } from './version.js';
 
 function describeFailure(error: unknown): string {
 	return error instanceof Error ? (error.stack ?? error.message) : String(error);
-}
-
-/** The CLI's own version, read when asked (nothing is read at import time). */
-function cliVersion(): string {
-	const manifest: unknown = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-	const version: unknown =
-		typeof manifest === 'object' && manifest !== null ? Reflect.get(manifest, 'version') : undefined;
-	if (typeof version !== 'string') throw new Error('the CLI package.json has no version');
-	return version;
 }
 
 /**

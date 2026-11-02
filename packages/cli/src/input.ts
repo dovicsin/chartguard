@@ -20,9 +20,14 @@ export async function readText(file: string): Promise<string> {
 }
 
 export async function readJson(file: string): Promise<unknown> {
+	return (await readJsonText(file)).value;
+}
+
+/** A JSON file's value and its text (for the positions of findings in it). */
+export async function readJsonText(file: string): Promise<{ readonly value: unknown; readonly text: string }> {
 	const text = await readText(file);
 	try {
-		return JSON.parse(text) as unknown;
+		return { value: JSON.parse(text) as unknown, text };
 	} catch (error) {
 		throw new InputError(`${file} is not valid JSON: ${describeError(error)}`);
 	}

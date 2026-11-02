@@ -15,6 +15,7 @@ import {
 	fileUrlText,
 	jsonRoundTrips,
 	nodeModulesPaths,
+	readerCopies,
 	recordCasts,
 	resultFields,
 	rewritesFiles,
@@ -245,4 +246,14 @@ test('R8 entry points: process.argv[1] is resolved only by the guarded helpers, 
 		({ path }) => !allowed.has(path) && !path.split(sep).includes('tests')
 	);
 	assert.deepEqual(argvScript(entries), []);
+});
+
+test('R16 the readers of paths and JSON text with positions are defined once, in @chartguard/core (E47)', () => {
+	const code = outsideTests([
+		...sources('packages'),
+		...sources('apps'),
+		...sources('tools'),
+		...sources('scripts')
+	]).filter(({ path }) => !path.startsWith(join('packages', 'core', 'src')));
+	assert.deepEqual(readerCopies(code), []);
 });

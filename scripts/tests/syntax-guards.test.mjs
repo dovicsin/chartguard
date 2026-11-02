@@ -9,6 +9,7 @@ import {
 	fileUrlText,
 	jsonRoundTrips,
 	nodeModulesPaths,
+	readerCopies,
 	recordCasts,
 	resultFields,
 	rewritesFiles,
@@ -155,5 +156,19 @@ test('R13 catches a cast to any record type, also wrapped or through unknown', (
 			'const map = <Record<string, number>>value;'
 		],
 		good: ['const read = readOwn(value, key);', 'const list = value as readonly unknown[];']
+	});
+});
+
+test('R16 catches a second definition of a shared reader, as a function or a const', () => {
+	expectGuard(readerCopies, {
+		bad: [
+			'export function pathSegments(path) { return []; }',
+			'const locateJsonPath = (root, path) => root;',
+			'export const parseJsonSource = function (text) { return text; };'
+		],
+		good: [
+			"import { pathSegments } from '@chartguard/core';\nconst parts = pathSegments('$.a');",
+			'function segments(path) { return []; }'
+		]
 	});
 });

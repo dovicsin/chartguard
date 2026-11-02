@@ -6,12 +6,13 @@ import { type ConfigValidator, isRecord, type ValidationOptions } from '@chartgu
 
 import { type AnalyzedEntry, analyzeEntry, analyzeUse, printEntries, selectConfigs } from './analyze.js';
 import { InputError } from './errors.js';
-import { EXIT_INVALID, EXIT_OK } from './exit-codes.js';
+import { exitStatus } from './exit.js';
 import { describeUnreadable, readJson, readText } from './input.js';
 import type { ConfigInvocation } from './invocation.js';
 import type { Io } from './io.js';
 import { validationOptions } from './options.js';
 import { printJson } from './report.js';
+import { type RunProperties, type SarifFinding, sarifLog, sourceRegion } from './sarif.js';
 import { loadConfigValidator, schemaNote } from './schema-source.js';
 
 /**
@@ -104,7 +105,9 @@ export async function analyzeCommand(invocation: ConfigInvocation, io: Io): Prom
 		throw new InputError(`No ${library} chart use and no suitable static object found. Specify --name <variable>.`);
 	const skipped = unreadable.map(({ fileName, diagnostics }) => ({ file: fileName, diagnostics }));
 	const project = { tsconfig: read.tsconfig ?? null, ...(read.truncated ? { truncated: true } : {}) };
-	if (json)
+	const findings = entries.flatMap(findingsOf);
+	if (invocation.format === 'sarif') printJson(sarifLog(findings, analysisProperties(library, entries)), io);
+	else if (json)
 		printJson(
 			{ mode: 'analyze', library, schema, project, entries, ...(skipped.length > 0 ? { unreadable: skipped } : {}) },
 			io
@@ -115,5 +118,32 @@ export async function analyzeCommand(invocation: ConfigInvocation, io: Io): Prom
 			{ schema: schemaNote(schema, library), tsconfig: read.tsconfig, unreadable: skipped, truncated: read.truncated },
 			io
 		);
-	return entries.some((entry) => entry.result?.valid === false) ? EXIT_INVALID : EXIT_OK;
+	return exitStatus(invocation.failOn ?? 'error', {
+		invalid: entries.some((entry) => entry.result?.valid === false),
+		diagnostics: findings.map(({ diagnostic }) => diagnostic)
+	});
+}
+
+/** Each finding of an entry (its extraction notes and its validation) at the source range the analysis gives it, else at the entry. */
+function findingsOf(entry: AnalyzedEntry): SarifFinding[] {
+	const at = { startLine: entry.line, startColumn: 1, endLine: entry.line, endColumn: 1 };
+	return [...entry.notes, ...(entry.result?.diagnostics ?? [])].map((diagnostic) => ({
+		diagnostic,
+		file: diagnostic.file ?? entry.file,
+		region: sourceRegion(diagnostic) ?? at
+	}));
+}
+
+/** What checked the entries: partial as soon as one is (or one was not validated), and the schema of the first. */
+function analysisProperties(library: string, entries: readonly AnalyzedEntry[]): RunProperties {
+	const results = entries.flatMap(({ result }) => (result === undefined ? [] : [result]));
+	const partial = results.length < entries.length || results.some(({ coverage }) => coverage === 'partial');
+	const [first] = results;
+	return {
+		mode: 'analyze',
+		library,
+		coverage: partial ? 'partial' : 'full',
+		...(first === undefined ? {} : { schemaVersion: first.schemaVersion }),
+		...(first?.schemaDigest === undefined ? {} : { schemaDigest: first.schemaDigest })
+	};
 }

@@ -42,6 +42,39 @@ class FixError extends Error {
     readonly name = "FixError";
 }
 
+### JsonNode
+type JsonNode = (JsonSpan & {
+    readonly kind: 'scalar';
+}) | (JsonSpan & {
+    readonly kind: 'array';
+    readonly items: readonly JsonNode[];
+}) | (JsonSpan & {
+    readonly kind: 'object';
+    readonly entries: ReadonlyMap<string, JsonNode>;
+});
+
+### JsonSource
+type JsonSource = {
+    readonly ok: true;
+    readonly root: JsonNode;
+} | {
+    readonly ok: false;
+    readonly message: string;
+    readonly offset: number;
+    readonly line: number;
+    readonly column: number;
+};
+
+### JsonSpan
+interface JsonSpan {
+    readonly start: number;
+    readonly end: number;
+    readonly line: number;
+    readonly column: number;
+    readonly endLine: number;
+    readonly endColumn: number;
+}
+
 ### KeyRename
 interface KeyRename {
     readonly kind: 'rename-key';
@@ -140,8 +173,16 @@ function isRecord(value: unknown): value is Record<string, unknown>;
 ### keySegment
 function keySegment(key: string): string;
 
+### locateJsonPath
+function locateJsonPath(root: JsonNode, path: string): JsonSpan & {
+    readonly exact: boolean;
+};
+
 ### ownDataProperty
 function ownDataProperty(target: object, key: string): OwnProperty;
+
+### parseJsonSource
+function parseJsonSource(text: string): JsonSource;
 
 ### pathSegments
 function pathSegments(path: string): (string | number)[] | undefined;

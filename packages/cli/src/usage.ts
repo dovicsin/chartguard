@@ -1,10 +1,15 @@
 export const USAGE = `ChartGuard starter (partial schema coverage)
 Usage:
-  chartguard validate --library <chartjs|echarts|highcharts> --file config.json [--library-version <x|auto>] [--registries <file.json>] [--json]
-  chartguard quality  --library <chartjs|echarts|highcharts> --file config.json [--settings <file.json>] [--json]
-  chartguard analyze  --library <chartjs|echarts|highcharts> (--file source.ts ... | --project tsconfig.json) [--name config] [--project <tsconfig.json>] [--patterns <file.json>] [--library-version <x|auto>] [--registries <file.json>] [--json]
+  chartguard validate --library <chartjs|echarts|highcharts> --file config.json [--library-version <x|auto>] [--registries <file.json>] [<output>]
+  chartguard quality  --library <chartjs|echarts|highcharts> --file config.json [--settings <file.json>] [<output>]
+  chartguard analyze  --library <chartjs|echarts|highcharts> (--file source.ts ... | --project tsconfig.json) [--name config] [--project <tsconfig.json>] [--patterns <file.json>] [--library-version <x|auto>] [--registries <file.json>] [<output>]
   chartguard schema build --library highcharts [--dir <project>] [--json]
   chartguard --version | --help
+<output>: [--format text|json|sarif | --json] [--fail-on error|warning|never]
+--format: text (default), json (as --json), or sarif: one SARIF 2.1.0 log for code scanning, each
+  finding at its file and the region of its value; paths relative to the working directory.
+--fail-on: what exits 1: a confirmed error (error, the default), also any warning (warning), or
+  nothing (never). quality is advisory: never by default, warning makes its warnings fail.
 --library-version: the version you run; another minor/patch turns confirmed errors into warnings,
   another major is not validated. auto reads node_modules upward from the file.
 --registries: what your runtime registered, { "<registry>": { "names": [...], "complete": true } }
@@ -21,7 +26,7 @@ analyze validates every config the file hands to the library (new Chart, setOpti
   "dark" }, "describesData": true, "pausesMotion": true } }; suppressed findings are listed with why.
 schema build: generates the full Highcharts schema from your installed highcharts (it cannot ship with
   ChartGuard: license); validate and analyze then use it for that installed version.
-Exit codes: 0 no confirmed errors, 1 confirmed validation errors, 2 bad arguments or input, 3 internal failure.
+Exit codes: 0 nothing that fails (--fail-on), 1 findings that fail, 2 bad arguments or input, 3 internal failure.
   Exit 2 names the problem on stderr; with --json, stdout is { "error": { "kind": "usage" | "input", "message" } }.
   A scalar option given twice is an error, never the last one silently.
 NOTE: coverage=partial means clean output does not certify complete compatibility.`;

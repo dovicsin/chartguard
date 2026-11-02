@@ -1,6 +1,11 @@
-import type { Diagnostic, QualityReport, Severity, ValidationResult } from '@chartguard/core';
-
-import { type JsonNode, parseJson } from './locate.js';
+import {
+	type Diagnostic,
+	type JsonNode,
+	parseJsonSource,
+	type QualityReport,
+	type Severity,
+	type ValidationResult
+} from '@chartguard/core';
 
 /** What the playground needs from a library: its published validate and analyze entry points. */
 export interface Adapter {
@@ -20,7 +25,7 @@ export type Inspection =
 
 /** Parses the editor text (JSON only: nothing typed is ever executed) and runs both checks. */
 export function inspect(text: string, adapter: Adapter): Inspection {
-	const parsed = parseJson(text);
+	const parsed = parseJsonSource(text);
 	if (!parsed.ok) return { kind: 'syntax-error', message: parsed.message, offset: parsed.offset };
 	const config = JSON.parse(text) as unknown;
 	return {

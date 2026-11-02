@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { locate, parseJson, pathSegments } from '../dist/locate.js';
+import { locateJsonPath as locate, parseJsonSource as parseJson } from '../dist/index.js';
 
 const text = '{\n  "type": "bar",\n  "data": { "datasets": [ { "data": [1, 2] }, {"label": "x"} ] }\n}';
 const parsed = parseJson(text);
 const slice = (span) => text.slice(span.start, span.end);
+const slice2 = (source, span) => source.slice(span.start, span.end);
 
 test('valid JSON parses with a span for every value', () => {
 	assert.equal(parsed.ok, true);
@@ -23,21 +24,46 @@ test('a path that does not exist resolves to its deepest existing ancestor, mark
 	assert.equal(locate(parsed.root, '$').exact, true);
 });
 
-test('path segments: keys, indices and hole ranges', () => {
-	assert.deepEqual(pathSegments('$.a[0].b'), ['a', 0, 'b']);
-	assert.deepEqual(pathSegments('$.series[3..9]'), ['series', 3]);
-	assert.deepEqual(pathSegments('$'), []);
-	// Keys that are not identifiers arrive JSON-quoted (config-core keySegment): one path, one place.
-	assert.deepEqual(pathSegments('$.title["te.xt"]["a b"][""]["say \\"hi\\""].$ok_1'), [
-		'title',
-		'te.xt',
-		'a b',
-		'',
-		'say "hi"',
-		'$ok_1'
-	]);
-	const { root } = parseJson('{"title": {"te.xt": 1, "te": {"xt": 2}}}');
+test('paths: keys, indices, hole ranges and quoted keys reach one place each', () => {
+	const { root } = parseJson('{"title": {"te.xt": 1, "te": {"xt": 2}}, "series": [0, 1, 2, 3, 4]}');
 	assert.equal(locate(root, '$.title["te.xt"]').exact, true);
+	assert.equal(
+		slice2('{"title": {"te.xt": 1, "te": {"xt": 2}}, "series": [0, 1, 2, 3, 4]}', locate(root, '$.title.te.xt')),
+		'2'
+	);
+	// A run of holes (`$.a[3..9]`, one finding for a sparse list) points at its first entry.
+	assert.equal(locate(root, '$.series[3..4]').exact, true);
+	// A path that is not one the engine writes points at the root, inexact, never a thrown error.
+	assert.deepEqual(locate(root, '$["\\x"]'), {
+		start: 0,
+		end: root.end,
+		exact: false,
+		line: 1,
+		column: 1,
+		endLine: 1,
+		endColumn: root.end + 1
+	});
+});
+
+test('a span carries its line and column (1-based), for editors and SARIF', () => {
+	const json = '{\n  "a": [1,\n    true]\n}';
+	const { root } = parseJson(json);
+	assert.deepEqual(locate(root, '$.a[1]'), {
+		start: 17,
+		end: 21,
+		exact: true,
+		line: 3,
+		column: 5,
+		endLine: 3,
+		endColumn: 9
+	});
+	assert.deepEqual(parseJson('{\n  x}'), {
+		ok: false,
+		message: 'Expected a JSON value',
+		offset: 4,
+		line: 2,
+		column: 3
+	});
 });
 
 test('syntax errors are reported with the offset where reading stopped', () => {
@@ -50,8 +76,10 @@ test('syntax errors are reported with the offset where reading stopped', () => {
 		['{} x', 'Unexpected text after the JSON value', 3],
 		["{'a': 1}", 'Expected a JSON value', 1]
 	];
-	for (const [input, message, offset] of cases)
-		assert.deepEqual(parseJson(input), { ok: false, message, offset }, input);
+	for (const [input, message, offset] of cases) {
+		const { ok, message: said, offset: at } = parseJson(input);
+		assert.deepEqual({ ok, message: said, offset: at }, { ok: false, message, offset }, input);
+	}
 });
 
 test('the reader accepts exactly what JSON.parse accepts on common inputs', () => {

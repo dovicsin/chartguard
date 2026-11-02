@@ -10,7 +10,7 @@
 		"tools/docs/**/*.mjs",
 		"tools/conformance/lib/**/*.mjs",
 		"tools/shared/**/*.mjs",
-		"apps/playground/dist/{locate,model,examples,selftest}.js"
+		"apps/playground/dist/{model,examples,selftest}.js"
 	],
 	"exclude": [
 		"**/node_modules/**",

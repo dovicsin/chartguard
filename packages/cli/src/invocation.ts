@@ -24,8 +24,18 @@ export interface ConfigInvocation {
 	readonly patterns: string | undefined;
 	/** `quality`: a JSON file with rule settings and the page context (CG-05-05). */
 	readonly settings: string | undefined;
+	/** How findings are printed (CG-06-02): `--format`, or `--json` for `json`. */
+	readonly format: Format;
+	/** `format === 'json'`: also a usage or input error is printed as JSON. */
 	readonly json: boolean;
+	/** What fails the run (exit 1); undefined: the command's default (`error`; `never` for quality). */
+	readonly failOn: FailOn | undefined;
 }
+
+const FORMATS = ['text', 'json', 'sarif'] as const;
+export type Format = (typeof FORMATS)[number];
+const FAIL_ON = ['error', 'warning', 'never'] as const;
+export type FailOn = (typeof FAIL_ON)[number];
 
 /** `schema build`: generate a library's schema from the install in a project directory. */
 export interface SchemaInvocation {
@@ -47,7 +57,9 @@ const OPTIONS = {
 	patterns: { type: 'string' },
 	settings: { type: 'string' },
 	dir: { type: 'string' },
-	json: { type: 'boolean', default: false }
+	json: { type: 'boolean', default: false },
+	format: { type: 'string' },
+	'fail-on': { type: 'string' }
 } as const;
 
 type OptionName = keyof typeof OPTIONS;
@@ -75,7 +87,9 @@ const OWNERS: Readonly<Record<OptionName, readonly Command[]>> = {
 	'library-version': ['validate', 'analyze'],
 	registries: ['validate', 'analyze'],
 	settings: ['quality'],
-	dir: ['schema']
+	dir: ['schema'],
+	format: CONFIG_COMMANDS,
+	'fail-on': CONFIG_COMMANDS
 };
 
 const HELP_WORDS: ReadonlySet<string> = new Set(['help', '--help', '-h']);
@@ -97,10 +111,41 @@ export function isVersionRequest(argv: readonly string[]): boolean {
 	return argv[0] === '--version';
 }
 
-/** Whether the user asked for JSON output: `--json` before a `--` terminator. */
+/** Whether the user asked for JSON output: `--json` or `--format json` before a `--` terminator. */
 export function wantsJson(argv: readonly string[]): boolean {
 	const end = argv.indexOf('--');
-	return (end === -1 ? argv : argv.slice(0, end)).includes('--json');
+	const args = end === -1 ? argv : argv.slice(0, end);
+	return (
+		args.includes('--json') ||
+		args.includes('--format=json') ||
+		args.some((arg, index) => arg === '--format' && args[index + 1] === 'json')
+	);
+}
+
+const isFormat = (value: string): value is Format => FORMATS.some((format) => format === value);
+const isFailOn = (value: string): value is FailOn => FAIL_ON.some((level) => level === value);
+
+/** The output format: `--format`, or `--json`; both, or an unknown one, is a usage error. */
+function formatOf({ json, format }: Values): { readonly format: Format } | { readonly reason: string } {
+	if (format === undefined) return { format: json ? 'json' : 'text' };
+	if (json) return { reason: '--json and --format are two output formats: give one' };
+	return isFormat(format) ? { format } : { reason: `unknown --format '${format}' (${FORMATS.join(', ')})` };
+}
+
+/** How the command prints (`--format`, `--json`) and what fails it (`--fail-on`). */
+function outputOf(
+	values: Values
+): { readonly format: Format; readonly failOn: FailOn | undefined } | { readonly reason: string } {
+	const format = formatOf(values);
+	if ('reason' in format) return format;
+	const threshold = failOnOf(values);
+	return 'reason' in threshold ? threshold : { ...format, ...threshold };
+}
+
+function failOnOf(values: Values): { readonly failOn: FailOn | undefined } | { readonly reason: string } {
+	const failOn = values['fail-on'];
+	if (failOn === undefined || isFailOn(failOn)) return { failOn };
+	return { reason: `unknown --fail-on '${failOn}' (${FAIL_ON.join(', ')})` };
 }
 
 /** A scalar option given twice would silently take the last value; a repeated file would be read twice. */
@@ -152,7 +197,9 @@ function configInvocation(command: ConfigCommand, rest: readonly string[], value
 	if ('reason' in chosen) return chosen;
 	const input = inputOf(command, values);
 	if ('reason' in input) return input;
-	const { file: files = [], name, json, registries, project, patterns, settings } = values;
+	const output = outputOf(values);
+	if ('reason' in output) return output;
+	const { file: files = [], name, registries, project, patterns, settings } = values;
 	const { library } = chosen;
 	const { file } = input;
 	const libraryVersion = values['library-version'];
@@ -167,7 +214,9 @@ function configInvocation(command: ConfigCommand, rest: readonly string[], value
 		project,
 		patterns,
 		settings,
-		json
+		format: output.format,
+		json: output.format === 'json',
+		failOn: output.failOn
 	};
 	return { invocation };
 }

@@ -1,8 +1,7 @@
-import type { ValidationStatus } from '@chartguard/core';
+import { locateJsonPath, type ValidationStatus } from '@chartguard/core';
 
 import { type Example, formatJson } from './examples.js';
 import { LIBRARIES, type Library, libraryById } from './libraries.js';
-import { locate } from './locate.js';
 import {
 	type Adapter,
 	bySeverity,
@@ -58,7 +57,7 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 /** Selects the text of the value a diagnostic points at and scrolls it into view. */
 function reveal(path: string): void {
 	if (inspection?.kind !== 'checked') return;
-	const span = locate(inspection.tree, path);
+	const span = locateJsonPath(inspection.tree, path);
 	const { line } = lineAndColumn(ui.editor.value, span.start);
 	const measured = Number.parseFloat(getComputedStyle(ui.editor).lineHeight);
 	const lineHeight = Number.isFinite(measured) ? measured : FALLBACK_LINE_HEIGHT;

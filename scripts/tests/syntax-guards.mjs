@@ -242,3 +242,21 @@ export function rewritesFiles(command, scripts = {}, seen = new Set()) {
 		return rewritesFiles(scripts[script], scripts, seen);
 	});
 }
+
+/** The readers of the engine's own notations: the path a finding names, and JSON text with positions. */
+const SHARED_READERS = new Set(['pathSegments', 'keySegment', 'parseJsonSource', 'locateJsonPath']);
+
+/** The name a declaration gives a function: `function f`, or `const f = () => …` / `function () {}`. */
+function functionName(node) {
+	if (ts.isFunctionDeclaration(node)) return node.name?.text;
+	if (!ts.isVariableDeclaration(node) || !ts.isIdentifier(node.name) || node.initializer === undefined)
+		return undefined;
+	const value = node.initializer;
+	return ts.isArrowFunction(value) || ts.isFunctionExpression(value) ? node.name.text : undefined;
+}
+
+/**
+ * R16 (E47): a shared reader defined again outside `@chartguard/core`: a second copy reads the same
+ * notation differently (the playground's own path reader threw on a malformed key the core rejects).
+ */
+export const readerCopies = (entries) => offences(entries, (node) => SHARED_READERS.has(functionName(node)));
