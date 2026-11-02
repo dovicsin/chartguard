@@ -32,21 +32,27 @@ export async function validationOptions(invocation: ConfigInvocation): Promise<C
 	return { ...chosen, options: { ...chosen.options, registries } };
 }
 
-/**
- * The rule settings and page context of `quality --settings` (CG-05-05). The file must be readable
- * JSON whose options pass the adapter's check; a malformed settings file is the user's input error, with every problem.
- */
-export async function qualityOptions(
-	{ settings }: ConfigInvocation,
-	adapter: QualityAdapter
-): Promise<QualityOptions | undefined> {
-	if (settings === undefined) return undefined;
-	const options = await readJson(settings);
+/** `options` checked by the adapter; a malformed one is the user's input error, with every problem, named by `source`. */
+function checkedQuality(options: unknown, source: string, adapter: QualityAdapter): QualityOptions {
 	try {
 		adapter.assertQualityOptions(options);
 	} catch (error) {
-		if (error instanceof adapter.QualityOptionsError) throw new InputError(`${settings}: ${error.message}`);
+		if (error instanceof adapter.QualityOptionsError) throw new InputError(`${source}: ${error.message}`);
 		throw error;
 	}
 	return options;
+}
+
+/**
+ * The rule settings and page context of `quality --settings` (CG-05-05), and the rules `--ruleset`
+ * selects (CG-06-02 part 4b), which replace the file's `ruleset`. The file must be readable JSON whose
+ * options pass the adapter's check; a malformed settings file or ruleset is the user's input error, with every problem.
+ */
+export async function qualityOptions(
+	{ settings, ruleset }: ConfigInvocation,
+	adapter: QualityAdapter
+): Promise<QualityOptions | undefined> {
+	const fromFile = settings === undefined ? undefined : checkedQuality(await readJson(settings), settings, adapter);
+	if (ruleset === undefined) return fromFile;
+	return { ...fromFile, ...checkedQuality({ ruleset }, '--ruleset', adapter) };
 }

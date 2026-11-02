@@ -21,6 +21,7 @@ export const OPTIONS = {
 	project: { type: 'string' },
 	patterns: { type: 'string' },
 	settings: { type: 'string' },
+	ruleset: { type: 'string', multiple: true },
 	dir: { type: 'string' },
 	json: { type: 'boolean', default: false },
 	format: { type: 'string' },
@@ -35,8 +36,8 @@ const ALL_COMMANDS: readonly Command[] = [...CONFIG_COMMANDS, 'schema'];
 
 /**
  * Which commands take each option (C4): `--name`, `--project` and `--patterns` belong to `analyze`;
- * `--library-version` and `--registries` to the config checks, not to `quality`; `--settings` to
- * `quality` only; `--dir` to `schema build`; a config file to the checks.
+ * `--library-version` and `--registries` to the config checks, not to `quality`; `--settings` and
+ * `--ruleset` to `quality` only; `--dir` to `schema build`; a config file to the checks.
  */
 export const OWNERS: Readonly<Record<OptionName, readonly Command[]>> = {
 	library: ALL_COMMANDS,
@@ -49,6 +50,7 @@ export const OWNERS: Readonly<Record<OptionName, readonly Command[]>> = {
 	'library-version': ['validate', 'analyze'],
 	registries: ['validate', 'analyze'],
 	settings: ['quality'],
+	ruleset: ['quality'],
 	dir: ['schema'],
 	format: CONFIG_COMMANDS,
 	'fail-on': CONFIG_COMMANDS,

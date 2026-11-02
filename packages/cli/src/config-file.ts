@@ -39,7 +39,8 @@ const KEYS: Readonly<Record<string, { readonly option: OptionName; readonly kind
 	settings: { option: 'settings', kind: 'path' },
 	patterns: { option: 'patterns', kind: 'path' },
 	project: { option: 'project', kind: 'path' },
-	name: { option: 'name', kind: 'text' }
+	name: { option: 'name', kind: 'text' },
+	ruleset: { option: 'ruleset', kind: 'list' }
 };
 
 /** The values the file gives one command, by option name, its paths relative to the working directory. */
@@ -55,7 +56,7 @@ export interface ProjectConfig {
 function problemOf(key: string, value: unknown): string | undefined {
 	const known = KEYS[key];
 	if (known === undefined) return 'unknown key';
-	if (known.kind === 'patterns')
+	if (known.kind === 'patterns' || known.kind === 'list')
 		return Array.isArray(value) && value.every((item) => typeof item === 'string')
 			? undefined
 			: 'must be a list of strings';

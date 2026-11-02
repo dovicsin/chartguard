@@ -1,14 +1,14 @@
 export const USAGE = `ChartGuard starter (partial schema coverage)
 Usage:
   chartguard validate --library <chartjs|echarts|highcharts> --file <file|pattern> ... [--ignore <pattern>] [--library-version <x|auto>] [--registries <file.json>] [<output>]
-  chartguard quality  --library <chartjs|echarts|highcharts> --file <file|pattern> ... [--ignore <pattern>] [--settings <file.json>] [<output>]
+  chartguard quality  --library <chartjs|echarts|highcharts> --file <file|pattern> ... [--ignore <pattern>] [--settings <file.json>] [--ruleset <rule|impact>] ... [<output>]
   chartguard analyze  --library <chartjs|echarts|highcharts> (--file <file|pattern> ... [--ignore <pattern>] | --project tsconfig.json) [--name config] [--project <tsconfig.json>] [--patterns <file.json>] [--library-version <x|auto>] [--registries <file.json>] [<output>]
   chartguard schema build --library highcharts [--dir <project>] [--json]
   chartguard --version | --help
 <output>: [--format text|json|sarif | --json] [--fail-on error|warning|never]
 Config: chartguard.config.json in the working directory, or --config <file>; --no-config reads none.
   Keys: library, files, ignore, format, failOn, libraryVersion, registries, settings, patterns, project,
-  name, at the top level and in a "validate" / "quality" / "analyze" section; the command line wins,
+  name, ruleset, at the top level and in a "validate" / "quality" / "analyze" section; the command line wins,
   then the section, then the top level. Paths in the file are relative to it.
 --file: a path, or a pattern relative to the working directory: * (within a directory), ** (any
   directories), ? (one character), {a,b}; never into node_modules or .git, never through links.
@@ -33,6 +33,8 @@ analyze validates every config the file hands to the library (new Chart, setOpti
 --settings: quality rule settings and the page the chart is shown on, { "rules": { "<rule id>": "off" | "info"
   | "warning" | { "level", "ignore": [{ "path", "reason" }] } }, "context": { "background": "#fff" | { "light",
   "dark" }, "describesData": true, "pausesMotion": true } }; suppressed findings are listed with why.
+--ruleset: only these quality rules run, by rule id or impact (misleads, excludes, omits, risks); the
+  others are off and listed as OFF. Repeatable; replaces the settings file's "ruleset".
 schema build: generates the full Highcharts schema from your installed highcharts (it cannot ship with
   ChartGuard: license); validate and analyze then use it for that installed version.
 Exit codes: 0 nothing that fails (--fail-on), 1 findings that fail, 2 bad arguments or input, 3 internal failure.

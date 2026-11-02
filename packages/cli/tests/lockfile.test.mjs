@@ -18,6 +18,7 @@ test('npm: a workspace entry, else the hoisted one; v1 dependencies', async (t) 
 				'apps/web/node_modules/echarts': { version: '5.6.0' }
 			}
 		}),
+		'package.json': JSON.stringify({ workspaces: ['apps/web'] }),
 		'apps/web/package.json': '{}',
 		'apps/web/chart.json': CONFIG,
 		'apps/other/chart.json': CONFIG
@@ -65,6 +66,9 @@ test("pnpm: the file's importer, any dependency kind, a peer suffix removed", as
 	});
 	assert.equal((await lockedVersion('chart.js', join(root, 'packages/charts/c.json'))).version, '4.5.1');
 	assert.equal((await lockedVersion('echarts', join(root, 'c.json'))).version, '6.1.0');
+	// Only the file's own importer: another project's dependency is no claim.
+	assert.equal(await lockedVersion('chart.js', join(root, 'c.json')), undefined);
+	assert.equal(await lockedVersion('echarts', join(root, 'packages/charts/c.json')), undefined);
 	// A link is not a version: the user says which.
 	await assert.rejects(
 		lockedVersion('highcharts', join(root, 'packages/charts/c.json')),
@@ -108,7 +112,11 @@ test('Yarn: the entry of the range package.json declares, classic and Berry; two
 		'yarn.lock': ['echarts@^5.0.0:', '  version "5.6.0"', '', 'echarts@^6.0.0:', '  version "6.1.0"', ''].join('\n'),
 		'c.json': CONFIG
 	});
-	await assert.rejects(lockedVersion('echarts', join(undeclared, 'c.json')), /yarn\.lock holds 2 versions of echarts/u);
+	// The lockfile was read: the ambiguity is the error as said, never "cannot be read".
+	await assert.rejects(lockedVersion('echarts', join(undeclared, 'c.json')), (error) => {
+		assert.match(error.message, /^\S*yarn\.lock holds 2 versions of echarts/u);
+		return true;
+	});
 });
 
 test('an unreadable lockfile is an input error, never a guess', async (t) => {

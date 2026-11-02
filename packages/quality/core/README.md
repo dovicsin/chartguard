@@ -100,6 +100,8 @@ The context declares what the config cannot show about the page:
 
 Each catalog entry lists the context facts that change it (`context`).
 
+`ruleset` selects the rules that run, by rule id or impact (`misleads`, `excludes`, `omits`, `risks`): `{ "ruleset": ["misleads", "data-not-described"] }` runs the rules that mislead and `data-not-described`; every other rule is off and listed in `disabled`. `rules` shapes the selected ones (a level `off` still turns one off); a level for a rule outside the set does not make it run. An empty list, a hole or an entry that is neither an id nor an impact is a `QualityOptionsError`.
+
 Invalid options throw `QualityOptionsError`, listing every problem with where it is; `assertQualityOptions` checks them alone.
 
 A rule's default severity follows its `impact`:

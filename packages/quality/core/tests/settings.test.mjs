@@ -169,7 +169,7 @@ test('options are checked: every problem is listed with where it is, and nothing
 	assert.deepEqual(problems({ rules: {}, context: {} }), []);
 	assert.deepEqual(problems([]), ['options: must be an object']);
 	assert.deepEqual(problems({ rule: {}, context: { background: '#fff', dark: true } }), [
-		'options.rule: is not an option (rules, context)',
+		'options.rule: is not an option (rules, context, ruleset)',
 		'options.context.dark: is not a context fact (background, describesData, pausesMotion)'
 	]);
 	assert.deepEqual(
@@ -210,6 +210,10 @@ test('options are checked: every problem is listed with where it is, and nothing
 	]);
 	const getter = Object.defineProperty({}, 'rules', { get: () => ({}), enumerable: true });
 	assert.deepEqual(problems(getter), ['options.rules: is behind a getter, which is never run']);
+	const item = Object.defineProperty([], '0', { get: () => ({ path: '$', reason: 'r' }), enumerable: true });
+	assert.deepEqual(problems({ rules: { 'dual-axis': { ignore: item } } }), [
+		'options.rules["dual-axis"].ignore[0]: is behind a getter, which is never run'
+	]);
 	// review and the adapters check the same way: a bad option throws before any rule runs.
 	assert.throws(() => review(bars(), { rules: { 'bar-baseline': 'error' } }), QualityOptionsError);
 });
@@ -229,4 +233,49 @@ test('the severity policy: a rule is a warning when it misleads or excludes, inf
 		RULE_CATALOG.filter(({ context }) => context.length > 0).map(({ id }) => id),
 		['low-contrast-series', 'data-not-described', 'long-motion']
 	);
+});
+
+test('ruleset: only the rules it names, by id or impact, run; every other rule is off (CG-06-02 part 4b)', () => {
+	const ids = (impact) => RULE_CATALOG.filter((info) => info.impact === impact).map(({ id }) => id);
+	const misleads = review(bars(), { ruleset: ['misleads'] });
+	assert.deepEqual(reported(misleads), ['VIS_BAR_BASELINE warning $.options.scales.y.min']);
+	assert.deepEqual(
+		misleads.disabled,
+		RULE_CATALOG.map(({ id }) => id).filter((id) => !ids('misleads').includes(id))
+	);
+	// A rule id and an impact together: their union.
+	const both = review(bars(), { ruleset: ['excludes', 'empty-title'] });
+	assert.deepEqual(reported(both), ['VIS_EMPTY_TITLE info $.options.plugins.title.text']);
+	assert.ok(!both.disabled.includes('empty-title'));
+	assert.ok(ids('excludes').every((id) => !both.disabled.includes(id)));
+	assert.ok(both.disabled.includes('bar-baseline'));
+	// rules shape the selected ones: their level and ignores; off stays off inside the set.
+	const shaped = review(bars(), {
+		ruleset: ['bar-baseline', 'empty-title'],
+		rules: { 'bar-baseline': 'info', 'empty-title': 'off', 'dual-axis': 'warning' }
+	});
+	assert.deepEqual(reported(shaped), ['VIS_BAR_BASELINE info $.options.scales.y.min']);
+	// A level for a rule outside the set does not make it run.
+	assert.ok(shaped.disabled.includes('empty-title') && shaped.disabled.includes('dual-axis'));
+	assert.equal(shaped.disabled.length, RULE_CATALOG.length - 1);
+});
+
+test('ruleset problems: an empty list, an unknown entry, a non-list, a getter', () => {
+	const choices = `misleads, excludes, omits, risks, ${RULE_CATALOG.map(({ id }) => id).join(', ')}`;
+	assert.deepEqual(problems({ ruleset: [] }), ['options.ruleset: must name at least one rule id or impact']);
+	assert.deepEqual(problems({ ruleset: ['misleads', 'VIS_BAR_BASELINE', 3] }), [
+		`options.ruleset[1]: is not a rule id or impact (${choices})`,
+		`options.ruleset[2]: is not a rule id or impact (${choices})`
+	]);
+	assert.deepEqual(problems({ ruleset: 'misleads' }), ['options.ruleset: must be a list of rule ids and impacts']);
+	const getter = Object.defineProperty(['misleads'], '0', { get: () => 'risks', enumerable: true });
+	assert.deepEqual(problems({ ruleset: getter }), ['options.ruleset[0]: is behind a getter, which is never run']);
+	// A hole is a problem: a list of holes would select nothing.
+	const holed = [];
+	holed[1] = 'risks';
+	assert.deepEqual(problems({ ruleset: holed }), ['options.ruleset[0]: is missing']);
+	assert.deepEqual(problems({ ruleset: ['risks'], rule: 1 }), [
+		'options.rule: is not an option (rules, context, ruleset)'
+	]);
+	assert.throws(() => review(bars(), { ruleset: [] }), QualityOptionsError);
 });

@@ -4,6 +4,7 @@
 interface QualityOptions {
     readonly rules?: Readonly<Record<string, RuleLevel | RuleSetting>>;
     readonly context?: QualityContext;
+    readonly ruleset?: readonly string[];
 }
 
 ### QualityOptionsError

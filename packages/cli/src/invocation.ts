@@ -43,6 +43,8 @@ export interface ConfigInvocation {
 	readonly patterns: string | undefined;
 	/** `quality`: a JSON file with rule settings and the page context (CG-05-05). */
 	readonly settings: string | undefined;
+	/** `quality`: every `--ruleset`, the rules that run by id or impact (CG-06-02 part 4b); undefined: the settings decide. */
+	readonly ruleset: readonly string[] | undefined;
 	/** How findings are printed (CG-06-02): `--format`, or `--json` for `json`. */
 	readonly format: Format;
 	/** `format === 'json'`: also a usage or input error is printed as JSON. */
@@ -118,11 +120,14 @@ function failOnOf(values: Values): { readonly failOn: FailOn | undefined } | { r
 	return { reason: `unknown --fail-on '${failOn}' (${FAIL_ON.join(', ')})` };
 }
 
+/** The options given once per value. */
+const MULTIPLE: ReadonlySet<string> = new Set(['file', 'ignore', 'ruleset']);
+
 /** A scalar option given twice would silently take the last value; a repeated file would be read twice. */
 function repeated({ tokens, values }: Parsed): string | undefined {
 	const seen = new Set<string>();
 	for (const token of tokens) {
-		if (token.kind !== 'option' || token.name === 'file' || token.name === 'ignore') continue;
+		if (token.kind !== 'option' || MULTIPLE.has(token.name)) continue;
 		if (seen.has(token.name)) return `--${token.name} is given more than once`;
 		seen.add(token.name);
 	}
@@ -173,7 +178,7 @@ function configInvocation(
 	if ('reason' in input) return input;
 	const output = outputOf(values);
 	if ('reason' in output) return output;
-	const { file: files = [], ignore: ignores = [], name, registries, project, patterns, settings } = values;
+	const { file: files = [], ignore: ignores = [], name, registries, project, patterns, settings, ruleset } = values;
 	const { library } = chosen;
 	const { file } = input;
 	const libraryVersion = values['library-version'];
@@ -190,6 +195,7 @@ function configInvocation(
 		project,
 		patterns,
 		settings,
+		ruleset,
 		format: output.format,
 		json: output.format === 'json',
 		failOn: output.failOn,

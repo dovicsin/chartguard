@@ -3,7 +3,7 @@
 ```sh
 chartguard validate --library <chartjs|echarts|highcharts> --file 'charts/**/*.json' [--ignore '**/draft/**']
 chartguard analyze  --library <chartjs|echarts|highcharts> --file chart.ts [--name <variable>] [--project <tsconfig.json>] [--patterns <file.json>]
-chartguard quality  --library <chartjs|echarts|highcharts> --file config.json [--settings settings.json]
+chartguard quality  --library <chartjs|echarts|highcharts> --file config.json [--settings settings.json] [--ruleset misleads]
 chartguard schema build --library highcharts [--dir <project>]
 chartguard --version
 chartguard --help
@@ -14,7 +14,7 @@ chartguard --help
 - A config the code changes after declaring it (`config.options.color = …`, `push`, or passing it to another function) is validated without the changed parts and noted (`CFG_MUTATED`).
 - `--library-version <x|auto>` validates against the version you run (`auto` reads `node_modules`, and without an install the version the nearest lockfile pins for the file's project: `package-lock.json`, `pnpm-lock.yaml` or `yarn.lock`; the report says which: `version <x> from <source>`; a lockfile that does not decide one exact version is an input error); `--registries <file.json>` says what your tree-shaken runtime registered.
 - `--file` may be given several times and may be a pattern, matched against paths relative to the working directory: `*` within a directory, `**` across directories, `?` one character, `{a,b}` alternatives; a `*` or `?` never matches a leading dot. A walk never enters `node_modules` or `.git` and never follows a link to a directory. `--ignore <pattern>` leaves files out. Files are read in code-unit order, each once. With several files (or any pattern) the text groups findings under `== <file>`, `--json` prints `{ "mode", "files": [ … ] }`, SARIF is one log, and the exit status is the worst; a file that cannot be read is listed with its reason, the others are checked, and the run exits 2. A pattern that matches nothing is an input error.
-- A project config file, `chartguard.config.json` in the working directory (or the file `--config` names; `--no-config` reads none), holds the options a project always uses, as JSON: `library`, `files`, `ignore`, `format`, `failOn`, `libraryVersion`, `registries`, `settings`, `patterns`, `project`, `name`, at the top level and in a `validate`, `quality` or `analyze` section for that command only. The command line wins, then the command's section, then the top level; a command-line value replaces the file's (`--file` replaces `files`). Paths and patterns in the file are relative to the file. A file with an unknown key or a wrong value is an input error listing every problem; the text report starts with `Settings from <file>.`, and a SARIF run names the file.
+- A project config file, `chartguard.config.json` in the working directory (or the file `--config` names; `--no-config` reads none), holds the options a project always uses, as JSON: `library`, `files`, `ignore`, `format`, `failOn`, `libraryVersion`, `registries`, `settings`, `ruleset`, `patterns`, `project`, `name`, at the top level and in a `validate`, `quality` or `analyze` section for that command only. The command line wins, then the command's section, then the top level; a command-line value replaces the file's (`--file` replaces `files`). Paths and patterns in the file are relative to the file. A file with an unknown key or a wrong value is an input error listing every problem; the text report starts with `Settings from <file>.`, and a SARIF run names the file.
 
   ```json
   { "library": "echarts", "files": ["charts/**/*.json"], "ignore": ["**/draft/**"], "validate": { "format": "sarif", "failOn": "warning" } }
@@ -35,7 +35,9 @@ The full Highcharts schema cannot ship with ChartGuard (license). `chartguard sc
 
 Suppressed findings are printed as `SUPPRESSED (setting|context)` with their reason, and rules turned off as `OFF`; the JSON report has `suppressed` and `disabled`.
 
-A malformed settings file is an input error (exit 2) listing every problem.
+`--ruleset <rule|impact>` (repeatable) runs only the rules it names, by rule id or impact (`misleads`, `excludes`, `omits`, `risks`); the others are listed as `OFF`. It replaces a `ruleset` in the settings file, whose levels and ignores still apply to the selected rules.
+
+A malformed settings file or `--ruleset` is an input error (exit 2) listing every problem.
 
 ## Fixes
 
