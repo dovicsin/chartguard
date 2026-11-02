@@ -125,10 +125,15 @@ test('a merge maps items to series as echarts does: an item that is not an objec
 			{ type: 'bar', data: [2] }
 		]
 	});
-	// `null` is skipped: the next item merges into the first series, the line, not the bar. (The schema
-	// still reports the `null` item itself, which echarts ignores.)
+	// `null` is skipped: the next item merges into the first series, the line, not the bar; the `null`
+	// item itself is without effect (CG-02-10).
 	const update = { series: [null, { smooth: 'yes' }] };
-	assert.deepEqual(errors(checkOption(chart, update)), ['CFG_TYPE $.series[0]', 'CFG_TYPE $.series[1].smooth']);
+	const checked = checkOption(chart, update);
+	assert.deepEqual(errors(checked), ['CFG_TYPE $.series[1].smooth']);
+	assert.deepEqual(
+		checked.diagnostics.filter((d) => d.code === 'CFG_INEFFECTIVE').map((d) => d.path),
+		['$.series[0]']
+	);
 	chart.setOption(update);
 	assert.deepEqual(
 		chart.getOption().series.map(({ type, smooth }) => [type, smooth]),
@@ -138,15 +143,9 @@ test('a merge maps items to series as echarts does: an item that is not an objec
 		]
 	);
 	// A bar option merged into the line series would be a line option the runtime ignores; checked as a line.
-	assert.deepEqual(
-		errors(checkOption(chart, { series: [0, 'x', { barWidth: true }] })).filter((line) => !/\[[01]\]$/u.test(line)),
-		[]
-	);
+	assert.deepEqual(errors(checkOption(chart, { series: [0, 'x', { barWidth: true }] })), []);
 	// Items beyond the series the chart has, after skipped ones, are new: without a type they are dropped.
-	assert.deepEqual(errors(checkOption(chart, { series: [null, {}, {}, {}] })), [
-		'CFG_TYPE $.series[0]',
-		'CFG_REQUIRED $.series[3].type'
-	]);
+	assert.deepEqual(errors(checkOption(chart, { series: [null, {}, {}, {}] })), ['CFG_REQUIRED $.series[3].type']);
 });
 
 test('a disposed chart sets nothing: no claim that a series is dropped (K4)', (t) => {

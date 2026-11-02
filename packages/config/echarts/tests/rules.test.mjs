@@ -4,7 +4,7 @@ import test from 'node:test';
 import { validate } from '../dist/index.js';
 
 /** Only the findings of the cross-option rules (their codes are not used by the schema walk). */
-const RULE_CODES = new Set(['CFG_REQUIRES', 'CFG_UNKNOWN_REFERENCE']);
+const RULE_CODES = new Set(['CFG_REQUIRES', 'CFG_UNKNOWN_REFERENCE', 'CFG_INEFFECTIVE']);
 const ruled = (option, options) =>
 	validate(option, options)
 		.diagnostics.filter((d) => RULE_CODES.has(d.code))
@@ -182,4 +182,55 @@ test('incomplete input (static extraction) turns rule errors into unresolved war
 			.map((d) => `${d.severity} ${d.confidence}`),
 		['warning unknown', 'warning unknown', 'warning unknown']
 	);
+});
+
+test('hoverOffset on a pie or gauge never takes effect and erases emphasis.scaleSize (CG-02-11)', () => {
+	const pie = (extra) => ({ series: [{ type: 'pie', data: [1], ...extra }] });
+	const OFFSET = 'warning CFG_INEFFECTIVE $.series[0].hoverOffset';
+	const ERASED = 'warning CFG_INEFFECTIVE $.series[0].emphasis.scaleSize';
+	assert.deepEqual(ruled(pie({ hoverOffset: 5 })), [OFFSET]);
+	assert.deepEqual(ruled(pie({ hoverOffset: 5, emphasis: { scaleSize: 8 } })), [OFFSET, ERASED]);
+	assert.deepEqual(ruled({ series: [{ type: 'gauge', data: [1], hoverOffset: 0 }] }), [OFFSET]);
+	// A gauge does not read emphasis.scaleSize: nothing it does is lost.
+	assert.deepEqual(ruled({ series: [{ type: 'gauge', data: [1], hoverOffset: 0, emphasis: { scaleSize: 3 } }] }), [
+		OFFSET
+	]);
+	// `!= null`: an unset or null hoverOffset does nothing; nor does it on another series type (not read at all).
+	assert.deepEqual(ruled(pie({ hoverOffset: null, emphasis: { scaleSize: 8 } })), []);
+	assert.deepEqual(ruled({ ...axes, series: [{ type: 'bar', data: [1], hoverOffset: 5 }] }), []);
+});
+
+test('hoverOffset: each part of a timeline or media option, and only what can be read (CG-02-11)', () => {
+	const pie = (extra) => ({ series: [{ type: 'pie', data: [1], ...extra }] });
+	const OFFSET = 'warning CFG_INEFFECTIVE $.series[0].hoverOffset';
+	// Each part of a timeline or media option is preprocessed on its own: a series typed there.
+	assert.deepEqual(ruled({ baseOption: pie({ hoverOffset: 5 }) }), [
+		'warning CFG_INEFFECTIVE $.baseOption.series[0].hoverOffset'
+	]);
+	assert.deepEqual(ruled({ options: [pie({ hoverOffset: 5 })] }), [
+		'warning CFG_INEFFECTIVE $.options[0].series[0].hoverOffset'
+	]);
+	assert.deepEqual(ruled({ media: [{ option: pie({ hoverOffset: 5 }) }] }), [
+		'warning CFG_INEFFECTIVE $.media[0].option.series[0].hoverOffset'
+	]);
+	// A type or value behind a getter, or an emphasis that is not an object, claims nothing about it.
+	const typed = Object.defineProperty({ data: [1], hoverOffset: 5 }, 'type', { get: () => 'pie', enumerable: true });
+	assert.deepEqual(ruled({ series: [typed] }), []);
+	const hidden = Object.defineProperty({ scaleSize: 8 }, 'scaleSize', { get: () => 8, enumerable: true });
+	assert.deepEqual(ruled(pie({ hoverOffset: 5, emphasis: hidden })), [OFFSET]);
+	// With incomplete input (a merge) the claim is unresolved.
+	assert.deepEqual(
+		validate(pie({ hoverOffset: 5 }), { incomplete: true })
+			.diagnostics.filter((d) => d.code === 'CFG_INEFFECTIVE')
+			.map((d) => `${d.severity} ${d.confidence}`),
+		['warning unknown']
+	);
+});
+
+test('entries that are not objects are skipped by the runtime and claim nothing in the rules (CG-02-10)', () => {
+	const SKIPPED = 'warning CFG_INEFFECTIVE $.series[0]';
+	assert.deepEqual(ruled({ ...grid, series: [null, heatmap] }), [SKIPPED, 'error CFG_REQUIRES $.series[1]']);
+	assert.deepEqual(ruled({ ...grid, visualMap: { min: 0, max: 1 }, series: [null, heatmap] }), [SKIPPED]);
+	assert.deepEqual(ruled({ ...axes, series: [null, { type: 'line', data: [1] }] }), [SKIPPED]);
+	assert.deepEqual(ruled({ legend: { data: ['A'] }, series: [5, { type: 'pie', name: 'A', data: [1] }] }), [SKIPPED]);
 });

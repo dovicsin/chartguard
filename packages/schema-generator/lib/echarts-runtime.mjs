@@ -161,8 +161,135 @@ function withGraphicFacts(root, definitions) {
 	return next;
 }
 
+/**
+ * How echarts merges the root option (`GlobalModel._mergeOption`, lib/model/Global.js): a `null`
+ * root option is skipped like an absent one; a root option of a component (`ComponentModel.hasClass`)
+ * is read as a list (`normalizeToArray`: one value is a list of one), and `mappingToExists`
+ * (lib/util/model.js) sets every entry that is not an object to `null` and skips it (CG-02-10).
+ * The components are the root options of `EChartsOption` the full bundle registers a model for
+ * (`aria` is a global option), checked against the runtime's `hasClass` by the generator tests.
+ *
+ * Preprocessors read some components before that skip, and throw on what they cannot read: the
+ * layout compatibility runs `'x' in option` on every truthy entry of nine components; the radar,
+ * polar, brush, toolbox and timeline preprocessors read a property of every listed entry, so a
+ * listed `null` throws; axisPointer reads the model of its first entry while drawing; and any
+ * brush value but `null` adds the brush buttons to the toolbox, so none is without effect. Which kinds
+ * of value each component skips, given alone (`value`) or listed (`entries`), follows from those
+ * lines; the conformance tests run every kind on every component against the runtime.
+ */
+const ROOT_MERGE = {
+	nullSkipped: { file: 'lib/model/Global.js', pattern: 'if (componentOption == null) {' },
+	listed: {
+		file: 'lib/model/Global.js',
+		pattern:
+			'var newCmptOptionList = concatInternalOptions(this, mainType, modelUtil.normalizeToArray(newOption[mainType]));'
+	},
+	skipped: { file: 'lib/util/model.js', pattern: 'if (!isObject(cmptOption)) {' }
+};
+const THROWS = {
+	layout: { file: 'lib/preprocessor/backwardCompat.js', pattern: 'if (prop[0] in option && !(prop[1] in option)) {' },
+	radar: {
+		file: 'lib/preprocessor/helper/compatStyle.js',
+		pattern: 'if (radarOpt.name && radarOpt.axisName == null) {'
+	},
+	polar: { file: 'lib/chart/radar/backwardCompat.js', pattern: 'if (polarOpt.indicator) {' },
+	brush: {
+		file: 'lib/component/brush/preprocessor.js',
+		pattern: "var tbs = brushOpt.hasOwnProperty('toolbox') ? brushOpt.toolbox : [];"
+	},
+	brushToolbox: {
+		file: 'lib/component/brush/preprocessor.js',
+		pattern: 'var brushComponents = normalizeToArray(option ? option.brush : []);'
+	},
+	toolbox: {
+		file: 'lib/preprocessor/helper/compatStyle.js',
+		pattern: 'each(toolboxOpt.feature, function (featureOpt) {'
+	},
+	timeline: { file: 'lib/preprocessor/helper/compatStyle.js', pattern: 'var data = timelineOpt.data;' },
+	axisPointer: {
+		file: 'lib/component/axisPointer/modelHelper.js',
+		pattern: "var linksOption = globalAxisPointerModel.get('link', true) || [];"
+	}
+};
+const EVERY = { value: ['falsy', 'truthy'], entries: ['null', 'falsy', 'truthy'] };
+const FALSY = { value: ['falsy'], entries: ['null', 'falsy'] };
+const NOT_NULL = { value: ['falsy', 'truthy'], entries: ['falsy', 'truthy'] };
+const FALSY_NOT_NULL = { value: ['falsy'], entries: ['falsy'] };
+/** By component: which kinds it skips, and the lines that throw on the others. */
+const COMPONENTS = {
+	dataset: [EVERY],
+	title: [FALSY, 'layout'],
+	grid: [FALSY, 'layout'],
+	radar: [NOT_NULL, 'radar'],
+	polar: [NOT_NULL, 'polar'],
+	geo: [FALSY, 'layout'],
+	angleAxis: [EVERY],
+	radiusAxis: [EVERY],
+	xAxis: [EVERY],
+	yAxis: [EVERY],
+	singleAxis: [EVERY],
+	parallel: [FALSY, 'layout'],
+	parallelAxis: [EVERY],
+	calendar: [EVERY],
+	matrix: [EVERY],
+	toolbox: [FALSY_NOT_NULL, 'layout', 'toolbox'],
+	tooltip: [EVERY],
+	axisPointer: [{ value: ['falsy'], entries: [] }, 'axisPointer'],
+	// Any brush value but `null` adds the brush buttons to the toolbox: none is without effect.
+	brush: [{ value: [], entries: [] }, 'brush', 'brushToolbox'],
+	timeline: [FALSY_NOT_NULL, 'layout', 'timeline'],
+	legend: [FALSY, 'layout'],
+	dataZoom: [FALSY, 'layout'],
+	visualMap: [FALSY, 'layout'],
+	thumbnail: [EVERY],
+	graphic: [EVERY],
+	series: [EVERY]
+};
+
+/** The option with `null` root options absent and each component option skipping what its runtime skips. */
+function withRootMerge(root, definitions, optionName) {
+	const option = definitions[optionName];
+	if (option?.kind !== 'object') throw changed(optionName);
+	const cite = (fact) => ({ source: 'echarts', pointer: runtimePointer(root, 'echarts', fact) });
+	const listed = [cite(ROOT_MERGE.listed), cite(ROOT_MERGE.skipped)];
+	const properties = { ...option.properties };
+	for (const [key, [skips, ...throwing]] of Object.entries(COMPONENTS)) {
+		const property = properties[key];
+		if (property === undefined) throw changed(`${optionName}.${key}`);
+		const sources = [...property.provenance.sources, ...listed, ...throwing.map((name) => cite(THROWS[name]))];
+		properties[key] = { ...property, skips, provenance: { ...property.provenance, sources } };
+	}
+	const provenance = { ...option.provenance, sources: [...option.provenance.sources, cite(ROOT_MERGE.nullSkipped)] };
+	return { ...definitions, [optionName]: { ...option, nullAsAbsent: true, provenance, properties } };
+}
+
+/**
+ * `hoverOffset` on a pie or gauge series: the backward-compat preprocessor means to copy it into
+ * `emphasis.scaleSize`, but its test is an assignment (`if (seriesOpt.emphasis.scaleSize = null)`),
+ * so it never copies and it erases `emphasis.scaleSize`. Declared, citing that line, so the
+ * `echarts/hover-offset` rule can say what it does instead of an unknown key; any value has the same
+ * effect, so its type is not stated (CG-02-11).
+ */
+const HOVER_OFFSET = { file: 'lib/preprocessor/backwardCompat.js', pattern: 'if (seriesOpt.hoverOffset != null) {' };
+const HOVER_OFFSET_SERIES = ['PieSeriesOption$1', 'GaugeSeriesOption$1'];
+
+function withHoverOffset(root, definitions) {
+	const pointer = runtimePointer(root, 'echarts', HOVER_OFFSET);
+	const next = { ...definitions };
+	for (const name of HOVER_OFFSET_SERIES) {
+		const series = next[name];
+		if (series?.kind !== 'object' || series.properties.hoverOffset !== undefined) throw changed(`${name}.hoverOffset`);
+		const hoverOffset = {
+			node: { kind: 'unknown' },
+			provenance: { confidence: 'authoritative', sources: [{ source: 'echarts', pointer }] }
+		};
+		next[name] = { ...series, properties: { ...series.properties, hoverOffset } };
+	}
+	return next;
+}
+
 /** New definitions where a matrix cell's `children` also take strings, citing the runtime line. */
-export function withRuntimeFacts(root, definitions) {
+export function withRuntimeFacts(root, definitions, optionName) {
 	const cell = definitions.MatrixDimensionCellOption;
 	const children = cell?.properties.children;
 	if (children?.node.kind !== 'array') throw changed('MatrixDimensionCellOption.children');
@@ -173,11 +300,12 @@ export function withRuntimeFacts(root, definitions) {
 		sources: [...children.provenance.sources, { source: 'echarts', pointer }]
 	};
 	const widened = { ...children, node: { kind: 'array', items }, provenance };
-	return withEc4TextStyle(
+	const facts = withEc4TextStyle(
 		root,
 		withGraphicFacts(root, {
 			...definitions,
 			MatrixDimensionCellOption: { ...cell, properties: { ...cell.properties, children: widened } }
 		})
 	);
+	return withHoverOffset(root, withRootMerge(root, facts, optionName));
 }

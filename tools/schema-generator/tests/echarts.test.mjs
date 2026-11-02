@@ -227,3 +227,37 @@ test('a copy into another option is named, never a rename; an unreachable rename
 	// The gauge branch follows `pie || gauge`: pointer.color is never copied.
 	assert.equal(nested(seriesVariant('gauge'), 'pointer').properties.color, undefined);
 });
+
+test('component lists: exactly the root options echarts models as components skip entries that are not objects (CG-02-10)', async () => {
+	// The runtime's own answer: a root key is merged as components when `ComponentModel.hasClass` knows it.
+	const { ComponentModel } = await import('echarts');
+	const keys = Object.keys(option.properties);
+	const components = keys.filter((key) => ComponentModel.hasClass(key));
+	assert.deepEqual(
+		keys.filter((key) => option.properties[key].skips !== undefined),
+		components
+	);
+	for (const key of components) {
+		const pointers = option.properties[key].provenance.sources.map(({ pointer }) => pointer);
+		assert.ok(
+			pointers.some((pointer) => pointer.startsWith('echarts/lib/util/model.js:')),
+			key
+		);
+	}
+	// A `null` root option is skipped like an absent one (`if (componentOption == null)`).
+	assert.equal(option.nullAsAbsent, true);
+	assert.ok(option.provenance.sources.some(({ pointer }) => pointer.startsWith('echarts/lib/model/Global.js:')));
+});
+
+test('hoverOffset: declared on pie and gauge, where the runtime reads it (and nowhere else), citing that line (CG-02-11)', () => {
+	for (const type of ['pie', 'gauge']) {
+		const property = seriesVariant(type).properties.hoverOffset;
+		assert.ok(property, type);
+		assert.ok(
+			property.provenance.sources.some(({ pointer }) =>
+				pointer.startsWith('echarts/lib/preprocessor/backwardCompat.js:')
+			)
+		);
+	}
+	assert.equal(seriesVariant('bar').properties.hoverOffset, undefined);
+});

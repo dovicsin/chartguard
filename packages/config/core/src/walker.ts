@@ -2,7 +2,15 @@ import { type Diagnostic, isContainer, ownDataProperty, type ValidationOptions }
 
 import { deprecationFinding } from './deprecation.js';
 import { asInferred, confirmed, inconclusive, unresolved } from './diagnostics.js';
-import { registrationFinding, unhandledFinding, unknownKeyFinding, variantFinding } from './findings.js';
+import {
+	registrationFinding,
+	skippedFinding,
+	unhandledFinding,
+	unknownKeyFinding,
+	variantFinding
+} from './findings.js';
+import { holeRuns, rangeSegment } from './holes.js';
+import type { SkippedKind } from './ir/types.js';
 import { isListLike, kindOf } from './kind.js';
 import { keySegment } from './paths.js';
 import { isHandled, type Registries } from './registry.js';
@@ -10,6 +18,13 @@ import type { Deprecation, NodeSchema, SchemaManifest } from './schema.js';
 import { type Selection, selectVariant } from './union.js';
 
 const MAX_DEPTH = 40;
+
+/** The kind of a value that is not an object (`skips`); undefined for an object, a function or nothing. */
+function skippedKind(value: unknown): SkippedKind | undefined {
+	if (value === undefined || isContainer(value) || typeof value === 'function') return undefined;
+	if (value === null) return 'null';
+	return Boolean(value) ? 'truthy' : 'falsy';
+}
 const MAX_ENTRIES = 20_000;
 /** Values one validation visits at most, whatever their shape: a bound on the whole walk, not only per container. */
 const MAX_VISITS = 1_000_000;
@@ -32,26 +47,6 @@ function descend({ path, depth, inferred }: Cursor, segment: string): Cursor {
 /** The cursor at `schema`: inferred from there on when the schema's own facts are. */
 function at(cursor: Cursor, schema: NodeSchema | undefined): Cursor {
 	return schema?.inferred === true && !cursor.inferred ? { ...cursor, inferred: true } : cursor;
-}
-
-interface HoleRun {
-	readonly first: number;
-	readonly last: number;
-}
-
-function holeRuns(items: ArrayLike<unknown>, count: number): HoleRun[] {
-	const runs: HoleRun[] = [];
-	for (let index = 0; index < count; index++) {
-		if (ownDataProperty(items, String(index)).found) continue;
-		const open = runs.at(-1);
-		if (open?.last === index - 1) runs[runs.length - 1] = { first: open.first, last: index };
-		else runs.push({ first: index, last: index });
-	}
-	return runs;
-}
-
-function rangeSegment({ first, last }: HoleRun): string {
-	return first === last ? `[${String(first)}]` : `[${String(first)}..${String(last)}]`;
 }
 
 /**
@@ -89,7 +84,15 @@ export class ConfigWalker {
 	 */
 	private skips(value: unknown, schema: NodeSchema, cursor: Cursor): boolean {
 		if (value === undefined && this.options.incomplete === true) return true;
-		return this.stops(cursor) || this.unhandled(schema, cursor);
+		return this.stops(cursor) || this.unhandled(schema, cursor) || this.skipped(value, schema, cursor);
+	}
+
+	/** A value the runtime skips because it is not an object (CG-02-10): reported as without effect, not checked. */
+	private skipped(value: unknown, { skips }: NodeSchema, cursor: Cursor): boolean {
+		const kind = skippedKind(value);
+		if (kind === undefined || skips?.includes(kind) !== true) return false;
+		this.report(cursor, skippedFinding(cursor.path));
+		return true;
 	}
 
 	/** The union member that applies, walked; a claim resting on a likely member is likely (H5). */

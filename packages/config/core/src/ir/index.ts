@@ -19,6 +19,8 @@ export type {
 	RefNode,
 	SchemaArtifact,
 	ScriptableNode,
+	SkippedKind,
+	Skips,
 	SourceKind,
 	SourceRecord,
 	SourceRef,

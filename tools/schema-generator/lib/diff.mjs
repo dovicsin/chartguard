@@ -99,10 +99,18 @@ function fieldSignature(key, value, paths) {
 	return Object.fromEntries(Object.entries(value).map(([name, property]) => [name, signature(property, paths)]));
 }
 
-const UNION_FIELDS = ['discriminator', 'defaultVariant', 'defaultWhen', 'defaultFrom', 'extensible', 'registry'];
+const UNION_FIELDS = [
+	'discriminator',
+	'defaultVariant',
+	'defaultWhen',
+	'selectWhen',
+	'defaultFrom',
+	'extensible',
+	'registry'
+];
 
 /** Property fields that change what the engine accepts; provenance and docs do not. */
-const PROPERTY_FIELDS = ['deprecated', 'handledBy'];
+const PROPERTY_FIELDS = ['deprecated', 'handledBy', 'skips'];
 
 function compareProperty(at, old, next, changes) {
 	if (old === undefined) changes.push({ kind: 'property-added', path: at, after: next.node });
@@ -131,6 +139,7 @@ function compareObjects(path, before, after, changes) {
 		changes.push({ kind: 'openness-changed', path, before: before.additional, after: after.additional });
 	if (JSON.stringify(before.includes ?? []) !== JSON.stringify(after.includes ?? []))
 		changes.push({ kind: 'includes-changed', path, before: before.includes ?? [], after: after.includes ?? [] });
+	if (before.host !== after.host) changes.push({ kind: 'host-changed', path, before: before.host, after: after.host });
 	if ((before.nullAsAbsent === true) !== (after.nullAsAbsent === true))
 		changes.push({
 			kind: 'nullAsAbsent-changed',

@@ -1,6 +1,7 @@
 import type { Coverage } from '@chartguard/core';
 
 import type { ResolvedExtensions } from './extensions.js';
+import type { SkippedKind } from './ir/types.js';
 
 export type SchemaKind = 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null' | 'function' | 'union' | 'any';
 export type EnumValue = string | number | boolean;
@@ -86,6 +87,8 @@ export interface NodeSchema {
 	readonly nullAsAbsent?: boolean;
 	/** A platform object of this class; a plain object is never one (see `ObjectNode.host`). */
 	readonly host?: string;
+	/** The kinds of non-object value the runtime skips here: such a value has no effect (CG-02-10). */
+	readonly skips?: readonly SkippedKind[];
 	/** Object: schema for keys not listed in `properties` (a record of caller-chosen keys). */
 	readonly values?: NodeSchema;
 	/** Union members; a value is checked against the member matching its runtime kind. */

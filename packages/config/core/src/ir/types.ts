@@ -60,6 +60,22 @@ export interface PropertyNode {
 	readonly docs?: string;
 	/** The runtime handles this option only when a component or plugin is registered. */
 	readonly handledBy?: Handler;
+	/**
+	 * The runtime reads this option as a list (one value is a list of one) and skips the values that
+	 * are not objects of the kinds listed: given alone (`value`) or as a list entry (`entries`). Such a
+	 * value has no effect; a kind not listed is one the runtime throws on (echarts components,
+	 * `mappingToExists`, CG-02-10).
+	 */
+	readonly skips?: Skips;
+}
+
+/** A value that is not an object, by how a runtime tells it apart: `null`, a falsy primitive, any other primitive. */
+export type SkippedKind = 'null' | 'falsy' | 'truthy';
+export const SKIPPED_KINDS: ReadonlySet<string> = new Set<SkippedKind>(['null', 'falsy', 'truthy']);
+
+export interface Skips {
+	readonly value: readonly SkippedKind[];
+	readonly entries: readonly SkippedKind[];
 }
 
 export interface ObjectNode extends NodeBase {

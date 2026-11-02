@@ -132,7 +132,7 @@ test("--patterns adds the project's own wrappers; a malformed patterns file is a
 		'bad.patterns.json': JSON.stringify([{ id: 'x', library: 'd3', module: 'm', export: 'f', argument: 0 }]),
 		'list.json': '{}',
 		'src/render.ts': 'export function render(el: unknown, option: unknown) { return [el, option]; }',
-		'src/chart.ts': 'import { render } from "./render";\nrender(el, { series: 5 });'
+		'src/chart.ts': 'import { render } from "./render";\nrender(el, { xAxis: { type: "catgory" } });'
 	});
 	const file = join(root, 'src/chart.ts');
 	const found = await run([

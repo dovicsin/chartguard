@@ -3,7 +3,7 @@ import { isRecord } from '@chartguard/core';
 import { checkUnionOptions, isNonEmpty, LITERAL_TYPES, selectedByRule } from './check-union.js';
 import { loopingDefaults, shapeless } from './founded.js';
 import { checkHeader, checkSources, quote, type Report } from './header.js';
-import { CONFIDENCE_TIERS, NODE_KINDS, OPENNESS, type SchemaArtifact } from './types.js';
+import { CONFIDENCE_TIERS, NODE_KINDS, OPENNESS, type SchemaArtifact, SKIPPED_KINDS } from './types.js';
 
 const MAX_DEPTH = 200;
 const CONFIDENCE_SET: ReadonlySet<unknown> = new Set(CONFIDENCE_TIERS);
@@ -23,6 +23,13 @@ function isHandler(value: unknown): boolean {
 		isRecord(value) && isNonEmpty(value['id']) && isNonEmpty(value['name']) && typeof value['enforced'] === 'boolean'
 	);
 }
+
+const isKinds = (value: unknown): boolean =>
+	Array.isArray(value) && value.every((kind) => typeof kind === 'string' && SKIPPED_KINDS.has(kind));
+
+/** Which non-object values a list option's runtime skips: two lists of known kinds. */
+const isSkips = (value: unknown): boolean =>
+	isRecord(value) && Object.keys(value).length === 2 && isKinds(value['value']) && isKinds(value['entries']);
 
 /**
  * A member's discriminator property must be a literal (or a union of literals, also one stored as a
@@ -133,6 +140,8 @@ class NodeChecker {
 		if (handledBy !== undefined && !isHandler(handledBy))
 			this.report(path, 'handledBy must be { id: <non-empty string>, name: <non-empty string>, enforced: <boolean> }');
 		this.checkDeprecation(property['deprecated'], path, siblings);
+		if (property['skips'] !== undefined && !isSkips(property['skips']))
+			this.report(path, 'skips must be { value: <kinds>, entries: <kinds> } of "null", "falsy", "truthy"');
 		this.checkNode(property['node'], `${path}.node`, depth + 1);
 	}
 

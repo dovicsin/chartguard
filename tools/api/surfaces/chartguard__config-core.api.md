@@ -136,6 +136,7 @@ interface NodeSchema {
     readonly inferred?: true;
     readonly nullAsAbsent?: boolean;
     readonly host?: string;
+    readonly skips?: readonly SkippedKind[];
     readonly values?: NodeSchema;
     readonly anyOf?: readonly NodeSchema[];
     readonly discriminator?: string;
@@ -199,6 +200,7 @@ interface PropertyNode {
     readonly deprecated?: Deprecation;
     readonly docs?: string;
     readonly handledBy?: Handler;
+    readonly skips?: Skips;
 }
 
 ### Provenance
@@ -301,6 +303,15 @@ interface ScriptableNode extends NodeBase {
 interface NodeBase {
     readonly provenance?: Provenance;
     readonly docs?: string;
+}
+
+### SkippedKind
+type SkippedKind = 'null' | 'falsy' | 'truthy';
+
+### Skips
+interface Skips {
+    readonly value: readonly SkippedKind[];
+    readonly entries: readonly SkippedKind[];
 }
 
 ### SourceKind

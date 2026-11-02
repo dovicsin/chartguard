@@ -139,6 +139,18 @@ test('every change kind is reported once, at its canonical path', () => {
 	);
 });
 
+test('what a list option skips, a selection rule and a platform class are changes the engine sees', () => {
+	const before = sample();
+	const after = structuredClone(before);
+	after.definitions.Bar.properties.type.skips = { value: ['falsy'], entries: ['null'] };
+	after.root.selectWhen = [{ test: 'truthy', property: 'elements', variant: 0 }];
+	after.definitions.Options.host = 'Date';
+	assert.deepEqual(
+		diffArtifacts(before, after).map(({ kind, path }) => `${kind} ${path}`),
+		['selectWhen-changed $', 'skips-changed $<type=bar>.type', 'host-changed $<type=line>.options']
+	);
+});
+
 test('added and removed definitions, and a definition that changes kind, are reported', () => {
 	const before = sample();
 	const after = structuredClone(before);

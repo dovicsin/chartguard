@@ -29,6 +29,18 @@ export function unhandledFinding({ name, enforced }: Handler, path: string): Dia
 	};
 }
 
+/** An entry the runtime skips because it is not an object (echarts `mappingToExists`). */
+export function skippedFinding(path: string): Diagnostic {
+	return {
+		code: 'CFG_INEFFECTIVE',
+		severity: 'warning',
+		confidence: 'certain',
+		path,
+		message: 'The runtime skips an entry that is not an object, so this one has no effect.',
+		suggestion: 'Remove the entry, or give it the options it should have.'
+	};
+}
+
 export function registrationFinding(
 	selection: Extract<Selection, { kind: 'registered' | 'unregistered' }>,
 	path: string

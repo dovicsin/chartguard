@@ -89,5 +89,30 @@ export const RULES_CONTRACT = [
 		},
 		findings: [],
 		runtime: 'accepted'
+	},
+	// CG-02-11: the backward-compat test for hoverOffset assigns instead of comparing.
+	{
+		name: 'hoverOffset on a pie',
+		config: { series: [{ type: 'pie', data: [1, 2], hoverOffset: 12 }] },
+		findings: ['warning CFG_INEFFECTIVE $.series[0].hoverOffset'],
+		runtime: 'accepted',
+		why: 'No effect: `globalBackwardCompat` never copies hoverOffset into emphasis.scaleSize, and logs nothing.'
+	},
+	{
+		name: 'hoverOffset on a gauge',
+		config: { series: [{ type: 'gauge', data: [{ value: 50 }], hoverOffset: 12 }] },
+		findings: ['warning CFG_INEFFECTIVE $.series[0].hoverOffset'],
+		runtime: 'accepted',
+		why: 'No effect: `globalBackwardCompat` never copies hoverOffset into emphasis.scaleSize, and logs nothing.'
+	},
+	{
+		name: 'hoverOffset on a pie beside emphasis.scaleSize',
+		config: { series: [{ type: 'pie', data: [1, 2], hoverOffset: 12, emphasis: { scaleSize: 4 } }] },
+		findings: [
+			'warning CFG_INEFFECTIVE $.series[0].hoverOffset',
+			'warning CFG_INEFFECTIVE $.series[0].emphasis.scaleSize'
+		],
+		runtime: 'accepted',
+		why: 'No effect: `globalBackwardCompat` sets emphasis.scaleSize to null when hoverOffset is set, and logs nothing.'
 	}
 ];

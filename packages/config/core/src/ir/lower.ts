@@ -7,6 +7,7 @@ import type {
 	ObjectNode,
 	PropertyNode,
 	SchemaArtifact,
+	Skips,
 	UnionNode
 } from './types.js';
 
@@ -187,11 +188,27 @@ class Lowerer {
 	private lowerProperty(property: PropertyNode, path: string): NodeSchema {
 		const { handledBy, deprecated, provenance } = property;
 		if (provenance.confidence === 'unknown') return this.approximate(path);
-		return this.annotated(this.lower(property.node, path), {
+		const value = this.lower(property.node, path);
+		return this.annotated(property.skips === undefined ? value : this.skipping(value, property.skips), {
 			...(handledBy === undefined ? {} : { handledBy }),
 			...(deprecated === undefined ? {} : { deprecated }),
 			...(isInferredTier(provenance.confidence) ? { inferred: true as const } : {})
 		});
+	}
+
+	/**
+	 * A value whose runtime skips what is not an object (CG-02-10): the value itself, and each entry
+	 * of a list it may be. New nodes only: a shared definition is not changed for its other uses.
+	 */
+	private skipping(value: NodeSchema, { value: alone, entries }: Skips): NodeSchema {
+		const listed = (member: NodeSchema): NodeSchema =>
+			member.kind === 'array' && member.element !== undefined && entries.length > 0
+				? { ...member, element: this.annotated(member.element, { skips: entries }) }
+				: member;
+		const own = alone.length === 0 ? {} : { skips: alone };
+		if (this.incomplete.has(value)) return this.annotated(value, own);
+		const next = value.kind === 'union' ? { ...value, anyOf: (value.anyOf ?? []).map(listed) } : listed(value);
+		return { ...next, ...own };
 	}
 
 	/**
