@@ -1,10 +1,5 @@
-import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { extractStaticConfigs } from '@chartguard/analysis-typescript';
-import { Linter } from 'eslint';
-
-import { renameEdit } from '../dist/edits.js';
 import plugin from '../dist/index.js';
 import { at, javascript, typescript } from './helpers.mjs';
 
@@ -91,19 +86,4 @@ test('JSX: a key written in the attribute that hands the config to the wrapper i
 test('a config with a part the analysis cannot read gets no fix: the new key may be set there', () => {
 	const spread = call("{ ...defaults, type: 'pie', clockWise: false, data: [1] }");
 	javascript.run('config-warnings', configWarnings, { valid: [], invalid: [warned(spread, null)] });
-});
-
-test('a rename to a name that is not an identifier is not written', () => {
-	const linter = new Linter();
-	const code = call("{ type: 'pie', clockWise: false, data: [1] }");
-	linter.verify(code, [], { filename: 'chart.js' });
-	const [use] = extractStaticConfigs(code, 'chart.js').uses;
-	const edit = (to) =>
-		renameEdit({ sourceCode: linter.getSourceCode(), fileName: 'chart.js', use }, '$.series[0].clockWise', {
-			kind: 'rename-key',
-			to
-		});
-	assert.deepEqual(edit('clockwise')?.text, 'clockwise');
-	assert.equal(edit('emphasis.scale'), undefined);
-	assert.equal(edit('2d'), undefined);
 });

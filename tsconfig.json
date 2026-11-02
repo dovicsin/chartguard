@@ -17,7 +17,13 @@
 			"path": "./packages/analysis/typescript"
 		},
 		{
+			"path": "./packages/integrations/source-checks"
+		},
+		{
 			"path": "./packages/integrations/eslint"
+		},
+		{
+			"path": "./packages/integrations/language-server"
 		},
 		{
 			"path": "./packages/config/chartjs"

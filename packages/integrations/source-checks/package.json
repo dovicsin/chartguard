@@ -1,0 +1,48 @@
+{
+	"name": "@chartguard/source-checks",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Chart config findings in JavaScript and TypeScript source, with verified edits, for editors and linters (CG-06-04)",
+	"type": "module",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dovicsin/chartguard.git",
+		"directory": "packages/integrations/source-checks"
+	},
+	"sideEffects": false,
+	"engines": {
+		"node": ">=20.19"
+	},
+	"files": [
+		"dist/",
+		"README.md"
+	],
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc -b",
+		"test": "node --test tests/*.test.mjs"
+	},
+	"dependencies": {
+		"@chartguard/core": "0.1.0",
+		"@chartguard/analysis-typescript": "0.1.0",
+		"@chartguard/config-chartjs": "0.1.0",
+		"@chartguard/config-echarts": "0.1.0",
+		"@chartguard/config-highcharts": "0.1.0",
+		"@chartguard/quality-chartjs": "0.1.0",
+		"@chartguard/quality-echarts": "0.1.0",
+		"@chartguard/quality-highcharts": "0.1.0",
+		"@chartguard/schema-generator": "0.1.0",
+		"typescript": "^5.8.3"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

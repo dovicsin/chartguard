@@ -11,6 +11,7 @@ const CONFIG_CORE = '@chartguard/config-core';
 const QUALITY_CORE = '@chartguard/quality-core';
 const ANALYSIS = '@chartguard/analysis-typescript';
 const SCHEMA_GENERATOR = '@chartguard/schema-generator';
+const SOURCE_CHECKS = '@chartguard/source-checks';
 const CONFIG_ADAPTERS = LIBRARIES.map((library) => `@chartguard/config-${library}`);
 const QUALITY_ADAPTERS = LIBRARIES.map((library) => `@chartguard/quality-${library}`);
 
@@ -50,12 +51,16 @@ export const POLICY = {
 		external: ['typescript'],
 		node: ['src/project.ts', 'src/tsconfig.ts', 'src/host.ts', 'src/session.ts']
 	}),
-	/** Runs where ESLint runs, in Node: it reads what the linted file's project installs (CG-06-03 part 2). */
-	'@chartguard/eslint-plugin': rule({
+	/** The source checks editors and linters share (CG-06-04): Node, reads what a file's project installs. */
+	[SOURCE_CHECKS]: rule({
 		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, ANALYSIS, SCHEMA_GENERATOR],
-		peer: ['eslint'],
+		external: ['typescript'],
 		node: true
 	}),
+	/** ESLint's adapter over the source checks; runs where ESLint runs. */
+	'@chartguard/eslint-plugin': rule({ internal: [SOURCE_CHECKS], peer: ['eslint'] }),
+	/** A language server over stdio (CG-06-04): the source checks for any editor that speaks LSP; no dependency beyond them. */
+	'@chartguard/language-server': rule({ internal: [SOURCE_CHECKS], node: true }),
 	/** Reads a chart library's declarations and runtime files from a project; never imports or runs them. */
 	[SCHEMA_GENERATOR]: rule({ internal: [CONFIG_CORE], external: ['typescript'], node: true }),
 	'@chartguard/cli': rule({

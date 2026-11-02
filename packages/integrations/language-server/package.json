@@ -1,0 +1,43 @@
+{
+	"name": "@chartguard/language-server",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Language server (LSP over stdio) with ChartGuard's chart config findings and verified edits (CG-06-04)",
+	"type": "module",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dovicsin/chartguard.git",
+		"directory": "packages/integrations/language-server"
+	},
+	"sideEffects": false,
+	"engines": {
+		"node": ">=20.19"
+	},
+	"files": [
+		"bin/",
+		"dist/",
+		"README.md"
+	],
+	"bin": {
+		"chartguard-language-server": "./bin/chartguard-language-server.mjs"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc -b",
+		"test": "node --test tests/*.test.mjs"
+	},
+	"dependencies": {
+		"@chartguard/source-checks": "0.1.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

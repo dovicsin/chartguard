@@ -8,31 +8,7 @@
 	"include": ["src/**/*.ts"],
 	"references": [
 		{
-			"path": "../../core"
-		},
-		{
-			"path": "../../analysis/typescript"
-		},
-		{
-			"path": "../../config/chartjs"
-		},
-		{
-			"path": "../../config/echarts"
-		},
-		{
-			"path": "../../config/highcharts"
-		},
-		{
-			"path": "../../quality/chartjs"
-		},
-		{
-			"path": "../../quality/echarts"
-		},
-		{
-			"path": "../../quality/highcharts"
-		},
-		{
-			"path": "../../schema-generator"
+			"path": "../source-checks"
 		}
 	]
 }

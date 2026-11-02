@@ -1,22 +1,29 @@
+import type { FindingKind, TextEdit } from '@chartguard/source-checks';
 import type { ESLint, Linter, Rule } from 'eslint';
 
-import { analysisOf, type RuleName } from './analysis.js';
-import { fixer } from './edits.js';
+import { analysisOf } from './analysis.js';
 
 /**
- * ESLint 9 flat-config plugin (CG-06-03): the chart configs a file hands to Chart.js, ECharts or
- * Highcharts, read without running anything, each finding at the range that wrote its value.
+ * ESLint 9 flat-config plugin (CG-06-03), over `@chartguard/source-checks`: the chart configs a file
+ * hands to Chart.js, ECharts or Highcharts, read without running anything, each finding at the range
+ * that wrote its value.
  * `valid-config` reports the validator's errors, `config-warnings` its warnings (with the runtime's
  * own renames as fixes), `chart-quality` the advisory quality warnings (with their verified edits as
  * suggestions, never applied without the user). Info findings are no claim.
  */
 export const meta = { name: '@chartguard/eslint-plugin', version: '0.1.0' };
 
+/** ESLint's fixer for an edit: the checked text is ESLint's, so its offsets are ESLint's. */
+const fixer =
+	({ start, end, text }: TextEdit): Rule.ReportFixer =>
+	(rule) =>
+		rule.replaceTextRange([start, end], text);
+
 /** What a rule declares beyond its description: the edits it may offer. */
 type Offers = Pick<Rule.RuleMetaData, 'fixable' | 'hasSuggestions'>;
 
 /** A rule reporting its own findings; the rules share one analysis per file. */
-function findingsRule(rule: RuleName, description: string, offers: Offers = {}): Rule.RuleModule {
+function findingsRule(rule: FindingKind, description: string, offers: Offers = {}): Rule.RuleModule {
 	return {
 		meta: {
 			type: rule === 'chart-quality' ? 'suggestion' : 'problem',
@@ -32,10 +39,14 @@ function findingsRule(rule: RuleName, description: string, offers: Offers = {}):
 			return {
 				Program() {
 					for (const finding of analysisOf(sourceCode, context.settings, context.filename, context.cwd)) {
-						if (finding.rule !== rule) continue;
+						if (finding.kind !== rule) continue;
 						const { fix, suggestion } = finding;
+						const loc = {
+							start: sourceCode.getLocFromIndex(finding.start),
+							end: sourceCode.getLocFromIndex(finding.end)
+						};
 						context.report({
-							loc: finding.loc,
+							loc,
 							messageId: 'finding',
 							data: { text: finding.message },
 							...(fix === undefined ? {} : { fix: fixer(fix) }),

@@ -60,6 +60,7 @@
 !/packages/**/src/generated/*.json
 !/packages/**/tests/**/*.mjs
 !/packages/cli/bin/*.mjs
+!/packages/integrations/language-server/bin/*.mjs
 # The schema generator is JavaScript with JSDoc (types are emitted from it); its pin file ships with it.
 !/packages/schema-generator/index.mjs
 !/packages/schema-generator/lib/*.mjs
