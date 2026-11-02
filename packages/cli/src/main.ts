@@ -1,4 +1,5 @@
 import { COMMAND_HANDLERS } from './commands.js';
+import { type ProjectConfig, readProjectConfig } from './config-file.js';
 import { InputError } from './errors.js';
 import { EXIT_FAILURE, EXIT_OK, EXIT_USAGE } from './exit-codes.js';
 import { type Invocation, isHelpRequest, isVersionRequest, parseInvocation, wantsJson } from './invocation.js';
@@ -43,7 +44,15 @@ export async function main(argv: readonly string[] = process.argv.slice(2), io: 
 		io.out(cliVersion());
 		return EXIT_OK;
 	}
-	const parsed = parseInvocation(argv);
+	let config: ProjectConfig | undefined;
+	try {
+		// A check reads the project's config file first (CG-06-02 part 3); schema build reads none.
+		if (argv[0] !== 'schema') config = await readProjectConfig(argv);
+	} catch (error) {
+		if (error instanceof InputError) return userError('input', error.message, wantsJson(argv), io);
+		throw error;
+	}
+	const parsed = parseInvocation(argv, config);
 	if ('reason' in parsed) return userError('usage', parsed.reason, wantsJson(argv), io);
 	return execute(parsed.invocation, io);
 }

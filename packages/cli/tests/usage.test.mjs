@@ -78,3 +78,10 @@ test('--version prints the CLI package version', async () => {
 	assert.deepEqual(await run(['--version']), { code: 0, out: VERSION, err: '' });
 	await rejects(['--version', 'extra'], /--version takes no arguments/);
 });
+
+test('an option with a default is present in every parse: it must belong to every command, or the owner check refuses it (C9)', async () => {
+	const { OPTIONS, OWNERS } = await import('../dist/option-table.js');
+	const everyCommand = ['validate', 'quality', 'analyze', 'schema'];
+	for (const [name, option] of Object.entries(OPTIONS))
+		if ('default' in option) assert.deepEqual([...OWNERS[name]].sort(), [...everyCommand].sort(), name);
+});

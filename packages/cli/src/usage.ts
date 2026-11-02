@@ -6,6 +6,10 @@ Usage:
   chartguard schema build --library highcharts [--dir <project>] [--json]
   chartguard --version | --help
 <output>: [--format text|json|sarif | --json] [--fail-on error|warning|never]
+Config: chartguard.config.json in the working directory, or --config <file>; --no-config reads none.
+  Keys: library, files, ignore, format, failOn, libraryVersion, registries, settings, patterns, project,
+  name, at the top level and in a "validate" / "quality" / "analyze" section; the command line wins,
+  then the section, then the top level. Paths in the file are relative to it.
 --file: a path, or a pattern relative to the working directory: * (within a directory), ** (any
   directories), ? (one character), {a,b}; never into node_modules or .git, never through links.
   Several files: text grouped by file, JSON { mode, files: [...] }, SARIF one log, the worst status;

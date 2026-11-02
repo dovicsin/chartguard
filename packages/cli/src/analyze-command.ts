@@ -14,7 +14,8 @@ import type { Io } from './io.js';
 import { validationOptions } from './options.js';
 import { printJson } from './report.js';
 import { type RunProperties, type SarifFinding, sarifLog, sourceRegion } from './sarif.js';
-import { loadConfigValidator, schemaNote } from './schema-source.js';
+import { loadConfigValidator, schemaNote, type SchemaSource } from './schema-source.js';
+import { settingsNote } from './several.js';
 
 /**
  * The patterns file: a JSON list; a `file` in a pattern is relative to the patterns file. Its
@@ -98,15 +99,12 @@ function entriesOf(analysis: ProjectAnalysis, check: Check): AnalyzedEntry[] {
 	);
 }
 
-export async function analyzeCommand(invocation: ConfigInvocation, io: Io): Promise<number> {
-	const { library, file, json, name } = invocation;
-	const read = await readSources(invocation);
-	const unreadable = read.analyses.filter((analysis) => !analysis.readable);
-	// Nothing could be read: each file and why, never "no chart use found".
-	if (unreadable.length > 0 && unreadable.length === read.analyses.length)
-		throw new InputError(
-			unreadable.map(({ fileName, diagnostics }) => describeUnreadable(fileName, diagnostics)).join('\n')
-		);
+/** The entries of the files that could be read, checked with the library's schema; none found is the user's input. */
+async function checkedEntries(
+	invocation: ConfigInvocation,
+	read: Read
+): Promise<{ entries: AnalyzedEntry[]; schema: SchemaSource }> {
+	const { library, file, name } = invocation;
 	const { validate, schema } = await loadConfigValidator(library, file);
 	const check = { validate, options: await validationOptions(invocation), library, name };
 	const entries = read.analyses
@@ -114,21 +112,51 @@ export async function analyzeCommand(invocation: ConfigInvocation, io: Io): Prom
 		.flatMap((analysis) => entriesOf(analysis, check));
 	if (entries.length === 0)
 		throw new InputError(`No ${library} chart use and no suitable static object found. Specify --name <variable>.`);
-	const skipped = unreadable.map(({ fileName, diagnostics }) => ({ file: fileName, diagnostics }));
+	return { entries, schema };
+}
+
+/** The entries in the invocation's format, with how they were read and checked. */
+function printAnalysis(
+	invocation: ConfigInvocation,
+	{
+		entries,
+		schema,
+		read,
+		findings
+	}: { entries: AnalyzedEntry[]; schema: SchemaSource; read: Read; findings: SarifFinding[] },
+	io: Io
+): void {
+	const { library, config } = invocation;
+	const unreadable = read.analyses
+		.filter((analysis) => !analysis.readable)
+		.map(({ fileName, diagnostics }) => ({ file: fileName, diagnostics }));
 	const project = { tsconfig: read.tsconfig ?? null, ...(read.truncated ? { truncated: true } : {}) };
+	if (invocation.format === 'sarif') {
+		const properties = { ...analysisProperties(library, entries), ...(config === undefined ? {} : { config }) };
+		printJson(sarifLog(findings, properties), io);
+		return;
+	}
+	if (invocation.json) {
+		const skipped = unreadable.length > 0 ? { unreadable } : {};
+		printJson({ mode: 'analyze', library, schema, project, entries, ...skipped }, io);
+		return;
+	}
+	if (config !== undefined) io.out(settingsNote(config));
+	const notes = { schema: schemaNote(schema, library), tsconfig: read.tsconfig, unreadable, truncated: read.truncated };
+	printEntries(entries, notes, io);
+}
+
+export async function analyzeCommand(invocation: ConfigInvocation, io: Io): Promise<number> {
+	const read = await readSources(invocation);
+	const unreadable = read.analyses.filter((analysis) => !analysis.readable);
+	// Nothing could be read: each file and why, never "no chart use found".
+	if (unreadable.length > 0 && unreadable.length === read.analyses.length)
+		throw new InputError(
+			unreadable.map(({ fileName, diagnostics }) => describeUnreadable(fileName, diagnostics)).join('\n')
+		);
+	const { entries, schema } = await checkedEntries(invocation, read);
 	const findings = entries.flatMap(findingsOf);
-	if (invocation.format === 'sarif') printJson(sarifLog(findings, analysisProperties(library, entries)), io);
-	else if (json)
-		printJson(
-			{ mode: 'analyze', library, schema, project, entries, ...(skipped.length > 0 ? { unreadable: skipped } : {}) },
-			io
-		);
-	else
-		printEntries(
-			entries,
-			{ schema: schemaNote(schema, library), tsconfig: read.tsconfig, unreadable: skipped, truncated: read.truncated },
-			io
-		);
+	printAnalysis(invocation, { entries, schema, read, findings }, io);
 	return exitStatus(invocation.failOn ?? 'error', {
 		invalid: entries.some((entry) => entry.result?.valid === false),
 		diagnostics: findings.map(({ diagnostic }) => diagnostic)

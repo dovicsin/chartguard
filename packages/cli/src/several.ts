@@ -5,6 +5,23 @@ import type { CheckedFile, UnusableFile } from './report.js';
 import { printJson } from './report.js';
 import { type RunProperties, sarifLog } from './sarif.js';
 
+/** How the files are printed: the format, whether the invocation names several, and the config file read. */
+interface PrintOptions {
+	readonly format: Format;
+	readonly several: boolean;
+	readonly config: string | undefined;
+}
+
+/** The first line of a text report completed from a config file. */
+export const settingsNote = (config: string): string => `Settings from ${config}.`;
+
+/** One file's report as before; several as `{ mode, files }`, a file that could not be used with its reason. */
+function jsonOf(mode: string, results: readonly (CheckedFile | UnusableFile)[], several: boolean): object {
+	const [only] = results;
+	if (!several && only !== undefined && 'findings' in only) return { mode, ...only.json };
+	return { mode, files: results.map((result) => ('error' in result ? result : { file: result.file, ...result.json })) };
+}
+
 /** The run's properties over several files: partial as soon as one is. */
 function mergedProperties(files: readonly CheckedFile[], mode: string): RunProperties {
 	const [first] = files;
@@ -26,33 +43,29 @@ function mergedProperties(files: readonly CheckedFile[], mode: string): RunPrope
 export function printFiles(
 	mode: string,
 	results: readonly (CheckedFile | UnusableFile)[],
-	{ format, several }: { readonly format: Format; readonly several: boolean },
+	{ format, several, config }: PrintOptions,
 	io: Io
 ): number {
 	const checked = results.filter((result): result is CheckedFile => 'findings' in result);
 	const unusable = results.filter((result): result is UnusableFile => 'error' in result);
 	for (const { error } of unusable) io.err(`ChartGuard: ${error}`);
-	if (format === 'sarif')
+	if (format === 'sarif') {
+		const properties = { ...mergedProperties(checked, mode), ...(config === undefined ? {} : { config }) };
 		printJson(
 			sarifLog(
 				checked.flatMap(({ findings }) => findings),
-				mergedProperties(checked, mode)
+				properties
 			),
 			io
 		);
-	else if (format === 'json') {
-		const [only] = checked;
-		if (!several && only !== undefined) printJson({ mode, ...only.json }, io);
-		else
-			printJson(
-				{ mode, files: results.map((result) => ('error' in result ? result : { file: result.file, ...result.json })) },
-				io
-			);
-	} else
+	} else if (format === 'json') printJson(jsonOf(mode, results, several), io);
+	else {
+		if (config !== undefined) io.out(settingsNote(config));
 		for (const result of checked) {
 			if (several) io.out(`== ${result.file}`);
 			result.text(io);
 		}
+	}
 	if (unusable.length > 0) return EXIT_USAGE;
 	return Math.max(EXIT_OK, ...checked.map(({ exitCode }) => exitCode));
 }

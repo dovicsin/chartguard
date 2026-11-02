@@ -1,10 +1,24 @@
 import { parseArgs } from 'node:util';
 
+import type { ConfigValues, ProjectConfig } from './config-file.js';
 import { isPattern } from './inputs.js';
 import { isLibrary, type Library } from './libraries.js';
+import {
+	type Command,
+	CONFIG_COMMANDS,
+	type ConfigCommand,
+	FAIL_ON,
+	type FailOn,
+	type Format,
+	FORMATS,
+	isFailOn,
+	isFormat,
+	isOptionName,
+	OPTIONS,
+	OWNERS
+} from './option-table.js';
 
-const CONFIG_COMMANDS = ['validate', 'quality', 'analyze'] as const;
-export type ConfigCommand = (typeof CONFIG_COMMANDS)[number];
+export type { ConfigCommand, FailOn, Format } from './option-table.js';
 
 /** `validate` or `quality` one input file; `analyze` one or more source files, or a whole project. */
 export interface ConfigInvocation {
@@ -35,12 +49,9 @@ export interface ConfigInvocation {
 	readonly json: boolean;
 	/** What fails the run (exit 1); undefined: the command's default (`error`; `never` for quality). */
 	readonly failOn: FailOn | undefined;
+	/** The project config file the options were completed from (CG-06-02 part 3), as named. */
+	readonly config: string | undefined;
 }
-
-const FORMATS = ['text', 'json', 'sarif'] as const;
-export type Format = (typeof FORMATS)[number];
-const FAIL_ON = ['error', 'warning', 'never'] as const;
-export type FailOn = (typeof FAIL_ON)[number];
 
 /** `schema build`: generate a library's schema from the install in a project directory. */
 export interface SchemaInvocation {
@@ -52,61 +63,16 @@ export interface SchemaInvocation {
 
 export type Invocation = ConfigInvocation | SchemaInvocation;
 
-const OPTIONS = {
-	library: { type: 'string' },
-	file: { type: 'string', multiple: true },
-	ignore: { type: 'string', multiple: true },
-	name: { type: 'string' },
-	'library-version': { type: 'string' },
-	registries: { type: 'string' },
-	project: { type: 'string' },
-	patterns: { type: 'string' },
-	settings: { type: 'string' },
-	dir: { type: 'string' },
-	json: { type: 'boolean', default: false },
-	format: { type: 'string' },
-	'fail-on': { type: 'string' }
-} as const;
-
-type OptionName = keyof typeof OPTIONS;
-type Command = ConfigCommand | 'schema';
 type Parsed = ReturnType<typeof parseArgs<{ options: typeof OPTIONS; allowPositionals: true; tokens: true }>>;
 type Values = Parsed['values'];
 
 /** A parsed invocation, or why the arguments are malformed (printed to the user as is). */
 export type InvocationResult = { readonly invocation: Invocation } | { readonly reason: string };
 
-const ALL_COMMANDS: readonly Command[] = [...CONFIG_COMMANDS, 'schema'];
-
-/**
- * Which commands take each option (C4): `--name`, `--project` and `--patterns` belong to `analyze`;
- * `--library-version` and `--registries` to the config checks, not to `quality`; `--settings` to
- * `quality` only; `--dir` to `schema build`.
- */
-const OWNERS: Readonly<Record<OptionName, readonly Command[]>> = {
-	library: ALL_COMMANDS,
-	json: ALL_COMMANDS,
-	file: CONFIG_COMMANDS,
-	ignore: CONFIG_COMMANDS,
-	name: ['analyze'],
-	project: ['analyze'],
-	patterns: ['analyze'],
-	'library-version': ['validate', 'analyze'],
-	registries: ['validate', 'analyze'],
-	settings: ['quality'],
-	dir: ['schema'],
-	format: CONFIG_COMMANDS,
-	'fail-on': CONFIG_COMMANDS
-};
-
 const HELP_WORDS: ReadonlySet<string> = new Set(['help', '--help', '-h']);
 
 function isConfigCommand(value: string | undefined): value is ConfigCommand {
 	return CONFIG_COMMANDS.some((command) => command === value);
-}
-
-function isOptionName(name: string): name is OptionName {
-	return Object.hasOwn(OPTIONS, name);
 }
 
 export function isHelpRequest(argv: readonly string[]): boolean {
@@ -128,9 +94,6 @@ export function wantsJson(argv: readonly string[]): boolean {
 		args.some((arg, index) => arg === '--format' && args[index + 1] === 'json')
 	);
 }
-
-const isFormat = (value: string): value is Format => FORMATS.some((format) => format === value);
-const isFailOn = (value: string): value is FailOn => FAIL_ON.some((level) => level === value);
 
 /** The output format: `--format`, or `--json`; both, or an unknown one, is a usage error. */
 function formatOf({ json, format }: Values): { readonly format: Format } | { readonly reason: string } {
@@ -196,7 +159,12 @@ function inputOf(command: ConfigCommand, values: Values): { readonly file: strin
 	return { reason: command === 'analyze' ? 'analyze needs --file or --project' : `${command} needs --file` };
 }
 
-function configInvocation(command: ConfigCommand, rest: readonly string[], values: Values): InvocationResult {
+function configInvocation(
+	command: ConfigCommand,
+	rest: readonly string[],
+	values: Values,
+	config: string | undefined
+): InvocationResult {
 	const [extra] = rest;
 	if (extra !== undefined) return { reason: `unexpected argument '${extra}'` };
 	const chosen = libraryOf(values);
@@ -224,7 +192,8 @@ function configInvocation(command: ConfigCommand, rest: readonly string[], value
 		settings,
 		format: output.format,
 		json: output.format === 'json',
-		failOn: output.failOn
+		failOn: output.failOn,
+		config
 	};
 	return { invocation };
 }
@@ -263,7 +232,33 @@ function commandOf(positionals: readonly string[]): { readonly command: Command 
 }
 
 /** The invocation, or the first reason it is malformed. */
-export function parseInvocation(argv: readonly string[]): InvocationResult {
+/**
+ * The command line completed from the config file (CG-06-02 part 3): an option the command line
+ * leaves out takes the file's value; `--json` or `--format` on the command line replaces its format.
+ */
+function completed(values: Values, config: ConfigValues): Values {
+	const merged: Record<string, unknown> = { ...values };
+	for (const [option, value] of Object.entries(config)) {
+		const given = option === 'format' ? (values.format ?? (values.json ? 'json' : undefined)) : merged[option];
+		if (given === undefined) merged[option] = value;
+	}
+	return merged as Values;
+}
+
+/** A check's invocation, its options completed from the config file. */
+function checkInvocation(
+	command: ConfigCommand,
+	rest: readonly string[],
+	given: Values,
+	config: ProjectConfig | undefined
+): InvocationResult {
+	if (given.config !== undefined && given['no-config'] === true)
+		return { reason: '--config and --no-config contradict each other: give one' };
+	const values = config === undefined ? given : completed(given, config.valuesFor(command));
+	return configInvocation(command, rest, values, config?.path);
+}
+
+export function parseInvocation(argv: readonly string[], config?: ProjectConfig): InvocationResult {
 	if (isVersionRequest(argv)) return { reason: '--version takes no arguments' };
 	const parsed = parse(argv);
 	if ('reason' in parsed) return parsed;
@@ -273,5 +268,6 @@ export function parseInvocation(argv: readonly string[]): InvocationResult {
 	const reason = repeated(parsed) ?? misplaced(command, parsed.values);
 	if (reason !== undefined) return { reason };
 	const rest = parsed.positionals.slice(1);
-	return command === 'schema' ? schemaInvocation(rest, parsed.values) : configInvocation(command, rest, parsed.values);
+	if (command === 'schema') return schemaInvocation(rest, parsed.values);
+	return checkInvocation(command, rest, parsed.values, config);
 }
