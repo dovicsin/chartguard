@@ -3,6 +3,7 @@ import {
 	type Fact,
 	firstSet,
 	formatPath,
+	isStaticValue,
 	type Item,
 	numberElement,
 	numberOr,
@@ -13,7 +14,6 @@ import {
 	type ValueSummary
 } from '@chartguard/quality-core';
 
-const isSet = (value: unknown): value is unknown => value !== undefined && typeof value !== 'function';
 const ARCS = new Set(['pie', 'doughnut']);
 
 /**
@@ -39,8 +39,8 @@ export function valuesOf(
 ): Fact<ValueSummary> {
 	const at = [...item.segments, 'data'];
 	const parsing = firstSet([
-		readFact(config, [...item.segments, 'parsing'], isSet),
-		readFact(config, ['options', 'parsing'], isSet)
+		readFact(config, [...item.segments, 'parsing'], isStaticValue),
+		readFact(config, ['options', 'parsing'], isStaticValue)
 	]);
 	if (!parsing.known && parsing.reason !== 'unset') return unknown(formatPath(at), parsing.reason);
 	if (parsing.known && parsing.value !== true) return unknown(formatPath(at), 'unmodelled');

@@ -1,3 +1,4 @@
+import { compareText, resolveIn, sameNode, upstreamChanged } from './nodes.mjs';
 import { runtimePointer } from './runtime.mjs';
 
 /**
@@ -17,8 +18,7 @@ const RUNTIME = {
 	animations: { file: 'dist/chunks/helpers.dataset.js', pattern: "_fallback: 'animation'" }
 };
 
-const changed = (what) => new Error(`chart.js changed: ${what}`);
-const compareText = (left, right) => (left < right ? -1 : Number(left > right));
+const changed = upstreamChanged('chart.js');
 
 const capitalize = (name) => `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
 
@@ -32,8 +32,7 @@ function prefixed(element, name) {
 /** Records one declared type for a name; a name shared by several elements collects each distinct type. */
 function collect(collected, key, property, sources) {
 	const entry = collected.get(key) ?? { nodes: [], sources: [...property.provenance.sources, ...sources] };
-	if (!entry.nodes.some((node) => JSON.stringify(node) === JSON.stringify(property.node)))
-		entry.nodes.push(property.node);
+	if (!entry.nodes.some((node) => sameNode(node, property.node))) entry.nodes.push(property.node);
 	collected.set(key, entry);
 }
 
@@ -73,7 +72,7 @@ function datasetNames(config, resolve) {
  * animation spec definitions that become open.
  */
 export function planOptionScopes(root, definitions, configNames) {
-	const resolve = (node) => (node.kind === 'ref' ? definitions[node.ref] : node);
+	const resolve = resolveIn(definitions);
 	const sources = [RUNTIME.scopes, RUNTIME.prefixes].map((fact) => ({
 		source: 'chartjs',
 		pointer: runtimePointer(root, 'chart.js', fact)

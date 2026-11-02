@@ -23,20 +23,25 @@ export { defaulted, known, unknown, valueOf } from './facts.js';
 export type { ValueRange } from './fit.js';
 export { dataRange, zeroFit } from './fit.js';
 export type { Current, Remedies, Remedy } from './fixes.js';
-export { currentAt, withFixes } from './fixes.js';
+export { currentAt, currentNumber, withFixes } from './fixes.js';
+export { LONG_MOTION_MS, SHORT_MOTION_MS } from './motion.js';
 export type { ElementReader, Item, PathSegment } from './read.js';
 export {
 	firstSet,
 	formatPath,
 	holds,
 	isBoolean,
+	isDefined,
+	isIndex,
 	isNumber,
+	isStaticValue,
 	isString,
 	itemsAt,
 	numberElement,
 	numberOr,
 	readFact,
 	readPath,
+	unreadable,
 	valuesAt
 } from './read.js';
 export { assertQualityOptions, review, RULE_CATALOG } from './review.js';

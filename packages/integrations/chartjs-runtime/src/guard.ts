@@ -8,6 +8,7 @@ import {
 } from '@chartguard/core';
 
 import { registriesOf } from './registries.js';
+import { appended, checkEnabled, inlinePlugins, runningVersion } from './setup.js';
 
 /** When a result was produced: the chart's creation, or an update (`chart.update(mode)`). */
 export interface GuardEvent {
@@ -56,8 +57,8 @@ const isPlain = (value: unknown): value is object => {
 /**
  * A copy of the plain objects in `value` as they are now, by property descriptor: data properties are
  * copied, accessors are kept as accessors and never run; anything else is shared. Arrays are shared,
- * not copied: between `guard()` and `beforeInit` Chart.js writes only into objects (chart.js@4.5.1
- * `initConfig`: `config.data`, `data.datasets`/`data.labels` when missing, `config.options`,
+ * not copied: between `guard()` and `beforeInit` Chart.js writes only into objects (`initConfig`,
+ * `SOURCES` in sources.ts: `config.data`, `data.datasets`/`data.labels` when missing, `config.options`,
  * `options.plugins`, `options.scales`; `mergeScaleConfig` merges into new objects), never into an
  * array, so a shared array still holds what the caller passed, and the copy costs nothing per data
  * point (CG-04-06).
@@ -85,14 +86,10 @@ function withProperty(object: object, key: string, value?: unknown): Record<stri
 	return copy;
 }
 
-/** The running Chart.js version, from the chart's constructor (`Chart.version`), if it has one. */
-function runningVersion(chart: GuardedChart): string | undefined {
-	const version: unknown = Object.getOwnPropertyDescriptor(chart.constructor, 'version')?.value;
-	return typeof version === 'string' ? version : undefined;
-}
-
 /** Every host Chart.js runs in has a console; the package compiles without DOM or Node types. */
 declare const console: { warn(...data: unknown[]): void };
+/** Every host Chart.js runs in has it (ES2020 hosts); the package compiles without DOM or Node types. */
+declare function queueMicrotask(callback: () => void): void;
 
 const UNCHECKED: Diagnostic = {
 	code: 'CFG_UNCHECKED',
@@ -180,6 +177,7 @@ class Guard {
 
 	constructor(
 		private readonly created: unknown,
+		private readonly inline: readonly unknown[],
 		private readonly options: GuardOptions
 	) {
 		this.validator = options.validator ?? validate;
@@ -201,12 +199,9 @@ class Guard {
 	 * `Chart.registry` holds plus the config's inline plugins (`registriesOf`). What the caller names wins.
 	 */
 	private validationOptions(chart: GuardedChart): ValidationOptions {
-		const libraryVersion = this.options.options?.libraryVersion ?? runningVersion(chart);
-		const inline: unknown = isPlain(this.created)
-			? Object.getOwnPropertyDescriptor(this.created, 'plugins')?.value
-			: undefined;
+		const libraryVersion = this.options.options?.libraryVersion ?? runningVersion(chart.constructor);
 		const registries = {
-			...registriesOf(chart.constructor as { readonly registry?: unknown }, inline),
+			...registriesOf(chart.constructor as { readonly registry?: unknown }, this.inline),
 			...this.options.options?.registries
 		};
 		return {
@@ -219,7 +214,21 @@ class Guard {
 	private create(chart: GuardedChart): void {
 		const checked = this.validator(this.created, this.validationOptions(chart));
 		this.charts.set(chart, { created: checked });
-		this.report(checked, { phase: 'create' });
+		this.deliver(checked, { phase: 'create' });
+	}
+
+	/**
+	 * Hands a result to the reporter. The hooks run inside Chart.js, which must never see a throw:
+	 * a reporter's error is rethrown outside it, in a microtask, where the host reports it as uncaught.
+	 */
+	private deliver(checked: ValidationResult, event: GuardEvent): void {
+		try {
+			this.report(checked, event);
+		} catch (error) {
+			queueMicrotask(() => {
+				throw error;
+			});
+		}
 	}
 
 	/** Records the scales at the chart's first render; whether this is that render. */
@@ -267,7 +276,7 @@ class Guard {
 		if (this.firstRender(chart, state)) return this.blocks(state.created);
 		if (this.options.updates === false) return undefined;
 		const noted = this.checkUpdate(chart, state);
-		this.report(noted, { phase: 'update', ...(mode === undefined ? {} : { mode }) });
+		this.deliver(noted, { phase: 'update', ...(mode === undefined ? {} : { mode }) });
 		return this.blocks(noted);
 	}
 }
@@ -276,10 +285,13 @@ class Guard {
  * The config with a `chartguard` plugin added (CG-04-02): pass it to `new Chart`. The config is
  * validated as given here when the chart is created, and the chart's own config at every update.
  * The caller's object is not changed, Chart.js is not patched, and no getter of the config runs.
+ * A `plugins` accessor or a non-array `plugins` is refused (`TypeError`): the guard cannot add itself
+ * without running or dropping it. A config that turns the guard off (`options.plugins: false`) is
+ * warned, and refused with `block`.
  */
 export function guard<T extends object>(config: T, options: GuardOptions = {}): T {
-	const plugins: unknown = Object.getOwnPropertyDescriptor(config, 'plugins')?.value;
-	const own: unknown[] = Array.isArray(plugins) ? plugins : [];
+	const own = inlinePlugins(config);
+	checkEnabled(config, options.block === true);
 	const created = snapshot(config);
-	return withProperty(config, 'plugins', [...own, new Guard(created, options).plugin()]) as T;
+	return withProperty(config, 'plugins', appended(own, new Guard(created, own, options).plugin())) as T;
 }

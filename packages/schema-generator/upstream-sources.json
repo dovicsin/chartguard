@@ -25,7 +25,7 @@
 				}
 			],
 			"openIssues": [
-				"Scale type defaults depend on the axis and chart type; a scale without an explicit type is reported as inconclusive until context resolution (CG-02-04)."
+				"A scale without type is checked as the type mergeScaleConfig gives it (CG-02-09); it stays inconclusive when a plugin chart or dataset type, an axis option on a non-axis id, the datasets alone or an unreadable value decide it, and a changed Chart.overrides is not modelled."
 			]
 		},
 		{
@@ -55,8 +55,7 @@
 			],
 			"openIssues": [
 				"Docs tree is unversioned; pin apache/echarts-doc by commit before use.",
-				"26268 of 58910 docs-tree nodes carry no type.",
-				"Runtime subtype defaults (dataZoom, legend, visualMap, timeline, axes) are not in the declarations; those components are inconclusive until CG-02-04."
+				"26268 of 58910 docs-tree nodes carry no type."
 			]
 		},
 		{
@@ -86,7 +85,7 @@
 			],
 			"openIssues": [
 				"Generated artifacts are never committed or published: the generator writes them to node_modules/.cache/chartguard from the local install (CG-01-05); code guard R12 checks git and npm pack.",
-				"Hand-curated config-highcharts subset (13.x) leaves union-typed fields open until CG-02-01."
+				"The hand-curated config-highcharts subset (13.x) leaves union-typed fields open; the locally generated schema checks them."
 			]
 		}
 	]

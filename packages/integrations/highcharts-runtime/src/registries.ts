@@ -9,8 +9,7 @@ export interface HighchartsRuntime {
 /**
  * The registry context of a live Highcharts (CG-04-05): the series types it has now, as
  * `highcharts.series`. `Highcharts.seriesTypes` holds every type the bundle and its loaded modules
- * registered, and `Chart#initSeries` throws error #17 for any other (highcharts@13.1.1
- * highcharts.src.js `error(17, true, …)`), so the list is complete for the charts created now.
+ * registered, and `Chart#initSeries` throws error #17 for any other (`SOURCES` in sources.ts), so the list is complete for the charts created now.
  * A namespace without `seriesTypes` gives no context, so no claim. Only own keys are read.
  */
 export function registriesOf(highcharts: HighchartsRuntime): Readonly<Record<string, RegistryContext>> {

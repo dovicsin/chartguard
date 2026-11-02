@@ -194,3 +194,24 @@ test('the message names the registry entry only where it differs from the value'
 		['"bar" is not registered with the runtime, which rejects it.', 'Register bar.']
 	);
 });
+
+test('a registry context that is not a plain object (a Map) is refused, never silently empty', () => {
+	const asMap = new Map([['runtime', { names: ['dataZoom.slider'], complete: true }]]);
+	assert.deepEqual(codes(s.object({ dataZoom }), { dataZoom: { type: 'nope' } }, asMap), [
+		'CFG_REGISTRY_CONTEXT warning $',
+		'CFG_UNKNOWN_VARIANT warning $.dataZoom.type'
+	]);
+});
+
+test('a default member with several literals names no single value the runtime picks: no registry claim (A21)', () => {
+	const ref = { id: 'r', prefix: '', enforced: true };
+	const union = (literals) =>
+		s.union([s.object({ type: s.string(literals) }), s.object({ type: s.string(['pie']) })], {
+			discriminator: 'type',
+			defaultVariant: 0,
+			registry: ref
+		});
+	const context = { r: { names: ['line', 'pie'], complete: true } };
+	assert.deepEqual(codes(s.object({ s: union(['spline']) }), { s: {} }, context), ['CFG_UNREGISTERED error $.s']);
+	assert.deepEqual(codes(s.object({ s: union(['spline', 'line']) }), { s: {} }, context), []);
+});

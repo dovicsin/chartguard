@@ -44,12 +44,13 @@ export function dataRange(series: Listed<SeriesSemantics>, key: string, at: stri
 
 /**
  * Where zero is in the ranges a runtime can fit at the sizes it can be drawn at: excluded when every
- * range leaves it out, included when none does, else it depends on the size (`layout`). The fact is at
- * the switch that asks for the fitted range.
+ * range leaves it out, included when none does, else it depends on the size (`layout`). No range at
+ * all decides nothing (`unmodelled`). The fact is at the switch that asks for the fitted range.
  */
 export function zeroFit(ranges: readonly ValueRange[], asked: KnownFact<unknown>): Fact<ZeroFit> {
+	if (ranges.length === 0) return unknown(asked.path, 'unmodelled');
 	const excludes = ranges.map(([min, max]) => min > 0 || max < 0);
-	if (excludes.length > 0 && excludes.every(Boolean)) return { ...asked, value: 'excluded' };
+	if (excludes.every(Boolean)) return { ...asked, value: 'excluded' };
 	if (!excludes.some(Boolean)) return { ...asked, value: 'included' };
 	return unknown(asked.path, 'layout');
 }

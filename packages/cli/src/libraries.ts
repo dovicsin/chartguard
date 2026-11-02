@@ -1,6 +1,7 @@
 import type { ConfigValidator, QualityReport } from '@chartguard/core';
-import type { QualityOptions } from '@chartguard/quality-chartjs';
+import type { QualityOptions } from '@chartguard/quality-core';
 
+/** The settings quality-core defines; every quality adapter re-exports this one type and accepts it. */
 export type { QualityOptions };
 
 const LIBRARIES = ['chartjs', 'echarts', 'highcharts'] as const;

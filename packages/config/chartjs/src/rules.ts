@@ -1,11 +1,15 @@
 import { type ConfigRule, itemsOf, keySegment, type Read, readOwn, type RuleContext } from '@chartguard/config-core';
 import type { Diagnostic } from '@chartguard/core';
 
-/** Whether Filler is not enabled: not registered, or switched off with `options.plugins.filler: false`; undefined when unknown. */
+/**
+ * Whether Filler is not enabled: not registered, or switched off with `options.plugins.filler: false`
+ * or `null` (`getOpts` turns `false` into `null` and passes `null` through, and `createDescriptors`
+ * skips a plugin whose options are `null`); undefined when unknown.
+ */
 function fillerDisabled(config: unknown, context: RuleContext): boolean | undefined {
 	const option = readOwn(config, 'options', 'plugins', 'filler');
 	if (!option.known) return undefined;
-	if (option.value === false) return true;
+	if (option.value === false || option.value === null) return true;
 	const registered = context.registered('chartjs.plugins', 'filler');
 	return registered === undefined ? undefined : !registered;
 }

@@ -7,12 +7,13 @@ import { UseDetector } from './detector.js';
 import { guarded, inputRefusal, truncation } from './limits.js';
 import { Notes, positionAt } from './notes.js';
 import { Origins } from './origins.js';
-import { type ChartPattern, rulesOf } from './patterns.js';
+import { type ChartPattern, type Rule, rulesOf } from './patterns.js';
 import { inMemoryProgram } from './program.js';
+import { isPureCall } from './pure.js';
 import { type Binding, bindingOf } from './scope.js';
 import type { PathFact } from './trace.js';
 import { type ChartUse, UseCollector } from './uses.js';
-import { isPureCall, withoutWritten } from './writes.js';
+import { type Call, withoutWritten } from './writes.js';
 
 export interface SourceObject {
 	readonly name: string;
@@ -127,14 +128,14 @@ export class Extraction {
 	private readonly detector: UseDetector;
 	private readonly bindings: Bindings;
 
+	/** `rules` are checked already (`rulesOf`): the caller's patterns are validated once per call. */
 	constructor(
 		private readonly program: ts.Program,
-		{ patterns = [] }: ExtractOptions = {}
+		rules: readonly Rule[]
 	) {
-		this.detector = new UseDetector(new Origins(program), rulesOf(patterns), program.getTypeChecker());
+		this.detector = new UseDetector(new Origins(program), rules, program.getTypeChecker());
 		// A chart use or a pure global leaves what it is given as it is; any other callee may change it.
-		const exempt = (call: ts.CallExpression | ts.NewExpression): boolean =>
-			this.detector.matchCall(call) !== undefined || isPureCall(call, program);
+		const exempt = (call: Call): boolean => this.detector.matchCall(call) !== undefined || isPureCall(call, program);
 		this.bindings = new Bindings(program, exempt);
 	}
 
@@ -168,14 +169,14 @@ export function extractStaticConfigs(
 	filename = 'config.ts',
 	options: ExtractOptions = {}
 ): AnalysisOutput {
-	rulesOf(options.patterns);
+	const rules = rulesOf(options.patterns);
 	const refusal = inputRefusal(source, filename);
 	if (refusal !== undefined) return refused(refusal);
 	return guarded(
 		filename,
 		() => {
 			const { program, file } = inMemoryProgram(source, filename);
-			return new Extraction(program, options).read({ file, fileName: filename });
+			return new Extraction(program, rules).read({ file, fileName: filename });
 		},
 		refused
 	);

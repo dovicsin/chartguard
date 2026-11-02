@@ -13,17 +13,16 @@ import {
 	withFixes
 } from '@chartguard/quality-core';
 
-import { asText, axesOf } from './axes.js';
+import { asText, axesOf, isText } from './axes.js';
 import { REMEDIES } from './fixes.js';
 import { motionOf } from './motion.js';
 import { scalesOf } from './scales.js';
 import { addedScales, seriesOf } from './series.js';
 
-const TITLE_SHOWN: Default<boolean> = { value: false, pointer: 'chart.js@4.5.1 dist/chart.js:8960 display: false,' };
-
-/** Chart.js titles are a string or one string per line. */
-const isText = (value: unknown): value is string | string[] =>
-	typeof value === 'string' || (Array.isArray(value) && (value as unknown[]).every((line) => typeof line === 'string'));
+const TITLE_SHOWN: Default<boolean> = {
+	value: false,
+	pointer: 'chart.js@4.5.1 dist/chart.js:8960 display: false, [in var plugin_title]'
+};
 
 /** The Chart.js config as library-neutral chart semantics (CG-05-02, CG-05-03). */
 export function normalize(config: unknown): ChartSemantics {

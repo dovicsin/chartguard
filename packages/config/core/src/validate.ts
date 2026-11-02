@@ -4,7 +4,7 @@ import { unresolved } from './diagnostics.js';
 import { readRegistries, type Registries } from './registry.js';
 import { type ConfigRule, ruleContext } from './rules.js';
 import type { SchemaManifest } from './schema.js';
-import { compatibility } from './version.js';
+import { type Compatibility, compatibility } from './version.js';
 import { ConfigWalker } from './walker.js';
 
 /** What one validation consults besides the input and the schema. */
@@ -22,9 +22,17 @@ function walk(input: unknown, manifest: SchemaManifest, { options, registries, r
 	return [...walker.diagnostics, ...rules.flatMap((rule) => rule.check(input, context))];
 }
 
-/** A confirmed error from a schema for another version is only a likely problem for this one. */
-function asUnresolved(diagnostic: Diagnostic): Diagnostic {
-	return diagnostic.severity === 'error' ? { ...diagnostic, severity: 'warning', confidence: 'unknown' } : diagnostic;
+/**
+ * A finding from a schema for another version is undecided for this one (A18): a confirmed error is a
+ * warning, and no finding stays certain (a deprecation or an ignored option may differ between
+ * versions). A fix is not offered: it was verified against the schema's version only.
+ */
+function asUnresolved({ fix: _fix, ...diagnostic }: Diagnostic): Diagnostic {
+	return {
+		...diagnostic,
+		severity: diagnostic.severity === 'error' ? 'warning' : diagnostic.severity,
+		confidence: 'unknown'
+	};
 }
 
 /**
@@ -32,15 +40,20 @@ function asUnresolved(diagnostic: Diagnostic): Diagnostic {
  * the schema's version or not given; downgraded for another minor or patch; not validated at all
  * for another major or a version that is not exact.
  */
-function versionedDiagnostics(input: unknown, manifest: SchemaManifest, context: Context): Diagnostic[] {
+function versionedDiagnostics(
+	input: unknown,
+	manifest: SchemaManifest,
+	context: Context,
+	fit: Compatibility | undefined
+): Diagnostic[] {
 	const requested = context.options.libraryVersion;
-	if (requested === undefined) return walk(input, manifest, context);
+	if (requested === undefined || fit === undefined) return walk(input, manifest, context);
 	const schema = `${manifest.library} ${manifest.version}`;
-	switch (compatibility(manifest.version, requested)) {
+	switch (fit) {
 		case 'exact':
 			return walk(input, manifest, context);
 		case 'same-major': {
-			const note = `Validated against ${schema}; ${requested} may accept or reject options differently, so confirmed errors are reported as warnings.`;
+			const note = `Validated against ${schema}; ${requested} may accept or reject options differently, so confirmed errors are reported as warnings and no finding is certain.`;
 			return [unresolved('CFG_VERSION_MISMATCH', '$', note), ...walk(input, manifest, context).map(asUnresolved)];
 		}
 		case 'other-major':
@@ -71,9 +84,10 @@ export function validateConfig(
 ): ValidationResult {
 	const reading = readRegistries(options.registries, manifest.root);
 	const context = { options, registries: reading.registries, rules };
-	const diagnostics = [...reading.diagnostics, ...versionedDiagnostics(input, manifest, context)];
 	const { libraryVersion } = options;
-	const versionDiffers = libraryVersion !== undefined && compatibility(manifest.version, libraryVersion) !== 'exact';
+	const fit = libraryVersion === undefined ? undefined : compatibility(manifest.version, libraryVersion);
+	const diagnostics = [...reading.diagnostics, ...versionedDiagnostics(input, manifest, context, fit)];
+	const versionDiffers = fit !== undefined && fit !== 'exact';
 	const coverage = options.incomplete === true || versionDiffers ? 'partial' : manifest.coverage;
 	const checked = result(manifest.library, manifest.version, coverage, diagnostics);
 	const ids = manifest.extensions?.list.map(({ id }) => id);

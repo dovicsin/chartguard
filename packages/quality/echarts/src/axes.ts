@@ -5,6 +5,7 @@ import {
 	type Fact,
 	formatPath,
 	isBoolean,
+	isIndex,
 	isNumber,
 	isString,
 	type Item,
@@ -28,8 +29,6 @@ const FIRST_AXIS: Default<number> = {
 		'echarts@6.1.0 dist/echarts.js:8912 result.models = opt.useDefault && (firstCmpt = ecModel.getComponent(mainType)) ? [firstCmpt] : [];'
 };
 const AXIS_TYPE = "echarts@6.1.0 dist/echarts.js:48731 return option.type || (option.data ? 'category' : 'value');";
-
-const isIndex = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0;
 
 /** The axes of one direction (`yAxis: {…}` or `yAxis: [...]`), keyed `yAxis[i]`. */
 function axisItems(config: unknown, direction: Direction): Listed<Item> {
@@ -60,9 +59,18 @@ export function axisType(config: unknown, direction: Direction, index: number): 
 }
 
 /** An axis is shown, and its name empty, unless set. */
-const SHOWN: Default<boolean> = { value: true, pointer: 'echarts@6.1.0 dist/echarts.js:48470 show: true,' };
-const NAME: Default<string> = { value: '', pointer: "echarts@6.1.0 dist/echarts.js:48476 name: ''," };
-const INVERSE: Default<boolean> = { value: false, pointer: 'echarts@6.1.0 dist/echarts.js:48474 inverse: false,' };
+const SHOWN: Default<boolean> = {
+	value: true,
+	pointer: 'echarts@6.1.0 dist/echarts.js:48470 show: true, [after mixin(CartesianAxisModel]'
+};
+const NAME: Default<string> = {
+	value: '',
+	pointer: "echarts@6.1.0 dist/echarts.js:48476 name: '', [after mixin(CartesianAxisModel]"
+};
+const INVERSE: Default<boolean> = {
+	value: false,
+	pointer: 'echarts@6.1.0 dist/echarts.js:48474 inverse: false, [after mixin(CartesianAxisModel]'
+};
 const SCALE_TYPES: Readonly<Record<string, ScaleType>> = {
 	value: 'linear',
 	log: 'log',

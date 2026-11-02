@@ -15,7 +15,9 @@ const LOCAL = fileURLToPath(
 const generated = createValidator(JSON.parse(readFileSync(LOCAL, 'utf8')));
 const full = { validator: generated, onResult: () => undefined };
 const quiet = { onResult: () => undefined };
-const findings = (result) => result.diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`);
+/** The charts here are fakes not created through createChart: the note that their version is unknown has its own test (version.test.mjs). */
+const findings = (result) =>
+	result.diagnostics.filter((d) => d.code !== 'CFG_VERSION_UNKNOWN').map((d) => `${d.severity} ${d.code} ${d.path}`);
 
 /** A Highcharts namespace whose constructors record their calls. */
 function namespace(version = '13.1.1') {

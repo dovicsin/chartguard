@@ -106,3 +106,14 @@ test('a required property set to undefined is missing, exactly as the walker tre
 	Object.defineProperty(accessor, 'kind', { enumerable: true, get: () => 'bar' });
 	assert.deepEqual(codes(accessor), ['CFG_DYNAMIC $.kind']);
 });
+
+test('a non-enumerable own property is noted, never checked nor counted as valid', () => {
+	const value = Object.defineProperty({}, 'type', { value: 7 });
+	const root = s.object({ type: s.string() }, { required: ['type'], additional: 'deny' });
+	const checked = validateConfig(value, { library: 'test', version: '1.0.0', coverage: 'full', source: 'test', root });
+	assert.equal(checked.status, 'partial');
+	assert.deepEqual(
+		checked.diagnostics.map((d) => `${d.code} ${d.confidence} ${d.path}`),
+		['CFG_DYNAMIC unknown $.type']
+	);
+});

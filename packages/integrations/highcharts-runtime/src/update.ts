@@ -1,6 +1,6 @@
-import { result, type ValidationResult } from '@chartguard/core';
+import type { ValidationResult } from '@chartguard/core';
 
-import { type ChartGuard, optionsFor, proceed, validatorOf } from './report.js';
+import { type ChartGuard, noted, optionsFor, proceed, validatorOf } from './report.js';
 import { chartTypeOf, type HighchartsChart, planUpdate, typed } from './series.js';
 
 /** `chart.update`'s arguments after the options. */
@@ -38,10 +38,7 @@ export function checkUpdate(
 	const { view, findings, pathOf } = planUpdate(chart, options, settings.oneToOne === true);
 	const checked = validatorOf(guard)(view, { ...optionsFor(chart, guard), incomplete: true });
 	const diagnostics = checked.diagnostics.map((diagnostic) => ({ ...diagnostic, path: pathOf(diagnostic.path) }));
-	return {
-		...checked,
-		...result(checked.library, checked.schemaVersion, checked.coverage, [...diagnostics, ...findings])
-	};
+	return noted(chart, guard, { ...checked, diagnostics }, findings);
 }
 
 /** The safe `chart.update` path (CG-04-04): `checkUpdate`, reported, then the update unless `block` and invalid. */
@@ -68,7 +65,7 @@ export function addSeries<C extends HighchartsChart>(
 	guard: ChartGuard = {}
 ): Added<ReturnType<C['addSeries']>> {
 	const view = { series: [typed(options, chartTypeOf(chart, undefined))] };
-	const checked = validatorOf(guard)(view, { ...optionsFor(chart, guard), incomplete: true });
+	const checked = noted(chart, guard, validatorOf(guard)(view, { ...optionsFor(chart, guard), incomplete: true }));
 	if (!proceed(checked, 'addSeries', guard)) return { series: undefined, result: checked };
 	const series = chart.addSeries(options, settings.redraw, settings.animation) as ReturnType<C['addSeries']>;
 	return { series, result: checked };

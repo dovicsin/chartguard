@@ -1,6 +1,7 @@
-import { type Diagnostic, isContainer, ownDataProperty, suggestion } from '@chartguard/core';
+import { type Diagnostic, ownDataProperty, suggestion } from '@chartguard/core';
 
 import { unresolved } from './diagnostics.js';
+import { isPlainData } from './kind.js';
 import type { Handler, NodeSchema, RegistryRef } from './schema.js';
 
 /** One registry of the caller's runtime, as the engine reads it. */
@@ -86,14 +87,15 @@ function namesOf(context: object): ReadonlySet<string> | undefined {
 }
 
 function readRegistry(context: unknown): Registry | undefined {
-	if (!isContainer(context) || Array.isArray(context)) return undefined;
+	if (!isPlainData(context)) return undefined;
 	const complete = ownDataProperty(context, 'complete');
 	const names = namesOf(context);
 	if (!complete.found || typeof complete.value !== 'boolean' || names === undefined) return undefined;
 	return { names, complete: complete.value };
 }
 
-const MALFORMED = 'Registry context must map registry ids to { names: string[], complete: boolean }; ignored.';
+const MALFORMED =
+	'Registry context must be a plain object mapping registry ids to { names: string[], complete: boolean }; ignored.';
 
 export interface RegistryContextReading {
 	readonly registries: Registries;
@@ -106,7 +108,8 @@ export interface RegistryContextReading {
  */
 export function readRegistries(input: unknown, root: NodeSchema): RegistryContextReading {
 	if (input === undefined) return { registries: new Map(), diagnostics: [] };
-	if (!isContainer(input) || Array.isArray(input))
+	// A Map or a class instance has no own keys to read: refused as a whole, never silently empty.
+	if (!isPlainData(input))
 		return { registries: new Map(), diagnostics: [unresolved('CFG_REGISTRY_CONTEXT', '$', MALFORMED)] };
 	const registries = new Map<string, Registry>();
 	for (const id of Object.keys(input)) {

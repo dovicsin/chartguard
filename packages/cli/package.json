@@ -27,6 +27,7 @@
 		"@chartguard/config-chartjs": "0.1.0",
 		"@chartguard/config-echarts": "0.1.0",
 		"@chartguard/config-highcharts": "0.1.0",
+		"@chartguard/quality-core": "0.1.0",
 		"@chartguard/quality-chartjs": "0.1.0",
 		"@chartguard/quality-echarts": "0.1.0",
 		"@chartguard/quality-highcharts": "0.1.0",

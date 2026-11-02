@@ -1,7 +1,7 @@
 import ts from 'typescript';
 
 /** The analysed file inside a Program built only to be read: nothing is emitted or run. */
-export interface ReadOnlyProgram {
+interface ReadOnlyProgram {
 	readonly program: ts.Program;
 	readonly file: ts.SourceFile;
 }

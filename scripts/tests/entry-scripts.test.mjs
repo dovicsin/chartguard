@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -49,4 +49,33 @@ test('the test runner finds the same test files from any working directory', (t)
 	const files = JSON.parse(listed.stdout);
 	assert.deepEqual(files, testFiles());
 	assert.ok(files.includes(join(ROOT, 'scripts', 'tests', 'entry-scripts.test.mjs')));
+});
+
+/** Every `*.test.mjs` under a `tests` directory at any depth, outside `node_modules` and `dist`. */
+function recursiveFind(root) {
+	return ['packages', 'apps', 'scripts', 'tools']
+		.flatMap((top) => readdirSync(join(root, top), { recursive: true }).map((path) => join(root, top, path)))
+		.filter((path) => path.endsWith('.test.mjs'))
+		.filter((path) => {
+			const segments = path.slice(root.length).split(sep);
+			const below = segments.slice(0, -1);
+			return below.includes('tests') && !below.includes('node_modules') && !below.includes('dist');
+		})
+		.sort();
+}
+
+test('the test runner runs every test file under tests/, nested ones too', (t) => {
+	const root = elsewhere(t);
+	const files = [
+		'packages/a/tests/top.test.mjs',
+		'packages/a/tests/nested/deep.test.mjs',
+		'apps/b/tests/x/y/z.test.mjs'
+	];
+	for (const directory of ['packages', 'apps', 'scripts', 'tools']) mkdirSync(join(root, directory));
+	for (const file of [...files, 'packages/a/tests/fixtures/data.json', 'packages/a/node_modules/m/tests/no.test.mjs']) {
+		mkdirSync(join(root, file, '..'), { recursive: true });
+		writeFileSync(join(root, file), '');
+	}
+	assert.deepEqual(testFiles(root).sort(), files.map((file) => join(root, file)).sort());
+	assert.deepEqual(testFiles().sort(), recursiveFind(ROOT));
 });

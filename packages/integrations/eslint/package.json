@@ -1,6 +1,7 @@
 {
 	"name": "@chartguard/eslint-plugin",
 	"version": "0.1.0",
+	"private": true,
 	"description": "ESLint adapter reserved: deliberately not advertised as ready",
 	"type": "module",
 	"license": "MIT",

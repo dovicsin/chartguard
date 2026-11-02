@@ -173,8 +173,18 @@ export class StaticDecoder {
 		if (target === undefined) return UNRESOLVED;
 		if (target.kind === 'undefined') return known(undefined);
 		if (scope.seen.has(target.declaration)) return unknownAt(node, 'cycle');
-		// A top-level constant or an export reads no builder's parameters.
-		const decoded = this.decode(target.expression, within(scope, target.declaration, undefined));
-		return withoutWritten(decoded, this.bindings.writesTo(target.declaration));
+		return this.decodeBound(target, scope).read;
+	}
+
+	/**
+	 * A constant's value as its declaration writes it (`initial`), and as code reads it with every
+	 * written path left out (`read`). A top-level constant or an export reads no builder's parameters.
+	 */
+	decodeBound(
+		target: Extract<Target, { kind: 'value' }>,
+		scope: Scope = ROOT_SCOPE
+	): { readonly initial: Decoded; readonly read: Decoded } {
+		const initial = this.decode(target.expression, within(scope, target.declaration, undefined));
+		return { initial, read: withoutWritten(initial, this.bindings.writesTo(target.declaration)) };
 	}
 }

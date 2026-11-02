@@ -37,6 +37,16 @@ test('a Filler disabled in options.plugins is not enabled either, also without a
 	]);
 });
 
+test('a Filler switched off with null is disabled as with false; null is not a type error (getOpts passes it through)', () => {
+	const config = line({ fill: true }, { plugins: { filler: null } });
+	assert.deepEqual(ruled(config, withFiller), ['warning certain $.data.datasets[0].fill']);
+	assert.deepEqual(
+		validate(config).diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`),
+		['warning CFG_INEFFECTIVE $.data.datasets[0].fill']
+	);
+	assert.deepEqual(validate(line({}, { plugins: { legend: null, tooltip: null } })).diagnostics, []);
+});
+
 test('no claim when the plugin is enabled, its state is unknown, or fill is falsy, a callback or unreadable', () => {
 	assert.deepEqual(ruled(line({ fill: true }), withFiller), []);
 	assert.deepEqual(ruled(line({ fill: true })), []);

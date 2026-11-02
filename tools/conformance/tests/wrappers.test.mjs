@@ -13,7 +13,8 @@ import * as echarts from 'echarts';
 import { guard, registriesOf as chartjsRegistries } from '../../../packages/integrations/chartjs-runtime/dist/index.js';
 import {
 	checkOption,
-	registriesOf as echartsRegistries
+	registriesOf as echartsRegistries,
+	setOption
 } from '../../../packages/integrations/echarts-runtime/dist/index.js';
 import { addSeries, checkUpdate, createChart } from '../../../packages/integrations/highcharts-runtime/dist/index.js';
 import { createChartjs } from '../lib/chartjs.mjs';
@@ -220,6 +221,16 @@ for (const wrapper of WRAPPERS) {
 		assert.ok(within([bare, wrapped]), `wrapped ${wrapped.toFixed(2)} ms vs validation ${bare.toFixed(2)} ms`);
 	});
 }
+
+test('runtime-echarts is measured as a merge into a real chart holding an option of the same size: the getOption clone counts', () => {
+	const input = echartsOption(1000);
+	const chart = heldChart(input);
+	assert.equal(typeof chart.getZr, 'function', 'a real echarts instance, not a fake');
+	assert.equal(chart.getOption().series[0].data.length, 1000);
+	const events = [];
+	setOption(chart, input, undefined, { validator: validateEcharts, onResult: (_, event) => events.push(event) });
+	assert.deepEqual(events, [{ fresh: false }]);
+});
 
 test('a full lifecycle through every wrapper leaves no global state behind, and a destroyed chart leaves nothing registered', () => {
 	for (const wrapper of WRAPPERS) wrapper.run(wrapper.input(10), wrapper.validator);

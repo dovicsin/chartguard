@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import test from 'node:test';
 
 import { isEntryPoint } from '../entry.mjs';
@@ -34,5 +35,28 @@ test(
 		);
 		const child = spawnSync('sh', ['-c', `"${process.execPath}" "${script}" | head -c 1`], { encoding: 'utf8' });
 		assert.equal(child.stderr, '');
+	}
+);
+
+test(
+	'an entry point whose stderr reader has gone exits quietly with its own status',
+	{ skip: process.platform === 'win32' },
+	async (t) => {
+		const { mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
+		const { tmpdir } = await import('node:os');
+		const { join } = await import('node:path');
+		const directory = mkdtempSync(join(tmpdir(), 'entry-'));
+		t.after(() => rmSync(directory, { recursive: true, force: true }));
+		const script = join(directory, 'complains.mjs');
+		writeFileSync(
+			script,
+			`import { runAsEntryPoint } from ${JSON.stringify(ENTRY)};
+		await runAsEntryPoint(import.meta.url, () => { for (let i = 0; i < 100; i++) process.stderr.write('problem\\n'); return 2; });`
+		);
+		const child = spawn(process.execPath, [script], { stdio: ['ignore', 'ignore', 'pipe'] });
+		// The reader closes before the tool writes: every write to stderr meets a closed pipe.
+		child.stderr.destroy();
+		const [status] = await once(child, 'close');
+		assert.equal(status, 2);
 	}
 );

@@ -7,7 +7,7 @@ Library-neutral chart semantics and the advisory quality rules that read them. T
 Every fact is one of:
 
 - **known from the config**, with the path it was read from;
-- **the runtime's default**, with a pointer to the line of the pinned package that applies it;
+- **the runtime's default**, with a pointer to the line of the pinned package that applies it (`<package>@<version> <file>:<line> <text>`; a text that is not distinctive in that file names its context, ` [in TitleModel.defaultOption]` or ` [after …]`, and a test checks it names exactly one line);
 - **declared by the caller** (`context`), for a fact the chart leaves to the page;
 - **unknown**, with its reason: `unset`, `accessor`, `dynamic`, `shape`, `unmodelled`, `inapplicable`, `layout` (it depends on the size the chart is drawn at) or `page` (the chart leaves it to the page it is shown in).
 

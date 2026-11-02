@@ -4,6 +4,7 @@ import {
 	type Fact,
 	firstSet,
 	isNumber,
+	isStaticValue,
 	isString,
 	type Item,
 	itemsAt,
@@ -19,12 +20,9 @@ import {
 } from '@chartguard/quality-core';
 
 import { shadesOf } from './shades.js';
+import { scopedFacts, seriesOption, seriesType } from './type.js';
 import { valuesOf } from './values.js';
 
-const CHART_TYPE: Default<string> = {
-	value: 'line',
-	pointer: "highcharts@13.1.1 highcharts.src.js:1191 type: 'line',"
-};
 /** A series binds the axis its `yAxis` names by index or id, else the first (`Series#bindAxes`). */
 const BIND_AXIS = 'highcharts@13.1.1 highcharts.src.js:33142 if ((seriesOptions[coll] ?? 0) === axis.index ||';
 /** `inverted` and `polar` come from the chart options, else from a series type that requires them (`propFromSeries`). */
@@ -44,14 +42,6 @@ const KINDS: Readonly<Record<string, SeriesKind>> = {
 	pie: 'pie'
 };
 const STACKINGS: Readonly<Record<string, Stacking>> = { normal: 'stacked', percent: 'percent' };
-
-const isSet = (value: unknown): value is unknown => value !== undefined && typeof value !== 'function';
-
-/** A series' type: its own, else the chart's (`Chart#initSeries`: `options.type || optionsChart.type`). */
-function typeOf(config: unknown, item: Item): Fact<string> {
-	const own = readFact(config, [...item.segments, 'type'], isString);
-	return own.known || own.reason !== 'unset' ? own : readFact(config, ['chart', 'type'], isString, CHART_TYPE);
-}
 
 /** What the whole chart decides for its series: its coordinate system and whether it is inverted. */
 export interface ChartLayout {
@@ -78,9 +68,8 @@ function boundAxis(config: unknown, named: Fact<number | string>): Fact<string> 
 }
 
 /** `stacking` resolves through the series, the options for its type and those for every series. */
-function stackingOf(config: unknown, item: Item, type: string): Fact<Stacking> {
-	const at = (path: readonly (string | number)[]): Fact<unknown> => readFact(config, [...path, 'stacking'], isSet);
-	const stacking = firstSet([at(item.segments), at(['plotOptions', type]), at(['plotOptions', 'series'])]);
+function stackingOf(config: unknown, item: Item, type: Fact<string>): Fact<Stacking> {
+	const stacking = firstSet(scopedFacts(config, item, type, { name: 'stacking', is: isStaticValue }));
 	if (!stacking.known)
 		return stacking.reason === 'unset'
 			? { known: true, value: 'none', path: stacking.path, source: 'default', pointer: STACKS }
@@ -94,30 +83,9 @@ function stackingOf(config: unknown, item: Item, type: string): Fact<Stacking> {
 /** Columns and bars grow from their `threshold`, zero by default; `null` grows them from the axis minimum. */
 const THRESHOLD: Default<number | null> = {
 	value: 0,
-	pointer: 'highcharts@13.1.1 highcharts.src.js:44250 threshold: 0,'
+	pointer: 'highcharts@13.1.1 highcharts.src.js:44250 threshold: 0, [in const ColumnSeriesDefaults]'
 };
 const isThreshold = (value: unknown): value is number | null => value === null || isNumber(value);
-
-/** A series option: its name, the values read, and the runtime default. */
-export interface SeriesOption<T> {
-	readonly name: string;
-	readonly is: (value: unknown) => value is T;
-	readonly fallback?: Default<T>;
-}
-
-/** An option of a series as its options merge: the series, the options for its type, those for every series. */
-export function seriesOption<T>(
-	config: unknown,
-	item: Item,
-	type: string,
-	{ name, is, fallback }: SeriesOption<T>
-): Fact<T> {
-	const scopes = [item.segments, ['plotOptions', type], ['plotOptions', 'series']];
-	return firstSet(
-		scopes.map((scope) => readFact(config, [...scope, name], is)),
-		fallback
-	);
-}
 
 /** Whether the y axis `key` (`yAxis[i]`) may be logarithmic: its type is not known to be another. */
 function maybeLog(config: unknown, key: string): boolean {
@@ -138,7 +106,7 @@ function baseOf(config: unknown, item: Item, type: Fact<string>, valueAxis: Fact
 	if (!type.known || KINDS[type.value] !== 'bar') return unknown(at, type.known ? 'inapplicable' : type.reason);
 	if (!valueAxis.known) return unknown(at, valueAxis.reason);
 	if (maybeLog(config, valueAxis.value)) return unknown(at, 'inapplicable');
-	const threshold = seriesOption(config, item, type.value, { name: 'threshold', is: isThreshold, fallback: THRESHOLD });
+	const threshold = seriesOption(config, item, type, { name: 'threshold', is: isThreshold, fallback: THRESHOLD });
 	if (!threshold.known) return threshold;
 	return threshold.value === null ? unknown(threshold.path, 'layout') : (threshold as Fact<number>);
 }
@@ -170,12 +138,12 @@ function layoutOf(config: unknown, item: Item, type: Fact<string>, chart: ChartL
 		coordinateSystem: chart.coordinateSystem,
 		orientation: polar ? unknown(item.path, 'inapplicable') : chart.orientation,
 		valueAxis: boundAxis(config, named),
-		stacking: stackingOf(config, item, type.value)
+		stacking: stackingOf(config, item, type)
 	};
 }
 
 export function seriesOf(config: unknown, item: Item, chart: ChartLayout, color: Fact<string>): SeriesSemantics {
-	const type = typeOf(config, item);
+	const type = seriesType(config, item);
 	const layout = layoutOf(config, item, type, chart);
 	return {
 		path: item.path,

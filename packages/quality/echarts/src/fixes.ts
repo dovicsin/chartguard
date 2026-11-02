@@ -1,12 +1,16 @@
-import { type Current, currentAt, type Remedies, type Remedy } from '@chartguard/quality-core';
+import {
+	type Current,
+	currentAt,
+	currentNumber,
+	LONG_MOTION_MS,
+	type Remedies,
+	type Remedy,
+	SHORT_MOTION_MS
+} from '@chartguard/quality-core';
 
-const ONE_SECOND = 1000;
-const LIMIT = 5000;
 /** One run of a lines effect lasts `effect.period` seconds (default 4, dist/echarts.js:69478) unless `constantSpeed` sets it. */
 const PERIOD_LIMIT = 5;
 
-const numberOf = (now: Current): number | undefined =>
-	now.set && typeof now.value === 'number' ? now.value : undefined;
 const unsetOr = (now: Current, value: unknown): boolean => !now.set || now.value === value;
 
 /** Whether one run of the lines effect whose `loop` is at `path` is known to last at most five seconds. */
@@ -27,16 +31,16 @@ function motionRemedy(now: Current, path: string, config: unknown): Remedy | und
 		};
 	if (path.endsWith('.effect.loop') && unsetOr(now, true) && shortRun(config, path))
 		return { value: false, effect: 'The lines effect runs once instead of forever.' };
-	const value = numberOf(now);
-	return path.endsWith('animationDuration') && value !== undefined && value > LIMIT
-		? { value: ONE_SECOND, effect: 'The animation lasts one second instead of more than five.' }
+	const value = currentNumber(now);
+	return path.endsWith('animationDuration') && value !== undefined && value > LONG_MOTION_MS
+		? { value: SHORT_MOTION_MS, effect: 'The animation lasts one second instead of more than five.' }
 		: undefined;
 }
 
 /** ECharts remedies (CG-05-06), each verified by the review before it is offered. */
 export const REMEDIES: Remedies = {
 	'bar-baseline': (now) => {
-		const value = numberOf(now);
+		const value = currentNumber(now);
 		if ((value !== undefined && value !== 0) || (now.set && now.value === 'dataMin'))
 			return { value: 0, effect: 'The bars grow from zero again, so their lengths are proportional to their values.' };
 		return now.set && now.value === true

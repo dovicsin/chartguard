@@ -111,6 +111,9 @@ type KnownFact<T> = {
     readonly pointer: string;
 };
 
+### LONG_MOTION_MS
+LONG_MOTION_MS = 5000
+
 ### Listed
 type Listed<T> = {
     readonly known: true;
@@ -194,6 +197,9 @@ interface RuleSetting {
 ### SEVERITY_OF_IMPACT
 SEVERITY_OF_IMPACT: Readonly<Record<Impact, 'warning' | 'info'>>
 
+### SHORT_MOTION_MS
+SHORT_MOTION_MS = 1000
+
 ### ScaleType
 type ScaleType = 'linear' | 'log' | 'category' | 'time' | 'other';
 
@@ -275,6 +281,9 @@ function contrastRatio(foreground: string, background: string): number | undefin
 ### currentAt
 function currentAt(config: unknown, path: string): Current | undefined;
 
+### currentNumber
+currentNumber: (now: Current) => number | undefined
+
 ### dataRange
 function dataRange(series: Listed<SeriesSemantics>, key: string, at: string): Fact<ValueRange>;
 
@@ -293,8 +302,17 @@ function holds(root: unknown, path: readonly PathSegment[]): boolean;
 ### isBoolean
 isBoolean: (value: unknown) => value is boolean
 
+### isDefined
+isDefined: (value: unknown) => value is unknown
+
+### isIndex
+isIndex: (value: unknown) => value is number
+
 ### isNumber
 isNumber: (value: unknown) => value is number
+
+### isStaticValue
+isStaticValue: (value: unknown) => value is unknown
 
 ### isString
 isString: (value: unknown) => value is string
@@ -330,6 +348,9 @@ function sameShades(color: Fact<string>): Fact<Shades>;
 
 ### unknown
 unknown: (path: string, reason: UnknownReason) => UnknownFact
+
+### unreadable
+unreadable: (fact: Fact<unknown>) => boolean
 
 ### valueOf
 valueOf: <T>(fact: Fact<T>) => T | undefined

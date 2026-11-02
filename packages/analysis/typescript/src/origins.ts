@@ -32,7 +32,16 @@ function installedPackage(fileName: string): string | undefined {
 	return first.startsWith('@') && second !== undefined ? `${first}/${second}` : first;
 }
 
+/** `import x = require('m')`: the module it names, when it names one by a string. */
+function requiredSpecifier(declaration: ts.ImportEqualsDeclaration): string | undefined {
+	const reference = declaration.moduleReference;
+	return ts.isExternalModuleReference(reference) && ts.isStringLiteral(reference.expression)
+		? reference.expression.text
+		: undefined;
+}
+
 function specifierOf(node: ts.Node): string | undefined {
+	if (ts.isImportEqualsDeclaration(node)) return requiredSpecifier(node);
 	const declaration = ts.findAncestor(
 		node,
 		(ancestor) => ts.isImportDeclaration(ancestor) || ts.isExportDeclaration(ancestor)
@@ -49,6 +58,8 @@ function importedPath(declaration: ts.Node): string[] | undefined {
 		return [(declaration.propertyName ?? declaration.name).text];
 	if (ts.isImportClause(declaration)) return ['default'];
 	if (ts.isNamespaceImport(declaration)) return [];
+	// `import x = require('m')` binds the whole module, as `import * as x` does.
+	if (ts.isImportEqualsDeclaration(declaration) && requiredSpecifier(declaration) !== undefined) return [];
 	return undefined;
 }
 

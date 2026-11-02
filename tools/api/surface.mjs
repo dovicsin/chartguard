@@ -1,15 +1,68 @@
-import { join } from 'node:path';
+import { realpathSync } from 'node:fs';
+import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 
 import ts from 'typescript';
 
 import { publishedPackages } from '../shared/workspace.mjs';
 
+const printer = ts.createPrinter({ removeComments: true });
+
+/** A declaration as a consumer reads it: comments removed, without `export`/`declare`. */
+const printed = (declaration) =>
+	printer
+		.printNode(ts.EmitHint.Unspecified, declaration, declaration.getSourceFile())
+		.replace(/^(export )?(declare )?/, '');
+
+const resolved = (checker, symbol) =>
+	symbol !== undefined && (symbol.flags & ts.SymbolFlags.Alias) !== 0 ? checker.getAliasedSymbol(symbol) : symbol;
+
+/** The name a type reference, `typeof` query, heritage clause or `import("…").X` names. */
+function referenceName(node) {
+	if (ts.isTypeReferenceNode(node)) return node.typeName;
+	if (ts.isExpressionWithTypeArguments(node)) return node.expression;
+	if (ts.isTypeQueryNode(node)) return node.exprName;
+	return ts.isImportTypeNode(node) ? node.qualifier : undefined;
+}
+
+function referencesIn(declaration, checker) {
+	const symbols = [];
+	const visit = (node) => {
+		const name = referenceName(node);
+		if (name !== undefined) symbols.push(resolved(checker, checker.getSymbolAtLocation(name)));
+		ts.forEachChild(node, visit);
+	};
+	visit(declaration);
+	return symbols.filter((symbol) => symbol !== undefined && (symbol.flags & ts.SymbolFlags.TypeParameter) === 0);
+}
+
+/**
+ * The declarations `declarations` reference, transitively, that the entry point does not export
+ * but this package declares: their shape is part of the export's, so a change inside one changes
+ * the export. Other packages' types are on their own surfaces; the platform's are not ours.
+ */
+function internalsOf(declarations, { checker, exported, inPackage }) {
+	const found = new Map();
+	const queue = [...declarations];
+	while (queue.length > 0) {
+		for (const symbol of referencesIn(queue.pop(), checker)) {
+			if (exported.has(symbol) || found.has(symbol)) continue;
+			const own = (symbol.declarations ?? []).filter((declaration) => inPackage(declaration.getSourceFile()));
+			if (own.length === 0) continue;
+			found.set(symbol, own);
+			queue.push(...own);
+		}
+	}
+	return [...found].map(([symbol, own]) => `// uses ${symbol.name}\n${own.map(printed).join('\n')}`).sort(byCodePoint);
+}
+
 /**
  * The public API surface of a package entry point (CG-00-07): every export, by name, with the
- * declaration text it resolves to (re-exports followed, comments removed). Read from the emitted
- * `.d.ts`, which is what a consumer compiles against.
+ * declaration text it resolves to (re-exports followed, comments removed), followed by every
+ * non-exported declaration of the package it references (`// uses Name`). Read from the emitted
+ * `.d.ts`, which is what a consumer compiles against. `packageDir` bounds "of the package"
+ * (default: the declaration file's directory).
  */
-export function surfaceOf(declarationFile) {
+export function surfaceOf(declarationFile, packageDir = dirname(declarationFile)) {
 	const program = ts.createProgram([declarationFile], {
 		noEmit: true,
 		noLib: true,
@@ -22,15 +75,17 @@ export function surfaceOf(declarationFile) {
 	const file = program.getSourceFile(declarationFile);
 	const module = file === undefined ? undefined : checker.getSymbolAtLocation(file);
 	if (module === undefined) throw new Error(`Not a module: ${declarationFile}`);
-	const printer = ts.createPrinter({ removeComments: true });
+	const exports = checker.getExportsOfModule(module).map((symbol) => [symbol.name, resolved(checker, symbol)]);
+	const root = realpathSync(packageDir);
+	const inPackage = (source) => {
+		const path = relative(root, realpathSync(source.fileName));
+		return path !== '' && !isAbsolute(path) && path.split(sep)[0] !== '..';
+	};
+	const context = { checker, exported: new Set(exports.map(([, target]) => target)), inPackage };
 	const surface = new Map();
-	for (const symbol of checker.getExportsOfModule(module)) {
-		const target = (symbol.flags & ts.SymbolFlags.Alias) === 0 ? symbol : checker.getAliasedSymbol(symbol);
-		const text = (target.declarations ?? [])
-			.map((declaration) => printer.printNode(ts.EmitHint.Unspecified, declaration, declaration.getSourceFile()))
-			.map((printed) => printed.replace(/^(export )?(declare )?/, ''))
-			.join('\n');
-		surface.set(symbol.name, text);
+	for (const [name, target] of exports) {
+		const declarations = target.declarations ?? [];
+		surface.set(name, [...declarations.map(printed), ...internalsOf(declarations, context)].join('\n'));
 	}
 	return surface;
 }
@@ -45,7 +100,8 @@ function entriesOf({ path, manifest }) {
 		.map(([key, target]) => ({
 			packageName: manifest.name,
 			specifier: key === '.' ? manifest.name : `${manifest.name}${key.slice(1)}`,
-			types: join(path, target.types)
+			types: join(path, target.types),
+			packageDir: path
 		}));
 }
 
@@ -58,8 +114,8 @@ export function publishedEntryPoints(root) {
 
 /** A package's surface file: each entry point, then each export with its declaration, in code-point order. */
 export function surfaceText(entries) {
-	const blocks = entries.map(({ specifier, types }) => {
-		const surface = surfaceOf(types);
+	const blocks = entries.map(({ specifier, types, packageDir }) => {
+		const surface = surfaceOf(types, packageDir);
 		const exports = [...surface.keys()].sort(byCodePoint).map((name) => `### ${name}\n${surface.get(name)}`);
 		return [`## ${specifier}`, ...exports].join('\n\n');
 	});

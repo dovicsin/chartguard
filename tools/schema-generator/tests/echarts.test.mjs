@@ -170,3 +170,60 @@ test('deprecations: the declarations state some, the runtime renames others; onl
 	assert.equal(barStyle.properties.barBorderRadius.deprecated.renameTo, 'borderRadius');
 	assert.equal(resolve(variant('line').properties.itemStyle.node).properties.barBorderRadius, undefined);
 });
+
+const seriesVariant = (type) => {
+	const items = resolve(
+		resolve(option.properties.series.node).anyOf.find((member) => resolve(member).kind === 'array').items
+	);
+	return resolve(items.anyOf.find((member) => resolve(member).properties.type.node.value === type));
+};
+const nested = (node, ...path) => path.reduce((current, key) => resolve(resolve(current).properties[key].node), node);
+
+test('compatBarItemStyle renames in the bar series, its emphasis, each data item and its emphasis; never elsewhere', () => {
+	const bar = seriesVariant('bar');
+	const item = resolve(bar.properties.data.node.items)
+		.anyOf.map(resolve)
+		.find((member) => member.properties?.itemStyle);
+	const styles = [
+		nested(bar, 'emphasis', 'itemStyle'),
+		nested(item, 'itemStyle'),
+		nested(item, 'emphasis', 'itemStyle')
+	];
+	for (const style of styles)
+		for (const part of ['Radius', 'Color', 'Width'])
+			assert.equal(style.properties[`barBorder${part}`].deprecated.renameTo, `border${part}`);
+	assert.equal(nested(seriesVariant('pictorialBar'), 'emphasis', 'itemStyle').properties.barBorderRadius, undefined);
+	// backgroundStyle is renamed inside backgroundStyle.itemStyle, which the background does not read.
+	assert.equal(nested(bar, 'backgroundStyle').properties.barBorderRadius, undefined);
+});
+
+test('compatSunburstState renames downplay on the series and on every node of its tree, at every depth', () => {
+	const sunburst = seriesVariant('sunburst');
+	assert.deepEqual(sunburst.properties.downplay.deprecated, {
+		message: 'downplay is deprecated; use blur instead.',
+		replacement: 'blur',
+		renameTo: 'blur'
+	});
+	const node = resolve(sunburst.properties.data.node.items);
+	assert.equal(node.properties.downplay.deprecated.renameTo, 'blur');
+	assert.equal(resolve(node.properties.children.node.items), node);
+	const pointers = sunburst.properties.downplay.provenance.sources.map(({ pointer }) => pointer);
+	assert.ok(pointers.every((pointer) => /^echarts\/lib\/preprocessor\/backwardCompat\.js:\d+$/.test(pointer)));
+});
+
+test('a copy into another option is named, never a rename; an unreachable rename is not modelled', () => {
+	const sunburst = seriesVariant('sunburst');
+	assert.deepEqual(sunburst.properties.highlightPolicy.deprecated, {
+		message: 'highlightPolicy is deprecated; use emphasis.focus instead.',
+		replacement: 'emphasis.focus'
+	});
+	assert.deepEqual(sunburst.properties.highlightPolicy.node, nested(sunburst, 'emphasis').properties.focus.node);
+	// hoverAnimation is copied for every series; an alias wherever the series reads emphasis.scale.
+	assert.deepEqual(seriesVariant('pie').properties.hoverAnimation.deprecated, {
+		message: 'hoverAnimation is deprecated; use emphasis.scale instead.',
+		replacement: 'emphasis.scale'
+	});
+	assert.equal(seriesVariant('bar').properties.hoverAnimation, undefined);
+	// The gauge branch follows `pie || gauge`: pointer.color is never copied.
+	assert.equal(nested(seriesVariant('gauge'), 'pointer').properties.color, undefined);
+});

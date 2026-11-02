@@ -31,6 +31,19 @@ test('bar baseline: a range fitted to the data that excludes zero at every size,
 	assert.deepEqual(run({}, [{ ...series('bar', none('$.a')), base: fact(20, '$.s.base') }]), []);
 });
 
+test('bar baseline: a scale type that is not known may be logarithmic, which has no zero: nothing is claimed (A51)', () => {
+	const bar = (base = none('$.base')) => ({ ...series('bar', fact('y', '$.a')), base });
+	const run = (extra, items = [bar()]) =>
+		codes(
+			review(chart({ items, axes: [axis('y', none('$.y.min'), { scale: none('$.y.type', 'accessor'), ...extra })] }))
+		);
+	assert.deepEqual(run({ min: fact(5, '$.y.min') }), []);
+	assert.deepEqual(run({ fit: fact('excluded', '$.y.scale') }), []);
+	assert.deepEqual(run({}, [bar(fact(20, '$.s.base'))]), []);
+	// The same axis with its type known to be linear: each is a finding.
+	assert.deepEqual(run({ min: fact(5, '$.y.min'), scale: fact('linear', '$.y.type') }), ['VIS_BAR_BASELINE $.y.min']);
+});
+
 test('percent without unit: a percent-stacked series on an axis whose labels and title are known to show no %', () => {
 	const stacked = (stacking) => ({ ...series('area', fact('y', '$.a')), stacking });
 	const run = (extra, stacking = fact('percent', '$.stacking')) =>
@@ -114,6 +127,8 @@ test('zeroFit: excluded when every range leaves zero out, included when none doe
 		]),
 		'? layout $.y.beginAtZero'
 	);
+	// No range at all is not known to include zero.
+	assert.equal(where([]), '? unmodelled $.y.beginAtZero');
 });
 
 test('bar baseline: an axis that starts (or ends) at the data cuts the bars only when the data lies above (or below) zero (H8)', () => {

@@ -30,3 +30,26 @@ test('no built-in endless motion; series animations merged across scopes', () =>
 	);
 	assert.equal(longest({ series: [] }), '0 config $.series');
 });
+
+test('a series type that cannot be read leaves the options for its type unknown', () => {
+	const hiddenType = (rest) => Object.defineProperty({ ...rest }, 'type', { get: () => 'column', enumerable: true });
+	// plotOptions.line would apply only if the series were a line: which scope applies is not known.
+	assert.equal(
+		longest({ plotOptions: { line: { animation: { duration: 6000 } } }, series: [hiddenType({ data: [1] })] }),
+		'? accessor $.series[0].type'
+	);
+	// The series' own option decides before its type's.
+	assert.equal(
+		longest({
+			plotOptions: { line: { animation: { duration: 6000 } } },
+			series: [hiddenType({ animation: false, data: [1] })]
+		}),
+		'0 config $.series[0].animation'
+	);
+	// A chart type behind a getter, likewise.
+	const chart = Object.defineProperty({}, 'type', { get: () => 'column', enumerable: true });
+	assert.equal(
+		longest({ chart, plotOptions: { line: { animation: { duration: 6000 } } }, series: [{ data: [1] }] }),
+		'? accessor $.chart.type'
+	);
+});

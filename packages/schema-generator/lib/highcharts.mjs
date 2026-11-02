@@ -1,6 +1,7 @@
 import { omit } from './digest.mjs';
 import { TypeEmitter } from './emitter.mjs';
 import { withHighchartsRuntimeFacts } from './highcharts-runtime.mjs';
+import { upstreamChanged } from './nodes.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
 import { runtimePointer, runtimeSection } from './runtime.mjs';
 import { artifactOf } from './types.mjs';
@@ -27,7 +28,7 @@ const CHART_DEFAULTS = { file: 'highcharts.src.js', pattern: 'const ChartDefault
 /** A member of the `ChartDefaults` object itself, not of a nested one: four spaces of indentation. */
 const DEFAULT_TYPE = /^ {4}type: '(\w+)',$/;
 
-const changed = (what) => new Error(`highcharts types changed: ${what}`);
+const changed = upstreamChanged('highcharts types');
 
 function typeLiteral(definitions, member) {
 	const target = member.kind === 'ref' ? definitions[member.ref] : member;
@@ -68,11 +69,11 @@ function seriesUnion(root, definitions, option) {
 	const typed = union.anyOf.filter((member) => typeLiteral(definitions, member) !== undefined);
 	if (union.anyOf.length - typed.length !== 1)
 		throw changed('expected exactly one series member without a type literal');
+	if (typed.some((member) => member.kind !== 'ref')) throw changed('expected every series variant to be a definition');
 	const { fallback, provenance } = seriesDefault(root);
 	const variants = Object.fromEntries(
 		typed.map((member) => [member.ref, withOptionalType(definitions[member.ref], provenance)])
 	);
-	if (typed.some((member) => member.kind !== 'ref')) throw changed('expected every series variant to be a definition');
 	return {
 		name,
 		variants,

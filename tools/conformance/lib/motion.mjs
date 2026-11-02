@@ -39,12 +39,14 @@ function loops(chart) {
 	return found;
 }
 
-/** echarts: endless is a looping animator in the rendered chart; longest the resolved animation duration. */
+/**
+ * echarts: endless is a looping animator in the rendered chart; longest the longest duration of a series
+ * the runtime animates (`SeriesModel#isAnimationEnabled`, which the harness's `ssr` chart lets run in Node).
+ */
 export function echartsMotion(chart) {
-	const model = chart.getModel();
-	const durations =
-		model.get('animation') === false
-			? [0]
-			: [model.get('animationDuration'), ...model.getSeries().map((series) => series.get('animationDuration'))];
-	return { endless: loops(chart), longest: Math.max(...durations) };
+	const animated = chart
+		.getModel()
+		.getSeries()
+		.filter((series) => series.isAnimationEnabled());
+	return { endless: loops(chart), longest: Math.max(0, ...animated.map((series) => series.get('animationDuration'))) };
 }

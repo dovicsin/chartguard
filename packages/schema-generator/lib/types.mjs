@@ -1,12 +1,14 @@
 import ts from 'typescript';
 
+import { upstreamChanged } from './nodes.mjs';
+
 /**
  * Checked lookups into upstream declarations. Each throws with the library name when the
  * declarations no longer have the expected shape, so an upstream change fails generation
  * loudly instead of producing a silently different artifact.
  */
 export function typeLookups(checker, library) {
-	const changed = (what) => new Error(`${library} types changed: ${what}`);
+	const changed = upstreamChanged(`${library} types`);
 	const property = (type, name) => {
 		const symbol = checker.getPropertyOfType(type, name);
 		if (symbol === undefined) throw changed(`no "${name}" property`);

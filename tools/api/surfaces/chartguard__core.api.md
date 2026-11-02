@@ -95,7 +95,7 @@ interface Suppression {
 }
 
 ### ValidateBeforeCreate
-type ValidateBeforeCreate = <T>(config: unknown, create: (value: unknown) => T, report?: ValidationReporter) => T;
+type ValidateBeforeCreate = <T>(config: unknown, create: (value: unknown) => T, report?: ValidationReporter, options?: ValidationOptions) => T;
 
 ### ValidationOptions
 interface ValidationOptions {

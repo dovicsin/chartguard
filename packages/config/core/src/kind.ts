@@ -18,7 +18,7 @@ export function kindOf(value: unknown): string {
  * with no enumerable members of its own, never an object that inherits data (`Object.create({ a: 1 })`),
  * a class instance or a platform object. Lists are not plain objects.
  */
-export function isPlainData(value: unknown): boolean {
+export function isPlainData(value: unknown): value is object {
 	if (typeof value !== 'object' || value === null || isListLike(value)) return false;
 	const prototype: unknown = Object.getPrototypeOf(value);
 	if (prototype === null) return true;

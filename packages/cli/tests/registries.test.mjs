@@ -4,14 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import { main } from '../bin/chartguard.mjs';
-
-async function run(argv) {
-	const out = [];
-	const err = [];
-	const code = await main(argv, { out: (line) => out.push(line), err: (line) => err.push(line) });
-	return { code, out: out.join('\n'), err: err.join('\n') };
-}
+import { run } from './helpers.mjs';
 
 /** A project with a config, a source file and registry context files. */
 function project(t) {

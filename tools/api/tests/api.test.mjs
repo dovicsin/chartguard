@@ -49,3 +49,35 @@ test('a surface follows re-exports to their declarations and ignores comments', 
 	assert.equal(surface.get('start'), 'function run(input: string): number;');
 	assert.match(surface.get('Options'), /^interface Options \{\s+readonly depth\?: number;\s+\}$/);
 });
+
+test('a change inside a type an export references but does not export changes the export', (t) => {
+	const directory = mkdtempSync(join(tmpdir(), 'chartguard-api-'));
+	t.after(() => rmSync(directory, { recursive: true, force: true }));
+	const surface = (inner) => {
+		writeFileSync(
+			join(directory, 'impl.d.ts'),
+			`interface Inner { ${inner} }\ninterface Settings<T> { readonly inner: Inner; readonly value: T; }\n` +
+				'export interface Shown { readonly n: number; }\n' +
+				'export declare function run(settings: Settings<Shown>): Shown;\n'
+		);
+		writeFileSync(join(directory, 'index.d.ts'), "export { run, type Shown } from './impl.js';\n");
+		return surfaceOf(join(directory, 'index.d.ts'));
+	};
+	const before = surface('readonly depth: number;');
+	// Referenced internals (transitively) are part of the export's text; exported ones are not repeated.
+	assert.match(
+		before.get('run'),
+		/^function run\(settings: Settings<Shown>\): Shown;\n\/\/ uses Inner\ninterface Inner/
+	);
+	assert.match(before.get('run'), /\/\/ uses Settings\ninterface Settings<T>/);
+	assert.doesNotMatch(before.get('run'), /uses Shown|uses T\b/);
+	assert.equal(before.get('Shown'), surface('readonly depth: number;').get('Shown'));
+	const after = surface('readonly depth: string;');
+	assert.deepEqual(
+		compareSurfaces(new Map([['pkg run', before.get('run')]]), new Map([['pkg run', after.get('run')]])),
+		{
+			breaking: ['changed pkg run'],
+			additive: []
+		}
+	);
+});

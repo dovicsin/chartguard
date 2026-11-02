@@ -8,6 +8,11 @@ interface ArrayNode extends NodeBase {
     readonly kind: 'array';
     readonly items: IrNode;
 }
+// uses NodeBase
+interface NodeBase {
+    readonly provenance?: Provenance;
+    readonly docs?: string;
+}
 
 ### ArtifactCheck
 interface ArtifactCheck {
@@ -20,6 +25,13 @@ type Compatibility = 'exact' | 'same-major' | 'other-major' | 'malformed';
 
 ### ConfidenceTier
 type ConfidenceTier = (typeof CONFIDENCE_TIERS)[number];
+// uses CONFIDENCE_TIERS
+CONFIDENCE_TIERS: readonly [
+    "authoritative",
+    "derived",
+    "manual",
+    "unknown"
+]
 
 ### ConfigRule
 interface ConfigRule {
@@ -100,6 +112,11 @@ interface LiteralNode extends NodeBase {
     readonly kind: 'literal';
     readonly value: string | number | boolean | null;
 }
+// uses NodeBase
+interface NodeBase {
+    readonly provenance?: Provenance;
+    readonly docs?: string;
+}
 
 ### LoweredSchema
 interface LoweredSchema {
@@ -143,6 +160,11 @@ interface ObjectNode extends NodeBase {
     readonly host?: string;
     readonly includes?: readonly string[];
 }
+// uses NodeBase
+interface NodeBase {
+    readonly provenance?: Provenance;
+    readonly docs?: string;
+}
 
 ### ObjectOptions
 interface ObjectOptions {
@@ -152,10 +174,21 @@ interface ObjectOptions {
 
 ### Openness
 type Openness = (typeof OPENNESS)[number];
+// uses OPENNESS
+OPENNESS: readonly [
+    "closed",
+    "open",
+    "unknown"
+]
 
 ### PrimitiveNode
 interface PrimitiveNode extends NodeBase {
     readonly kind: 'string' | 'number' | 'boolean' | 'null' | 'function' | 'unknown';
+}
+// uses NodeBase
+interface NodeBase {
+    readonly provenance?: Provenance;
+    readonly docs?: string;
 }
 
 ### PropertyNode
@@ -187,11 +220,21 @@ interface RecordNode extends NodeBase {
     readonly kind: 'record';
     readonly values: IrNode;
 }
+// uses NodeBase
+interface NodeBase {
+    readonly provenance?: Provenance;
+    readonly docs?: string;
+}
 
 ### RefNode
 interface RefNode extends NodeBase {
     readonly kind: 'ref';
     readonly ref: string;
+}
+// uses NodeBase
+interface NodeBase {
+    readonly provenance?: Provenance;
+    readonly docs?: string;
 }
 
 ### RegistryRef
@@ -254,9 +297,20 @@ interface ScriptableNode extends NodeBase {
     readonly kind: 'scriptable';
     readonly value: IrNode;
 }
+// uses NodeBase
+interface NodeBase {
+    readonly provenance?: Provenance;
+    readonly docs?: string;
+}
 
 ### SourceKind
 type SourceKind = (typeof SOURCE_KINDS)[number];
+// uses SOURCE_KINDS
+SOURCE_KINDS: readonly [
+    "npm-package",
+    "docs-tree",
+    "manual"
+]
 
 ### SourceRecord
 interface SourceRecord {
@@ -285,6 +339,11 @@ interface UnionNode extends NodeBase {
     readonly extensible?: boolean;
     readonly registry?: RegistryRef;
     readonly extensionPoint?: string;
+}
+// uses NodeBase
+interface NodeBase {
+    readonly provenance?: Provenance;
+    readonly docs?: string;
 }
 
 ### UnionOptions

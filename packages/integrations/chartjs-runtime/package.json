@@ -33,6 +33,14 @@
 		"@chartguard/core": "0.1.0",
 		"@chartguard/config-chartjs": "0.1.0"
 	},
+	"peerDependencies": {
+		"chart.js": "^4.5.1"
+	},
+	"peerDependenciesMeta": {
+		"chart.js": {
+			"optional": false
+		}
+	},
 	"publishConfig": {
 		"access": "public"
 	}

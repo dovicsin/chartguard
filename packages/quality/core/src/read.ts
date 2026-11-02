@@ -90,6 +90,15 @@ export function holds(root: unknown, path: readonly PathSegment[]): boolean {
 export const isString = (value: unknown): value is string => typeof value === 'string';
 export const isNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 export const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
+/** Any value the config holds, a function included: a fact that only asks whether an option is set. */
+export const isDefined = (value: unknown): value is unknown => value !== undefined;
+/** A value the config holds that is not a function (a function decides at runtime: `dynamic`). */
+/** A list index: an integer from zero. */
+export const isIndex = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0;
+export const isStaticValue = (value: unknown): value is unknown => value !== undefined && typeof value !== 'function';
+
+/** Whether a fact is set in the config but cannot be read (a getter, a function, another shape): not merely unset. */
+export const unreadable = (fact: Fact<unknown>): boolean => !fact.known && fact.reason !== 'unset';
 
 /**
  * An option the runtime resolves through scopes, most specific first (a series, then the options for

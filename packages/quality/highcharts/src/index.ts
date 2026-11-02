@@ -30,9 +30,10 @@ import {
 import { seriesColors } from './color.js';
 import { REMEDIES } from './fixes.js';
 import { motionOf } from './motion.js';
-import { FROM_SERIES, seriesOf, seriesOption } from './series.js';
+import { FROM_SERIES, seriesOf } from './series.js';
 import { backgroundOf } from './shades.js';
 import { axisTitleOf, chartTitleOf } from './titles.js';
+import { seriesOption } from './type.js';
 
 /** The option that rounds each bound out to a tick, by bound. */
 const ON_TICK = { min: 'startOnTick', max: 'endOnTick' } as const;
@@ -181,24 +182,29 @@ function fittedBy(
 	{ kind, type, valueAxis, base }: SeriesSemantics,
 	key: string
 ): UnknownFact | undefined {
-	if (valueOf(kind) !== 'bar' || valueOf(valueAxis) !== key || !type.known) return undefined;
-	const soft = seriesOption(config, item, type.value, { name: 'softThreshold', is: isBoolean, fallback: SOFT });
+	if (valueOf(kind) !== 'bar' || valueOf(valueAxis) !== key) return undefined;
+	const soft = seriesOption(config, item, type, { name: 'softThreshold', is: isBoolean, fallback: SOFT });
 	if (soft.known && !soft.value) return unknown(soft.path, 'layout');
 	return !base.known && base.reason === 'layout' ? base : undefined;
 }
 
+/** The switch that asks every series for a range fitted to the data, where an unset fit is (B3). */
+const FIT_SWITCH = formatPath(['plotOptions', 'series', 'softThreshold']);
+
 /**
  * Highcharts fits a y axis to the data when a bar on it turns its soft threshold off or has no
  * threshold (`null`): the range then follows the tick algorithm, which depends on the plot size.
+ * The switches are the series'; when no bar on the axis sets one, the fact is unset at `FIT_SWITCH`.
  */
-function fitOf(config: unknown, key: string, at: string, series: Series): Fact<ZeroFit> {
-	if (!series.items.known || !series.semantics.known) return unknown(at, 'unset');
+function fitOf(config: unknown, key: string, series: Series): Fact<ZeroFit> {
+	if (!series.items.known) return series.items;
+	if (!series.semantics.known) return series.semantics;
 	const { items } = series.items;
 	const fitted = series.semantics.items.map((semantics, index) => {
 		const item = items[index];
 		return item === undefined ? undefined : fittedBy(config, item, semantics, key);
 	});
-	return fitted.find((fact) => fact !== undefined) ?? unknown(at, 'unset');
+	return fitted.find((fact) => fact !== undefined) ?? unknown(FIT_SWITCH, 'unset');
 }
 
 /** The series as read and as semantics. */
@@ -219,7 +225,7 @@ function axesOf(config: unknown, series: Series): AxisSemantics[] {
 			scale: scaleOf(config, axis.segments),
 			min: boundOf(config, axis.segments, name, 'min'),
 			max: boundOf(config, axis.segments, name, 'max'),
-			fit: fitOf(config, `${name}[${String(index)}]`, axis.path, series),
+			fit: fitOf(config, `${name}[${String(index)}]`, series),
 			unit: unitOf(config, axis.segments),
 			panel: panelOf(config, axis.segments),
 			reversed: readFact(config, [...axis.segments, 'reversed'], isBoolean, name === 'yAxis' ? Y_REVERSED : undefined),
@@ -236,14 +242,18 @@ function axesOf(config: unknown, series: Series): AxisSemantics[] {
 function accessOf(config: unknown): AccessSemantics {
 	const enabled = readFact(config, ['accessibility', 'enabled'], isBoolean);
 	if (enabled.known && !enabled.value) return { dataDescribed: enabled, keyboard: enabled };
+	// A switch that cannot be read decides the data's description, and the keyboard unless it is off by its own switch.
+	const unread = enabled.known || enabled.reason === 'unset' ? undefined : enabled;
+	return { dataDescribed: unread ?? unknown(enabled.path, 'unmodelled'), keyboard: keyboardOf(config, unread) };
+}
+
+/** Keyboard access: off by its own switch; otherwise the module (or a switch not read) decides. */
+function keyboardOf(config: unknown, unread: UnknownFact | undefined): Fact<boolean> {
 	const keyboard = readFact(config, ['accessibility', 'keyboardNavigation', 'enabled'], isBoolean);
-	return {
-		dataDescribed: enabled.known || enabled.reason === 'unset' ? unknown(enabled.path, 'unmodelled') : enabled,
-		keyboard:
-			keyboard.known && !keyboard.value
-				? keyboard
-				: unknown(keyboard.path, keyboard.known || keyboard.reason === 'unset' ? 'unmodelled' : keyboard.reason)
-	};
+	if (keyboard.known && !keyboard.value) return keyboard;
+	return (
+		unread ?? unknown(keyboard.path, keyboard.known || keyboard.reason === 'unset' ? 'unmodelled' : keyboard.reason)
+	);
 }
 
 /** The Highcharts options as library-neutral chart semantics (CG-05-02, CG-05-03). */

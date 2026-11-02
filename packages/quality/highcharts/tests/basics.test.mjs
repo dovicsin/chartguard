@@ -161,7 +161,7 @@ test('stacking resolves through the series, plotOptions for its type and plotOpt
 });
 
 test('every runtime default points at the line of the pinned highcharts that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 32));
+	assert.equal(checkPackagePointers(import.meta.url), 31));
 
 test('titles: null hides a title; a y axis without text takes lang.yAxisTitle, else "Values"; an implicit y axis is read', () => {
 	const hidden = normalize({ title: { text: null }, yAxis: { title: { text: null } } });
@@ -195,5 +195,15 @@ test('access: off with accessibility.enabled false; keyboard off by its own swit
 	assert.deepEqual(access({ accessibility: { keyboardNavigation: { enabled: false } } }), [
 		'? unmodelled $.accessibility.enabled',
 		'false config $.accessibility.keyboardNavigation.enabled'
+	]);
+	// A switch that cannot be read decides both, unless keyboard navigation is off by its own switch.
+	const hidden = (rest) => Object.defineProperty({ ...rest }, 'enabled', { get: () => false, enumerable: true });
+	assert.deepEqual(access({ accessibility: hidden({ keyboardNavigation: { enabled: false } }) }), [
+		'? accessor $.accessibility.enabled',
+		'false config $.accessibility.keyboardNavigation.enabled'
+	]);
+	assert.deepEqual(access({ accessibility: hidden({}) }), [
+		'? accessor $.accessibility.enabled',
+		'? accessor $.accessibility.enabled'
 	]);
 });

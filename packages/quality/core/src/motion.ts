@@ -2,8 +2,10 @@ import { rule, SOURCES } from './catalog.js';
 
 /** The motion rules (CG-05-04 part 7). */
 
-/** WCAG 2.2 SC 2.2.2: moving content that starts by itself and lasts longer than this needs a way to pause it. */
-const LIMIT = 5000;
+/** WCAG 2.2 SC 2.2.2: moving content that starts by itself and lasts longer than this (ms) needs a way to pause it. */
+export const LONG_MOTION_MS = 5000;
+/** The duration (ms) the long-motion fixes give an animation that lasts too long. */
+export const SHORT_MOTION_MS = 1000;
 
 export const longMotion = rule(
 	{
@@ -29,7 +31,8 @@ export const longMotion = rule(
 		limits: [
 			'A control the page gives to pause or stop the chart meets the criterion; the config does not show it. Declaring it (`context.pausesMotion: true`) suppresses the finding.',
 			"None of the pinned runtimes follows the user's reduced-motion preference: short animations are not reported, and the preference is left to the page.",
-			'Only the motion when the chart is drawn is checked, not the animations of later updates.'
+			'Only the motion when the chart is drawn is checked, not the animations of later updates.',
+			'ECharts does not animate a series with `animation: false` or with more data than its `animationThreshold`; a data count from a `dataset`, of a hierarchy or of a `large` series is unknown, and so is whether that series animates.'
 		]
 	},
 	({ motion: { endless, longest } }, report) => {
@@ -40,7 +43,7 @@ export const longMotion = rule(
 					'This chart keeps moving without end: give readers a way to stop it, or show the effect only on hover.'
 				)
 			];
-		if (longest.known && longest.value > LIMIT)
+		if (longest.known && longest.value > LONG_MOTION_MS)
 			return [
 				report(
 					longest.path,

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { runAsEntryPoint } from '../shared/entry.mjs';
@@ -11,9 +12,9 @@ import { runAsEntryPoint } from '../shared/entry.mjs';
  */
 export const OUTLINE = 'https://echarts.apache.org/en/documents/option-parts/option-outline.json';
 export const PAGE = 'https://echarts.apache.org/en/option.html';
-const ROOT = fileURLToPath(new URL('../..', import.meta.url));
-export const DOCS_FILE = `${ROOT}packages/config/echarts/src/generated/echarts-docs.json`;
-const ARTIFACT = `${ROOT}packages/config/echarts/src/generated/echarts-6.1.0.json`;
+const GENERATED = fileURLToPath(new URL('../../packages/config/echarts/src/generated/', import.meta.url));
+export const DOCS_FILE = join(GENERATED, 'echarts-docs.json');
+const ARTIFACT = join(GENERATED, 'echarts-6.1.0.json');
 
 /** A node's anchor: an option is `parent.prop`; a list item `parent-type`. */
 function anchorOf(node, at) {

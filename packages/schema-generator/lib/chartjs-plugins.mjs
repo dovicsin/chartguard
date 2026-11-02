@@ -7,6 +7,8 @@ import { runtimePointer } from './runtime.mjs';
  * plugin in the pinned runtime, or generation fails.
  */
 const DESCRIPTORS = { file: 'dist/chart.js', pattern: 'const opts = getOpts(options[id], all);' };
+/** `getOpts` turns `false` into `null` and passes `null` through; `createDescriptors` then skips the plugin. */
+const SKIPPED = { file: 'dist/chart.js', pattern: 'if (opts === null) {' };
 
 const pluginPointer = (root, id) =>
 	runtimePointer(root, 'chart.js', { file: 'dist/chart.js', pattern: `id: '${id}',` });
@@ -27,12 +29,13 @@ export function pluginDefinitions(definitions, configNames) {
  */
 export function planPluginHandlers(root, definitions, configNames) {
 	const descriptors = runtimePointer(root, 'chart.js', DESCRIPTORS);
+	const skipped = runtimePointer(root, 'chart.js', SKIPPED);
 	return pluginDefinitions(definitions, configNames).flatMap((definition) =>
 		Object.keys(definitions[definition].properties).map((property) => ({
 			definition,
 			property,
 			handledBy: { id: 'chartjs.plugins', name: property, enforced: false },
-			sources: [descriptors, pluginPointer(root, property)].map((pointer) => ({ source: 'chartjs', pointer }))
+			sources: [descriptors, skipped, pluginPointer(root, property)].map((pointer) => ({ source: 'chartjs', pointer }))
 		}))
 	);
 }

@@ -4,11 +4,12 @@ import ts from 'typescript';
 import type { Bindings } from './bindings.js';
 import { type Decoded, known } from './decoded.js';
 import type { StaticDecoder } from './decoder.js';
-import type { Call, Tag, UseDetector } from './detector.js';
+import type { Tag, UseDetector } from './detector.js';
 import { chartjsConfig, type Prop, propsOf } from './jsx.js';
 import { type Notes, type Position, positionAt } from './notes.js';
 import type { ChartLibrary, PropRule, Rule } from './patterns.js';
 import type { PathFact, Trace } from './trace.js';
+import type { Call } from './writes.js';
 
 /** A place where the analysed file hands a config to a chart library (CG-03-06). */
 export interface ChartUse {
@@ -91,18 +92,19 @@ export class UseCollector {
 	 * names its writes (`CFG_MUTATED`); what is unresolved apart from them is `CFG_DYNAMIC`.
 	 */
 	private read(expression: ts.Expression, at: Call | Tag): Read {
-		const { value, complete, trace } = this.decoder.decode(expression);
-		if (!ts.isIdentifier(expression))
-			return { value, complete, trace, diagnostics: complete ? [] : [this.dynamic(at)] };
-		const target = this.bindings.ofIdentifier(expression);
-		const passed = target?.kind === 'value' ? target : undefined;
-		const writes = passed === undefined ? [] : this.bindings.writesTo(passed.declaration);
-		const initial = passed === undefined ? complete : this.decoder.decode(passed.expression).complete;
+		const target = ts.isIdentifier(expression) ? this.bindings.ofIdentifier(expression) : undefined;
+		if (!ts.isIdentifier(expression) || target?.kind !== 'value') {
+			const { value, complete, trace } = this.decoder.decode(expression);
+			const source = ts.isIdentifier(expression) ? { source: expression.text } : {};
+			return { value, complete, trace, diagnostics: complete ? [] : [this.dynamic(at)], ...source };
+		}
+		// Passed by name: one reading gives the value as declared and as the code leaves it.
+		const { initial, read } = this.decoder.decodeBound(target);
 		const diagnostics = [
-			...writes.map((write) => this.notes.mutated(expression.text, write)),
-			...(initial ? [] : [this.dynamic(at)])
+			...this.bindings.writesTo(target.declaration).map((write) => this.notes.mutated(expression.text, write)),
+			...(initial.complete ? [] : [this.dynamic(at)])
 		];
-		return { value, complete, trace, diagnostics, source: expression.text };
+		return { ...read, diagnostics, source: expression.text };
 	}
 
 	private dynamic(at: Call | Tag): Diagnostic {

@@ -33,6 +33,14 @@
 		"@chartguard/core": "0.1.0",
 		"@chartguard/config-echarts": "0.1.0"
 	},
+	"peerDependencies": {
+		"echarts": "^6.1.0"
+	},
+	"peerDependenciesMeta": {
+		"echarts": {
+			"optional": false
+		}
+	},
 	"publishConfig": {
 		"access": "public"
 	}

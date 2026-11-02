@@ -215,3 +215,18 @@ test('a use in a file with syntax errors, or whose prop may come from a spread, 
 	).uses;
 	assert.deepEqual([missing.complete, missing.value], [true, undefined]);
 });
+
+test('import x = require() of a library is an origin, as import * as x is (A38)', () => {
+	const source =
+		"import echarts = require('echarts');\nconst option = { series: [{ type: 'bar', data: [1] }] };\necharts.init(document.body).setOption(option);";
+	const output = extractStaticConfigs(source, 'chart.ts');
+	assert.deepEqual(
+		output.uses.map((use) => [use.pattern, use.complete, use.source]),
+		[['echarts.set-option', true, 'option']]
+	);
+	const local = extractStaticConfigs(
+		"import echarts = require('./echarts');\necharts.init(document.body).setOption({ series: [] });",
+		'chart.ts'
+	);
+	assert.deepEqual(local.uses, []);
+});

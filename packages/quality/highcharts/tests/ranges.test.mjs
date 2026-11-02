@@ -48,7 +48,13 @@ test('base: a bar grows from its threshold, through the series, plotOptions for 
 
 test('fit: no threshold or a hard one makes the tick algorithm fit the axis to the data and the plot size', () => {
 	const fit = (config) => brief(yAxis(config).fit);
-	assert.equal(fit({ chart: { type: 'column' }, series: [{ data: [60] }] }), '? unset $.yAxis');
+	// Like Chart.js and ECharts, the fact is at the switch that would ask for a fitted range (B3).
+	assert.equal(
+		fit({ chart: { type: 'column' }, series: [{ data: [60] }] }),
+		'? unset $.plotOptions.series.softThreshold'
+	);
+	const hidden = Object.defineProperty({ chart: { type: 'column' } }, 'series', { get: () => [], enumerable: true });
+	assert.equal(fit(hidden), '? accessor $.series');
 	const none = { chart: { type: 'column' }, plotOptions: { series: { threshold: null } }, series: [{ data: [60] }] };
 	assert.equal(fit(none), '? layout $.plotOptions.series.threshold');
 	assert.equal(brief(normalize(none).series.items[0].base), '? layout $.plotOptions.series.threshold');
@@ -57,7 +63,10 @@ test('fit: no threshold or a hard one makes the tick algorithm fit the axis to t
 		'? layout $.series[0].softThreshold'
 	);
 	// A line's soft threshold does not fit a bar axis.
-	assert.equal(fit({ series: [{ type: 'line', data: [60], softThreshold: false }] }), '? unset $.yAxis');
+	assert.equal(
+		fit({ series: [{ type: 'line', data: [60], softThreshold: false }] }),
+		'? unset $.plotOptions.series.softThreshold'
+	);
 	assert.deepEqual(findings(none, 'VIS_BAR_BASELINE'), []);
 });
 

@@ -10,6 +10,7 @@ import type { ConfigValidator, ValidationOptions, ValidationResult } from '@char
 import { asCoreExtension, type ChartjsExtension, withControllers } from './controllers.js';
 import artifact from './generated/chartjs-4.5.1.json' with { type: 'json' };
 import { RULES } from './rules.js';
+import { withScaleTypes } from './scales.js';
 
 export type { ChartjsExtension, ControllerExtension } from './controllers.js';
 export { type Extension, ExtensionError } from '@chartguard/config-core';
@@ -27,7 +28,8 @@ export function schema(): LoweredSchema {
 }
 
 export function validate(input: unknown, options?: ValidationOptions): ValidationResult {
-	return validateConfig(input, schema().manifest, options, RULES);
+	const manifest = schema().manifest;
+	return validateConfig(input, withScaleTypes(manifest, input, options?.incomplete === true), options, RULES);
 }
 
 /**
@@ -39,5 +41,6 @@ export function validate(input: unknown, options?: ValidationOptions): Validatio
  */
 export function withExtensions(extensions: readonly ChartjsExtension[]): ConfigValidator {
 	const manifest = withControllers(extend(schema().manifest, extensions.map(asCoreExtension)), extensions);
-	return (input, options) => validateConfig(input, manifest, options, RULES);
+	return (input, options) =>
+		validateConfig(input, withScaleTypes(manifest, input, options?.incomplete === true), options, RULES);
 }

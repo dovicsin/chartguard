@@ -9,17 +9,27 @@ export class FixError extends Error {
 
 type Segment = string | number;
 
+/** A typed array (`Float32Array`, …): copied with its own `slice`. */
+interface TypedList {
+	slice(): object;
+}
+
 /**
- * A shallow copy that keeps the prototype and every property: getters are copied, never run. The copy
- * is ours, so its properties are configurable (a frozen input stays frozen; its copy can be edited).
+ * A shallow copy that keeps the prototype and every property, symbol-keyed ones included: getters are
+ * copied, never run. The copy is ours, so its properties are configurable (a frozen input stays frozen;
+ * its copy can be edited). A typed array is copied as a typed array of its own kind (A13: a list).
  */
 function copyOf(value: object): object {
+	if (ArrayBuffer.isView(value) && !(value instanceof DataView)) return (value as unknown as TypedList).slice();
 	const array = Array.isArray(value);
 	const shell: object = array ? [] : (Object.create(Object.getPrototypeOf(value) as object | null) as object);
 	const descriptors: PropertyDescriptorMap = {};
-	for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(value))) {
+	for (const key of Reflect.ownKeys(value)) {
 		if (array && key === 'length') continue;
-		descriptors[key] =
+		const descriptor = Object.getOwnPropertyDescriptor(value, key);
+		if (descriptor === undefined) continue;
+		// A symbol key is a valid key of a property descriptor map; `PropertyDescriptorMap` only says strings.
+		(descriptors as Record<PropertyKey, PropertyDescriptor>)[key] =
 			'value' in descriptor
 				? { ...descriptor, writable: true, configurable: true }
 				: { ...descriptor, configurable: true };

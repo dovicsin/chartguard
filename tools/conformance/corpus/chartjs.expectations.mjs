@@ -9,6 +9,10 @@ export const EXPECTATIONS = [
 		paths: ['line/multi-axis.md']
 	},
 	{
+		why: 'Unresolved: a scale title is padded only by `top` and `bottom` (`drawTitle` reads `padding.top`/`padding.bottom`, `getTitleHeight` `padding.height`); `left` and `right`, which `toPadding` also reads, have no effect there. Checked since the runtime-chosen type of a scale without `type` is modelled (`mergeScaleConfig`).',
+		paths: ['scale-options/titles.md']
+	},
+	{
 		why: 'Unresolved: the sample registers its own scale or controller in a separate file the docs load next to it; the bare runtime does not know the type.',
 		paths: ['advanced/derived-axis-type.md', 'advanced/derived-chart-type.md']
 	},

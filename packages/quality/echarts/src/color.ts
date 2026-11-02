@@ -1,21 +1,23 @@
 import {
 	type Fact,
 	formatPath,
+	isDefined,
+	isString,
 	type Item,
 	type KnownFact,
 	type Listed,
 	readFact,
-	unknown
+	unknown,
+	unreadable
 } from '@chartguard/quality-core';
 
-const isSet = (value: unknown): value is unknown => value !== undefined;
 const THEME_POINTER =
 	"echarts@6.1.0 dist/echarts.js:18872 theme: ['#5070dd', '#b6d634', '#505372', '#ff994d', '#0ca8df', '#ffd10a', '#fb628b', '#785db0', '#3fbe95'],";
 const THEME = ['#5070dd', '#b6d634', '#505372', '#ff994d', '#0ca8df', '#ffd10a', '#fb628b', '#785db0', '#3fbe95'];
 
 /** The global palette: the option's `color` (a list, or one colour), else the theme's. */
 function paletteOf(config: unknown): Fact<readonly KnownFact<string>[]> {
-	const color = readFact(config, ['color'], isSet);
+	const color = readFact(config, ['color'], isDefined);
 	if (!color.known && color.reason !== 'unset') return color;
 	if (!color.known)
 		return {
@@ -53,12 +55,12 @@ function ownColor(config: unknown, item: Item): Fact<unknown> {
 			formatPath([...item.segments, 'itemStyle', 'color']),
 			type.reason === 'unset' ? 'unmodelled' : type.reason
 		);
-	return readFact(config, [...item.segments, ...(OWN_COLOR[type.value] ?? ['itemStyle', 'color'])], isSet);
+	return readFact(config, [...item.segments, ...(OWN_COLOR[type.value] ?? ['itemStyle', 'color'])], isDefined);
 }
 
 /** A series' own palette (`series.color`, a list or one colour): its first colour. */
 function seriesPalette(config: unknown, item: Item): Fact<string> {
-	const color = readFact(config, [...item.segments, 'color'], isSet);
+	const color = readFact(config, [...item.segments, 'color'], isDefined);
 	if (!color.known) return color;
 	const first = Array.isArray(color.value) ? (color.value as unknown[])[0] : color.value;
 	const path = Array.isArray(color.value) ? formatPath([...item.segments, 'color', 0]) : color.path;
@@ -92,11 +94,6 @@ class Palette {
 	}
 }
 
-const isString = (value: unknown): value is string => typeof value === 'string';
-
-/** Whether a fact could be set but cannot be read (a getter): the palette's order is lost after it. */
-const unreadable = (fact: Fact<unknown>): boolean => !fact.known && fact.reason !== 'unset';
-
 /** A colour of the series' own that decides it without the palette, or undefined when the palette draws. */
 function ownDecides(own: Fact<unknown>): Fact<string> | undefined {
 	if (!own.known || typeof own.value === 'function' || own.value === 'auto') return undefined;
@@ -107,6 +104,7 @@ function ownDecides(own: Fact<unknown>): Fact<string> | undefined {
 function colorOf(config: unknown, item: Item, index: number, palette: Palette): Fact<string> {
 	const own = ownColor(config, item);
 	const named = readFact(config, [...item.segments, 'name'], isString);
+	// A colour or name set but not readable: the palette's order is lost after it.
 	if (unreadable(own) || unreadable(named)) palette.lose();
 	const decided = ownDecides(own);
 	if (decided !== undefined) return decided;
@@ -131,7 +129,7 @@ export function seriesColors(config: unknown, items: Listed<Item>): Fact<string>
 		const type = readFact(config, [...item.segments, 'type'], isString);
 		if (!type.known || type.value === 'pie') return unknown(color.path, type.known ? 'unmodelled' : type.reason);
 		// A line's `lineStyle.color` repaints its line only: the series is then two colours.
-		const stroke = readFact(config, [...item.segments, 'lineStyle', 'color'], isSet);
+		const stroke = readFact(config, [...item.segments, 'lineStyle', 'color'], isDefined);
 		return type.value === 'line' && (stroke.known || stroke.reason !== 'unset')
 			? unknown(stroke.path, 'unmodelled')
 			: color;

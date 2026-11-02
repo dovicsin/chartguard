@@ -27,17 +27,31 @@ const BY_ROLE: Readonly<Record<string, { readonly index: Default<string>; readon
 		value: { value: 'linear', pointer: "chart.js@4.5.1 dist/chart.js:1400 type: 'linear'," }
 	},
 	line: {
-		index: { value: 'category', pointer: "chart.js@4.5.1 dist/chart.js:2097 type: 'category'" },
-		value: { value: 'linear', pointer: "chart.js@4.5.1 dist/chart.js:2100 type: 'linear'" }
+		index: {
+			value: 'category',
+			pointer: "chart.js@4.5.1 dist/chart.js:2097 type: 'category' [in class LineController]"
+		},
+		value: { value: 'linear', pointer: "chart.js@4.5.1 dist/chart.js:2100 type: 'linear' [in class LineController]" }
 	}
 };
 /** Scatter charts default both scales to `linear`, radar charts their `r` scale to `radialLinear`. */
 const BY_AXIS: Readonly<Record<string, Partial<Record<Axis, Default<string>>>>> = {
 	scatter: {
-		x: { value: 'linear', pointer: "chart.js@4.5.1 dist/chart.js:2472 type: 'linear'" },
-		y: { value: 'linear', pointer: "chart.js@4.5.1 dist/chart.js:2475 type: 'linear'" }
+		x: {
+			value: 'linear',
+			pointer: "chart.js@4.5.1 dist/chart.js:2472 type: 'linear' [in class ScatterController] [in x: {]"
+		},
+		y: {
+			value: 'linear',
+			pointer: "chart.js@4.5.1 dist/chart.js:2475 type: 'linear' [in class ScatterController] [in y: {]"
+		}
 	},
-	radar: { r: { value: 'radialLinear', pointer: "chart.js@4.5.1 dist/chart.js:2402 type: 'radialLinear'" } }
+	radar: {
+		r: {
+			value: 'radialLinear',
+			pointer: "chart.js@4.5.1 dist/chart.js:2402 type: 'radialLinear' [in class RadarController]"
+		}
+	}
 };
 /** A scale title is hidden and empty unless set (`title: { display: false, text: '' }`). */
 const TITLE_SHOWN: Default<boolean> = {
@@ -70,7 +84,7 @@ function panelOf(config: unknown, path: readonly string[], key: string): Fact<st
 /** A linear scale labels its ticks with plain numbers unless a callback formats them. */
 const NUMERIC: Default<string> = {
 	value: '',
-	pointer: 'chart.js@4.5.1 dist/chart.js:10364 callback: Ticks.formatters.numeric'
+	pointer: 'chart.js@4.5.1 dist/chart.js:10364 callback: Ticks.formatters.numeric [in class LinearScale extends]'
 };
 
 /** The unit around the tick labels: none on a linear scale without a callback; a callback decides at runtime. */
@@ -92,7 +106,7 @@ const SCALE_TYPES: Readonly<Record<string, ScaleType>> = {
 };
 
 /** Chart.js titles are a string or one string per line. */
-const isText = (value: unknown): value is string | string[] =>
+export const isText = (value: unknown): value is string | string[] =>
 	typeof value === 'string' || (Array.isArray(value) && (value as unknown[]).every((line) => typeof line === 'string'));
 export const asText = (fact: Fact<string | string[]>): Fact<string> => {
 	if (!fact.known || typeof fact.value === 'string') return fact as Fact<string>;
@@ -146,13 +160,13 @@ function axisOf(config: unknown, key: string, axis: Axis | undefined, chart: Dat
 	};
 }
 
-/** Every scale the chart builds that is read (configured or added by a dataset), and any a dataset names. */
 /** The datasets as read and as series: a fitted range is measured from their values. */
 interface Datasets {
 	readonly series: Listed<SeriesSemantics>;
 	readonly datasets: Listed<Item>;
 }
 
+/** Every scale the chart builds that is read (configured or added by a dataset), and any a dataset names. */
 export function axesOf(config: unknown, { series, datasets }: Datasets, scales: Scales): AxisSemantics[] {
 	const built = scales.entries.flatMap(({ id, axis }) => (id === undefined ? [] : [[id, axis] as const]));
 	const named = series.known ? series.items.flatMap(({ valueAxis }) => (valueAxis.known ? [valueAxis.value] : [])) : [];

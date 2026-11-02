@@ -2,6 +2,7 @@ import {
 	type Default,
 	type Fact,
 	formatPath,
+	isDefined,
 	type Item,
 	known,
 	type KnownFact,
@@ -11,21 +12,12 @@ import {
 	unknown
 } from '@chartguard/quality-core';
 
-const isSet = (value: unknown): value is unknown => value !== undefined;
+import { scopedFacts, seriesType } from './type.js';
+
 /** A series animates for 1000 ms by default; `animation: true` or an object without `duration` means 500 (`animObject`). */
 const SERIES: Default<number> = { value: 1000, pointer: 'highcharts@13.1.1 highcharts.src.js:30251 duration: 1000' };
 const ANIM_OBJECT = 'highcharts@13.1.1 highcharts.src.js:8842 merge({ duration: 500, defer: 0 }, animation) :';
 const ANIM_TRUE = 'highcharts@13.1.1 highcharts.src.js:8843 { duration: animation ? 500 : 0, defer: 0 };';
-
-const isString = (value: unknown): value is string => typeof value === 'string';
-
-/** A series' type, for its `plotOptions`: its own, else the chart's, else line. */
-function typeName(config: unknown, item: Item): string {
-	const own = readFact(config, [...item.segments, 'type'], isString);
-	if (own.known) return own.value;
-	const chart = readFact(config, ['chart', 'type'], isString);
-	return chart.known ? chart.value : 'line';
-}
 
 const booleanDuration = (value: boolean, path: string): Fact<number> =>
 	value ? { known: true, value: 500, path, source: 'default', pointer: ANIM_TRUE } : known(0, path);
@@ -40,7 +32,7 @@ const objectDefault = (path: string): Fact<number> => ({
 /** An object `animation`'s own `duration`, or undefined when it has none (it merges with the scopes below). */
 function durationOf(animation: KnownFact<unknown>): Fact<number> | undefined {
 	const at = `${animation.path}.duration`;
-	const duration = readFact(animation.value, ['duration'], isSet);
+	const duration = readFact(animation.value, ['duration'], isDefined);
 	if (duration.known) return typeof duration.value === 'number' ? known(duration.value, at) : unknown(at, 'shape');
 	return duration.reason === 'unset' ? undefined : unknown(at, duration.reason);
 }
@@ -52,10 +44,10 @@ function durationOf(animation: KnownFact<unknown>): Fact<number> | undefined {
  * 500 ms, `animObject`); the highest object `duration` decides; nothing set keeps 1000 ms.
  */
 function seriesDuration(config: unknown, item: Item): Fact<number> {
-	const scopes = [item.segments, ['plotOptions', typeName(config, item)], ['plotOptions', 'series']];
+	// A type that cannot be read leaves the options for its type unknown: they decide before plotOptions.series.
+	const scopes = scopedFacts(config, item, seriesType(config, item), { name: 'animation', is: isDefined });
 	let overObject: string | undefined;
-	for (const scope of scopes) {
-		const animation = readFact(config, [...scope, 'animation'], isSet);
+	for (const animation of scopes) {
 		if (!animation.known) {
 			if (animation.reason !== 'unset') return animation;
 			continue;

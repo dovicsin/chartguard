@@ -26,6 +26,7 @@ interface ChartGuard {
     readonly options?: ValidationOptions;
     readonly onResult?: (result: ValidationResult, event: ChartEvent) => void;
     readonly block?: boolean;
+    readonly highcharts?: HighchartsRuntime;
 }
 
 ### CreateGuard

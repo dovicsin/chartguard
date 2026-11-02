@@ -196,3 +196,18 @@ test('nullAsAbsent: a null optional property counts as absent, as runtimes that 
 	// A required property is still required, and null is no value for it.
 	assert.deepEqual(codes(options, { width: null }), ['CFG_TYPE error $.width']);
 });
+
+test('a null discriminator is absent where every member reads it with pick() (A25): the default applies', () => {
+	const line = { ...s.object({ type: s.string(['line']), step: s.boolean() }), nullAsAbsent: true };
+	const pie = { ...s.object({ type: s.string(['pie']) }), nullAsAbsent: true };
+	const root = s.object({ s: s.union([line, pie], { discriminator: 'type', defaultVariant: 0 }) });
+	const nullable = { library: 'test', version: '1.0.0', coverage: 'full', source: 'test', root };
+	assert.deepEqual(validateConfig({ s: { type: null, step: true } }, nullable).diagnostics, []);
+	assert.deepEqual(
+		validateConfig({ s: { type: null, step: 'yes' } }, nullable).diagnostics.map((d) => `${d.code} ${d.path}`),
+		['CFG_TYPE $.s.step']
+	);
+	// Where a member does not read with pick(), null is a value: a wrong one.
+	const strict = s.object({ s: s.union([s.object({ type: s.string(['line']) }), pie], { discriminator: 'type' }) });
+	assert.equal(validateConfig({ s: { type: null } }, { ...nullable, root: strict }).diagnostics[0]?.code, 'CFG_ENUM');
+});

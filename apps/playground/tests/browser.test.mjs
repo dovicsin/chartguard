@@ -5,6 +5,7 @@ import { extname, join, normalize } from 'node:path';
 import test from 'node:test';
 
 import { browserSkipReason, dumpDom } from '../../../tools/shared/chrome.mjs';
+import { skipOutsideCi } from '../../../tools/shared/ci.mjs';
 import { OUT } from '../scripts/build.mjs';
 
 const TYPES = {
@@ -37,7 +38,8 @@ const unescape = (text) =>
 test(
 	'in a real browser every example reproduces its pinned validator findings and runtime verdict',
 	{
-		skip: browserSkipReason() ?? (existsSync(join(OUT, 'main.js')) ? false : 'needs a built playground'),
+		// On CI a missing browser or bundle fails the gate instead of skipping it (E22).
+		skip: browserSkipReason() ?? (existsSync(join(OUT, 'main.js')) ? false : skipOutsideCi('needs a built playground')),
 		timeout: 180_000
 	},
 	async (t) => {

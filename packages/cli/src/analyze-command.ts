@@ -37,13 +37,20 @@ interface Read {
 	readonly truncated: boolean;
 }
 
+/** Each file once, by its resolved path (`a.ts` and `./a.ts` are one file), in the order first given. */
+function distinctFiles(files: readonly string[]): string[] {
+	return files.filter((file, index) => files.findIndex((other) => resolve(other) === resolve(file)) === index);
+}
+
 /** The files read in one Program with their project's options; an unusable tsconfig or pattern is the user's input. */
 async function readSources({ files, project, patterns }: ConfigInvocation): Promise<Read> {
-	const { analyzeFiles, analyzeProjectFiles, ProjectConfigError } =
+	const { analyzeFiles, analyzeProjectFiles, ProjectConfigError, ScanOptionError } =
 		await import('@chartguard/analysis-typescript/project');
 	const { PatternError } = await import('@chartguard/analysis-typescript');
 	const extraPatterns = await readPatterns(patterns);
-	const texts = await Promise.all(files.map(async (fileName) => ({ fileName, source: await readText(fileName) })));
+	const texts = await Promise.all(
+		distinctFiles(files).map(async (fileName) => ({ fileName, source: await readText(fileName) }))
+	);
 	try {
 		if (texts.length === 0 && project !== undefined) {
 			const scan = await analyzeProjectFiles(project, { patterns: extraPatterns });
@@ -52,7 +59,8 @@ async function readSources({ files, project, patterns }: ConfigInvocation): Prom
 		const analyses = analyzeFiles(texts, { tsconfig: project ?? true, patterns: extraPatterns });
 		return { analyses, tsconfig: analyses[0]?.tsconfig, truncated: false };
 	} catch (error) {
-		if (error instanceof ProjectConfigError || error instanceof PatternError) throw new InputError(error.message);
+		if (error instanceof ProjectConfigError || error instanceof ScanOptionError || error instanceof PatternError)
+			throw new InputError(error.message);
 		throw error;
 	}
 }
@@ -82,9 +90,11 @@ export async function analyzeCommand(invocation: ConfigInvocation, io: Io): Prom
 	const { library, file, json, name } = invocation;
 	const read = await readSources(invocation);
 	const unreadable = read.analyses.filter((analysis) => !analysis.readable);
-	const [only] = unreadable;
-	if (only !== undefined && read.analyses.length === 1)
-		throw new InputError(describeUnreadable(only.fileName, only.diagnostics));
+	// Nothing could be read: each file and why, never "no chart use found".
+	if (unreadable.length > 0 && unreadable.length === read.analyses.length)
+		throw new InputError(
+			unreadable.map(({ fileName, diagnostics }) => describeUnreadable(fileName, diagnostics)).join('\n')
+		);
 	const { validate, schema } = await loadConfigValidator(library, file);
 	const check = { validate, options: await validationOptions(invocation), library, name };
 	const entries = read.analyses

@@ -2,9 +2,19 @@ name: ci
 on:
   push:
   pull_request:
+# The workflow only reads the repository; nothing it runs can write to it.
+permissions:
+  contents: read
+# Runs of one ref share a group: on a pull request a newer push cancels the running check; branch
+# pushes (main) each finish, so every commit keeps its result.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   check:
     runs-on: ubuntu-latest
+    # A hang guard far above an honest run (build, corpora in Chrome, coverage), never a time budget.
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:

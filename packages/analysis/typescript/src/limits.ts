@@ -9,26 +9,89 @@ export const MAX_SOURCE_LENGTH = 2_000_000;
  */
 export const MAX_NESTING = 256;
 
-const OPENING = new Set([ts.SyntaxKind.OpenBraceToken, ts.SyntaxKind.OpenBracketToken, ts.SyntaxKind.OpenParenToken]);
-const CLOSING = new Set([
-	ts.SyntaxKind.CloseBraceToken,
+const OPENING = new Set([ts.SyntaxKind.OpenBracketToken, ts.SyntaxKind.OpenParenToken]);
+const CLOSING = new Set([ts.SyntaxKind.CloseBracketToken, ts.SyntaxKind.CloseParenToken]);
+
+/** Tokens after which a `/` divides; after any other a regular expression starts. */
+const ENDS_OPERAND = new Set([
+	ts.SyntaxKind.Identifier,
+	ts.SyntaxKind.PrivateIdentifier,
+	ts.SyntaxKind.NumericLiteral,
+	ts.SyntaxKind.BigIntLiteral,
+	ts.SyntaxKind.StringLiteral,
+	ts.SyntaxKind.NoSubstitutionTemplateLiteral,
+	ts.SyntaxKind.TemplateTail,
+	ts.SyntaxKind.RegularExpressionLiteral,
+	ts.SyntaxKind.CloseParenToken,
 	ts.SyntaxKind.CloseBracketToken,
-	ts.SyntaxKind.CloseParenToken
+	ts.SyntaxKind.CloseBraceToken,
+	ts.SyntaxKind.PlusPlusToken,
+	ts.SyntaxKind.MinusMinusToken,
+	ts.SyntaxKind.ThisKeyword,
+	ts.SyntaxKind.SuperKeyword,
+	ts.SyntaxKind.TrueKeyword,
+	ts.SyntaxKind.FalseKeyword,
+	ts.SyntaxKind.NullKeyword
 ]);
+
+const SLASHES = new Set([ts.SyntaxKind.SlashToken, ts.SyntaxKind.SlashEqualsToken]);
+
+/**
+ * Bracket depth as the scanner sees it, template- and regex-aware: a `}` that closes a template
+ * substitution resumes the template's text (`reScanTemplateToken`), and a `/` where an operand may
+ * start is a regular expression (`reScanSlashToken`), so brackets in either are text.
+ */
+class Nesting {
+	depth = 0;
+	deepest = 0;
+	/** For each open `{` or `${`, whether it is a template substitution. */
+	private readonly braces: boolean[] = [];
+
+	constructor(private readonly scanner: ts.Scanner) {}
+
+	/** The token, rescanned where the previous one decides what it is. */
+	next(previous: ts.SyntaxKind): ts.SyntaxKind {
+		const token = this.scanner.scan();
+		if (SLASHES.has(token) && !ENDS_OPERAND.has(previous)) return this.scanner.reScanSlashToken();
+		if (token === ts.SyntaxKind.CloseBraceToken && this.braces.at(-1) === true)
+			return this.scanner.reScanTemplateToken(false);
+		return token;
+	}
+
+	count(token: ts.SyntaxKind): void {
+		if (OPENING.has(token) || token === ts.SyntaxKind.OpenBraceToken || token === ts.SyntaxKind.TemplateHead)
+			this.open(token);
+		else if (CLOSING.has(token)) this.depth = Math.max(0, this.depth - 1);
+		else if (token === ts.SyntaxKind.CloseBraceToken || token === ts.SyntaxKind.TemplateTail) this.closeBrace();
+	}
+
+	private open(token: ts.SyntaxKind): void {
+		this.deepest = Math.max(this.deepest, ++this.depth);
+		if (token === ts.SyntaxKind.OpenBraceToken) this.braces.push(false);
+		else if (token === ts.SyntaxKind.TemplateHead) this.braces.push(true);
+	}
+
+	/** A `}` or the end of a template: the innermost brace closes. A `TemplateMiddle` keeps it open. */
+	private closeBrace(): void {
+		this.braces.pop();
+		this.depth = Math.max(0, this.depth - 1);
+	}
+}
 
 /** The deepest bracket nesting, measured with the scanner alone: iterative, so any input is safe to measure. */
 function nestingOf(source: string): number {
 	const scanner = ts.createScanner(ts.ScriptTarget.Latest, true, ts.LanguageVariant.Standard, source);
-	let depth = 0;
-	let deepest = 0;
-	for (let token = scanner.scan(); token !== ts.SyntaxKind.EndOfFileToken; token = scanner.scan()) {
-		if (OPENING.has(token)) deepest = Math.max(deepest, ++depth);
-		else if (CLOSING.has(token)) depth = Math.max(0, depth - 1);
+	const nesting = new Nesting(scanner);
+	let previous = ts.SyntaxKind.Unknown;
+	for (let token = nesting.next(previous); token !== ts.SyntaxKind.EndOfFileToken; token = nesting.next(previous)) {
+		nesting.count(token);
+		previous = token;
 	}
-	return deepest;
+	return nesting.deepest;
 }
 
-const refusal = (code: string, message: string, file: string): Diagnostic => ({
+/** A file-level note on why `file` is not read, or only in part. */
+export const refusal = (code: string, message: string, file: string): Diagnostic => ({
 	code,
 	severity: 'warning',
 	message,
@@ -66,8 +129,13 @@ export function guarded<T>(file: string, read: () => T, refused: (diagnostic: Di
 		return read();
 	} catch (error) {
 		if (!(error instanceof RangeError)) throw error;
-		return refused(refusal('CFG_TOO_COMPLEX', 'The file, or one it imports, is nested too deeply to read.', file));
+		return refused(tooDeep(file));
 	}
+}
+
+/** The refusal of a file whose reading overflowed the stack: it, or one it imports, nests too deeply. */
+export function tooDeep(file: string): Diagnostic {
+	return refusal('CFG_TOO_COMPLEX', 'The file, or one it imports, is nested too deeply to read.', file);
 }
 
 /** A file-level note: the work bound was reached, so some values were left unknown (`MAX_DECODE_STEPS`). */

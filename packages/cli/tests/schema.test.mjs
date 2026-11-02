@@ -5,16 +5,9 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { main } from '../bin/chartguard.mjs';
+import { run } from './helpers.mjs';
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url));
-
-async function run(argv) {
-	const out = [];
-	const err = [];
-	const code = await main(argv, { out: (line) => out.push(line), err: (line) => err.push(line) });
-	return { code, out: out.join('\n'), err: err.join('\n') };
-}
 
 /** A user's project with highcharts linked from this repository's install, and a config in a subdirectory. */
 function project(t, { highcharts = true } = {}) {

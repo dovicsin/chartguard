@@ -5,6 +5,7 @@ import { validate } from '@chartguard/config-echarts';
 import * as echarts from 'echarts';
 
 import { KNOWN_VALID } from '../../../config/echarts/tests/fixtures/known-valid.mjs';
+import { checkPackagePointers } from '../../../quality/core/tests/pointers.mjs';
 import { checkOption, setOption } from '../dist/index.js';
 
 const AXES = { xAxis: { type: 'category', data: ['a'] }, yAxis: {} };
@@ -168,3 +169,6 @@ test('the chart option is read once per call: getOption clones all of it (K5)', 
 	checkOption(chart, { series: [{ data: [2] }] });
 	assert.equal(reads.mock.callCount(), 2);
 });
+
+test('every runtime pointer the wrapper rests on is a literal that still holds in the pinned echarts (E37)', () =>
+	assert.equal(checkPackagePointers(import.meta.url), 7));

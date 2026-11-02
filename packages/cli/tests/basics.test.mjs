@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -61,6 +62,18 @@ test('quality json output is tagged with its mode, is advisory and points at the
 test('validate json output is tagged with its mode', async () => {
 	const argv = ['validate', '--library', 'chartjs', '--file', example('chartjs-valid-subset.json'), '--json'];
 	assert.equal(JSON.parse((await run(argv)).out).mode, 'validate');
+});
+
+test('validate json carries the whole result, its mode and its schema source, each in its own field', async () => {
+	const { readFileSync } = await import('node:fs');
+	const { validate } = await import('@chartguard/config-chartjs');
+	const file = example('chartjs-valid-subset.json');
+	const json = JSON.parse((await run(['validate', '--library', 'chartjs', '--file', file, '--json'])).out);
+	const result = JSON.parse(JSON.stringify(validate(JSON.parse(readFileSync(file, 'utf8')))));
+	const { mode, schema, ...rest } = json;
+	assert.equal(mode, 'validate');
+	assert.equal(typeof schema, 'object');
+	assert.deepEqual(rest, result);
 });
 
 test('malformed JSON input is an input failure with the file named, not an internal failure', async () => {
@@ -141,6 +154,14 @@ test('a reader that closes the pipe early is not a crash', { skip: process.platf
 	const command = `"${process.execPath}" "${BIN}" analyze --library chartjs --file "${example('chartjs-source.ts')}" | head -c 1`;
 	const child = spawnSync('sh', ['-c', command], { encoding: 'utf8' });
 	assert.equal(child.stderr, '');
+});
+
+test('a closed stderr pipe is not a crash either', { skip: process.platform === 'win32' }, async () => {
+	const child = spawn(process.execPath, [BIN, 'validate', '--library', 'd3'], { stdio: ['ignore', 'ignore', 'pipe'] });
+	// The reader closes before the usage error is written.
+	child.stderr.destroy();
+	const [status] = await once(child, 'close');
+	assert.equal(status, 2);
 });
 
 test('importing the bin from a non-path argv runs nothing and does not throw', () => {

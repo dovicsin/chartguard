@@ -3,6 +3,7 @@ import { withDeprecatedAliases } from './echarts-deprecations.mjs';
 import { addComponentHandlers } from './echarts-handlers.mjs';
 import { withRuntimeFacts } from './echarts-runtime.mjs';
 import { TypeEmitter } from './emitter.mjs';
+import { upstreamChanged } from './nodes.mjs';
 import { createEntryProgram, exportedAliasTypes } from './program.mjs';
 import { runtimeProvenance } from './runtime.mjs';
 import { artifactOf, typeLookups, unionMembers } from './types.mjs';
@@ -17,7 +18,7 @@ const SOURCE_ID = 'echarts';
  */
 const ENTRY = ["import type { EChartsOption } from 'echarts';", 'export type Option = EChartsOption;'].join('\n');
 
-const changed = (what) => new Error(`echarts types changed: ${what}`);
+const changed = upstreamChanged('echarts types');
 const SERIES_LOOKUP = {
 	file: 'lib/model/Global.js',
 	pattern: 'error("Series " + subType + " is used but not imported.'

@@ -1,13 +1,47 @@
+import { readFileSync } from 'node:fs';
+
 import { COMMAND_HANDLERS } from './commands.js';
 import { InputError } from './errors.js';
 import { EXIT_FAILURE, EXIT_OK, EXIT_USAGE } from './exit-codes.js';
-import { isHelpRequest, parseInvocation } from './invocation.js';
+import { type Invocation, isHelpRequest, isVersionRequest, parseInvocation, wantsJson } from './invocation.js';
 import { type Io, processIo } from './io.js';
+import { printJson } from './report.js';
 import { schemaCommand } from './schema.js';
-import { USAGE } from './usage.js';
+import { USAGE, USAGE_HINT } from './usage.js';
 
 function describeFailure(error: unknown): string {
 	return error instanceof Error ? (error.stack ?? error.message) : String(error);
+}
+
+/** The CLI's own version, read when asked (nothing is read at import time). */
+function cliVersion(): string {
+	const manifest: unknown = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+	const version: unknown =
+		typeof manifest === 'object' && manifest !== null ? Reflect.get(manifest, 'version') : undefined;
+	if (typeof version !== 'string') throw new Error('the CLI package.json has no version');
+	return version;
+}
+
+/**
+ * The user's arguments or input cannot be used (exit 2): the reason on stderr; with `--json`, also
+ * `{ "error": { "kind", "message" } }` on stdout, so stdout stays one JSON document.
+ */
+function userError(kind: 'usage' | 'input', message: string, json: boolean, io: Io): number {
+	io.err(`ChartGuard: ${message}`);
+	if (kind === 'usage') io.err(USAGE_HINT);
+	if (json) printJson({ error: { kind, message } }, io);
+	return EXIT_USAGE;
+}
+
+async function execute(invocation: Invocation, io: Io): Promise<number> {
+	try {
+		if (invocation.command === 'schema') return await schemaCommand(invocation, io);
+		return await COMMAND_HANDLERS[invocation.command](invocation, io);
+	} catch (error) {
+		if (error instanceof InputError) return userError('input', error.message, invocation.json, io);
+		io.err(`ChartGuard internal failure: ${describeFailure(error)}`);
+		return EXIT_FAILURE;
+	}
 }
 
 export async function main(argv: readonly string[] = process.argv.slice(2), io: Io = processIo): Promise<number> {
@@ -15,20 +49,11 @@ export async function main(argv: readonly string[] = process.argv.slice(2), io: 
 		io.out(USAGE);
 		return EXIT_OK;
 	}
-	const invocation = parseInvocation(argv);
-	if (invocation === undefined) {
-		io.out(USAGE);
-		return EXIT_USAGE;
+	if (isVersionRequest(argv) && argv.length === 1) {
+		io.out(cliVersion());
+		return EXIT_OK;
 	}
-	try {
-		if (invocation.command === 'schema') return await schemaCommand(invocation, io);
-		return await COMMAND_HANDLERS[invocation.command](invocation, io);
-	} catch (error) {
-		if (error instanceof InputError) {
-			io.err(`ChartGuard: ${error.message}`);
-			return EXIT_USAGE;
-		}
-		io.err(`ChartGuard internal failure: ${describeFailure(error)}`);
-		return EXIT_FAILURE;
-	}
+	const parsed = parseInvocation(argv);
+	if ('reason' in parsed) return userError('usage', parsed.reason, wantsJson(argv), io);
+	return execute(parsed.invocation, io);
 }

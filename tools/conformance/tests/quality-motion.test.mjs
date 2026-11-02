@@ -51,7 +51,19 @@ const ECHARTS = [
 			}
 		]
 	},
-	{ ...AXES, animationDuration: 6000, series: [{ type: 'bar', animationDuration: 7000, data: [1] }] }
+	{ ...AXES, animationDuration: 6000, series: [{ type: 'bar', animationDuration: 7000, data: [1] }] },
+	// A series animates by its own `animation`, else the option's, and not with more data than its threshold.
+	{ ...AXES, series: [{ type: 'bar', animation: false, animationDuration: 6000, data: [1] }] },
+	{ ...AXES, animation: false, series: [{ type: 'bar', animation: true, animationDuration: 6000, data: [1] }] },
+	{ ...AXES, animation: false, series: [{ type: 'bar', animation: null, animationDuration: 6000, data: [1] }] },
+	{ ...AXES, series: [{ type: 'bar', animationDuration: 6000, data: Array.from({ length: 2500 }, () => 1) }] },
+	{ ...AXES, series: [{ type: 'bar', animationDuration: 6000, data: Array.from({ length: 2000 }, () => 1) }] },
+	{
+		...AXES,
+		animationThreshold: 3000,
+		series: [{ type: 'bar', animationDuration: 6000, data: Array.from({ length: 2500 }, () => 1) }]
+	},
+	{ ...AXES, series: [{ type: 'line', animationThreshold: 1, animationDuration: 6000, data: [1, 2] }] }
 ];
 const HIGHCHARTS = [
 	{ series: [{ data: [1] }] },

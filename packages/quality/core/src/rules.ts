@@ -77,18 +77,19 @@ const barBaseline = rule(
 		]
 	},
 	(chart, report) => {
-		const measured = measuredAxes(chart, ['bar']).filter(({ axis }) => configured(axis.scale) !== 'log');
-		const axes = measured.flatMap(({ axis }) => {
+		// Only an axis known not to be logarithmic has a zero: an unknown scale type claims nothing (A51).
+		const zeroed = measuredAxes(chart, ['bar']).filter(({ axis }) => axis.scale.known && axis.scale.value !== 'log');
+		const axes = zeroed.flatMap(({ axis }) => {
 			const cut = cutAxis(chart, axis);
 			return cut === undefined ? [] : [report(cut.path, cut.message)];
 		});
 		// A base the config sets, once per place it is set (an ECharts axis `startValue` serves all its bars).
-		const linear = new Set(measured.map(({ axis }) => axis.key));
+		const withZero = new Set(zeroed.map(({ axis }) => axis.key));
 		const bases = new Map<string, number>();
 		if (chart.series.known)
 			for (const { kind, valueAxis, base } of chart.series.items) {
 				const [value, key] = [configured(base), valueOf(valueAxis)];
-				if (valueOf(kind) === 'bar' && key !== undefined && linear.has(key) && value !== undefined && value !== 0)
+				if (valueOf(kind) === 'bar' && key !== undefined && withZero.has(key) && value !== undefined && value !== 0)
 					bases.set(base.path, value);
 			}
 		return [

@@ -20,7 +20,7 @@ function visitAll(node, visit) {
 }
 
 /** `path:line` of every node of every entry `matches` accepts. */
-function offences(entries, matches) {
+export function offences(entries, matches) {
 	return entries.flatMap((entry) => {
 		const source = parse(entry);
 		const found = [];
@@ -35,7 +35,7 @@ function offences(entries, matches) {
 }
 
 /** The text of a string literal or of any part of a template literal; undefined for other nodes. */
-function stringText(node) {
+export function stringText(node) {
 	if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
 	if (ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) return node.text;
 	return undefined;
@@ -50,7 +50,7 @@ function nameOf(name) {
 }
 
 /** The object and member name of `a.b` or `a['b']`; undefined for anything else. */
-function memberOf(node) {
+export function memberOf(node) {
 	if (ts.isPropertyAccessExpression(node)) return { object: node.expression, member: node.name.text };
 	if (ts.isElementAccessExpression(node))
 		return { object: node.expression, member: stringText(node.argumentExpression) };

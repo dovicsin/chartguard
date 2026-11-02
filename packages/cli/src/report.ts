@@ -29,8 +29,26 @@ export function printJson(value: unknown, io: Io): void {
 	io.out(JSON.stringify(value, null, 2));
 }
 
+/** The fields the CLI adds to a result in `validate --json`. */
+interface CliFields {
+	readonly mode: 'validate';
+	readonly schema: SchemaSource;
+}
+
+/**
+ * `never` (a compile error below) as soon as ValidationResult gains a field the CLI writes too: the
+ * spread would silently lose one of them. The result itself is copied whole, `valid` and `status`
+ * as core derived them (B1).
+ */
+type ValidateJson =
+	Extract<keyof ValidationResult, keyof CliFields> extends never ? ValidationResult & CliFields : never;
+
+function validateJson(checked: ValidationResult, schema: SchemaSource): ValidateJson {
+	return { mode: 'validate', ...checked, schema };
+}
+
 export function reportResult(checked: ValidationResult, schema: SchemaSource, json: boolean, io: Io): number {
-	if (json) printJson({ mode: 'validate', ...checked, schema }, io);
+	if (json) printJson(validateJson(checked, schema), io);
 	else {
 		io.out(`${checked.library} ${checked.status} (coverage: ${checked.coverage}; schema ${schemaLabel(checked)})`);
 		const note = schemaNote(schema, checked.library);

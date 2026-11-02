@@ -2,6 +2,7 @@ import {
 	type Fact,
 	holds,
 	isBoolean,
+	isDefined,
 	isString,
 	type Item,
 	itemsAt,
@@ -11,7 +12,6 @@ import {
 } from '@chartguard/quality-core';
 
 const isMode = (value: unknown): value is boolean | string => isBoolean(value) || isString(value);
-const isAnything = (value: unknown): value is unknown => value !== undefined;
 
 /**
  * Why a legend may hide the series named `name`, or undefined when none does. echarts drops a series
@@ -57,7 +57,7 @@ function hiddenBy(config: unknown, segments: readonly PathSegment[], name: Fact<
 function listed(config: unknown, segments: readonly PathSegment[], name: Fact<string>): UnknownReason | undefined {
 	if (!holds(config, [...segments, 'selected'])) return undefined;
 	if (!name.known) return name.reason;
-	const selected = readFact(config, [...segments, 'selected', name.value], isAnything);
+	const selected = readFact(config, [...segments, 'selected', name.value], isDefined);
 	if (!selected.known) return selected.reason === 'unset' ? undefined : selected.reason;
 	return Boolean(selected.value) ? undefined : 'unmodelled';
 }

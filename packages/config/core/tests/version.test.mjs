@@ -61,3 +61,19 @@ test('another major or a malformed version: not validated, explained, partial', 
 	assert.equal(malformed.valid, true);
 	assert.match(malformed.diagnostics[0].message, /"latest" is not an exact version/);
 });
+
+test('under another minor no finding stays certain and no fix is offered (A18)', () => {
+	const root = s.object({
+		old: { ...s.string(), deprecated: { since: '1.0.0', replacement: 'new', renameTo: 'new' } },
+		new: s.string()
+	});
+	const versioned = { library: 'test', version: '2.3.4', coverage: 'full', source: 'test', root };
+	const exact = validateConfig({ old: 'x' }, versioned, { libraryVersion: '2.3.4' }).diagnostics;
+	assert.equal(exact[0]?.confidence, 'certain');
+	const other = validateConfig({ old: 'x' }, versioned, { libraryVersion: '2.0.0' }).diagnostics;
+	assert.ok(other.length > 1);
+	for (const diagnostic of other) {
+		assert.equal(diagnostic.confidence, 'unknown', diagnostic.code);
+		assert.equal(diagnostic.fix, undefined, diagnostic.code);
+	}
+});

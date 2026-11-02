@@ -1,3 +1,4 @@
+import { upstreamChanged } from './nodes.mjs';
 import { runtimePointer } from './runtime.mjs';
 
 /**
@@ -70,7 +71,7 @@ const ELEMENTS = [
 ];
 const COMPONENT = 'GraphicComponentOption';
 
-const changed = (what) => new Error(`echarts types changed: ${what}`);
+const changed = upstreamChanged('echarts types');
 
 /** The element or component a definition name is (with or without the `mainType` intersection). */
 const graphicKind = (ref) => [...ELEMENTS, COMPONENT].find((name) => ref === name || ref.startsWith(`${name} & `));

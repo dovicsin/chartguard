@@ -2,11 +2,11 @@ import { isContainer, ownDataProperty } from '@chartguard/core';
 import {
 	type Fact,
 	formatPath,
+	isStaticValue,
 	type Item,
 	numberElement,
 	numberOr,
 	type PathSegment,
-	readFact,
 	unknown,
 	type UnknownFact,
 	type ValueAt,
@@ -14,7 +14,7 @@ import {
 	type ValueSummary
 } from '@chartguard/quality-core';
 
-const isSet = (value: unknown): value is unknown => value !== undefined && typeof value !== 'function';
+import { scopedFacts } from './type.js';
 
 /** An element: `y`, `[x, y]` (also `[name, y]`), or `{ y }`; longer arrays and other keys are not read yet. */
 function element(value: unknown, path: readonly PathSegment[]): ValueAt | null | UnknownFact {
@@ -34,10 +34,9 @@ function element(value: unknown, path: readonly PathSegment[]): ValueAt | null |
 /** The values of a series' `data`. `keys` (in the series or its `plotOptions`) remaps arrays: not read yet. */
 export function valuesOf(config: unknown, item: Item, type: Fact<string>): Fact<ValueSummary> {
 	const at = [...item.segments, 'data'];
-	const scopes = [item.segments, ['plotOptions', type.known ? type.value : 'series'], ['plotOptions', 'series']];
-	const keys = scopes
-		.map((scope) => readFact(config, [...scope, 'keys'], isSet))
-		.find((fact) => fact.known || fact.reason !== 'unset');
+	const keys = scopedFacts(config, item, type, { name: 'keys', is: isStaticValue }).find(
+		(fact) => fact.known || fact.reason !== 'unset'
+	);
 	if (keys !== undefined) return unknown(formatPath(at), keys.known ? 'unmodelled' : keys.reason);
 	return valuesAt(config, at, element);
 }

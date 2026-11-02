@@ -57,3 +57,27 @@ test('a package member is named as the code reaches it, also when the package ex
 			file
 		);
 });
+
+test('in a project, import x = require() of an installed library is an origin and its config is not mutated (A38)', (t) => {
+	const root = mkdtempSync(join(tmpdir(), 'chartguard-require-'));
+	t.after(() => rmSync(root, { recursive: true, force: true }));
+	const files = {
+		'tsconfig.json': '{ "compilerOptions": { "module": "commonjs" } }',
+		'node_modules/echarts/package.json': '{ "name": "echarts", "types": "index.d.ts" }',
+		'node_modules/echarts/index.d.ts':
+			'declare function init$1(element: unknown): { setOption(option: unknown): void };\nexport { init$1 as init };'
+	};
+	for (const [name, text] of Object.entries(files)) {
+		mkdirSync(join(root, name, '..'), { recursive: true });
+		writeFileSync(join(root, name), text);
+	}
+	const chart =
+		"import echarts = require('echarts');\nconst option = { series: [{ type: 'bar', data: [1] }] };\necharts.init(document.body).setOption(option);";
+	const analysis = analyzeProject(chart, join(root, 'src/chart.ts'));
+	assert.deepEqual(
+		analysis.uses.map((use) => [use.pattern, use.complete]),
+		[['echarts.set-option', true]]
+	);
+	const option = analysis.objects.find((object) => object.name === 'option');
+	assert.deepEqual([option.complete, option.diagnostics.map((d) => d.code)], [true, []]);
+});

@@ -2,6 +2,7 @@ import { isContainer, ownDataProperty } from '@chartguard/core';
 import {
 	type Fact,
 	formatPath,
+	isStaticValue,
 	type Item,
 	numberElement,
 	numberOr,
@@ -14,8 +15,6 @@ import {
 	valuesAt,
 	type ValueSummary
 } from '@chartguard/quality-core';
-
-const isSet = (value: unknown): value is unknown => value !== undefined && typeof value !== 'function';
 
 /** A number, a gap (`null`, `'-'`: echarts' empty value), or undefined for anything else. */
 const scalar = (value: unknown, path: readonly PathSegment[]): ValueAt | null | undefined =>
@@ -38,7 +37,7 @@ function element(value: unknown, path: readonly PathSegment[]): ValueAt | null |
 export function valuesOf(config: unknown, item: Item): Fact<ValueSummary> {
 	const at = [...item.segments, 'data'];
 	const routing = ['datasetIndex', 'datasetId', 'encode'].map((key) =>
-		readFact(config, [...item.segments, key], isSet)
+		readFact(config, [...item.segments, key], isStaticValue)
 	);
 	const routed = routing.find((fact) => fact.known || fact.reason !== 'unset');
 	if (routed !== undefined) return unknown(formatPath(at), routed.known ? 'unmodelled' : routed.reason);

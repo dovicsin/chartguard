@@ -44,7 +44,10 @@ test('a rule whose property is a getter cannot be decided: the variant is ambigu
 			{ test: 'truthy', property: 'data', variant: 1 }
 		]
 	});
-	assert.deepEqual(codes(ordered, Object.defineProperty({ categories: ['a'] }, 'data', { get: () => 1 })), []);
+	// The non-enumerable getter itself is noted, never run (a runtime that merges options skips it).
+	assert.deepEqual(codes(ordered, Object.defineProperty({ categories: ['a'] }, 'data', { get: () => 1 })), [
+		'CFG_DYNAMIC warning $.data'
+	]);
 	// A getter discriminator is not an absent one: the runtime reads it, so no default applies.
 	const getterType = Object.defineProperty({ min: 'x' }, 'type', { enumerable: true, get: () => 'category' });
 	assert.deepEqual(codes(axis, getterType), ['CFG_AMBIGUOUS info $']);

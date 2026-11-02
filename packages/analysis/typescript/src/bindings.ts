@@ -13,6 +13,9 @@ export type Target =
 
 const UNDEFINED: Target = { kind: 'undefined' };
 
+/** Aliases followed one by one at most; a longer chain is unresolved. */
+const MAX_ALIAS_HOPS = 64;
+
 type Constant = ts.VariableDeclaration & { readonly initializer: ts.Expression };
 
 /** The step a binding element reads from its pattern's value; undefined for a rest element or a computed name. */
@@ -95,7 +98,7 @@ export class Bindings {
 		const symbol = this.symbolOf(node);
 		// The checker's own `undefined`: no declaration anywhere, so nothing shadows it.
 		if (symbol?.name === 'undefined' && (symbol.declarations ?? []).length === 0) return UNDEFINED;
-		return this.valueOf(this.followed(symbol));
+		return this.valueOf(this.valueFollowed(symbol));
 	}
 
 	/** The value of a namespace member (`memberSymbol`). */
@@ -106,9 +109,9 @@ export class Bindings {
 	/** `ns.name` for a namespace import of a source module; any other object's property may be reassigned. */
 	private memberSymbol({ expression, name }: ts.PropertyAccessExpression): ts.Symbol | undefined {
 		if (!ts.isIdentifier(expression) || isDynamicScope(expression)) return undefined;
-		const declarations = this.followed(this.checker.getSymbolAtLocation(expression))?.declarations ?? [];
+		const declarations = this.valueFollowed(this.checker.getSymbolAtLocation(expression))?.declarations ?? [];
 		if (declarations.length === 0 || !declarations.every(ts.isSourceFile)) return undefined;
-		return this.followed(this.checker.getSymbolAtLocation(name));
+		return this.valueFollowed(this.checker.getSymbolAtLocation(name));
 	}
 
 	/** Every place readable code may change the constant `declaration` declares (CG-03-05). */
@@ -206,7 +209,7 @@ export class Bindings {
 	private calleeSymbol(callee: ts.Expression): ts.Symbol | undefined {
 		if (ts.isPropertyAccessExpression(callee)) return this.memberSymbol(callee);
 		if (!ts.isIdentifier(callee) || isDynamicScope(callee)) return undefined;
-		return this.followed(this.checker.getSymbolAtLocation(callee));
+		return this.valueFollowed(this.checker.getSymbolAtLocation(callee));
 	}
 
 	/**
@@ -241,6 +244,20 @@ export class Bindings {
 	private followed(symbol: ts.Symbol | undefined): ts.Symbol | undefined {
 		if (symbol === undefined || (symbol.flags & ts.SymbolFlags.Alias) === 0) return symbol;
 		return this.checker.getAliasedSymbol(symbol);
+	}
+
+	/**
+	 * What a name reads at runtime: `followed`, unless an alias on the way is type-only (`import type`,
+	 * `import { type x }`, `export type { x }`): those are erased, so the name holds no value read here.
+	 */
+	private valueFollowed(symbol: ts.Symbol | undefined): ts.Symbol | undefined {
+		let current = symbol;
+		for (let hops = 0; current !== undefined && (current.flags & ts.SymbolFlags.Alias) !== 0; hops++) {
+			if (hops > MAX_ALIAS_HOPS || (current.declarations ?? []).some(ts.isTypeOnlyImportOrExportDeclaration))
+				return undefined;
+			current = this.checker.getImmediateAliasedSymbol(current);
+		}
+		return this.followed(symbol);
 	}
 
 	/**

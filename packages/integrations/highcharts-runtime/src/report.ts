@@ -1,5 +1,11 @@
 import { validate } from '@chartguard/config-highcharts';
-import type { ConfigValidator, ValidationOptions, ValidationResult } from '@chartguard/core';
+import {
+	type ConfigValidator,
+	type Diagnostic,
+	result,
+	type ValidationOptions,
+	type ValidationResult
+} from '@chartguard/core';
 
 import { type HighchartsRuntime, registriesOf } from './registries.js';
 
@@ -20,6 +26,12 @@ export interface ChartGuard {
 	readonly onResult?: (result: ValidationResult, event: ChartEvent) => void;
 	/** Invalid options are not applied: no chart is created, updated or given the series. */
 	readonly block?: boolean;
+	/**
+	 * The `Highcharts` namespace the chart runs on, for `update` and `addSeries` on a chart not created
+	 * through `createChart` (which remembers it): its version and series types are read on every call.
+	 * When named, it wins over the remembered one.
+	 */
+	readonly highcharts?: HighchartsRuntime;
 }
 
 /** Every host Highcharts runs in has a console; the package compiles without DOM or Node types. */
@@ -43,9 +55,42 @@ export function settingsFor(highcharts: HighchartsRuntime | undefined, guard: Ch
 	return { ...guard.options, ...libraryVersion, ...(Object.keys(registries).length === 0 ? {} : { registries }) };
 }
 
-/** `settingsFor` the Highcharts the chart was created with, if it was created through `createChart`. */
+/** The Highcharts a chart runs on: the one the caller names, else the one `createChart` remembered. */
+const runtimeOf = (chart: object, guard: ChartGuard): HighchartsRuntime | undefined =>
+	guard.highcharts ?? runtimes.get(chart);
+
+/** `settingsFor` the Highcharts the chart runs on (`runtimeOf`). */
 export const optionsFor = (chart: object, guard: ChartGuard): ValidationOptions =>
-	settingsFor(runtimes.get(chart), guard);
+	settingsFor(runtimeOf(chart, guard), guard);
+
+const VERSION_UNKNOWN: Diagnostic = {
+	code: 'CFG_VERSION_UNKNOWN',
+	severity: 'info',
+	confidence: 'unknown',
+	path: '$',
+	message:
+		"The running Highcharts is not known for this chart (it was not created through createChart), so it is checked as the schema's version, without the series types Highcharts has.",
+	suggestion: 'Create the chart through createChart, or pass `highcharts` (the namespace) in the guard options.'
+};
+
+/**
+ * `checked` with `extra` findings, and a note when the running version is not known: no version is
+ * named, and the chart's Highcharts (`runtimeOf`) gives none.
+ */
+export function noted(
+	chart: object,
+	guard: ChartGuard,
+	checked: ValidationResult,
+	extra: readonly Diagnostic[] = []
+): ValidationResult {
+	const version = guard.options?.libraryVersion ?? runtimeOf(chart, guard)?.version;
+	const notes = typeof version === 'string' ? extra : [...extra, VERSION_UNKNOWN];
+	if (notes.length === 0) return checked;
+	return {
+		...checked,
+		...result(checked.library, checked.schemaVersion, checked.coverage, [...checked.diagnostics, ...notes])
+	};
+}
 
 export const validatorOf = (guard: ChartGuard): ConfigValidator => guard.validator ?? validate;
 

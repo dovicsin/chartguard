@@ -17,6 +17,7 @@ import { RANGE_CASES } from './ranges-cases.mjs';
 import { SCALE_CASES } from './scales-cases.mjs';
 import { UNKNOWN_CASES } from './unknown-cases.mjs';
 import { MORE_COUNTEREXAMPLES, UNKNOWN_LABEL_CASES } from './unknown-label-cases.mjs';
+import { UNKNOWN_LIBRARY_CASES } from './unknown-library-cases.mjs';
 
 /**
  * Every case that is not about labels gets the titles a real chart has (a chart title, and a title on
@@ -84,6 +85,7 @@ export const RULES_CONTRACT = [
 	...MORE_COUNTEREXAMPLES,
 	...UNKNOWN_CASES,
 	...UNKNOWN_LABEL_CASES,
+	...UNKNOWN_LIBRARY_CASES,
 	...CONTEXT_CASES,
 	...SETTING_CASES
 ].map(realistic);

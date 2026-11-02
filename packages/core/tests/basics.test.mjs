@@ -112,3 +112,14 @@ test('only the one spelling keySegment writes is a path: never a thrown error, n
 	assert.deepEqual(pathSegments('$[0][10]["a b"]'), [0, 10, 'a b']);
 	assert.deepEqual(pathSegments(String.raw`$["\u0001"]`), ['\u0001']);
 });
+
+test('the pre-create wrapper passes the caller options to the validator', () => {
+	const seen = [];
+	const guard = createValidateBeforeCreate('demo', (_config, options) => {
+		seen.push(options);
+		return result('demo', '1', 'partial', []);
+	});
+	guard({}, () => 'chart', undefined, { libraryVersion: '1.2.3' });
+	guard({}, () => 'chart');
+	assert.deepEqual(seen, [{ libraryVersion: '1.2.3' }, undefined]);
+});

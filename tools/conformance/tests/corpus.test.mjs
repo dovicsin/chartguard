@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { browserSkipReason } from '../../shared/chrome.mjs';
+import { skipOutsideCi } from '../../shared/ci.mjs';
 import { EXPECTATIONS as CHARTJS } from '../corpus/chartjs.expectations.mjs';
 import { EXPECTATIONS as ECHARTS } from '../corpus/echarts.expectations.mjs';
 import { EXPECTATIONS as HIGHCHARTS } from '../corpus/highcharts.expectations.mjs';
@@ -16,8 +17,7 @@ const NO_PERMISSION_MODEL = 'this Node version has no permission model to isolat
 /** Why a local corpus (Highcharts) cannot run here: not imported yet (a failure on CI), or no browser. */
 function localSkipReason(library) {
 	if (existsSync(corpusFile(library))) return browserSkipReason();
-	if (process.env['CI'] !== undefined) throw new Error(`CI must import the ${library} corpus first`);
-	return `import it first: node tools/conformance/corpus/import.mjs ${library}`;
+	return skipOutsideCi(`import it first: node tools/conformance/corpus/import.mjs ${library}`);
 }
 
 const CORPORA = [

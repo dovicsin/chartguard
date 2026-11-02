@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { normalize } from '../dist/index.js';
+import { analyze, normalize } from '../dist/index.js';
 
 const colors = (option) =>
 	normalize(option).series.items.map(({ color }) =>
@@ -70,6 +70,30 @@ test('background: only an opaque backgroundColor; without one, or translucent, o
 		normalize({ series: [{ type: 'bar', itemStyle: { color: '#123' } }] }).series.items[0].shades.value.dark.value,
 		'#123'
 	);
+});
+
+test('background: several grids, any one that draws its own background may be behind a series (A58)', () => {
+	const background = (option) => {
+		const fact = normalize(option).background;
+		return fact.known ? `${fact.value.light.value} / ${fact.value.dark.value}` : `? ${fact.reason}`;
+	};
+	assert.equal(
+		background({ backgroundColor: '#fff', grid: [{ show: true, backgroundColor: '#000' }] }),
+		'? unmodelled'
+	);
+	assert.equal(background({ backgroundColor: '#fff', grid: [{}, { show: true }] }), '? unmodelled');
+	assert.equal(background({ backgroundColor: '#fff', grid: [{}, { show: false }] }), '#fff / #fff');
+	const hidden = Object.defineProperty([{}], '1', { get: () => ({ show: true }), enumerable: true });
+	assert.equal(background({ backgroundColor: '#fff', grid: hidden }), '? accessor');
+	assert.equal(background({ backgroundColor: '#fff', grid: [{ show: 'yes' }] }), '? shape');
+	const onBlackGrid = {
+		backgroundColor: '#ffffff',
+		grid: [{ show: true, backgroundColor: '#000000' }],
+		xAxis: { type: 'category', data: ['a'] },
+		yAxis: {},
+		series: [{ type: 'bar', data: [1], itemStyle: { color: '#eeeeee' } }]
+	};
+	assert.ok(!analyze(onBlackGrid).diagnostics.some(({ code }) => code === 'VIS_LOW_CONTRAST_SERIES'));
 });
 
 test("a series' own colour is read where its type draws it (lineStyle for lines, borderColor for boxplot): otherwise it takes the next palette colour (K8)", () => {

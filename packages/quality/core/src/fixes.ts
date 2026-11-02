@@ -26,16 +26,14 @@ export interface Remedy {
  */
 export type Remedies = Readonly<Record<string, (now: Current, path: string, config: unknown) => Remedy | undefined>>;
 
-/** What the option at `path` holds, or undefined when it is not a plain value (an object, a getter, a function). */
-export function currentAt(config: unknown, path: string): Current | undefined {
-	return readCurrent(config, path);
-}
-
 const isOptionValue = (value: unknown): value is OptionValue =>
 	value === null || ['string', 'number', 'boolean'].includes(typeof value);
 
-/** What the option at `path` holds, read through own data properties; undefined when it cannot be edited as a value. */
-function readCurrent(config: unknown, path: string): Current | undefined {
+/**
+ * What the option at `path` holds, read through own data properties: nothing, or a JSON primitive;
+ * undefined when it cannot be edited as a value (an object, a getter, a function).
+ */
+export function currentAt(config: unknown, path: string): Current | undefined {
 	const segments = pathSegments(path);
 	if (segments === undefined || segments.length === 0) return undefined;
 	let value = config;
@@ -49,6 +47,10 @@ function readCurrent(config: unknown, path: string): Current | undefined {
 	if (value === undefined) return { set: false };
 	return isOptionValue(value) ? { set: true, value } : undefined;
 }
+
+/** The number an option holds now, or undefined when it holds none. */
+export const currentNumber = (now: Current): number | undefined =>
+	now.set && typeof now.value === 'number' ? now.value : undefined;
 
 const keyOf = ({ code, path }: Diagnostic): string => `${code} ${path}`;
 

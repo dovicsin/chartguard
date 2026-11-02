@@ -1,11 +1,11 @@
-import { isContainer, isRecord, ownDataProperty, type OwnProperty, type RegistryContext } from '@chartguard/core';
+import { isContainer, ownDataProperty, type RegistryContext } from '@chartguard/core';
 
-const MISSING: OwnProperty = { found: false, accessor: false };
-/** An own data property of the caller's config, never through a getter. */
-const read = (value: unknown, key: string): unknown => {
-	const property = isContainer(value) ? ownDataProperty(value, key) : MISSING;
+/** An own data property of the caller's config, never through a getter: undefined when missing or an accessor. */
+export function ownValue(value: unknown, key: string): unknown {
+	if (!isContainer(value)) return undefined;
+	const property = ownDataProperty(value, key);
 	return property.found ? property.value : undefined;
-};
+}
 
 /**
  * A property of the runtime, read as the runtime exposes it (`Chart` is a class; a bundler may expose
@@ -27,7 +27,8 @@ function idsOf(registry: unknown, kind: string): string[] | undefined {
 function inlineIds(plugins: unknown): { readonly ids: readonly string[]; readonly complete: boolean } {
 	if (plugins === undefined) return { ids: [], complete: true };
 	if (!Array.isArray(plugins)) return { ids: [], complete: false };
-	const ids = (plugins as unknown[]).map((plugin) => (isRecord(plugin) ? read(plugin, 'id') : undefined));
+	// Element by element through own data properties: an element behind a getter is not read (A49).
+	const ids = Array.from({ length: plugins.length }, (_, index) => ownValue(ownValue(plugins, String(index)), 'id'));
 	const named = ids.filter((id): id is string => typeof id === 'string');
 	return { ids: named, complete: named.length === ids.length };
 }

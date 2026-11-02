@@ -4,6 +4,7 @@ Usage:
   chartguard quality  --library <chartjs|echarts|highcharts> --file config.json [--settings <file.json>] [--json]
   chartguard analyze  --library <chartjs|echarts|highcharts> (--file source.ts ... | --project tsconfig.json) [--name config] [--project <tsconfig.json>] [--patterns <file.json>] [--library-version <x|auto>] [--registries <file.json>] [--json]
   chartguard schema build --library highcharts [--dir <project>] [--json]
+  chartguard --version | --help
 --library-version: the version you run; another minor/patch turns confirmed errors into warnings,
   another major is not validated. auto reads node_modules upward from the file.
 --registries: what your runtime registered, { "<registry>": { "names": [...], "complete": true } }
@@ -21,4 +22,9 @@ analyze validates every config the file hands to the library (new Chart, setOpti
 schema build: generates the full Highcharts schema from your installed highcharts (it cannot ship with
   ChartGuard: license); validate and analyze then use it for that installed version.
 Exit codes: 0 no confirmed errors, 1 confirmed validation errors, 2 bad arguments or input, 3 internal failure.
+  Exit 2 names the problem on stderr; with --json, stdout is { "error": { "kind": "usage" | "input", "message" } }.
+  A scalar option given twice is an error, never the last one silently.
 NOTE: coverage=partial means clean output does not certify complete compatibility.`;
+
+/** Printed under a usage error instead of the whole usage. */
+export const USAGE_HINT = "Run 'chartguard --help' for usage.";

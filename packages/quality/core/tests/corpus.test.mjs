@@ -29,14 +29,65 @@ test('every case names a rule of the catalog and a kind, and is written for at l
 	}
 });
 
-test('every rule has a trigger, a counterexample and an unknown case, and a case for each of its context conditions', () => {
+/**
+ * Where a library cannot express a kind of case for a rule, and why: every other rule, library and
+ * kind has a case. An exemption that a case contradicts is stale and fails.
+ */
+const NO_CASE = [
+	{
+		rule: 'placeholder-text',
+		libraries: ['chartjs', 'echarts'],
+		kinds: ['triggers', 'counterexample', 'unknown'],
+		why: 'neither draws a text the config does not set: their titles default to empty (Chart.js `text: ""`, ECharts `text: ""`) and they make no axis title of their own'
+	},
+	{
+		rule: 'percent-without-unit',
+		libraries: ['chartjs', 'echarts'],
+		kinds: ['triggers', 'counterexample', 'unknown'],
+		why: 'neither stacks as percentages (the rule\'s premise): only Highcharts has `stacking: "percent"`'
+	},
+	{
+		rule: 'keyboard-disabled',
+		libraries: ['chartjs', 'echarts'],
+		kinds: ['triggers', 'counterexample', 'unknown'],
+		why: 'neither has keyboard navigation of its own, so the config never turns it off (A57)'
+	},
+	{
+		rule: 'data-not-described',
+		libraries: ['chartjs'],
+		kinds: ['triggers', 'counterexample'],
+		why: "a canvas's text alternative is the page's: the config never decides it, only a declared context does (its context cases)"
+	},
+	{
+		rule: 'low-contrast-series',
+		libraries: ['chartjs'],
+		kinds: ['triggers', 'counterexample'],
+		why: 'Chart.js paints no background: a series is on the page, compared only when the context declares it (its context cases)'
+	}
+];
+const exempt = (rule, library, kind) =>
+	NO_CASE.find((entry) => entry.rule === rule && entry.libraries.includes(library) && entry.kinds.includes(kind));
+
+test('every rule has a trigger, a counterexample and an unknown case for each library, unless that library cannot express it', () => {
+	for (const { id } of RULE_CATALOG)
+		for (const library of LIBRARIES)
+			for (const kind of ['triggers', 'counterexample', 'unknown']) {
+				const covered = RULES_CONTRACT.some(
+					(entry) => entry.rule === id && entry.kind === kind && entry[library] !== undefined
+				);
+				const exemption = exempt(id, library, kind);
+				assert.ok(covered || exemption !== undefined, `${id}: no ${kind} case for ${library}`);
+				assert.ok(!(covered && exemption !== undefined), `${id}: ${library} ${kind} is exempt, but has a case`);
+			}
+	for (const { rule, why } of NO_CASE) {
+		assert.ok(codeOf.has(rule), rule);
+		assert.ok(why.length > 0, rule);
+	}
+});
+
+test('a case for each context condition of every rule', () => {
 	for (const { id, context } of RULE_CATALOG) {
 		const cases = RULES_CONTRACT.filter((entry) => entry.rule === id);
-		for (const kind of ['triggers', 'counterexample', 'unknown'])
-			assert.ok(
-				cases.some((entry) => entry.kind === kind),
-				`${id}: no ${kind} case`
-			);
 		for (const { fact, effect } of context) {
 			const declared = cases.filter(
 				(entry) =>

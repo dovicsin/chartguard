@@ -4,6 +4,7 @@ import {
 	type Fact,
 	firstSet,
 	isNumber,
+	isStaticValue,
 	isString,
 	type Item,
 	type Listed,
@@ -42,7 +43,10 @@ const PIE = new Set(['pie', 'doughnut']);
 const RADIAL = new Set(['radar', 'polarArea']);
 
 /** A bar grows from zero unless its `base` is set (`startValue = baseValue ?? start`, with `start` zero unless stacked). */
-const BASE: Default<number> = { value: 0, pointer: 'chart.js@4.5.1 dist/chart.js:1574 let start = 0;' };
+const BASE: Default<number> = {
+	value: 0,
+	pointer: 'chart.js@4.5.1 dist/chart.js:1574 let start = 0; [in _calculateBarValuePixels(index)]'
+};
 
 /** A bar's `base`, through the dataset, the options for bar datasets and the chart options (`datasetScopeKeys`). */
 function baseOf(config: unknown, item: Item, kind: Fact<SeriesKind>): Fact<number> {
@@ -59,7 +63,6 @@ function baseOf(config: unknown, item: Item, kind: Fact<SeriesKind>): Fact<numbe
 }
 
 /** Any value the config sets, except one decided at runtime. */
-const isSet = (value: unknown): value is unknown => value !== undefined && typeof value !== 'function';
 
 /** A dataset's type: its own, else the chart's (`const type = dataset.type || config.type`, dist/chart.js:5317). */
 function typeOf(config: unknown, item: Item): Fact<string> {
@@ -78,9 +81,9 @@ function kindOf(config: unknown, item: Item, type: Fact<string>): Fact<SeriesKin
 		return { ...type, value: CARTESIAN[type.value] ?? (PIE.has(type.value) ? 'pie' : 'other') };
 	const fill = firstSet(
 		[
-			readFact(config, [...item.segments, 'fill'], isSet),
-			readFact(config, ['options', 'datasets', 'line', 'fill'], isSet),
-			readFact(config, ['options', 'elements', 'line', 'fill'], isSet)
+			readFact(config, [...item.segments, 'fill'], isStaticValue),
+			readFact(config, ['options', 'datasets', 'line', 'fill'], isStaticValue),
+			readFact(config, ['options', 'elements', 'line', 'fill'], isStaticValue)
 		],
 		FILL
 	);
@@ -136,10 +139,10 @@ export function addedScales(config: unknown): DatasetScales {
 /** Whether the dataset's values are stacked, from its value scale's `stacked`, else its own `stack`. */
 function stackingOf(config: unknown, item: Item, scale: Fact<string>): Fact<Stacking> {
 	if (!scale.known) return unknown(`${item.path}.stack`, scale.reason);
-	const stacked = readFact(config, ['options', 'scales', scale.value, 'stacked'], isSet);
+	const stacked = readFact(config, ['options', 'scales', scale.value, 'stacked'], isStaticValue);
 	if (stacked.known) return { ...stacked, value: stacked.value === false ? 'none' : 'stacked' };
 	if (stacked.reason !== 'unset') return stacked;
-	const stack = readFact(config, [...item.segments, 'stack'], isSet);
+	const stack = readFact(config, [...item.segments, 'stack'], isStaticValue);
 	if (stack.known) return { ...stack, value: 'stacked' };
 	return stack.reason === 'unset'
 		? { known: true, value: 'none', path: stack.path, source: 'default', pointer: STACKED }

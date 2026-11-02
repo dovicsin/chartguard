@@ -23,6 +23,14 @@ interface GuardPlugin {
         readonly mode?: string;
     }): boolean | undefined;
 }
+// uses GuardedChart
+interface GuardedChart {
+    readonly config: {
+        readonly type?: unknown;
+        readonly data?: unknown;
+        readonly options?: unknown;
+    };
+}
 
 ### guard
 function guard<T extends object>(config: T, options?: GuardOptions): T;

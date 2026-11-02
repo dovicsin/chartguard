@@ -1,20 +1,29 @@
 import { isContainer } from '@chartguard/core';
-import { type Fact, isTransparent, type KnownFact, readFact, type Shades, unknown } from '@chartguard/quality-core';
+import {
+	type Fact,
+	isBoolean,
+	isString,
+	isTransparent,
+	type KnownFact,
+	readFact,
+	type Shades,
+	unknown
+} from '@chartguard/quality-core';
 
 type Scheme = 'light' | 'dark';
 
 /** The palette colours (`defaultColors`), each at the line that defines it. */
 const DEFAULT_COLORS: readonly KnownFact<string>[] = [
-	{ value: '#2caffe', pointer: "highcharts@13.1.1 highcharts.src.js:12147 '#2caffe'," },
-	{ value: '#544fc5', pointer: "highcharts@13.1.1 highcharts.src.js:12148 '#544fc5'," },
-	{ value: '#00e272', pointer: "highcharts@13.1.1 highcharts.src.js:12149 '#00e272'," },
-	{ value: '#fe6a35', pointer: "highcharts@13.1.1 highcharts.src.js:12150 '#fe6a35'," },
-	{ value: '#6b8abc', pointer: "highcharts@13.1.1 highcharts.src.js:12151 '#6b8abc'," },
-	{ value: '#d568fb', pointer: "highcharts@13.1.1 highcharts.src.js:12152 '#d568fb'," },
-	{ value: '#2ee0ca', pointer: "highcharts@13.1.1 highcharts.src.js:12153 '#2ee0ca'," },
-	{ value: '#fa4b42', pointer: "highcharts@13.1.1 highcharts.src.js:12154 '#fa4b42'," },
-	{ value: '#feb56a', pointer: "highcharts@13.1.1 highcharts.src.js:12155 '#feb56a'," },
-	{ value: '#91e8e1', pointer: "highcharts@13.1.1 highcharts.src.js:12156 '#91e8e1'" }
+	{ value: '#2caffe', pointer: "highcharts@13.1.1 highcharts.src.js:12147 '#2caffe', [in const defaultColors]" },
+	{ value: '#544fc5', pointer: "highcharts@13.1.1 highcharts.src.js:12148 '#544fc5', [in const defaultColors]" },
+	{ value: '#00e272', pointer: "highcharts@13.1.1 highcharts.src.js:12149 '#00e272', [in const defaultColors]" },
+	{ value: '#fe6a35', pointer: "highcharts@13.1.1 highcharts.src.js:12150 '#fe6a35', [in const defaultColors]" },
+	{ value: '#6b8abc', pointer: "highcharts@13.1.1 highcharts.src.js:12151 '#6b8abc', [in const defaultColors]" },
+	{ value: '#d568fb', pointer: "highcharts@13.1.1 highcharts.src.js:12152 '#d568fb', [in const defaultColors]" },
+	{ value: '#2ee0ca', pointer: "highcharts@13.1.1 highcharts.src.js:12153 '#2ee0ca', [in const defaultColors]" },
+	{ value: '#fa4b42', pointer: "highcharts@13.1.1 highcharts.src.js:12154 '#fa4b42', [in const defaultColors]" },
+	{ value: '#feb56a', pointer: "highcharts@13.1.1 highcharts.src.js:12155 '#feb56a', [in const defaultColors]" },
+	{ value: '#91e8e1', pointer: "highcharts@13.1.1 highcharts.src.js:12156 '#91e8e1' [in const defaultColors]" }
 ].map(({ value, pointer }) => ({ known: true, value, path: '$.palette.colors', source: 'default', pointer }));
 /** Dark-scheme overrides of the palette colours (`defaultDarkOverrideColors`), by index. */
 const DARK_OVERRIDES: Readonly<Record<number, KnownFact<string>>> = {
@@ -23,7 +32,7 @@ const DARK_OVERRIDES: Readonly<Record<number, KnownFact<string>>> = {
 		value: '#00e272',
 		path: '$.palette.dark.colors',
 		source: 'default',
-		pointer: "highcharts@13.1.1 highcharts.src.js:12160 '#00e272',"
+		pointer: "highcharts@13.1.1 highcharts.src.js:12160 '#00e272', [in const defaultDarkOverrideColors]"
 	},
 	2: {
 		known: true,
@@ -50,9 +59,8 @@ const BACKGROUNDS: Readonly<Record<Scheme, KnownFact<string>>> = {
 	}
 };
 const CHART_BACKGROUND =
-	"highcharts@13.1.1 highcharts.src.js:1469 backgroundColor: 'var(--highcharts-background-color)',";
+	"highcharts@13.1.1 highcharts.src.js:1469 backgroundColor: 'var(--highcharts-background-color)', [in const ChartDefaults]";
 
-const isString = (value: unknown): value is string => typeof value === 'string';
 const COLOR_VARIABLE = /^var\(--highcharts-color-(\d+)\)$/;
 const BACKGROUND_VARIABLE = 'var(--highcharts-background-color)';
 
@@ -101,7 +109,7 @@ function schemes(config: unknown): readonly Scheme[] | undefined {
 	if (!palette.known) return palette.reason === 'unset' ? ['light', 'dark'] : undefined;
 	const [scheme, inject] = [
 		readFact(config, ['palette', 'colorScheme'], isString),
-		readFact(config, ['palette', 'injectCSS'], (value): value is boolean => typeof value === 'boolean')
+		readFact(config, ['palette', 'injectCSS'], isBoolean)
 	];
 	if (scheme.known || scheme.reason !== 'unset' || (inject.known ? !inject.value : inject.reason !== 'unset'))
 		return undefined;

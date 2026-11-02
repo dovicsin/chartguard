@@ -222,6 +222,26 @@ export class ConfigWalker {
 			this.diagnostics.push(unresolved('CFG_TRUNCATED', cursor.path, 'Object inspection limit reached.'));
 		for (const key of keys.slice(0, MAX_ENTRIES))
 			this.walkProperty(object, key, schema, descend(cursor, keySegment(key)));
+		this.noteHidden(object, keys.length, cursor);
+	}
+
+	/**
+	 * A non-enumerable own property is read by a runtime that looks the key up, and skipped by one that
+	 * merges or copies options: what it does is not decided here, so it is noted, never checked nor
+	 * treated as valid (invariant 4).
+	 */
+	private noteHidden(object: object, enumerable: number, cursor: Cursor): void {
+		const names = Object.getOwnPropertyNames(object);
+		if (names.length === enumerable) return;
+		const shown = new Set(Object.keys(object));
+		for (const key of names.filter((name) => !shown.has(name)).slice(0, MAX_ENTRIES))
+			this.diagnostics.push(
+				unresolved(
+					'CFG_DYNAMIC',
+					`${cursor.path}${keySegment(key)}`,
+					'Property is not enumerable; a runtime that merges options skips it. Not checked.'
+				)
+			);
 	}
 
 	/**

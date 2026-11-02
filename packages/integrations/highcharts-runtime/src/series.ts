@@ -45,8 +45,8 @@ function byId(chart: HighchartsChart, id: unknown): Reached | undefined {
 }
 
 /**
- * The series item `index` of an update reaches, as highcharts@13.1.1 `Chart#update` matches it
- * (highcharts.src.js, `collectionsWithUpdate.forEach`): by `id` through `chart.get`, else the series
+ * The series item `index` of an update reaches, as `Chart#update` matches it (`SOURCES` in
+ * sources.ts): by `id` through `chart.get`, else the series
  * at `index ?? i`, unless the item has an id and that series has another, or the series is internal.
  */
 function reachedBy(chart: HighchartsChart, item: object, index: number): Reached {

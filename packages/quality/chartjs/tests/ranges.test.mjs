@@ -95,6 +95,11 @@ test('base: a bar grows from its base, through the dataset, options.datasets.bar
 	assert.deepEqual(baselines(bars([60], {}, { dataset: { base: 0 } })), []);
 	// On a logarithmic axis bar-log-scale reports instead.
 	assert.deepEqual(baselines(bars([60], { type: 'logarithmic' }, { dataset: { base: 20 } })), []);
+	// A scale type behind a getter may be logarithmic: no baseline is claimed (A51).
+	const hiddenType = (rest) =>
+		Object.defineProperty({ ...rest }, 'type', { get: () => 'logarithmic', enumerable: true });
+	assert.deepEqual(baselines(bars([60, 70], hiddenType({ min: 50 }))), []);
+	assert.deepEqual(baselines(bars([60], hiddenType({}), { dataset: { base: 20 } })), []);
 });
 
 test('unit: plain numbers on a linear scale unless a tick callback formats them', () => {

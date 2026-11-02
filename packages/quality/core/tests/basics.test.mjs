@@ -4,6 +4,7 @@ import test from 'node:test';
 import { pathSegments } from '@chartguard/core';
 
 import { formatPath, itemsAt, readFact, readPath, review, valueOf } from '../dist/index.js';
+import { axis, chart, fact, none, series } from './fixtures/semantics.mjs';
 
 const isNumber = (value) => typeof value === 'number';
 const DEFAULT = { value: 0, pointer: 'lib@1.0.0 file.js:1 zero' };
@@ -72,47 +73,6 @@ test('paths are written in the engine syntax and name exactly one place (E29)', 
 	assert.equal(formatPath([]), '$');
 });
 
-const fact = (value, path, source = 'config') => ({
-	known: true,
-	value,
-	path,
-	source,
-	...(source === 'default' ? { pointer: 'p' } : {})
-});
-const none = (path, reason = 'unset') => ({ known: false, path, reason });
-const series = (kind, valueAxis, orientation = fact('vertical', '$.o')) => ({
-	path: '$.s',
-	type: fact(kind, '$.t'),
-	kind: fact(kind, '$.t'),
-	name: none('$.n'),
-	stacking: none('$.stack'),
-	base: none('$.base'),
-	valueAxis,
-	orientation,
-	color: none('$.color')
-});
-const axis = (key, min, extra = {}) => ({
-	key,
-	path: `$.${key}`,
-	scale: none('$.scale'),
-	min,
-	max: none('$.max'),
-	fit: none('$.fit'),
-	unit: none('$.unit'),
-	panel: fact('plot', '$.panel', 'default'),
-	reversed: none('$.reversed'),
-	title: { text: none('$.title'), shown: none('$.shown') },
-	...extra
-});
-const chart = ({ items = [], axes = [], text = none('$.title.text'), shown = none('$.title.show') } = {}) => ({
-	library: 't',
-	title: { text, shown },
-	series: { known: true, path: '$.series', items },
-	axes,
-	background: none('$.background'),
-	motion: { endless: none('$.endless'), longest: none('$.longest') },
-	access: { dataDescribed: none('$.access'), keyboard: none('$.keyboard') }
-});
 const codes = (report) => report.diagnostics.map((d) => `${d.code} ${d.path}`);
 
 test('bar baseline: a configured non-zero minimum of an axis a bar series is measured on, once per axis', () => {

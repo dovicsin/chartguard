@@ -18,6 +18,7 @@ import {
 	type SeriesSemantics,
 	type Shades,
 	unknown,
+	type UnknownFact,
 	withFixes
 } from '@chartguard/quality-core';
 
@@ -27,13 +28,19 @@ import { REMEDIES } from './fixes.js';
 import { motionOf } from './motion.js';
 import { seriesOf } from './series.js';
 
-const TITLE_SHOWN: Default<boolean> = { value: true, pointer: 'echarts@6.1.0 dist/echarts.js:84452 show: true,' };
+const TITLE_SHOWN: Default<boolean> = {
+	value: true,
+	pointer: 'echarts@6.1.0 dist/echarts.js:84452 show: true, [in TitleModel.defaultOption]'
+};
 /** Without `aria.enabled` echarts describes nothing; with it, its label (a generated description) is on by default. */
 const ARIA: Default<boolean> = {
 	value: false,
 	pointer: "echarts@6.1.0 dist/echarts.js:92032 if (!ariaModel.get('enabled')) {"
 };
-const ARIA_LABEL: Default<boolean> = { value: true, pointer: 'echarts@6.1.0 dist/echarts.js:92020 enabled: true' };
+const ARIA_LABEL: Default<boolean> = {
+	value: true,
+	pointer: 'echarts@6.1.0 dist/echarts.js:92020 enabled: true [in var DEFAULT_OPTION] [in label: {]'
+};
 
 function accessOf(config: unknown): AccessSemantics {
 	const enabled = readFact(config, ['aria', 'enabled'], isBoolean, ARIA);
@@ -44,15 +51,31 @@ function accessOf(config: unknown): AccessSemantics {
 }
 
 /**
+ * Why the background is not known for a grid: one that draws a background of its own (`show`, false by
+ * default) is behind
+ * the series on its axes, which the chart-wide background does not model; `grid` may be one or a list.
+ * Undefined when no grid draws one.
+ */
+function gridBackground(config: unknown): UnknownFact | undefined {
+	const grids = itemsAt(config, ['grid'], { single: true });
+	if (!grids.known) return grids;
+	for (const grid of grids.items) {
+		const show = readFact(config, [...grid.segments, 'show'], isBoolean);
+		if (!show.known && show.reason !== 'unset') return show;
+		if (show.known && show.value) return unknown(show.path, 'unmodelled');
+	}
+	return undefined;
+}
+
+/**
  * The background: the option's `backgroundColor` when it is opaque. Without one (or with a transparent
  * one) echarts draws none (`ecModel.get('backgroundColor') || 'transparent'`, dist/echarts.js:29469) and
- * the page shows through (`page`); a translucent one, or a grid that draws its own background
- * (`grid.show`), is not modelled.
+ * the page shows through (`page`); a translucent one, or any grid that draws its own background
+ * (`grid.show`, one grid or several), is not modelled.
  */
 function backgroundOf(config: unknown): Fact<Shades> {
-	const grid = readFact(config, ['grid', 'show'], isBoolean);
-	if (!grid.known && grid.reason !== 'unset') return grid;
-	if (grid.known && grid.value) return unknown(grid.path, 'unmodelled');
+	const grid = gridBackground(config);
+	if (grid !== undefined) return grid;
 	const color = readFact(config, ['backgroundColor'], isString);
 	if (!color.known) return color.reason === 'unset' ? unknown(color.path, 'page') : color;
 	if (isTransparent(color.value)) return unknown(color.path, 'page');
@@ -60,7 +83,10 @@ function backgroundOf(config: unknown): Fact<Shades> {
 }
 
 /** Without a title (or its text) echarts draws none. */
-const TITLE_TEXT: Default<string> = { value: '', pointer: "echarts@6.1.0 dist/echarts.js:84453 text: ''," };
+const TITLE_TEXT: Default<string> = {
+	value: '',
+	pointer: "echarts@6.1.0 dist/echarts.js:84453 text: '', [in TitleModel.defaultOption]"
+};
 
 /** The ECharts option as library-neutral chart semantics (CG-05-02, CG-05-03). Several titles stay unknown: none is guessed. */
 export function normalize(config: unknown): ChartSemantics {

@@ -1,3 +1,4 @@
+import { sameNode, upstreamChanged } from './nodes.mjs';
 import { runtimePointer } from './runtime.mjs';
 
 /**
@@ -34,8 +35,7 @@ const FACTS = {
 };
 
 const ANY_ARRAY = { kind: 'array', items: { kind: 'unknown' } };
-const changed = (what) => new Error(`highcharts types changed: ${what}`);
-const sameNode = (left, right) => JSON.stringify(left) === JSON.stringify(right);
+const changed = upstreamChanged('highcharts types');
 
 /** The provenance with one more runtime source; a node without provenance gets the runtime fact as its own. */
 const withSource = (provenance, source) =>

@@ -1,6 +1,9 @@
-import { dirname, resolve, sep } from 'node:path';
+import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
 import ts from 'typescript';
+
+import { MAX_SOURCE_LENGTH } from './limits.js';
 
 /** A tsconfig that cannot be used; every problem is listed. The caller's input, never ChartGuard's defect. */
 export class ProjectConfigError extends Error {
@@ -64,4 +67,42 @@ export function locateTsconfig(fileName: string, choice: TsconfigChoice): string
 	if (typeof choice === 'string') return resolve(choice);
 	if (!choice) return undefined;
 	return ts.findConfigFile(dirname(resolve(fileName)), (path) => ts.sys.fileExists(path));
+}
+
+/** A project file's text, or why the scan does not read it (`code`, `message`). */
+export type ProjectFileRead =
+	| { readonly source: string }
+	| { readonly code: 'CFG_OUTSIDE_PROJECT' | 'CFG_UNREADABLE' | 'CFG_TOO_LARGE'; readonly message: string };
+
+/** Bytes a file of `MAX_SOURCE_LENGTH` characters takes at most in UTF-8: a larger file is not even loaded. */
+const MAX_SOURCE_BYTES = MAX_SOURCE_LENGTH * 3;
+
+/** Whether `path` is `directory` or below it, by path segment (E2). */
+function isInside(path: string, directory: string): boolean {
+	const inside = relative(directory, path);
+	return inside === '' || (!isAbsolute(inside) && inside.split(sep)[0] !== '..');
+}
+
+const reasonOf = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+
+/**
+ * A file a scan lists, read only when it really lies in the project directory (`root`, the
+ * tsconfig's directory, both after following symbolic links): a link out of it, or an `include` or
+ * `files` entry outside it, is not read without the user's choice. A file that cannot be read says why.
+ */
+export function readProjectFile(fileName: string, root: string): ProjectFileRead {
+	try {
+		const real = realpathSync(fileName);
+		if (!isInside(real, realpathSync(root)))
+			return {
+				code: 'CFG_OUTSIDE_PROJECT',
+				message: `The file is outside the project directory ${root} (it is ${real}); it is not read.`
+			};
+		const { size } = statSync(real);
+		if (size > MAX_SOURCE_BYTES)
+			return { code: 'CFG_TOO_LARGE', message: `The file has ${String(size)} bytes; it is not read.` };
+		return { source: readFileSync(real, 'utf8') };
+	} catch (error) {
+		return { code: 'CFG_UNREADABLE', message: `The file cannot be read: ${reasonOf(error)}` };
+	}
 }

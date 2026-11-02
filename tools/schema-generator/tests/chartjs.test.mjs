@@ -110,6 +110,19 @@ test('scale unions are extensible, datasets inherit the chart type, runtime-defa
 	assert.deepEqual([scale.discriminator, scale.extensible], ['type', true]);
 });
 
+test('every chart type takes every scale type: the runtime looks a scale up in one registry, whatever the chart', () => {
+	const { root, definitions } = artifact;
+	const unions = root.anyOf.map(({ ref }) => {
+		const options = resolve(definitions[ref].properties.options.node);
+		return resolve(resolve(options.properties.scales.node).values);
+	});
+	const [shared] = unions;
+	for (const union of unions) assert.equal(union, shared);
+	const types = shared.anyOf.map((member) => resolve(member).properties.type.node.value);
+	assert.deepEqual(types, ['linear', 'logarithmic', 'category', 'time', 'timeseries', 'radialLinear']);
+	assert.deepEqual(shared.registry, { id: 'chartjs.scales', prefix: '', enforced: true });
+});
+
 test('every option value under options is scriptable; discriminators stay literal', () => {
 	const options = resolve(artifact.definitions.Config_line.properties.options.node);
 	const title = resolve(resolve(options.properties.plugins.node).properties.title.node)
@@ -122,15 +135,18 @@ test('every option value under options is scriptable; discriminators stay litera
 	assert.equal(scale.properties.type.node.kind, 'literal');
 });
 
-test('a built-in plugin entry may be a boolean: getOpts disables it with false and enables it with true', () => {
+test('a built-in plugin entry may be a boolean or null: getOpts disables it with false or null, enables it with true', () => {
 	const options = resolve(artifact.definitions.Config_bar.properties.options.node);
 	const plugins = resolve(options.properties.plugins.node);
 	for (const id of ['legend', 'tooltip', 'title', 'subtitle', 'decimation', 'filler', 'colors']) {
 		const members = resolve(plugins.properties[id].node).anyOf.map(resolve);
-		assert.ok(
-			members.some((member) => member.kind === 'boolean'),
+		assert.deepEqual(
+			['boolean', 'null'].filter((kind) => members.some((member) => member.kind === kind)),
+			['boolean', 'null'],
 			id
 		);
+		const pointers = plugins.properties[id].provenance.sources.map(({ pointer }) => pointer);
+		assert.ok(pointers.includes('chart.js/dist/chart.js:5203'), `${id} cites createDescriptors skipping null`);
 	}
 });
 

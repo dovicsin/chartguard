@@ -86,6 +86,8 @@ export class TypeEmitter {
 		 * Property declaration node → extra IR nodes the runtime also accepts there. Keyed by the
 		 * declaration, because a property reached through an intersection is a transient symbol.
 		 */
+		// A key without a declaration would widen every declaration-less property (keys a mapped type synthesizes).
+		if (widened.has(undefined)) throw new Error('widened: a property without a declaration cannot be widened');
 		this.widened = widened;
 		/** Alias names of homomorphic mapped wrappers (`DeepPartial`) that pass primitives through unchanged. */
 		this.wrappers = wrappers;
@@ -315,10 +317,11 @@ export class TypeEmitter {
 	/** Keys synthesized by mapped types have no declaration of their own; they cite their owner type. */
 	emitProperty(symbol, owner) {
 		const declared = this.emit(this.checker.getTypeOfSymbol(symbol));
-		const extra = this.widened.get(symbol.declarations?.[0]);
+		const declaration = symbol.declarations?.[0];
+		const extra = declaration === undefined ? undefined : this.widened.get(declaration);
 		const node = extra === undefined ? declared : { kind: 'union', anyOf: [declared, ...extra] };
 		const optional = (symbol.flags & ts.SymbolFlags.Optional) !== 0 || this.runtimeOptional.has(symbol);
-		const provenance = this.provenance.of(symbol.declarations?.[0] === undefined ? owner : symbol);
+		const provenance = this.provenance.of(declaration === undefined ? owner : symbol);
 		const deprecated = deprecationOf(symbol);
 		return {
 			node,

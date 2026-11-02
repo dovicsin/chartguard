@@ -1,3 +1,5 @@
+import { resolveIn } from './nodes.mjs';
+
 /**
  * Chart.js resolves every option through its scriptable resolver (`_descriptors` in
  * helpers.dataset.js defaults to `scriptable: true`; the root descriptor is
@@ -19,7 +21,7 @@ export function makeOptionsScriptable(definitions, configRefs) {
 	};
 	collect(definitions);
 
-	const resolve = (node) => (node.kind === 'ref' ? definitions[node.ref] : node);
+	const resolve = resolveIn(definitions);
 	const acceptsFunction = (node, seen = new Set()) => {
 		if (node.kind === 'ref') {
 			if (seen.has(node.ref)) return false;

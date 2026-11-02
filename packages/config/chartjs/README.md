@@ -7,11 +7,15 @@ import { validate } from "@chartguard/config-chartjs";
 const result = validate(config);
 ```
 
-See `docs/08-schema-pipeline.md` before production use.
+A finding is as certain as the schema fact it rests on, and a clean result means no confirmed error was found, not that the configuration is complete: read `status` and `coverage`.
+
+## Scale types
+
+A scale without `type` is checked as the type Chart.js gives it (`mergeScaleConfig`): by the chart type's scale defaults for its axis or role (bar and line: the index axis `category`, the value axis `linear`, swapped by `indexAxis: 'y'`; scatter and bubble `linear`; radar and polar area `r` `radialLinear`), else by the defaults of the dataset types bound to it, else `radialLinear`, `category` or `linear` by its axis. The axis is the scale id (`x`, `y`, `r`), else its `position`, else the id's first letter. Every chart type takes every scale type, as the runtime looks a scale's type up in one registry.
 
 ## Known limits
 
-- **A scale without `type` is not checked.** Chart.js chooses its type from the chart type, the axis the scale id stands for and the datasets bound to it (`mergeScaleConfig`); that choice is not modelled yet, so such a scale is reported as `CFG_AMBIGUOUS` (info) and its options are not checked. Give the scale its `type` to have it checked (roadmap CG-02-09).
+- A scale without `type` stays inconclusive (`CFG_AMBIGUOUS`, info, its options unchecked) when the runtime's choice cannot be read without running code: a plugin chart type or dataset type (its controller's scale defaults are unknown), an `axis` option on an id that is not an axis, a scale only the datasets bound to it give an axis, a getter on the way, or a partial update (`incomplete: true`). The runtime's own defaults are assumed: a changed `Chart.overrides` or `Chart.defaults` is not modelled.
 
 ## Plugin options and scales
 

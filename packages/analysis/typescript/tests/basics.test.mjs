@@ -186,3 +186,22 @@ test('syntax errors make every object incomplete and are reported with their pos
 	);
 	assert.deepEqual(extractStaticConfigs('const config = { a: 1 };').diagnostics, []);
 });
+
+test('a literal __proto__ sets the prototype, never an own key: the inherited content is unknown (A3)', () => {
+	for (const key of ['__proto__', '"__proto__"', "'__proto__'"]) {
+		const object = named(`const config = { a: 1, ${key}: { polluted: true }, b: 2 };`);
+		assert.deepEqual([object.complete, Object.getOwnPropertyNames(object.value)], [false, ['a', 'b']], key);
+		assert.equal(Object.getPrototypeOf(object.value), null);
+	}
+	// A null prototype inherits nothing; a primitive is ignored by the runtime.
+	for (const value of ['null', '5']) {
+		const object = named(`const config = { __proto__: ${value}, a: 1 };`);
+		assert.deepEqual([object.complete, Object.getOwnPropertyNames(object.value)], [true, ['a']], value);
+	}
+	// Shorthand and computed __proto__ are own properties.
+	const shorthand = named('const __proto__ = { x: 1 };\nconst config = { __proto__ };');
+	assert.deepEqual([shorthand.complete, Object.getOwnPropertyNames(shorthand.value)], [true, ['__proto__']]);
+	assert.equal(Object.getPrototypeOf(shorthand.value), null);
+	const computed = named('const config = { ["__proto__"]: { x: 1 } };');
+	assert.equal(computed.complete, false);
+});

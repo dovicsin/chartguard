@@ -34,6 +34,8 @@ await analyzeProjectFiles("tsconfig.json", { signal });         // every include
 
 A file longer than `MAX_SOURCE_LENGTH` or nested deeper than `MAX_NESTING` is not read (`readable: false`, with a note); following references is bounded (`MAX_DECODE_STEPS`), values beyond it are `limit`.
 
+A scan reads only files inside the tsconfig's directory (after following symbolic links): a link out of it, or an `include`/`files` entry outside it, is listed as not read (`CFG_OUTSIDE_PROJECT`); a file that cannot be read from disk is listed with its reason (`CFG_UNREADABLE`). `maxFiles` must be a non-negative integer, otherwise the scan throws `ScanOptionError`. A Program that cannot be built at all (a file nested too deeply for the parser) refuses every file (`CFG_TOO_COMPLEX`); nothing throws.
+
 ## Chart uses
 
 `objects` lists the file's object constants; `uses` lists where the file hands a config to a chart library, recognized by where the callee comes from: `new Chart` (chart.js), `setOption` on `echarts.init(…)`, `Highcharts.chart` / `stockChart` / `mapChart` / `ganttChart`, the React wrappers react-chartjs-2, echarts-for-react and highcharts-react-official, and ChartGuard's `validateBeforeCreate`. Your own wrappers are added as patterns:
@@ -44,5 +46,5 @@ extractStaticConfigs(source, "chart.tsx", {
 });
 ```
 
-A pattern names a package (`module`) or a project file (`file`, absolute), a dotted `export`, and the config's `argument` index or JSX `prop`; malformed patterns throw `PatternError`. Passing an object to any other function counts as a possible change, except a few globals that only read (`console.*`, `JSON.stringify`, `structuredClone`, `Object.keys`, …).
+A pattern names a package (`module`) or a project file (`file`, absolute), a dotted `export`, and the config's `argument` index or JSX `prop`; malformed patterns throw `PatternError`. Passing an object to any other function counts as a possible change, except a few globals that only read (`console.*`, `JSON.stringify`, `structuredClone`, `Object.keys`, …), recognised as the global declared by the lib or `@types/node`, never by name: a local or script-level `console` may do anything. `import x = require('echarts')` is an origin, as `import * as x` is. A type-only import (`import type`, `import { type x }`, `export type { x }`) is erased at runtime, so its value is unknown. A literal `__proto__: …` sets the prototype, not a key: the object's inherited keys are unknown.
 

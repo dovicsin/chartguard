@@ -77,8 +77,8 @@ function itemsAt(series: unknown, path: string): { item: unknown; path: string }
 const untyped = (item: unknown): boolean => isRecord(item) && !Object.hasOwn(item, 'type');
 
 /**
- * echarts drops a series it cannot find a model for by type (echarts@6.1.0 dist/echarts.js:
- * `error("Unknown series " + subType)`): an untyped item of a fresh option, or of a merge beyond the
+ * echarts drops a series it cannot find a model for by type ("Unknown series", `SOURCES` in
+ * sources.ts): an untyped item of a fresh option, or of a merge beyond the
  * series the chart has when the update names none by `id` or `name`.
  */
 function dropped(path: string): Diagnostic {
@@ -113,8 +113,8 @@ const isInternal = (series: unknown): boolean => {
 
 /**
  * For each item of the update, the held series it merges into, as echarts maps by position
- * (`mappingByIndex`, echarts lib/util/model.js:252): each item takes the first series no item took
- * yet that is not internal; an item that is not an object takes none (:156); past the held series
+ * (`mappingByIndex`, `SOURCES` in sources.ts): each item takes the first series no item took
+ * yet that is not internal; an item that is not an object takes none; past the held series
  * an item is new (`undefined`). K3.
  */
 function slots(items: readonly unknown[], held: readonly unknown[]): (number | undefined)[] {

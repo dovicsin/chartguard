@@ -110,6 +110,56 @@ interface ProjectAnalysis extends AnalysisOutput {
     readonly fileName: string;
     readonly tsconfig: string | undefined;
 }
+// uses AnalysisOutput
+interface AnalysisOutput {
+    readonly readable: boolean;
+    readonly objects: readonly SourceObject[];
+    readonly uses: readonly ChartUse[];
+    readonly diagnostics: readonly Diagnostic[];
+}
+// uses Binding
+type Binding = 'const' | 'let' | 'var';
+// uses ChartLibrary
+type ChartLibrary = 'chartjs' | 'echarts' | 'highcharts';
+// uses ChartUse
+interface ChartUse {
+    readonly library: ChartLibrary;
+    readonly pattern: string;
+    readonly line: number;
+    readonly column: number;
+    readonly value: unknown;
+    readonly complete: boolean;
+    readonly diagnostics: readonly Diagnostic[];
+    readonly source?: string;
+    readonly paths: readonly PathFact[];
+}
+// uses PathFact
+interface PathFact extends SourceRange {
+    readonly path: string;
+    readonly known: boolean;
+    readonly reason?: UnknownReason;
+}
+// uses SourceObject
+interface SourceObject {
+    readonly name: string;
+    readonly line: number;
+    readonly column: number;
+    readonly binding: Binding;
+    readonly value: unknown;
+    readonly complete: boolean;
+    readonly diagnostics: readonly Diagnostic[];
+    readonly paths: readonly PathFact[];
+}
+// uses SourceRange
+interface SourceRange {
+    readonly file: string;
+    readonly line: number;
+    readonly column: number;
+    readonly endLine: number;
+    readonly endColumn: number;
+}
+// uses UnknownReason
+type UnknownReason = 'call' | 'name' | 'expression' | 'computed-key' | 'spread' | 'choice' | 'mutated' | 'cycle' | 'limit';
 
 ### ProjectConfigError
 class ProjectConfigError extends Error {
@@ -123,6 +173,25 @@ class ProjectConfigError extends Error {
 interface ProjectOptions extends ExtractOptions {
     readonly tsconfig?: TsconfigChoice;
 }
+// uses ChartLibrary
+type ChartLibrary = 'chartjs' | 'echarts' | 'highcharts';
+// uses ChartPattern
+interface ChartPattern {
+    readonly id: string;
+    readonly library: ChartLibrary;
+    readonly module?: string;
+    readonly file?: string;
+    readonly export: string;
+    readonly argument?: number;
+    readonly prop?: string;
+    readonly construct?: boolean;
+}
+// uses ExtractOptions
+interface ExtractOptions {
+    readonly patterns?: readonly ChartPattern[];
+}
+// uses TsconfigChoice
+type TsconfigChoice = string | boolean;
 
 ### ProjectScan
 interface ProjectScan {
@@ -131,10 +200,32 @@ interface ProjectScan {
     readonly truncated: boolean;
 }
 
+### ScanOptionError
+class ScanOptionError extends Error {
+    readonly name = "ScanOptionError";
+}
+
 ### ScanOptions
 interface ScanOptions extends ExtractOptions {
     readonly signal?: AbortSignal;
     readonly maxFiles?: number;
+}
+// uses ChartLibrary
+type ChartLibrary = 'chartjs' | 'echarts' | 'highcharts';
+// uses ChartPattern
+interface ChartPattern {
+    readonly id: string;
+    readonly library: ChartLibrary;
+    readonly module?: string;
+    readonly file?: string;
+    readonly export: string;
+    readonly argument?: number;
+    readonly prop?: string;
+    readonly construct?: boolean;
+}
+// uses ExtractOptions
+interface ExtractOptions {
+    readonly patterns?: readonly ChartPattern[];
 }
 
 ### SourceText

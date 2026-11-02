@@ -5,7 +5,7 @@ import type { Decoded } from './decoded.js';
 import { staticKey } from './literals.js';
 import type { Trace, UnknownReason } from './trace.js';
 
-export type Decode = (node: ts.Expression) => Decoded;
+type Decode = (node: ts.Expression) => Decoded;
 
 /** Defined rather than assigned so keys such as `__proto__` cannot reach the prototype. */
 function defineEntry(target: Record<string, unknown>, key: string, value: unknown): void {
@@ -30,6 +30,10 @@ export function decodeArray(node: ts.ArrayLiteralExpression, decode: Decode): De
 	});
 	return { value, complete, trace: { node, entries } };
 }
+
+/** A non-computed `__proto__: …` (also quoted) sets the prototype; a shorthand or computed one is an own key. */
+const setsPrototype = (property: ts.PropertyAssignment): boolean =>
+	(ts.isIdentifier(property.name) || ts.isStringLiteral(property.name)) && property.name.text === '__proto__';
 
 /** An object literal being read: its known keys, their traces, and whether other keys may exist. */
 class ObjectReader {
@@ -82,10 +86,24 @@ class ObjectReader {
 			this.unknownKeys(property, 'computed-key');
 			return;
 		}
+		if (ts.isPropertyAssignment(property) && setsPrototype(property)) {
+			this.prototype(property);
+			return;
+		}
 		const part = this.decode(ts.isShorthandPropertyAssignment(property) ? property.name : property.initializer);
 		if (part.complete || part.value !== undefined) defineEntry(this.target, key, part.value);
 		if (part.trace !== undefined) this.entries.set(key, part.trace);
 		this.complete &&= part.complete;
+	}
+
+	/**
+	 * `__proto__: p` sets the prototype, never an own key: `null` inherits nothing and a primitive is
+	 * ignored, but any other value lends the object keys this reader does not list.
+	 */
+	private prototype(property: ts.PropertyAssignment): void {
+		const { value, complete } = this.decode(property.initializer);
+		const inheritsNothing = complete && (value === null || (typeof value !== 'object' && typeof value !== 'function'));
+		if (!inheritsNothing) this.unknownKeys(property, 'expression');
 	}
 
 	/**

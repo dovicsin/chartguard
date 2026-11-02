@@ -4,14 +4,14 @@
 		".": {
 			"entry": [
 				"scripts/*.mjs",
-				"scripts/tests/*.test.mjs",
-				"tools/schema-generator/tests/*.test.mjs",
-				"tools/conformance/tests/*.test.mjs",
-				"tools/shared/tests/*.test.mjs",
+				"scripts/tests/**/*.test.mjs",
+				"tools/schema-generator/tests/**/*.test.mjs",
+				"tools/conformance/tests/**/*.test.mjs",
+				"tools/shared/tests/**/*.test.mjs",
 				"tools/api/*.mjs",
-				"tools/api/tests/*.test.mjs",
+				"tools/api/tests/**/*.test.mjs",
 				"tools/docs/*.mjs",
-				"tools/docs/tests/*.test.mjs"
+				"tools/docs/tests/**/*.test.mjs"
 			],
 			"project": [
 				"scripts/**/*.mjs",
@@ -31,8 +31,12 @@
 			"project": ["src/**/*.ts"]
 		},
 		"apps/playground": {
-			"entry": ["src/main.ts", "scripts/*.mjs", "tests/*.test.mjs"],
+			"entry": ["src/main.ts", "scripts/*.mjs", "tests/**/*.test.mjs"],
 			"project": ["src/**/*.ts", "scripts/*.mjs"]
+		},
+		"packages/integrations/*-runtime": {
+			"entry": ["tests/**/*.test.mjs", "src/sources.ts"],
+			"project": ["src/**/*.ts"]
 		},
 		"packages/*/*": {
 			"entry": ["tests/**/*.test.mjs"],

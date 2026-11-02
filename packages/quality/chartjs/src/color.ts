@@ -3,6 +3,7 @@ import {
 	type Fact,
 	firstSet,
 	formatPath,
+	isStaticValue,
 	type Item,
 	known,
 	type Listed,
@@ -11,8 +12,6 @@ import {
 	unknown,
 	type UnknownFact
 } from '@chartguard/quality-core';
-
-const isSet = (value: unknown): value is unknown => value !== undefined && typeof value !== 'function';
 
 /** The option that colours a dataset, and the element whose options it falls back to. */
 const COLORED_BY: Readonly<
@@ -91,9 +90,9 @@ function colorsDefined(config: unknown, datasets: Listed<Item>): Fact<boolean> {
  */
 function forcedOver(config: unknown): UnknownFact | undefined {
 	const at = ['options', 'plugins', 'colors'];
-	const enabled = readFact(config, [...at, 'enabled'], isSet);
+	const enabled = readFact(config, [...at, 'enabled'], isStaticValue);
 	if (enabled.known && enabled.value === false) return undefined;
-	const force = readFact(config, [...at, 'forceOverride'], isSet);
+	const force = readFact(config, [...at, 'forceOverride'], isStaticValue);
 	if (!force.known) return force.reason === 'unset' ? undefined : force;
 	return force.value === false || force.value === undefined || force.value === null
 		? undefined
@@ -106,7 +105,7 @@ export function colorOf(config: unknown, item: Item, type: Fact<string>, dataset
 	if (forced !== undefined) return unknown(`${item.path}.backgroundColor`, forced.reason);
 	const by = COLORED_BY[type.value];
 	if (by === undefined) return unknown(`${item.path}.backgroundColor`, 'unmodelled');
-	const at = (path: readonly PathSegment[]): Fact<unknown> => readFact(config, [...path, by.key], isSet);
+	const at = (path: readonly PathSegment[]): Fact<unknown> => readFact(config, [...path, by.key], isStaticValue);
 	const own = firstSet([
 		at(item.segments),
 		at(['options', 'datasets', type.value]),

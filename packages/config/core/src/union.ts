@@ -97,7 +97,6 @@ function memberAt(union: NodeSchema, index: number): Selection | undefined {
 const sameRegistry = (left: RegistryRef, right: RegistryRef): boolean =>
 	left.id === right.id && left.prefix === right.prefix && left.enforced === right.enforced;
 
-/** The registry of the union itself, or the one every nested union that names one agrees on. */
 /** The variant point of a union, or the one every nested union that names one agrees on. */
 function pointOf(union: NodeSchema, seen = new Set<NodeSchema>()): string | undefined {
 	if (union.extensionPoint !== undefined) return union.extensionPoint;
@@ -118,6 +117,7 @@ function extensionVariant(
 	return extensions?.variants.get(point)?.get(`${ref.prefix}${value}`);
 }
 
+/** The registry of the union itself, or the one every nested union that names one agrees on. */
 function registryOf(union: NodeSchema, seen = new Set<NodeSchema>()): RegistryRef | undefined {
 	if (union.registry !== undefined) return union.registry;
 	const nested = nestedUnions(union, seen).flatMap((member) => registryOf(member, seen) ?? []);
@@ -145,8 +145,10 @@ function checkDefault(
 	registries: Registries
 ): Selection {
 	if (selection.kind !== 'variant' || ref === undefined) return selection;
-	const [literal] = discriminatorValues(selection.schema, key).filter((value) => typeof value === 'string');
-	if (typeof literal !== 'string') return selection;
+	// Which literal the runtime picks is known only when the default member has exactly one: never guess (A21).
+	const literals = discriminatorValues(selection.schema, key);
+	const [literal] = literals;
+	if (literals.length !== 1 || typeof literal !== 'string') return selection;
 	const found = registration(registries, ref, literal);
 	if (found?.rejected !== true) return selection;
 	return { kind: 'unregistered', key, value: literal, defaulted: true, registration: found };
@@ -157,7 +159,6 @@ function isExtensible(union: NodeSchema, seen = new Set<NodeSchema>()): boolean 
 	return union.extensible === true || nestedUnions(union, seen).some((member) => isExtensible(member, seen));
 }
 
-/** The member an explicit discriminator value selects, as the caller's registry and the schema decide. */
 /** A union whose object members are told apart by the literal values of `key`. */
 interface Discriminated {
 	readonly union: NodeSchema;
@@ -165,6 +166,7 @@ interface Discriminated {
 	readonly key: string;
 }
 
+/** The member an explicit discriminator value selects, as the caller's registry and the schema decide. */
 function selectExplicit(value: unknown, { union, members, key }: Discriminated, context: SelectionContext): Selection {
 	const { registries } = context;
 	const ref = registryOf(union);
@@ -188,6 +190,13 @@ export interface SelectionContext {
 	readonly extensions?: ResolvedExtensions | undefined;
 }
 
+/**
+ * `null` for the discriminator where every member reads its options with `pick()` (`nullAsAbsent`,
+ * A25): the runtime takes the default, as it does for a missing key.
+ */
+const nullIsAbsent = (value: unknown, members: readonly NodeSchema[]): boolean =>
+	value === null && members.length > 0 && members.every((member) => member.nullAsAbsent === true);
+
 function selectByDiscriminator(
 	value: object,
 	union: NodeSchema,
@@ -199,7 +208,7 @@ function selectByDiscriminator(
 	if (key === undefined || members.some((member) => discriminatorValues(member, key).length === 0)) return AMBIGUOUS;
 	const entry = ownDataProperty(value, key);
 	if (!entry.found && entry.accessor) return AMBIGUOUS;
-	if (!entry.found || entry.value === undefined)
+	if (!entry.found || entry.value === undefined || nullIsAbsent(entry.value, members))
 		return checkDefault(defaultOf(union, value, { root, extensions }) ?? AMBIGUOUS, key, registryOf(union), registries);
 	return selectExplicit(entry.value, { union, members, key }, { registries, root, extensions });
 }

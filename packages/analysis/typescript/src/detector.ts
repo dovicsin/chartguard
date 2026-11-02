@@ -3,12 +3,12 @@ import ts from 'typescript';
 import type { Origins } from './origins.js';
 import { type ArgumentRule, ECHARTS_INIT, matches, type PropRule, type Rule } from './patterns.js';
 import { bindingOf } from './scope.js';
+import type { Call } from './writes.js';
 
-export type Call = ts.CallExpression | ts.NewExpression;
 export type Tag = ts.JsxOpeningElement | ts.JsxSelfClosingElement;
 
 /** A matched call: its rule and the expression holding the config. */
-export interface CallMatch {
+interface CallMatch {
 	readonly rule: Rule;
 	readonly config: ts.Expression;
 }

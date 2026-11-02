@@ -24,8 +24,9 @@ const toggle = object({ enabled: s.boolean() });
 const text = object({ text: s.string() });
 
 /**
- * Union-typed upstream fields stay open until the schema DSL supports unions (CG-02-01):
- * a narrower guess would reject valid configs.
+ * Union-typed upstream fields stay open in this hand-written subset: a hand-written union would be a
+ * guess narrower than the declarations and could reject valid configs. The generated schema
+ * (`createValidator`) checks them.
  */
 const union = s.any;
 
@@ -65,8 +66,7 @@ export function validate(input: unknown, options?: ValidationOptions): Validatio
 
 /**
  * A validator for a schema artifact generated from the caller's own installed `highcharts`
- * (`node tools/schema-generator/generate.mjs write highcharts`, written to
- * `node_modules/.cache/chartguard/`). This package never ships a Highcharts-derived schema: the
+ * (`chartguard schema build --library highcharts`, written to `node_modules/.cache/chartguard/`). This package never ships a Highcharts-derived schema: the
  * Highcharts license does not clear redistributing it (CG-01-05). `extensions` add plugin series to
  * the `highcharts.series` registry (CG-02-05). Throws for a malformed artifact, one generated for
  * another library, or a refused extension (`ExtensionError`).

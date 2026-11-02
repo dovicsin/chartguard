@@ -81,7 +81,8 @@ export const lowContrastSeries = rule(
 		limits: [
 			'Only the chart background is compared, not gridlines or other series. A page showing through (Chart.js canvases, ECharts without `backgroundColor`, a transparent Highcharts background) is compared only when the caller declares it (`context.background`); a scheme the declaration leaves out is not compared.',
 			'Information given another way (data labels, a table) meets the criterion without the contrast; several default palettes have colours below 3:1 on white, so the finding is a note.',
-			'Only hex and rgb() colours are compared.'
+			'Only hex and rgb() colours are compared.',
+			'An ECharts grid that draws its own background (`grid.show`, one grid or several) is not modelled: the background is then unknown.'
 		]
 	},
 	({ series, background }, report) => {

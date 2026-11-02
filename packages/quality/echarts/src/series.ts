@@ -3,6 +3,7 @@ import {
 	type Default,
 	type Fact,
 	isNumber,
+	isStaticValue,
 	isString,
 	type Item,
 	type Orientation,
@@ -22,12 +23,24 @@ import { valuesOf } from './values.js';
 
 /** Each cartesian series type defaults to the grid, at the line of its own default options. */
 const GRID: Readonly<Record<string, Default<string>>> = {
-	line: { value: 'cartesian2d', pointer: "echarts@6.1.0 dist/echarts.js:40938 coordinateSystem: 'cartesian2d'," },
-	bar: { value: 'cartesian2d', pointer: "echarts@6.1.0 dist/echarts.js:45641 coordinateSystem: 'cartesian2d'," },
-	scatter: { value: 'cartesian2d', pointer: "echarts@6.1.0 dist/echarts.js:48071 coordinateSystem: 'cartesian2d'," },
+	line: {
+		value: 'cartesian2d',
+		pointer: "echarts@6.1.0 dist/echarts.js:40938 coordinateSystem: 'cartesian2d', [in LineSeriesModel.defaultOption]"
+	},
+	bar: {
+		value: 'cartesian2d',
+		pointer:
+			"echarts@6.1.0 dist/echarts.js:45641 coordinateSystem: 'cartesian2d', [in BaseBarSeriesModel.defaultOption]"
+	},
+	scatter: {
+		value: 'cartesian2d',
+		pointer:
+			"echarts@6.1.0 dist/echarts.js:48071 coordinateSystem: 'cartesian2d', [in ScatterSeriesModel.defaultOption]"
+	},
 	effectScatter: {
 		value: 'cartesian2d',
-		pointer: "echarts@6.1.0 dist/echarts.js:68448 coordinateSystem: 'cartesian2d',"
+		pointer:
+			"echarts@6.1.0 dist/echarts.js:68448 coordinateSystem: 'cartesian2d', [in EffectScatterSeriesModel.defaultOption]"
 	}
 };
 /** A series is stacked with those sharing its `stack`; an empty one does not stack. */
@@ -43,13 +56,11 @@ const KINDS: Readonly<Record<string, SeriesKind>> = {
 const SYSTEMS: Readonly<Record<string, CoordinateSystem>> = { cartesian2d: 'cartesian', polar: 'polar' };
 const MEASURED = new Set(['value', 'log']);
 
-const isSet = (value: unknown): value is unknown => value !== undefined && typeof value !== 'function';
-
 /** A line series with `areaStyle` draws an area (`var isAreaChart = !areaStyleModel.isEmpty()`, dist/echarts.js:42844; empty is `null`). */
 function kindOf(config: unknown, item: Item, type: Fact<string>): Fact<SeriesKind> {
 	if (!type.known) return type;
 	if (type.value !== 'line') return { ...type, value: KINDS[type.value] ?? 'other' };
-	const area = readFact(config, [...item.segments, 'areaStyle'], isSet);
+	const area = readFact(config, [...item.segments, 'areaStyle'], isStaticValue);
 	if (area.known) return area.value === null ? { ...type, value: 'line' } : { ...area, value: 'area' };
 	return area.reason === 'unset' ? { ...type, value: 'line' } : area;
 }
@@ -62,7 +73,7 @@ function systemOf(config: unknown, item: Item, type: string): Fact<CoordinateSys
 }
 
 function stackingOf(config: unknown, item: Item): Fact<Stacking> {
-	const stack = readFact(config, [...item.segments, 'stack'], isSet);
+	const stack = readFact(config, [...item.segments, 'stack'], isStaticValue);
 	if (stack.known) return { ...stack, value: stack.value === '' || stack.value === null ? 'none' : 'stacked' };
 	return stack.reason === 'unset'
 		? { known: true, value: 'none', path: stack.path, source: 'default', pointer: STACKED }

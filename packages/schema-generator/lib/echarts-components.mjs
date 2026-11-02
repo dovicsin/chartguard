@@ -1,3 +1,4 @@
+import { resolveIn, upstreamChanged } from './nodes.mjs';
 import { runtimeProvenance } from './runtime.mjs';
 
 /**
@@ -109,13 +110,13 @@ const AXIS_TYPE = {
 	pattern: "option.type || (option.data ? 'category' : 'value')"
 };
 
-const changed = (what) => new Error(`echarts runtime changed: ${what}`);
+const changed = upstreamChanged('echarts runtime');
 
 const provenance = (root, fact) => runtimeProvenance(root, { sourceId: 'echarts', packageName: 'echarts' }, fact);
 
 /** The union a root property holds, and the union of its array items when it is `T | T[]`. */
 function unionsOf(definitions, node) {
-	const resolve = (candidate) => (candidate.kind === 'ref' ? definitions[candidate.ref] : candidate);
+	const resolve = resolveIn(definitions);
 	const outer = resolve(node);
 	if (outer.kind !== 'union') throw changed('expected a union');
 	const list = outer.anyOf.map(resolve).find((member) => member.kind === 'array');

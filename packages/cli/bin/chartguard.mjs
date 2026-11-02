@@ -20,12 +20,13 @@ function isEntryPoint() {
 	}
 }
 
-/** A reader that stops early (`chartguard … | head`) closes the pipe; that is not a failure. */
+/** A reader that stops early (`chartguard … | head`, `2>&1 | head`) closes the pipe; that is not a failure. */
 function ignoreClosedPipe(error) {
 	if (error.code !== 'EPIPE') throw error;
 }
 
 if (isEntryPoint()) {
 	process.stdout.on('error', ignoreClosedPipe);
+	process.stderr.on('error', ignoreClosedPipe);
 	process.exitCode = await main();
 }

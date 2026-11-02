@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import { extractStaticConfigs } from '../dist/index.js';
 import { analyzeProject } from '../dist/project.js';
@@ -168,4 +169,32 @@ test('a write through an alias reaches every object the aliased place may come f
 		[value(exact, 'a'), value(exact, 'b')],
 		[{ opts: { color: 'red', size: 2 } }, { opts: { size: 3 } }]
 	);
+});
+
+test('writing the length of an array leaves its elements unknown (A37)', () => {
+	assert.deepEqual(
+		read(`${BASE}config.data.datasets.length = 0;`),
+		partial({ type: 'bar', options: { color: 'red', size: 2 }, data: {} })
+	);
+	assert.deepEqual(read(`${BASE}config.data.datasets["length"] = 1;`).value.data, {});
+	// The length of an object is just a key.
+	assert.deepEqual(read('const config = { o: { length: 2, a: 1 } };\nconfig.o.length = 0;'), partial({ o: { a: 1 } }));
+});
+
+test('the global console is pure also when @types/node declares it; a local console is not (A38)', (t) => {
+	const root = mkdtempSync(join(tmpdir(), 'chartguard-console-'));
+	t.after(() => rmSync(root, { recursive: true, force: true }));
+	const typeRoots = [fileURLToPath(new URL('../../../../node_modules/@types', import.meta.url))];
+	writeFileSync(join(root, 'tsconfig.json'), JSON.stringify({ compilerOptions: { types: ['node'], typeRoots } }));
+	const analysed = (source) =>
+		analyzeProject(source, join(root, 'chart.ts')).objects.find((object) => object.name === 'config');
+	const logged = analysed(`${BASE}console.log(config);\nconsole.table(config.options);`);
+	assert.deepEqual([logged.complete, logged.diagnostics.map((d) => d.code)], [true, []]);
+	// A script's own top-level console shadows the global at runtime, as a module's does.
+	for (const tail of ['', '\nexport {};']) {
+		const local = analysed(
+			`const console = { log(value: any) { value.type = 1; } };\n${BASE}console.log(config);${tail}`
+		);
+		assert.equal(local.complete, false, tail);
+	}
 });

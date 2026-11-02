@@ -100,3 +100,27 @@ test('fuzzed sources never throw, never invent a value, and stay serializable (s
 		}
 	}
 });
+
+test('the bracket count follows template substitutions and regular expressions: no false refusal, no undercount (E31)', () => {
+	const deepParens = `\`${'('.repeat(300)}\``;
+	// A template after a substitution holds text, not brackets.
+	const afterSubstitution = extractStaticConfigs(`const a = 1;\nconst t = \`\${a}\`;\nconst u = ${deepParens};`);
+	assert.deepEqual([afterSubstitution.readable, codes(afterSubstitution)], [true, []]);
+	const nested = extractStaticConfigs(
+		`const a = 1;\nconst t = \`x\${ \`y\${a}z\` }w\${a}\`;\nconst u = ${deepParens};`
+	);
+	assert.deepEqual([nested.readable, codes(nested)], [true, []]);
+	// Brackets between two templates are code, and are counted.
+	const hidden = extractStaticConfigs(
+		`const a = 1;\nconst t = \`\${a}\`;\nconst deep = ${'['.repeat(300)}${']'.repeat(300)};\nconst s = \`x\`;`
+	);
+	assert.deepEqual([hidden.readable, codes(hidden)], [false, ['CFG_TOO_COMPLEX']]);
+	// A bracket inside a regular expression is text.
+	const regexes = extractStaticConfigs(`const r = [${'/[(]/g, '.repeat(300)}];\nconst q = x / 2 / (3);`);
+	assert.deepEqual([regexes.readable, codes(regexes)], [true, []]);
+	const divided = extractStaticConfigs(`const q = a / ${'('.repeat(300)}1${')'.repeat(300)} / 2;`);
+	assert.deepEqual([divided.readable, codes(divided)], [false, ['CFG_TOO_COMPLEX']]);
+	// Unbalanced or truncated input is measured without a crash.
+	for (const source of ['}`${', '`${a}}}}`', '${', '/[(/', '`${`${`${'])
+		assert.equal(typeof extractStaticConfigs(source).readable, 'boolean');
+});

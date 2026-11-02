@@ -1,7 +1,10 @@
 import {
 	type Fact,
-	firstSet,
 	formatPath,
+	isBoolean,
+	isDefined,
+	isIndex,
+	isString,
 	type Item,
 	type KnownFact,
 	type Listed,
@@ -9,9 +12,8 @@ import {
 	unknown
 } from '@chartguard/quality-core';
 
-const isSet = (value: unknown): value is unknown => value !== undefined;
-const isString = (value: unknown): value is string => typeof value === 'string';
-const isIndex = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0;
+import { seriesOption, seriesType } from './type.js';
+
 const DEFAULT_COLORS =
 	'highcharts@13.1.1 highcharts.src.js:4817 colors: new Array(10).fill(1).map((_, i) => `var(--highcharts-color-${i})`),';
 /** Series types coloured per point by default. */
@@ -19,7 +21,7 @@ const BY_POINT = new Set(['pie']);
 
 /** The chart's colours: its `colors`, else Highcharts' ten CSS variables. */
 function colorsOf(config: unknown): Fact<readonly KnownFact<string>[]> {
-	const colors = readFact(config, ['colors'], isSet);
+	const colors = readFact(config, ['colors'], isDefined);
 	if (!colors.known && colors.reason !== 'unset') return colors;
 	if (!colors.known) {
 		const value = Array.from({ length: 10 }, (_, index): KnownFact<string> => ({
@@ -44,17 +46,6 @@ function colorsOf(config: unknown): Fact<readonly KnownFact<string>[]> {
 		}))
 	};
 }
-
-/** A series' type: its own, else the chart's, else line. */
-const typeOf = (config: unknown, item: Item): Fact<string> => {
-	const own = readFact(config, [...item.segments, 'type'], isString);
-	return own.known || own.reason !== 'unset'
-		? own
-		: readFact(config, ['chart', 'type'], isString, {
-				value: 'line',
-				pointer: "highcharts@13.1.1 highcharts.src.js:1191 type: 'line',"
-			});
-};
 
 /** The chart's colour counter (`chart.colorCounter`): it moves only for series that take the next colour. */
 class Cycle {
@@ -83,8 +74,7 @@ class Cycle {
 
 /** An option the series resolves through itself, the options for its type and those for every series. */
 function scoped(config: unknown, item: Item, type: Fact<string>, key: string): Fact<unknown> {
-	const scopes = [item.segments, ['plotOptions', type.known ? type.value : 'series'], ['plotOptions', 'series']];
-	return firstSet(scopes.map((scope) => readFact(config, [...scope, key], isSet)));
+	return seriesOption(config, item, type, { name: key, is: isDefined });
 }
 
 /** Whether the series is coloured per point: `colorByPoint`, which pies default to. Undefined when unknown. */
@@ -96,7 +86,7 @@ function byPoint(config: unknown, item: Item, type: Fact<string>): boolean | und
 }
 
 function colorOf(config: unknown, item: Item, cycle: Cycle): Fact<string> {
-	const type = typeOf(config, item);
+	const type = seriesType(config, item);
 	const at = formatPath([...item.segments, 'color']);
 	const perPoint = byPoint(config, item, type);
 	if (perPoint === true) return unknown(at, 'unmodelled');
@@ -115,7 +105,7 @@ function colorOf(config: unknown, item: Item, cycle: Cycle): Fact<string> {
  */
 export function seriesColors(config: unknown, items: Listed<Item>): Fact<string>[] {
 	if (!items.known) return [];
-	const styled = readFact(config, ['chart', 'styledMode'], (value): value is boolean => typeof value === 'boolean');
+	const styled = readFact(config, ['chart', 'styledMode'], isBoolean);
 	const cycle = new Cycle(colorsOf(config));
 	if (!styled.known ? styled.reason !== 'unset' : styled.value) cycle.lose();
 	return items.items.map((item) => colorOf(config, item, cycle));

@@ -23,12 +23,13 @@ function ignoreClosedPipe(error) {
 
 /**
  * Runs `main(argv)` when the module at `moduleUrl` is the script Node was started with, with a
- * closed stdout pipe tolerated, and sets the exit code from its result (a number, or nothing for 0).
+ * closed stdout or stderr pipe tolerated, and sets the exit code from its result (a number, or nothing for 0).
  * Every tool entry point goes through here, so none can crash on `| head` again.
  */
 export async function runAsEntryPoint(moduleUrl, main) {
 	if (!isEntryPoint(moduleUrl)) return;
 	process.stdout.on('error', ignoreClosedPipe);
+	process.stderr.on('error', ignoreClosedPipe);
 	const code = await main(process.argv.slice(2));
 	process.exitCode = typeof code === 'number' ? code : 0;
 }

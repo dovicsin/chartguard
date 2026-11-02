@@ -75,3 +75,16 @@ test('backgrounds that paint nothing: the plot falls back to the chart, the char
 	// A translucent background is what is drawn; contrast is not measured against it (not opaque).
 	assert.equal(background({ backgroundColor: 'rgba(0, 0, 0, 0.5)' }), 'rgba(0, 0, 0, 0.5) / rgba(0, 0, 0, 0.5)');
 });
+
+test('a series type behind a getter: the options for its type, and so its colour, are not known (one type resolver)', () => {
+	const hiddenType = (rest) => Object.defineProperty({ ...rest }, 'type', { get: () => 'column', enumerable: true });
+	// Highcharts colours it from plotOptions.column; plotOptions.series is not what it draws.
+	assert.deepEqual(
+		colors({
+			plotOptions: { series: { color: '#f00' }, column: { color: '#0f0' } },
+			series: [hiddenType({}), { type: 'line' }]
+		}),
+		['? unmodelled $.series[0].color', '#f00 config $.plotOptions.series.color']
+	);
+	assert.deepEqual(colors({ series: [hiddenType({ color: '#123' })] }), ['#123 config $.series[0].color']);
+});

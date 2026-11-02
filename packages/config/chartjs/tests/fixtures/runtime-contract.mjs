@@ -97,9 +97,34 @@ export const RUNTIME_CONTRACT = [
 		why: 'Unresolved: the runtime ignores unknown keys; the warning carries a suggestion.'
 	},
 	{
-		name: 'scale without type',
+		name: 'scale without type: a bar chart y scale is linear (mergeScaleConfig)',
 		config: { ...bar(), options: { scales: { y: { min: '50' } } } },
-		findings: ['info CFG_AMBIGUOUS $.options.scales.y'],
+		findings: ['error CFG_TYPE $.options.scales.y.min'],
+		runtime: 'accepted',
+		why: 'Type contract: declared `number` on the linear scale the runtime chooses; LinearScaleBase.parse coerces it with `+raw`.'
+	},
+	{
+		name: 'scale without type on a horizontal bar chart: y is the category index scale',
+		config: { ...bar(), options: { indexAxis: 'y', scales: { y: { min: 'a' }, x: { beginAtZero: true } } } },
+		findings: [],
+		runtime: 'accepted'
+	},
+	{
+		name: 'scale without type whose axis only the datasets name stays unchecked',
+		config: { ...bar({ yAxisID: 'values' }), options: { scales: { values: { min: '50' } } } },
+		findings: ['info CFG_AMBIGUOUS $.options.scales.values'],
+		runtime: 'accepted'
+	},
+	{
+		name: 'fill with the Filler plugin disabled with null (getOpts passes null through)',
+		config: { ...line({ fill: true }), options: { plugins: { filler: null } } },
+		findings: ['warning CFG_INEFFECTIVE $.data.datasets[0].fill'],
+		runtime: 'complained'
+	},
+	{
+		name: 'built-in plugins disabled with null',
+		config: { ...bar(), options: { plugins: { legend: null, tooltip: null } } },
+		findings: [],
 		runtime: 'accepted'
 	},
 	{

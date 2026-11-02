@@ -53,7 +53,7 @@ export const POLICY = {
 	/** Reads a chart library's declarations and runtime files from a project; never imports or runs them. */
 	[SCHEMA_GENERATOR]: rule({ internal: [CONFIG_CORE], external: ['typescript'], node: true }),
 	'@chartguard/cli': rule({
-		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, ANALYSIS, SCHEMA_GENERATOR],
+		internal: [CORE, QUALITY_CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, ANALYSIS, SCHEMA_GENERATOR],
 		node: true
 	}),
 	/** A browser app: published adapter entry points and the two runtimes it renders with; no Node built-ins. */

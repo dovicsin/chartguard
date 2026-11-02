@@ -21,7 +21,8 @@ export const series = (kind, valueAxis, orientation = fact('vertical', '$.o')) =
 export const axis = (key, min, extra = {}) => ({
 	key,
 	path: `$.${key}`,
-	scale: none('$.scale'),
+	// The scale the runtime defaults to: a rule about a linear range needs it known (an unknown scale claims nothing).
+	scale: fact('linear', '$.scale', 'default'),
 	min,
 	max: none('$.max'),
 	fit: none('$.fit'),

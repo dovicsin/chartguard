@@ -1,6 +1,8 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
+import { skipOutsideCi } from './ci.mjs';
+
 /** A Chrome or Chromium binary: `CHROME_PATH`, or the usual Linux locations. */
 const CHROME = [
 	process.env['CHROME_PATH'],
@@ -14,26 +16,35 @@ const CHROME = [
  * failure, not a skip: a gate that silently skips is no gate.
  */
 export function browserSkipReason() {
-	if (CHROME !== undefined) return undefined;
-	if (process.env['CI'] !== undefined)
-		throw new Error('CI must provide Chrome (set CHROME_PATH) for the browser tests');
-	return 'needs Chrome (set CHROME_PATH)';
+	return CHROME === undefined ? skipOutsideCi('needs Chrome (set CHROME_PATH)') : undefined;
+}
+
+/** Collects a child's output stream as text. */
+function collect(stream) {
+	let text = '';
+	stream.on('data', (chunk) => (text += chunk));
+	return () => text;
 }
 
 /**
  * The DOM of `url` after the page ran, in headless Chrome with virtual time. `offline` blocks every
- * host name lookup, for pages that run upstream code: nothing it does can reach the network.
+ * host name lookup, for pages that run upstream code: nothing it does can reach the network. A
+ * Chrome that exits with a failure rejects with its status and stderr: what it printed before is
+ * a partial page, never a result. `binary` replaces the Chrome found here (tests).
  */
-export function dumpDom(url, { offline = false, virtualTime = 120_000 } = {}) {
+export function dumpDom(url, { offline = false, virtualTime = 120_000, binary = CHROME } = {}) {
 	const sandbox = process.getuid?.() === 0 ? ['--no-sandbox'] : [];
 	const network = offline ? ['--host-resolver-rules=MAP * ~NOTFOUND'] : [];
 	const budget = `--virtual-time-budget=${String(virtualTime)}`;
 	const args = ['--headless=new', '--disable-gpu', '--no-first-run', ...sandbox, ...network, budget, '--dump-dom', url];
 	return new Promise((resolve, reject) => {
-		const chrome = spawn(CHROME, args, { stdio: ['ignore', 'pipe', 'ignore'] });
-		let html = '';
-		chrome.stdout.on('data', (chunk) => (html += chunk));
+		const chrome = spawn(binary, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+		const html = collect(chrome.stdout);
+		const errors = collect(chrome.stderr);
 		chrome.on('error', reject);
-		chrome.on('close', () => resolve(html));
+		chrome.on('close', (status, signal) => {
+			if (status === 0) resolve(html());
+			else reject(new Error(`Chrome exited with ${String(status ?? signal)} for ${url}:\n${errors()}`));
+		});
 	});
 }

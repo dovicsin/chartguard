@@ -1,11 +1,11 @@
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
 import type { Diagnostic } from '@chartguard/core';
 import ts from 'typescript';
 
 import { type AnalysedFile, type AnalysisOutput, Extraction, type ExtractOptions, refused } from './extract.js';
-import { guarded, inputRefusal } from './limits.js';
-import { rulesOf } from './patterns.js';
+import { guarded, inputRefusal, refusal, tooDeep } from './limits.js';
+import { type Rule, rulesOf } from './patterns.js';
 import { READ_ONLY, rootNameOf, sourceFileOf } from './program.js';
 import {
 	compilerOptionsOf,
@@ -13,6 +13,7 @@ import {
 	MAX_PROJECT_FILES,
 	ProjectConfigError,
 	projectFileNames,
+	readProjectFile,
 	type TsconfigChoice
 } from './tsconfig.js';
 
@@ -39,15 +40,23 @@ export interface ProjectAnalysis extends AnalysisOutput {
  * The given files, with their texts, as the roots of one Program built with the project's compiler
  * options: module resolution, lib and types as configured. Other files are read from disk.
  */
+/** One root of a Program: its file, the name the caller gave and the resolved name it is known by. */
+interface Root extends AnalysedFile {
+	readonly root: string;
+}
+
+/** The resolved name a given file is a root of the Program under: `a.ts` and `./a.ts` are one root. */
+const rootKey = (fileName: string): string => rootNameOf(resolve(fileName));
+
 function projectProgram(
 	texts: readonly SourceText[],
 	tsconfig: string | undefined
-): { program: ts.Program; files: AnalysedFile[] } {
+): { program: ts.Program; files: Root[] } {
 	const options = { ...(tsconfig === undefined ? {} : compilerOptionsOf(tsconfig)), ...READ_ONLY };
 	const roots = new Map(
 		texts.map(({ fileName, source }) => {
-			const rootName = rootNameOf(resolve(fileName));
-			return [rootName, { file: sourceFileOf(rootName, source), fileName }] as const;
+			const root = rootKey(fileName);
+			return [root, { file: sourceFileOf(root, source), fileName, root }] as const;
 		})
 	);
 	const host = ts.createCompilerHost(options, true);
@@ -77,8 +86,34 @@ function admitted(texts: readonly SourceText[]): {
 	readable: SourceText[];
 } {
 	const refusals = texts.map(({ source, fileName }) => inputRefusal(source, fileName));
-	return { refusals, readable: texts.filter((_, index) => refusals[index] === undefined) };
+	return { refusals, readable: readableOf(texts, refusals) };
 }
+
+const readableOf = (texts: readonly SourceText[], refusals: readonly (Diagnostic | undefined)[]): SourceText[] =>
+	texts.filter((_, index) => refusals[index] === undefined);
+
+/**
+ * The Program of the readable texts and its reading, or `undefined` when building it overflowed the
+ * stack: a root nested more deeply than the bracket count sees (E31).
+ */
+function extractionOf(
+	readable: readonly SourceText[],
+	tsconfig: string | undefined,
+	rules: readonly Rule[]
+): { files: Root[]; extraction: Extraction } | undefined {
+	return guarded(
+		tsconfig ?? '',
+		() => {
+			const { program, files } = projectProgram(readable, tsconfig);
+			return { files, extraction: new Extraction(program, rules) };
+		},
+		() => undefined
+	);
+}
+
+/** Every readable text refused: the Program they are read in could not be built. */
+const allRefused = (readable: readonly SourceText[]): Map<string, AnalysisOutput> =>
+	new Map(readable.map(({ fileName }) => [rootKey(fileName), refused(tooDeep(fileName))] as const));
 
 /** Each text's analysis in the given order: its refusal, or what the Program read for it. */
 function ordered(
@@ -88,8 +123,8 @@ function ordered(
 	tsconfig: string | undefined
 ): ProjectAnalysis[] {
 	return texts.map(({ fileName }, index) => {
-		const refusal = refusals[index];
-		const output = refusal === undefined ? outputs.get(fileName) : refused(refusal);
+		const why = refusals[index];
+		const output = why === undefined ? outputs.get(rootKey(fileName)) : refused(why);
 		// Every readable text is a root of the Program, so it has an output.
 		if (output === undefined) throw new Error(`No analysis for ${fileName}.`);
 		return { ...output, fileName, tsconfig };
@@ -105,20 +140,20 @@ export function analyzeFiles(
 	texts: readonly SourceText[],
 	{ tsconfig = true, ...options }: ProjectOptions = {}
 ): ProjectAnalysis[] {
-	rulesOf(options.patterns);
+	const rules = rulesOf(options.patterns);
 	const [first] = texts;
 	if (first === undefined) return [];
 	const located = locateTsconfig(first.fileName, tsconfig);
 	const { refusals, readable } = admitted(texts);
-	const outputs = guarded(
-		first.fileName,
-		() => {
-			const { program, files } = projectProgram(readable, located);
-			const extraction = new Extraction(program, options);
-			return new Map(files.map((file) => [file.fileName, extraction.read(file)] as const));
-		},
-		(diagnostic) => new Map(readable.map(({ fileName }) => [fileName, refused(diagnostic)] as const))
-	);
+	const built = extractionOf(readable, located, rules);
+	const outputs =
+		built === undefined
+			? allRefused(readable)
+			: guarded(
+					first.fileName,
+					() => new Map(built.files.map((file) => [file.root, built.extraction.read(file)] as const)),
+					() => allRefused(readable)
+				);
 	return ordered(texts, refusals, outputs, located);
 }
 
@@ -143,10 +178,56 @@ export interface ProjectScan {
 	readonly truncated: boolean;
 }
 
+/** A scan option that cannot be used: the caller's input, never ChartGuard's defect (C1). */
+export class ScanOptionError extends Error {
+	override readonly name = 'ScanOptionError';
+}
+
+function checkMaxFiles(maxFiles: unknown): void {
+	if (typeof maxFiles !== 'number' || !Number.isSafeInteger(maxFiles) || maxFiles < 0)
+		throw new ScanOptionError(`maxFiles must be a non-negative integer; got ${String(maxFiles)}.`);
+}
+
+/**
+ * The listed files' texts, and why each is not read: outside the project directory, unreadable on
+ * disk (CG-03-04-07-08: listed with its reason), too large or too deep (CG-03-08).
+ */
+function scanned(
+	names: readonly string[],
+	root: string
+): { texts: SourceText[]; refusals: (Diagnostic | undefined)[] } {
+	const texts: SourceText[] = [];
+	const refusals: (Diagnostic | undefined)[] = [];
+	for (const fileName of names) {
+		const read = readProjectFile(fileName, root);
+		const source = 'source' in read ? read.source : '';
+		texts.push({ fileName, source });
+		refusals.push('source' in read ? inputRefusal(source, fileName) : refusal(read.code, read.message, fileName));
+	}
+	return { texts, refusals };
+}
+
 const nextTurn = (): Promise<void> =>
 	new Promise((done) => {
 		setTimeout(done, 0);
 	});
+
+/** Each root read in turn, yielding between files so other work runs and `signal` can cancel. */
+async function readEach(
+	{ files, extraction }: { files: readonly Root[]; extraction: Extraction },
+	signal: AbortSignal | undefined
+): Promise<Map<string, AnalysisOutput>> {
+	const outputs = new Map<string, AnalysisOutput>();
+	for (const file of files) {
+		await nextTurn();
+		signal?.throwIfAborted();
+		outputs.set(
+			file.root,
+			guarded(file.fileName, () => extraction.read(file), refused)
+		);
+	}
+	return outputs;
+}
 
 /**
  * Every source file the tsconfig's `include`/`files` name, read in one Program (CG-03-07). Between
@@ -158,21 +239,13 @@ export async function analyzeProjectFiles(
 	{ signal, maxFiles = MAX_PROJECT_FILES, ...options }: ScanOptions = {}
 ): Promise<ProjectScan> {
 	signal?.throwIfAborted();
-	rulesOf(options.patterns);
+	checkMaxFiles(maxFiles);
+	const rules = rulesOf(options.patterns);
 	const config = resolve(tsconfig);
 	const names = projectFileNames(config);
-	const texts = names.slice(0, maxFiles).map((fileName) => ({ fileName, source: ts.sys.readFile(fileName) ?? '' }));
-	const { refusals, readable } = admitted(texts);
-	const { program, files } = projectProgram(readable, config);
-	const extraction = new Extraction(program, options);
-	const outputs = new Map<string, AnalysisOutput>();
-	for (const file of files) {
-		await nextTurn();
-		signal?.throwIfAborted();
-		outputs.set(
-			file.fileName,
-			guarded(file.fileName, () => extraction.read(file), refused)
-		);
-	}
+	const { texts, refusals } = scanned(names.slice(0, maxFiles), dirname(config));
+	const readable = readableOf(texts, refusals);
+	const built = extractionOf(readable, config, rules);
+	const outputs = built === undefined ? allRefused(readable) : await readEach(built, signal);
 	return { tsconfig: config, files: ordered(texts, refusals, outputs, config), truncated: names.length > texts.length };
 }

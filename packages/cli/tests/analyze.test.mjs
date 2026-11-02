@@ -227,3 +227,38 @@ test('a config the code changes however it spells the write, or that comes from 
 	const plain = sourceProject(t, { 'tsconfig.json': '{}', 'src/plain.ts': `${head}${use}` });
 	assert.equal((await run(['analyze', '--library', 'chartjs', '--file', join(plain, 'src/plain.ts')])).code, 1);
 });
+
+test('a file named twice is read once, and when every given file is unreadable each is named with why (C1, exit 2)', async (t) => {
+	const root = sourceProject(t, {
+		'tsconfig.json': '{}',
+		'src/chart.ts': CHART,
+		'src/broken.ts': 'export const a = (;',
+		'src/deep.ts': `export const config = ${'['.repeat(300)}${']'.repeat(300)};`
+	});
+	const file = join(root, 'src/chart.ts');
+	const twice = await run([
+		'analyze',
+		'--library',
+		'chartjs',
+		'--file',
+		file,
+		'--file',
+		`${root}/src/./chart.ts`,
+		'--json'
+	]);
+	assert.equal(twice.code, 1, twice.err);
+	assert.equal(JSON.parse(twice.out).entries.length, 1);
+	const unreadable = await run([
+		'analyze',
+		'--library',
+		'chartjs',
+		'--file',
+		join(root, 'src/broken.ts'),
+		'--file',
+		join(root, 'src/deep.ts')
+	]);
+	assert.equal(unreadable.code, 2, unreadable.err);
+	assert.match(unreadable.err, /broken\.ts cannot be read reliably/);
+	assert.match(unreadable.err, /deep\.ts cannot be read reliably[^]*nest/);
+	assert.doesNotMatch(unreadable.err, /Specify --name/);
+});

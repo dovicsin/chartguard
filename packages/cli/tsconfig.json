@@ -18,6 +18,9 @@
 			"path": "../config/chartjs"
 		},
 		{
+			"path": "../quality/core"
+		},
+		{
 			"path": "../quality/chartjs"
 		},
 		{

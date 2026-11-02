@@ -92,3 +92,14 @@ test('rename-key: moves the value to the new name while it is free; needs the pa
 	assert.throws(() => applyFix({ a: {} }, fix, '$.a.oldName'), /nothing to rename/);
 	assert.throws(() => applyFix({ a: { oldName: 5 } }, fix), /needs the path/);
 });
+
+test('a typed array on the way stays a typed array of its kind, and symbol-keyed properties are kept (A13)', () => {
+	const data = new Float32Array([1, 2]);
+	const marker = Symbol('marker');
+	const input = { d: data, [marker]: 'kept', a: { b: 1 } };
+	const fixed = applyFix(input, set('$.d[0]', 5, 1));
+	assert.ok(fixed.d instanceof Float32Array);
+	assert.deepEqual([...fixed.d], [5, 2]);
+	assert.deepEqual([...data], [1, 2], 'the input is never written');
+	assert.equal(applyFix(input, set('$.a.b', 2, 1))[marker], 'kept');
+});

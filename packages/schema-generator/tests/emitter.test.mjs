@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { declarationOf } from '../lib/chartjs.mjs';
 import { TypeEmitter } from '../lib/emitter.mjs';
 import { createEntryProgram, exportedAliasTypes } from '../lib/program.mjs';
 
@@ -102,4 +103,25 @@ test('a platform class (Date, CanvasGradient, HTMLElement) is a host object: it 
 		additional: 'open',
 		properties: {}
 	});
+});
+
+test('a property without a declaration is never widened: keys a mapped type synthesizes share no lookup key', () => {
+	const entry = "type K = 'a' | 'b';\nexport type U = { [P in K]: number } & { c: string };";
+	const { program, checker, entry: file } = createEntryProgram(ROOT, entry);
+	const type = exportedAliasTypes(checker, file).get('U');
+	const [, , c] = checker.getPropertiesOfType(type);
+	assert.deepEqual(
+		checker.getPropertiesOfType(type).map((symbol) => symbol.declarations?.length),
+		[undefined, undefined, 1]
+	);
+	const options = { program, checker, sourceId: 't', packageName: 'test' };
+	assert.throws(
+		() => new TypeEmitter({ ...options, widened: new Map([[undefined, [{ kind: 'boolean' }]]]) }),
+		/without a declaration/
+	);
+	const emitter = new TypeEmitter({ ...options, widened: new Map([[c.declarations[0], [{ kind: 'boolean' }]]]) });
+	const { properties } = emitter.definitions[emitter.emit(type).ref];
+	assert.deepEqual(properties.a.node, { kind: 'number' });
+	assert.deepEqual(properties.c.node, { kind: 'union', anyOf: [{ kind: 'string' }, { kind: 'boolean' }] });
+	assert.throws(() => declarationOf({ name: 'synthesized' }), /plugin option "synthesized" has no declaration/);
 });

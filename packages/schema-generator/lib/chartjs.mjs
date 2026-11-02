@@ -55,7 +55,12 @@ function entryText(chartTypes) {
 		`export type Config_${chartType} = ChartConfiguration<'${chartType}'>;`,
 		`export type Dataset_${chartType} = ChartDataset<'${chartType}'>;`
 	]);
-	return ["import type { ChartConfiguration, ChartDataset } from 'chart.js';", ...lines].join('\n');
+	return [
+		"import type { ChartConfiguration, ChartDataset, ChartOptions } from 'chart.js';",
+		// Options of every chart type at once: their `scales` take every scale type.
+		'export type AnyOptions = ChartOptions;',
+		...lines
+	].join('\n');
 }
 
 /**
@@ -68,7 +73,7 @@ function entryText(chartTypes) {
  * chart.js/dist/chart.js, `config.data = config.data || {}`, `data.datasets = data.datasets || []`,
  * `_dataCheck`: `dataset.data || (dataset.data = [])`), so their absence is not an error.
  */
-function adjustChartType(lookups, { config, datasetTypes, facts }, into) {
+function adjustChartType(lookups, { config, datasetTypes }, into) {
 	const { property, propertyType, indexValueType, elementType } = lookups;
 	const data = propertyType(config, 'data');
 	const datasetType = elementType(propertyType(data, 'datasets'));
@@ -76,10 +81,11 @@ function adjustChartType(lookups, { config, datasetTypes, facts }, into) {
 	into.opaque.add(elementType(propertyType(config, 'plugins')));
 	const plugins = propertyType(options, 'plugins');
 	into.open.add(plugins);
-	// getOpts (chart.js `PluginService`): `false` disables a plugin, `true` enables it with defaults.
+	// getOpts (chart.js `PluginService`): `false` and `null` disable a plugin (`createDescriptors` skips
+	// it), `true` enables it with defaults; each plugin entry cites both lines (chartjs-plugins.mjs).
 	for (const plugin of lookups.checker.getPropertiesOfType(plugins))
-		into.widened.set(plugin.declarations?.[0], [{ kind: 'boolean' }]);
-	into.registries.set(indexValueType(propertyType(options, 'scales')), facts.scale);
+		into.widened.set(declarationOf(plugin), [{ kind: 'boolean' }, { kind: 'null' }]);
+	into.scales.add(indexValueType(propertyType(options, 'scales')));
 	into.runtimeOptional.add(property(config, 'data'));
 	into.runtimeOptional.add(property(data, 'datasets'));
 	for (const dataset of [datasetType, ...datasetTypes]) {
@@ -89,6 +95,34 @@ function adjustChartType(lookups, { config, datasetTypes, facts }, into) {
 	into.datasetVariants.set(datasetType, [datasetType, ...datasetTypes]);
 }
 
+/**
+ * The declaration a plugin's option is widened at. `widened` is keyed by declaration: a symbol without
+ * one (a key a mapped type synthesizes) would key `undefined`, which every other declaration-less
+ * property also looks up, so it would widen them all.
+ */
+export function declarationOf(symbol) {
+	const [declaration] = symbol.declarations ?? [];
+	if (declaration === undefined)
+		throw new Error(`chart.js types changed: plugin option "${symbol.name}" has no declaration`);
+	return declaration;
+}
+
+/**
+ * Every chart type takes every scale type: the runtime looks a scale's type up in one registry,
+ * whatever the chart type (`registry.getScale(scaleType)`), and chooses an untyped scale's type by
+ * its axis (`radialLinear` on `r`, `category` or `linear` on `x` and `y`) in any chart. The
+ * declarations narrow `scales` by chart type (`ChartTypeRegistry[TType]['scales']`): a radar chart's
+ * `x` scale, which the runtime builds as `category`, would be checked as `radialLinear`. Each chart
+ * type's scale type is emitted as the scale type of `ChartOptions` over every chart type.
+ */
+function everyScaleType(lookups, anyOptions, into) {
+	const every = lookups.indexValueType(lookups.propertyType(lookups.checker.getNonNullableType(anyOptions), 'scales'));
+	return { every, own: [...into.scales].filter((own) => own !== every) };
+}
+
+/** Each chart type's scale type emitted as the one of every chart type. */
+const scaleOverrides = (emitter, { every, own }) => own.map((type) => [type, () => emitter.emit(every)]);
+
 function contractAdjustments(checker, chartTypes, aliases, facts) {
 	const into = {
 		opaque: new Set(),
@@ -96,16 +130,19 @@ function contractAdjustments(checker, chartTypes, aliases, facts) {
 		registries: new Map(),
 		runtimeOptional: new Set(),
 		widened: new Map(),
-		datasetVariants: new Map()
+		datasetVariants: new Map(),
+		scales: new Set()
 	};
 	for (const chartType of chartTypes) {
 		const config = aliases.get(`Config_${chartType}`);
 		const datasetTypes = chartTypes
 			.filter((other) => other !== chartType)
 			.map((other) => aliases.get(`Dataset_${other}`));
-		adjustChartType(typeLookups(checker, 'chart.js'), { config, datasetTypes, facts }, into);
+		adjustChartType(typeLookups(checker, 'chart.js'), { config, datasetTypes }, into);
 	}
-	return into;
+	const scales = everyScaleType(typeLookups(checker, 'chart.js'), aliases.get('AnyOptions'), into);
+	into.registries.set(scales.every, facts.scale);
+	return { ...into, scales };
 }
 
 /** Mixed charts: a dataset without `type` inherits the chart type; plugins may register more types. */
@@ -200,7 +237,7 @@ export function generateChartjs(root, pin) {
 	const { program, checker, entry } = createEntryProgram(root, entryText(chartTypes), registryProgram);
 	const aliases = exportedAliasTypes(checker, entry);
 	const facts = registryFacts(root);
-	const { datasetVariants, ...adjustments } = contractAdjustments(checker, chartTypes, aliases, facts);
+	const { datasetVariants, scales, ...adjustments } = contractAdjustments(checker, chartTypes, aliases, facts);
 	const emitter = new TypeEmitter({
 		program,
 		checker,
@@ -209,7 +246,10 @@ export function generateChartjs(root, pin) {
 		wrappers: WRAPPERS,
 		...adjustments
 	});
-	emitter.overrides = datasetUnions(emitter, datasetVariants, facts.dataset);
+	emitter.overrides = new Map([
+		...datasetUnions(emitter, datasetVariants, facts.dataset),
+		...scaleOverrides(emitter, scales)
+	]);
 	const configs = chartTypes.map((chartType) => emitter.reference(aliases.get(`Config_${chartType}`)));
 	const definitions = withRuntimeFacts(
 		root,

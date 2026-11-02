@@ -115,3 +115,21 @@ test('a namespace member read in a function with a direct eval is dynamic', (t) 
 		'import * as limits from "./limits";\nfunction f() { eval(s); const config = { min: limits.min, kept: 1 }; }';
 	assert.deepEqual(analyze(t, files, chart), partial({ kept: 1 }));
 });
+
+test('a type-only import is erased at runtime: its value is unknown, however it is spelled', (t) => {
+	const files = {
+		'src/theme.ts': 'export const palette = { color: "red" };',
+		'src/types.ts': 'export type { palette } from "./theme";'
+	};
+	for (const spelling of [
+		'import type { palette } from "./theme";',
+		'import { type palette } from "./theme";',
+		'import type * as theme from "./theme";\nconst palette = theme.palette;',
+		'import { palette } from "./types";'
+	])
+		assert.deepEqual(analyze(t, files, `${spelling}\nconst config = { kept: 1, ...palette };`), partial({}), spelling);
+	assert.deepEqual(
+		analyze(t, files, 'import { palette } from "./theme";\nconst config = { kept: 1, ...palette };'),
+		complete({ kept: 1, color: 'red' })
+	);
+});

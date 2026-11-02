@@ -117,32 +117,6 @@ export function passedChains(argument: ts.Expression): Chain[] {
 	});
 }
 
-/** Globals that read what they are given and never change it. */
-const PURE_MEMBERS: ReadonlyMap<string, ReadonlySet<string> | 'any'> = new Map<string, ReadonlySet<string> | 'any'>([
-	['console', 'any'],
-	['JSON', new Set(['stringify'])],
-	['Object', new Set(['keys', 'values', 'entries', 'getOwnPropertyNames', 'hasOwn', 'isFrozen', 'freeze'])],
-	['Array', new Set(['isArray', 'from'])]
-]);
-const PURE_FUNCTIONS: ReadonlySet<string> = new Set(['structuredClone', 'String', 'Number', 'Boolean']);
-
-/**
- * A call to one of those globals: the name must resolve to the default lib, or to nothing (a
- * Program without lib); a local `console` may do anything.
- */
-export function isPureCall(call: Call, program: ts.Program): boolean {
-	const callee = call.expression;
-	const isGlobal = (name: ts.Identifier): boolean =>
-		(program.getTypeChecker().getSymbolAtLocation(name)?.declarations ?? []).every((declaration) =>
-			program.isSourceFileDefaultLibrary(declaration.getSourceFile())
-		);
-	if (ts.isIdentifier(callee)) return PURE_FUNCTIONS.has(callee.text) && isGlobal(callee);
-	if (!ts.isPropertyAccessExpression(callee) || !ts.isIdentifier(callee.expression)) return false;
-	const members = PURE_MEMBERS.get(callee.expression.text);
-	const pure = members === 'any' || members?.has(callee.name.text) === true;
-	return pure && isGlobal(callee.expression);
-}
-
 /** The names a binding declares: an identifier, or every identifier of a destructuring pattern. */
 function boundNames(name: ts.BindingName): ts.Identifier[] {
 	if (ts.isIdentifier(name)) return [name];
@@ -150,7 +124,7 @@ function boundNames(name: ts.BindingName): ts.Identifier[] {
 }
 
 /** The names visible at the top level of a file: its own declarations and what it imports. */
-function topLevelNames(file: ts.SourceFile): ts.Identifier[] {
+export function topLevelNames(file: ts.SourceFile): ts.Identifier[] {
 	return file.statements.flatMap((statement) => {
 		if (ts.isVariableStatement(statement))
 			return statement.declarationList.declarations.flatMap((declaration) => boundNames(declaration.name));
@@ -298,9 +272,22 @@ function changesNothing(value: unknown, { path, replaces }: Write): boolean {
 	return found !== 'missing' && found.value !== undefined && !isContainer(found.value);
 }
 
+/**
+ * Setting an array's `length` adds or removes its elements: the write reaches the whole array, so it
+ * is written at the array's path. (Deleting `length` from an array fails silently and keeps them.)
+ */
+function throughLength(value: unknown, write: Write): Write {
+	const last = write.path.at(-1);
+	if (last?.key !== 'length') return write;
+	const owner = valueAt(value, write.path.slice(0, -1));
+	return owner !== 'missing' && Array.isArray(owner.value) ? { ...write, path: write.path.slice(0, -1) } : write;
+}
+
 /** A decoded constant with every written path left out, unknown from the write site; any write makes it incomplete (CG-03-05). */
 export function withoutWritten(decoded: Decoded, all: readonly Write[]): Decoded {
-	const writes = all.filter((write) => !changesNothing(decoded.value, write));
+	const writes = all
+		.filter((write) => !changesNothing(decoded.value, write))
+		.map((write) => throughLength(decoded.value, write));
 	if (writes.length === 0) return decoded;
 	let { value, trace } = decoded;
 	for (const { path, node } of writes) {
