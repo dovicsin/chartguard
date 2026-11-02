@@ -27,7 +27,7 @@ test('a malformed invocation names what was wrong on stderr, not the usage on st
 	await rejects(['validate', '--library', 'chartjs', '--file', OK, '--bogus'], /'--bogus'/);
 	await rejects(['validate', '--library', 'd3', '--file', OK], /unknown library 'd3'/);
 	await rejects(['validate', '--file', OK], /--library is required/);
-	await rejects(['validate', '--library', 'chartjs'], /validate reads exactly one --file/);
+	await rejects(['validate', '--library', 'chartjs'], /validate needs --file/);
 	await rejects(['frobnicate'], /unknown command 'frobnicate'/);
 	await rejects(
 		['validate', '--library', 'chartjs', '--file', OK, '--name', 'x'],

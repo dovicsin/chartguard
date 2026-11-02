@@ -1,5 +1,6 @@
 import { parseArgs } from 'node:util';
 
+import { isPattern } from './inputs.js';
 import { isLibrary, type Library } from './libraries.js';
 
 const CONFIG_COMMANDS = ['validate', 'quality', 'analyze'] as const;
@@ -11,8 +12,12 @@ export interface ConfigInvocation {
 	readonly library: Library;
 	/** The input file, or for `analyze` the first file, or the tsconfig of a project scan: where installed packages are looked up from. */
 	readonly file: string;
-	/** `analyze`: every `--file`; empty for a scan of `--project`. */
+	/** Every `--file`, a path or a pattern (CG-06-02); empty for a scan of `--project`. */
 	readonly files: readonly string[];
+	/** `--ignore` patterns: what the files leave out. */
+	readonly ignores: readonly string[];
+	/** The invocation can name several files (several `--file`, or a pattern): results are listed per file. */
+	readonly several: boolean;
 	readonly name: string | undefined;
 	/** An exact version, `auto` (the installed package), or undefined: no claim about the user's install. */
 	readonly libraryVersion: string | undefined;
@@ -50,6 +55,7 @@ export type Invocation = ConfigInvocation | SchemaInvocation;
 const OPTIONS = {
 	library: { type: 'string' },
 	file: { type: 'string', multiple: true },
+	ignore: { type: 'string', multiple: true },
 	name: { type: 'string' },
 	'library-version': { type: 'string' },
 	registries: { type: 'string' },
@@ -81,6 +87,7 @@ const OWNERS: Readonly<Record<OptionName, readonly Command[]>> = {
 	library: ALL_COMMANDS,
 	json: ALL_COMMANDS,
 	file: CONFIG_COMMANDS,
+	ignore: CONFIG_COMMANDS,
 	name: ['analyze'],
 	project: ['analyze'],
 	patterns: ['analyze'],
@@ -152,7 +159,7 @@ function failOnOf(values: Values): { readonly failOn: FailOn | undefined } | { r
 function repeated({ tokens, values }: Parsed): string | undefined {
 	const seen = new Set<string>();
 	for (const token of tokens) {
-		if (token.kind !== 'option' || token.name === 'file') continue;
+		if (token.kind !== 'option' || token.name === 'file' || token.name === 'ignore') continue;
 		if (seen.has(token.name)) return `--${token.name} is given more than once`;
 		seen.add(token.name);
 	}
@@ -177,17 +184,16 @@ function libraryOf(values: Values): { readonly library: Library } | { readonly r
 }
 
 /**
- * `validate` and `quality` read exactly one file; `analyze` one or more, or with none, every file
- * of `--project`. The file installed packages are looked up from: the first, or the tsconfig.
+ * Every command reads one or more `--file` (paths or patterns); `analyze` may instead read every
+ * file of `--project`. The file installed packages are looked up from: the first, or the tsconfig.
+ * `--ignore` leaves out some of the files, so it needs them.
  */
 function inputOf(command: ConfigCommand, values: Values): { readonly file: string } | { readonly reason: string } {
-	const { file: files = [], project } = values;
-	if (command === 'analyze') {
-		const first = files[0] ?? project;
-		return first === undefined ? { reason: 'analyze needs --file or --project' } : { file: first };
-	}
-	const [file] = files;
-	return files.length === 1 && file !== undefined ? { file } : { reason: `${command} reads exactly one --file` };
+	const { file: files = [], project, ignore } = values;
+	if (ignore !== undefined && files.length === 0) return { reason: '--ignore leaves out files of --file: give --file' };
+	const first = files[0] ?? (command === 'analyze' ? project : undefined);
+	if (first !== undefined) return { file: first };
+	return { reason: command === 'analyze' ? 'analyze needs --file or --project' : `${command} needs --file` };
 }
 
 function configInvocation(command: ConfigCommand, rest: readonly string[], values: Values): InvocationResult {
@@ -199,7 +205,7 @@ function configInvocation(command: ConfigCommand, rest: readonly string[], value
 	if ('reason' in input) return input;
 	const output = outputOf(values);
 	if ('reason' in output) return output;
-	const { file: files = [], name, registries, project, patterns, settings } = values;
+	const { file: files = [], ignore: ignores = [], name, registries, project, patterns, settings } = values;
 	const { library } = chosen;
 	const { file } = input;
 	const libraryVersion = values['library-version'];
@@ -208,6 +214,8 @@ function configInvocation(command: ConfigCommand, rest: readonly string[], value
 		library,
 		file,
 		files,
+		ignores,
+		several: files.length > 1 || files.some(isPattern),
 		name,
 		libraryVersion,
 		registries,

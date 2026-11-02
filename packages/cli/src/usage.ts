@@ -1,11 +1,15 @@
 export const USAGE = `ChartGuard starter (partial schema coverage)
 Usage:
-  chartguard validate --library <chartjs|echarts|highcharts> --file config.json [--library-version <x|auto>] [--registries <file.json>] [<output>]
-  chartguard quality  --library <chartjs|echarts|highcharts> --file config.json [--settings <file.json>] [<output>]
-  chartguard analyze  --library <chartjs|echarts|highcharts> (--file source.ts ... | --project tsconfig.json) [--name config] [--project <tsconfig.json>] [--patterns <file.json>] [--library-version <x|auto>] [--registries <file.json>] [<output>]
+  chartguard validate --library <chartjs|echarts|highcharts> --file <file|pattern> ... [--ignore <pattern>] [--library-version <x|auto>] [--registries <file.json>] [<output>]
+  chartguard quality  --library <chartjs|echarts|highcharts> --file <file|pattern> ... [--ignore <pattern>] [--settings <file.json>] [<output>]
+  chartguard analyze  --library <chartjs|echarts|highcharts> (--file <file|pattern> ... [--ignore <pattern>] | --project tsconfig.json) [--name config] [--project <tsconfig.json>] [--patterns <file.json>] [--library-version <x|auto>] [--registries <file.json>] [<output>]
   chartguard schema build --library highcharts [--dir <project>] [--json]
   chartguard --version | --help
 <output>: [--format text|json|sarif | --json] [--fail-on error|warning|never]
+--file: a path, or a pattern relative to the working directory: * (within a directory), ** (any
+  directories), ? (one character), {a,b}; never into node_modules or .git, never through links.
+  Several files: text grouped by file, JSON { mode, files: [...] }, SARIF one log, the worst status;
+  a file that cannot be read is listed and the others checked (exit 2). --ignore leaves files out.
 --format: text (default), json (as --json), or sarif: one SARIF 2.1.0 log for code scanning, each
   finding at its file and the region of its value; paths relative to the working directory.
 --fail-on: what exits 1: a confirmed error (error, the default), also any warning (warning), or

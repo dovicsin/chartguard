@@ -8,6 +8,7 @@ import { type AnalyzedEntry, analyzeEntry, analyzeUse, printEntries, selectConfi
 import { InputError } from './errors.js';
 import { exitStatus } from './exit.js';
 import { describeUnreadable, readJson, readText } from './input.js';
+import { expandInputs } from './inputs.js';
 import type { ConfigInvocation } from './invocation.js';
 import type { Io } from './io.js';
 import { validationOptions } from './options.js';
@@ -43,8 +44,18 @@ function distinctFiles(files: readonly string[]): string[] {
 	return files.filter((file, index) => files.findIndex((other) => resolve(other) === resolve(file)) === index);
 }
 
+/** The files `--file` names, through patterns and ignores (CG-06-02 part 2); none for a scan of `--project`. */
+async function sourceFiles({ files: inputs, ignores }: ConfigInvocation): Promise<string[]> {
+	if (inputs.length === 0) return [];
+	const files = await expandInputs(inputs, ignores);
+	if (files.length === 0) throw new InputError('every --file is left out by --ignore.');
+	return files;
+}
+
 /** The files read in one Program with their project's options; an unusable tsconfig or pattern is the user's input. */
-async function readSources({ files, project, patterns }: ConfigInvocation): Promise<Read> {
+async function readSources(invocation: ConfigInvocation): Promise<Read> {
+	const { project, patterns } = invocation;
+	const files = await sourceFiles(invocation);
 	const { analyzeFiles, analyzeProjectFiles, ProjectConfigError, ScanOptionError } =
 		await import('@chartguard/analysis-typescript/project');
 	const { PatternError } = await import('@chartguard/analysis-typescript');
