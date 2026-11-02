@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 
 import type { ConfigValues, ProjectConfig } from './config-file.js';
@@ -37,6 +38,8 @@ export interface ConfigInvocation {
 	readonly libraryVersion: string | undefined;
 	/** A JSON file with the registry context: what the user's runtime has registered. */
 	readonly registries: string | undefined;
+	/** `validate`, `analyze`: every `--plugin-schema`, JSON files of plugin extensions (CG-06-02 part 4c). */
+	readonly pluginSchemas: readonly string[];
 	/** `analyze`: the tsconfig to build the Program with; undefined discovers the nearest one. */
 	readonly project: string | undefined;
 	/** `analyze`: a JSON list of the project's own chart wrappers (CG-03-06). */
@@ -45,6 +48,8 @@ export interface ConfigInvocation {
 	readonly settings: string | undefined;
 	/** `quality`: every `--ruleset`, the rules that run by id or impact (CG-06-02 part 4b); undefined: the settings decide. */
 	readonly ruleset: readonly string[] | undefined;
+	/** `--cache`: where results are stored and reused (CG-06-02 part 4d); undefined: no cache. */
+	readonly cache: string | undefined;
 	/** How findings are printed (CG-06-02): `--format`, or `--json` for `json`. */
 	readonly format: Format;
 	/** `format === 'json'`: also a usage or input error is printed as JSON. */
@@ -121,9 +126,9 @@ function failOnOf(values: Values): { readonly failOn: FailOn | undefined } | { r
 }
 
 /** The options given once per value. */
-const MULTIPLE: ReadonlySet<string> = new Set(['file', 'ignore', 'ruleset']);
+const MULTIPLE: ReadonlySet<string> = new Set(['file', 'ignore', 'ruleset', 'plugin-schema']);
 
-/** A scalar option given twice would silently take the last value; a repeated file would be read twice. */
+/** A scalar option given twice would silently take the last value; a repeated file or plugin schema would be read twice. */
 function repeated({ tokens, values }: Parsed): string | undefined {
 	const seen = new Set<string>();
 	for (const token of tokens) {
@@ -131,9 +136,12 @@ function repeated({ tokens, values }: Parsed): string | undefined {
 		if (seen.has(token.name)) return `--${token.name} is given more than once`;
 		seen.add(token.name);
 	}
-	const files = values.file ?? [];
-	const twice = files.find((file, index) => files.indexOf(file) !== index);
-	return twice === undefined ? undefined : `--file ${twice} is given more than once`;
+	for (const name of ['file', 'plugin-schema'] as const) {
+		const given = values[name] ?? [];
+		const twice = given.find((value, index) => given.indexOf(value) !== index);
+		if (twice !== undefined) return `--${name} ${twice} is given more than once`;
+	}
+	return undefined;
 }
 
 function misplaced(command: Command, values: Values): string | undefined {
@@ -142,6 +150,17 @@ function misplaced(command: Command, values: Values): string | undefined {
 			return `--${name} is not an option of ${command}`;
 	}
 	return undefined;
+}
+
+/** The default cache location, in the working directory's `node_modules/.cache`. */
+const CACHE_LOCATION = join('node_modules', '.cache', 'chartguard', 'results');
+
+/** `--cache [--cache-location <dir>]`; a location without `--cache` would silently do nothing. */
+function cacheOf(values: Values): { readonly cache: string | undefined } | { readonly reason: string } {
+	const location = values['cache-location'];
+	if (values.cache !== true)
+		return location === undefined ? { cache: undefined } : { reason: '--cache-location needs --cache' };
+	return { cache: location ?? CACHE_LOCATION };
 }
 
 function libraryOf(values: Values): { readonly library: Library } | { readonly reason: string } {
@@ -178,30 +197,42 @@ function configInvocation(
 	if ('reason' in input) return input;
 	const output = outputOf(values);
 	if ('reason' in output) return output;
-	const { file: files = [], ignore: ignores = [], name, registries, project, patterns, settings, ruleset } = values;
+	const cached = cacheOf(values);
+	if ('reason' in cached) return cached;
 	const { library } = chosen;
-	const { file } = input;
-	const libraryVersion = values['library-version'];
+	const { format, failOn } = output;
 	const invocation = {
 		command,
 		library,
-		file,
+		...input,
+		...givenOf(values),
+		...cached,
+		format,
+		json: format === 'json',
+		failOn,
+		config
+	};
+	return { invocation };
+}
+
+/** The options a check passes on as given (or as completed from the config file). */
+type Given = Omit<ConfigInvocation, 'command' | 'library' | 'file' | 'cache' | 'format' | 'json' | 'failOn' | 'config'>;
+
+function givenOf(values: Values): Given {
+	const { file: files = [], ignore: ignores = [], name, registries, project, patterns, settings, ruleset } = values;
+	return {
 		files,
 		ignores,
 		several: files.length > 1 || files.some(isPattern),
 		name,
-		libraryVersion,
+		libraryVersion: values['library-version'],
 		registries,
+		pluginSchemas: values['plugin-schema'] ?? [],
 		project,
 		patterns,
 		settings,
-		ruleset,
-		format: output.format,
-		json: output.format === 'json',
-		failOn: output.failOn,
-		config
+		ruleset
 	};
-	return { invocation };
 }
 
 /** `schema build --library <library> [--dir <project>] [--json]`, and nothing else. */

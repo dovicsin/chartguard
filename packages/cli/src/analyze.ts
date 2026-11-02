@@ -82,6 +82,8 @@ function describeDiagnostic(diagnostic: Diagnostic): string {
 /** What the entries were read and checked with, and what could not be read. */
 export interface AnalysisNotes {
 	readonly schema: string | undefined;
+	/** The plugin extensions the entries were checked with (CG-06-02 part 4c). */
+	readonly plugins: string | undefined;
 	readonly tsconfig: string | undefined;
 	readonly unreadable: readonly { readonly file: string; readonly diagnostics: readonly Diagnostic[] }[];
 	readonly truncated: boolean;
@@ -91,6 +93,7 @@ function printNotes(notes: AnalysisNotes, io: Io): void {
 	io.out(notes.tsconfig === undefined ? 'Read without a tsconfig.' : `Read with ${notes.tsconfig}.`);
 	if (notes.truncated) io.out('NOTE: the project has more files than one scan reads; the rest were not read.');
 	if (notes.schema !== undefined) io.out(notes.schema.trimStart());
+	if (notes.plugins !== undefined) io.out(notes.plugins.trimStart());
 	for (const { file, diagnostics } of notes.unreadable)
 		io.out(`${file}: not read (${diagnostics.map(({ message }) => message).join(' ')})`);
 }

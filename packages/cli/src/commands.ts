@@ -1,13 +1,15 @@
 import { analyzeCommand } from './analyze-command.js';
-import { InputError } from './errors.js';
+import { isQualityReport, isValidationResult, openCache, type ResultCache } from './cache.js';
+import { InputError, RunInputError } from './errors.js';
 import { readJsonText } from './input.js';
 import { expandInputs } from './inputs.js';
 import type { ConfigCommand, ConfigInvocation, FailOn } from './invocation.js';
 import type { Io } from './io.js';
 import { loadQualityAdapter } from './libraries.js';
 import { qualityOptions, validationOptions } from './options.js';
+import { readPluginSchemas } from './plugins.js';
 import { type CheckedFile, checkedQuality, checkedResult, type Output, type UnusableFile } from './report.js';
-import { loadConfigValidator } from './schema-source.js';
+import { schemaFinder } from './schema-source.js';
 import { printFiles } from './several.js';
 
 export type CommandHandler = (invocation: ConfigInvocation, io: Io) => Promise<number>;
@@ -32,29 +34,58 @@ async function checkFiles(
 		try {
 			results.push(await check(file));
 		} catch (error) {
-			if (!(error instanceof InputError) || !invocation.several) throw error;
+			if (!(error instanceof InputError) || error instanceof RunInputError || !invocation.several) throw error;
 			results.push({ file, error: error.message });
 		}
 	return results;
 }
 
+/** The run's result cache, when `--cache` asks for one (CG-06-02 part 4d). */
+async function cacheOf({ cache }: ConfigInvocation, io: Io): Promise<ResultCache | undefined> {
+	return cache === undefined ? undefined : openCache(cache, io);
+}
+
+/** `compute()`, or its result stored under `parts` in the cache. */
+function through<T>(
+	cache: ResultCache | undefined,
+	parts: unknown,
+	is: (value: unknown) => value is T,
+	compute: () => Promise<T>
+): Promise<T> {
+	return cache === undefined ? compute() : cache.through(parts, is, compute);
+}
+
 const validateCommand: CommandHandler = async (invocation, io) => {
 	const { library } = invocation;
+	const plugins = await readPluginSchemas(invocation.pluginSchemas);
+	const schemas = schemaFinder(library, plugins);
+	const cache = await cacheOf(invocation, io);
 	const results = await checkFiles(invocation, async (file) => {
 		const { value: config, text } = await readJsonText(file);
-		const { validate, schema } = await loadConfigValidator(library, file);
+		const found = await schemas(file);
 		const { options, version } = await validationOptions({ ...invocation, file });
-		return checkedResult(validate(config, options), schema, outputOf(invocation, file, text, 'error'), version);
+		// Everything the result depends on; the code is part of every key.
+		const parts = { command: 'validate', library, text, options, schema: found.identity, plugins: plugins.extensions };
+		const checked = await through(cache, parts, isValidationResult, async () =>
+			(await found.validator())(config, options)
+		);
+		return checkedResult(checked, found.schema, outputOf(invocation, file, text, 'error'), version);
 	});
 	return printFiles('validate', results, invocation, io);
 };
 
 const qualityCommand: CommandHandler = async (invocation, io) => {
-	const adapter = await loadQualityAdapter(invocation.library);
+	const { library } = invocation;
+	const adapter = await loadQualityAdapter(library);
 	const options = await qualityOptions(invocation, adapter);
+	const cache = await cacheOf(invocation, io);
 	const results = await checkFiles(invocation, async (file) => {
 		const { value: config, text } = await readJsonText(file);
-		return checkedQuality(adapter.analyze(config, options), outputOf(invocation, file, text, 'never'));
+		const parts = { command: 'quality', library, text, options: options ?? null };
+		const report = await through(cache, parts, isQualityReport, () =>
+			Promise.resolve(adapter.analyze(config, options))
+		);
+		return checkedQuality(report, outputOf(invocation, file, text, 'never'));
 	});
 	return printFiles('quality', results, invocation, io);
 };

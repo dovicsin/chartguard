@@ -8,6 +8,7 @@ import {
 	entryWork,
 	fileUrlText,
 	jsonRoundTrips,
+	networkAccess,
 	nodeModulesPaths,
 	readerCopies,
 	recordCasts,
@@ -169,6 +170,33 @@ test('R16 catches a second definition of a shared reader, as a function or a con
 		good: [
 			"import { pathSegments } from '@chartguard/core';\nconst parts = pathSegments('$.a');",
 			'function segments(path) { return []; }'
+		]
+	});
+});
+
+test('R17 catches network and process modules and network globals however they are reached', () => {
+	expectGuard(networkAccess, {
+		bad: [
+			"import http from 'node:http';",
+			"import { request } from 'https';",
+			"export { connect } from 'node:net';",
+			"const { spawn } = await import('node:child_process');",
+			"const dns = require('dns');",
+			"import { fetch as get } from 'undici';",
+			"const response = await fetch('https://example.com');",
+			'const get = globalThis.fetch;',
+			"const get = globalThis['fetch'];",
+			"const socket = new WebSocket('wss://x');",
+			'const request = fetch;'
+		],
+		good: [
+			"import { readFile } from 'node:fs/promises';",
+			"import { createHash } from 'node:crypto';",
+			'const options = { fetch: 1 };',
+			'const fetched = cache.fetch(key);',
+			'function fetchAll(fetch) { return 1; }',
+			"// fetch('https://example.com') in a comment",
+			"const text = 'fetch';"
 		]
 	});
 });

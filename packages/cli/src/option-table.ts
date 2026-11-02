@@ -22,6 +22,9 @@ export const OPTIONS = {
 	patterns: { type: 'string' },
 	settings: { type: 'string' },
 	ruleset: { type: 'string', multiple: true },
+	'plugin-schema': { type: 'string', multiple: true },
+	cache: { type: 'boolean' },
+	'cache-location': { type: 'string' },
 	dir: { type: 'string' },
 	json: { type: 'boolean', default: false },
 	format: { type: 'string' },
@@ -36,8 +39,9 @@ const ALL_COMMANDS: readonly Command[] = [...CONFIG_COMMANDS, 'schema'];
 
 /**
  * Which commands take each option (C4): `--name`, `--project` and `--patterns` belong to `analyze`;
- * `--library-version` and `--registries` to the config checks, not to `quality`; `--settings` and
- * `--ruleset` to `quality` only; `--dir` to `schema build`; a config file to the checks.
+ * `--library-version`, `--registries` and `--plugin-schema` to the config checks, not to `quality`; `--settings` and
+ * `--ruleset` to `quality` only; `--cache` and `--cache-location` to `validate` and `quality` (an analysis depends on files the cache
+ * cannot list); `--dir` to `schema build`; a config file to the checks.
  */
 export const OWNERS: Readonly<Record<OptionName, readonly Command[]>> = {
 	library: ALL_COMMANDS,
@@ -51,6 +55,9 @@ export const OWNERS: Readonly<Record<OptionName, readonly Command[]>> = {
 	registries: ['validate', 'analyze'],
 	settings: ['quality'],
 	ruleset: ['quality'],
+	'plugin-schema': ['validate', 'analyze'],
+	cache: ['validate', 'quality'],
+	'cache-location': ['validate', 'quality'],
 	dir: ['schema'],
 	format: CONFIG_COMMANDS,
 	'fail-on': CONFIG_COMMANDS,

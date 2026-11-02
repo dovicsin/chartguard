@@ -5,7 +5,7 @@ import type { ResolvedVersion } from './installed.js';
 import type { FailOn, Format } from './invocation.js';
 import type { Io } from './io.js';
 import { jsonLocator, type RunProperties, type SarifFinding } from './sarif.js';
-import { schemaNote, type SchemaSource } from './schema-source.js';
+import { pluginNote, schemaNote, type SchemaSource } from './schema-source.js';
 
 const PARTIAL_NOTE = '  NOTE: partial schema coverage; absence of errors is not a compatibility guarantee.';
 const ADVISORY_NOTE =
@@ -92,6 +92,11 @@ function jsonFindings(diagnostics: readonly Diagnostic[], { file, text }: Output
 /** Where `--library-version auto` found the version it validated against. */
 const versionNote = ({ version, source }: ResolvedVersion): string => `  version ${version} from ${source}`;
 
+/** The plugin extensions a run was checked with, as a SARIF run property. */
+export function extensionProperty(extensions: readonly string[] | undefined): RunProperties {
+	return extensions === undefined || extensions.length === 0 ? {} : { extensions: extensions.join(', ') };
+}
+
 /** What checked a config: library, command, coverage, status and the schema's version and digest. */
 function runProperties(mode: string, checked: ValidationResult): RunProperties {
 	return {
@@ -100,7 +105,8 @@ function runProperties(mode: string, checked: ValidationResult): RunProperties {
 		coverage: checked.coverage,
 		resultStatus: checked.status,
 		schemaVersion: checked.schemaVersion,
-		...(checked.schemaDigest === undefined ? {} : { schemaDigest: checked.schemaDigest })
+		...(checked.schemaDigest === undefined ? {} : { schemaDigest: checked.schemaDigest }),
+		...extensionProperty(checked.extensions)
 	};
 }
 
@@ -119,6 +125,8 @@ export function checkedResult(
 			io.out(`${checked.library} ${checked.status} (coverage: ${checked.coverage}; schema ${schemaLabel(checked)})`);
 			const note = schemaNote(schema, checked.library);
 			if (note !== undefined) io.out(note);
+			const plugins = pluginNote(checked.extensions);
+			if (plugins !== undefined) io.out(plugins);
 			if (version !== undefined) io.out(versionNote(version));
 			for (const diagnostic of checked.diagnostics) io.out(describe(diagnostic));
 			if (checked.status === 'partial') io.out(PARTIAL_NOTE);

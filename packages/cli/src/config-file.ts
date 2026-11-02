@@ -27,7 +27,7 @@ import {
 const DEFAULT_CONFIG = 'chartguard.config.json';
 
 /** A config key, the option it stands for, and what it must hold. */
-type Kind = 'list' | 'path' | 'patterns' | 'text';
+type Kind = 'flag' | 'list' | 'path' | 'paths' | 'patterns' | 'text';
 const KEYS: Readonly<Record<string, { readonly option: OptionName; readonly kind: Kind }>> = {
 	library: { option: 'library', kind: 'text' },
 	files: { option: 'file', kind: 'patterns' },
@@ -40,11 +40,14 @@ const KEYS: Readonly<Record<string, { readonly option: OptionName; readonly kind
 	patterns: { option: 'patterns', kind: 'path' },
 	project: { option: 'project', kind: 'path' },
 	name: { option: 'name', kind: 'text' },
-	ruleset: { option: 'ruleset', kind: 'list' }
+	ruleset: { option: 'ruleset', kind: 'list' },
+	pluginSchemas: { option: 'plugin-schema', kind: 'paths' },
+	cache: { option: 'cache', kind: 'flag' },
+	cacheLocation: { option: 'cache-location', kind: 'path' }
 };
 
 /** The values the file gives one command, by option name, its paths relative to the working directory. */
-export type ConfigValues = Partial<Record<OptionName, string | string[]>>;
+export type ConfigValues = Partial<Record<OptionName, boolean | string | string[]>>;
 
 export interface ProjectConfig {
 	/** The file as the user named it (or the default name). */
@@ -52,14 +55,17 @@ export interface ProjectConfig {
 	readonly valuesFor: (command: ConfigCommand) => ConfigValues;
 }
 
+/** The kinds a list of strings holds. */
+const LISTS: ReadonlySet<Kind> = new Set(['list', 'paths', 'patterns']);
+const isStringList = (value: unknown): boolean =>
+	Array.isArray(value) && value.every((item) => typeof item === 'string');
+
 /** What is wrong with one value of the file, or undefined. */
 function problemOf(key: string, value: unknown): string | undefined {
 	const known = KEYS[key];
 	if (known === undefined) return 'unknown key';
-	if (known.kind === 'patterns' || known.kind === 'list')
-		return Array.isArray(value) && value.every((item) => typeof item === 'string')
-			? undefined
-			: 'must be a list of strings';
+	if (known.kind === 'flag') return typeof value === 'boolean' ? undefined : 'must be true or false';
+	if (LISTS.has(known.kind)) return isStringList(value) ? undefined : 'must be a list of strings';
 	if (typeof value !== 'string') return 'must be a string';
 	return CHOICES[key]?.(value);
 }
@@ -95,6 +101,7 @@ function located(kind: Kind, value: string | string[], base: string): string | s
 	const prefix = (pattern: string): string => (base === '' ? pattern : `${base.split(sep).join('/')}/${pattern}`);
 	if (kind === 'patterns' && Array.isArray(value)) return value.map(prefix);
 	if (kind === 'path' && typeof value === 'string') return join(base, value);
+	if (kind === 'paths' && Array.isArray(value)) return value.map((path) => join(base, path));
 	return value;
 }
 
@@ -103,7 +110,9 @@ function optionsOf(part: Record<string, unknown>, base: string): ConfigValues {
 	const values: ConfigValues = {};
 	for (const [key, value] of Object.entries(part)) {
 		const known = KEYS[key];
-		if (known !== undefined && (typeof value === 'string' || Array.isArray(value)))
+		if (known === undefined) continue;
+		if (typeof value === 'boolean') values[known.option] = value;
+		else if (typeof value === 'string' || Array.isArray(value))
 			values[known.option] = located(known.kind, value as string | string[], base);
 	}
 	return values;

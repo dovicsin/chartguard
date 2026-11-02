@@ -260,3 +260,57 @@ function functionName(node) {
  * notation differently (the playground's own path reader threw on a malformed key the core rejects).
  */
 export const readerCopies = (entries) => offences(entries, (node) => SHARED_READERS.has(functionName(node)));
+
+/** Modules that reach the network, or start a process that could. */
+const NETWORK_MODULES = new Set([
+	'http',
+	'https',
+	'http2',
+	'net',
+	'tls',
+	'dgram',
+	'dns',
+	'child_process',
+	'undici',
+	'ws'
+]);
+/** Globals that reach the network. */
+const NETWORK_GLOBALS = new Set(['fetch', 'WebSocket', 'XMLHttpRequest', 'EventSource']);
+const GLOBAL_OBJECTS = new Set(['globalThis', 'global', 'window', 'self']);
+
+const isNetworkModule = (specifier) =>
+	specifier !== undefined && NETWORK_MODULES.has(specifier.replace(/^node:/u, '').split('/')[0]);
+
+/** An identifier read as a value: not a property name, a member name or a declared name. */
+function isValueReference(node) {
+	const { parent } = node;
+	if (ts.isPropertyAccessExpression(parent) && parent.name === node) return false;
+	if (
+		(ts.isPropertyAssignment(parent) || ts.isMethodDeclaration(parent) || ts.isPropertySignature(parent)) &&
+		parent.name === node
+	)
+		return false;
+	return (
+		!(ts.isVariableDeclaration(parent) || ts.isParameter(parent) || ts.isFunctionDeclaration(parent)) ||
+		parent.name !== node
+	);
+}
+
+/**
+ * R17: network access in published code (E49): an import, re-export, dynamic import or `require` of
+ * a network or process module, or a network global (`fetch`, also as `globalThis.fetch`).
+ */
+export const networkAccess = (entries) =>
+	offences(entries, (node) => {
+		if (isNetworkModule(specifierOf(node))) return true;
+		if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'require')
+			return isNetworkModule(stringText(node.arguments[0]));
+		if (ts.isIdentifier(node) && NETWORK_GLOBALS.has(node.text)) return isValueReference(node);
+		const access = memberOf(node);
+		return (
+			access !== undefined &&
+			NETWORK_GLOBALS.has(access.member) &&
+			ts.isIdentifier(access.object) &&
+			GLOBAL_OBJECTS.has(access.object.text)
+		);
+	});

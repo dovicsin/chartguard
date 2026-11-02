@@ -12,9 +12,10 @@ import { expandInputs } from './inputs.js';
 import type { ConfigInvocation } from './invocation.js';
 import type { Io } from './io.js';
 import { validationOptions } from './options.js';
-import { printJson } from './report.js';
+import { readPluginSchemas } from './plugins.js';
+import { extensionProperty, printJson } from './report.js';
 import { type RunProperties, type SarifFinding, sarifLog, sourceRegion } from './sarif.js';
-import { loadConfigValidator, schemaNote, type SchemaSource } from './schema-source.js';
+import { loadConfigValidator, pluginNote, schemaNote, type SchemaSource } from './schema-source.js';
 import { settingsNote } from './several.js';
 
 /**
@@ -105,7 +106,8 @@ async function checkedEntries(
 	read: Read
 ): Promise<{ entries: AnalyzedEntry[]; schema: SchemaSource }> {
 	const { library, file, name } = invocation;
-	const { validate, schema } = await loadConfigValidator(library, file);
+	const plugins = await readPluginSchemas(invocation.pluginSchemas);
+	const { validate, schema } = await loadConfigValidator(library, file, plugins);
 	const { options } = await validationOptions(invocation);
 	const check = { validate, options, library, name };
 	const entries = read.analyses
@@ -143,7 +145,14 @@ function printAnalysis(
 		return;
 	}
 	if (config !== undefined) io.out(settingsNote(config));
-	const notes = { schema: schemaNote(schema, library), tsconfig: read.tsconfig, unreadable, truncated: read.truncated };
+	const plugins = pluginNote(entries.find(({ result }) => result !== undefined)?.result?.extensions);
+	const notes = {
+		schema: schemaNote(schema, library),
+		plugins,
+		tsconfig: read.tsconfig,
+		unreadable,
+		truncated: read.truncated
+	};
 	printEntries(entries, notes, io);
 }
 
@@ -184,6 +193,7 @@ function analysisProperties(library: string, entries: readonly AnalyzedEntry[]):
 		library,
 		coverage: partial ? 'partial' : 'full',
 		...(first === undefined ? {} : { schemaVersion: first.schemaVersion }),
-		...(first?.schemaDigest === undefined ? {} : { schemaDigest: first.schemaDigest })
+		...(first?.schemaDigest === undefined ? {} : { schemaDigest: first.schemaDigest }),
+		...extensionProperty(first?.extensions)
 	};
 }

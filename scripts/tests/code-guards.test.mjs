@@ -14,6 +14,7 @@ import {
 	entryWork,
 	fileUrlText,
 	jsonRoundTrips,
+	networkAccess,
 	nodeModulesPaths,
 	readerCopies,
 	recordCasts,
@@ -256,4 +257,12 @@ test('R16 the readers of paths and JSON text with positions are defined once, in
 		...sources('scripts')
 	]).filter(({ path }) => !path.startsWith(join('packages', 'core', 'src')));
 	assert.deepEqual(readerCopies(code), []);
+});
+
+test('R17 published packages never reach the network nor start a process: --no-network is the only mode (E49)', () => {
+	const published = outsideTests([...sources('packages', ['.ts', '.mjs', '.js', '.cjs', '.mts', '.cts'])]).filter(
+		({ path }) => !path.endsWith('.d.ts')
+	);
+	assert.ok(published.some(({ path }) => path === join('packages', 'cli', 'bin', 'chartguard.mjs')));
+	assert.deepEqual(networkAccess(published), []);
 });

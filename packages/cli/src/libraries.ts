@@ -9,6 +9,17 @@ export type Library = (typeof LIBRARIES)[number];
 
 interface ConfigAdapter {
 	readonly validate: ConfigValidator;
+	/** A validator extended with plugin schemas (CG-02-05); Highcharts takes them with its built schema only. */
+	readonly withExtensions?: (extensions: readonly never[]) => ConfigValidator;
+	readonly ExtensionError: new (problems: readonly string[]) => Error;
+}
+
+/** The Highcharts adapter's validator over a schema built from the user's install, with plugin schemas. */
+export interface HighchartsAdapter extends ConfigAdapter {
+	readonly createValidator: (
+		artifact: unknown,
+		settings?: { readonly extensions?: readonly never[] }
+	) => ConfigValidator;
 }
 
 export interface QualityAdapter {
