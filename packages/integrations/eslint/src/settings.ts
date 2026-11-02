@@ -13,6 +13,8 @@ export interface ChartGuardSettings {
 	readonly patterns: readonly ChartPattern[];
 	/** Rule levels, ignores, page context and ruleset for `chart-quality`, as `quality --settings` takes them. */
 	readonly quality: QualityOptions | undefined;
+	/** Project mode: `true` for each file's nearest tsconfig, or a tsconfig path; `false` reads each file alone. */
+	readonly project: boolean | string;
 }
 
 /** Settings ESLint cannot lint with: every problem, each named by its key. ESLint stops with it, as with any configuration error. */
@@ -23,7 +25,7 @@ export class SettingsError extends Error {
 	}
 }
 
-const KEYS = ['libraryVersion', 'registries', 'extensions', 'patterns', 'quality'] as const;
+const KEYS = ['libraryVersion', 'registries', 'extensions', 'patterns', 'quality', 'project'] as const;
 const PREFIX = 'settings.chartguard';
 const isLibrary = (key: string): key is ChartLibrary => LIBRARIES.some((library) => library === key);
 
@@ -47,29 +49,40 @@ function qualityProblems(value: unknown): string[] {
 	}
 }
 
-/** The problems of one key of `settings.chartguard`; a value's own shape (a registry, an extension) is its reader's to judge. */
-function problemsOf(key: string, value: unknown): string[] {
-	switch (key) {
-		case 'libraryVersion':
-			return perLibrary(key, value, (entry) => typeof entry === 'string', 'a version string');
-		case 'extensions':
-			return perLibrary(key, value, Array.isArray, 'a list of extensions');
-		case 'registries':
-			return isRecord(value) ? [] : [`${PREFIX}.registries: must be an object of registries`];
-		case 'patterns':
-			return Array.isArray(value) ? [] : [`${PREFIX}.patterns: must be a list of patterns`];
-		case 'quality':
-			return qualityProblems(value);
-		default:
-			return [`${PREFIX}.${key}: unknown key (${KEYS.join(', ')})`];
-	}
-}
+const projectProblems = (value: unknown): string[] =>
+	typeof value === 'boolean' || (typeof value === 'string' && value !== '')
+		? []
+		: [`${PREFIX}.project: must be true, false or a tsconfig path`];
+
+/** The check of each key of `settings.chartguard`; a value's own shape (a registry, an extension) is its reader's to judge. */
+const CHECKS: Readonly<Record<(typeof KEYS)[number], (value: unknown) => string[]>> = {
+	libraryVersion: (value) =>
+		perLibrary('libraryVersion', value, (entry) => typeof entry === 'string', 'a version string'),
+	extensions: (value) => perLibrary('extensions', value, Array.isArray, 'a list of extensions'),
+	registries: (value) => (isRecord(value) ? [] : [`${PREFIX}.registries: must be an object of registries`]),
+	patterns: (value) => (Array.isArray(value) ? [] : [`${PREFIX}.patterns: must be a list of patterns`]),
+	quality: qualityProblems,
+	project: projectProblems
+};
+
+const isKey = (key: string): key is (typeof KEYS)[number] => KEYS.some((known) => known === key);
+
+/** The problems of one key of `settings.chartguard`. */
+const problemsOf = (key: string, value: unknown): string[] =>
+	isKey(key) ? CHECKS[key](value) : [`${PREFIX}.${key}: unknown key (${KEYS.join(', ')})`];
 
 /** `settings.chartguard` checked: absent is no setting; anything else must be an object of known keys of the right shape. */
 export function readSettings(settings: Readonly<Record<string, unknown>>): ChartGuardSettings {
 	const given = settings['chartguard'];
 	if (given === undefined)
-		return { libraryVersion: {}, registries: undefined, extensions: {}, patterns: [], quality: undefined };
+		return {
+			libraryVersion: {},
+			registries: undefined,
+			extensions: {},
+			patterns: [],
+			quality: undefined,
+			project: false
+		};
 	if (!isRecord(given)) throw new SettingsError([`${PREFIX}: must be an object (${KEYS.join(', ')})`]);
 	const problems = Object.entries(given).flatMap(([key, value]) => problemsOf(key, value));
 	if (problems.length > 0) throw new SettingsError(problems);
@@ -80,6 +93,7 @@ export function readSettings(settings: Readonly<Record<string, unknown>>): Chart
 		registries: given['registries'] as ChartGuardSettings['registries'],
 		extensions: given['extensions'] ?? {},
 		patterns: (given['patterns'] ?? []) as ChartGuardSettings['patterns'],
-		quality: given['quality'] as QualityOptions | undefined
+		quality: given['quality'] as QualityOptions | undefined,
+		project: (given['project'] ?? false) as boolean | string
 	};
 }

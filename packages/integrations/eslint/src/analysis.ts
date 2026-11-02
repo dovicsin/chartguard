@@ -1,4 +1,7 @@
+import { relative, resolve } from 'node:path';
+
 import {
+	type AnalysisOutput,
 	type ChartUse,
 	extractStaticConfigs,
 	PatternError,
@@ -9,6 +12,7 @@ import type { Diagnostic, ValidationOptions } from '@chartguard/core';
 import type { AST, SourceCode } from 'eslint';
 
 import { renameEdit, type TextEdit, valueEdit } from './edits.js';
+import { Sessions } from './sessions.js';
 import { type ChartGuardSettings, readSettings, SettingsError } from './settings.js';
 import { reviewOf, Validators } from './validators.js';
 
@@ -32,37 +36,45 @@ const locationOf = ({ line, column, endLine, endColumn }: Omit<SourceRange, 'fil
 	end: { line: endLine, column: endColumn - 1 }
 });
 
-const describe = ({ code, path, message, suggestion }: Diagnostic): string =>
-	`${code} ${path}: ${message}${suggestion === undefined ? '' : ` ${suggestion}`}`;
-
-/**
- * Where a finding stands: the range that wrote its value or the nearest value above it (the config
- * itself at worst), else the use, as a point. One file in memory: every range is in it.
- */
-function placeOf(diagnostic: Diagnostic, use: ChartUse): AST.SourceLocation {
-	const range = rangeAt(use.paths, diagnostic.path);
-	if (range !== undefined) return locationOf(range);
-	return locationOf({ line: use.line, column: use.column, endLine: use.line, endColumn: use.column });
-}
-
 /** What one file's analysis needs to check its uses and place findings and their edits. */
 interface Reading {
 	readonly sourceCode: SourceCode;
 	readonly fileName: string;
+	/** ESLint's working directory: other files are named relative to it. */
+	readonly cwd: string;
 	readonly settings: ChartGuardSettings;
 	readonly validators: Validators;
 }
 
+const describe = ({ code, path, message, suggestion }: Diagnostic): string =>
+	`${code} ${path}: ${message}${suggestion === undefined ? '' : ` ${suggestion}`}`;
+
+/**
+ * Where a finding stands and what it says: at the range that wrote its value or the nearest value
+ * above it, when that is in the linted file; a value written in another file (project mode) is
+ * reported at the use, naming where it was written.
+ */
+function placed(diagnostic: Diagnostic, use: ChartUse, { fileName, cwd }: Reading): Pick<Finding, 'message' | 'loc'> {
+	const message = describe(diagnostic);
+	const range = rangeAt(use.paths, diagnostic.path);
+	if (range !== undefined && resolve(range.file) === resolve(fileName)) return { message, loc: locationOf(range) };
+	const at = locationOf({ line: use.line, column: use.column, endLine: use.line, endColumn: use.column });
+	if (range === undefined) return { message, loc: at };
+	const where = `${relative(cwd, range.file).split('\\').join('/')}:${String(range.line)}:${String(range.column)}`;
+	return { message: `${message} (written in ${where})`, loc: at };
+}
+
 /** A finding with its edit: only for a config read completely (an unread part may hold what the edit changes). */
-function findingOf(rule: RuleName, diagnostic: Diagnostic, use: ChartUse, { sourceCode }: Reading): Finding {
-	const finding = { rule, message: describe(diagnostic), loc: placeOf(diagnostic, use) };
+function findingOf(rule: RuleName, diagnostic: Diagnostic, use: ChartUse, reading: Reading): Finding {
+	const { sourceCode, fileName } = reading;
+	const finding = { rule, ...placed(diagnostic, use, reading) };
 	const { fix } = diagnostic;
 	if (fix === undefined || !use.complete) return finding;
 	if (fix.kind === 'rename-key') {
-		const edit = renameEdit(sourceCode, use, diagnostic.path, fix);
+		const edit = renameEdit({ sourceCode, fileName, use }, diagnostic.path, fix);
 		return edit === undefined ? finding : { ...finding, fix: edit };
 	}
-	const edit = valueEdit(sourceCode, use, fix);
+	const edit = valueEdit({ sourceCode, fileName, use }, fix);
 	const description = `Set ${fix.path} to ${JSON.stringify(fix.value)}: ${fix.effect}`;
 	return edit === undefined ? finding : { ...finding, suggestion: { description, edit } };
 }
@@ -113,6 +125,8 @@ function distinct(findings: readonly Finding[]): Finding[] {
 interface Prepared {
 	readonly settings: ChartGuardSettings;
 	readonly validators: Validators;
+	/** Project mode: one analysis session per project. */
+	readonly sessions: Sessions | undefined;
 }
 
 /** Per ESLint settings object: as long as ESLint holds it, never longer. */
@@ -122,23 +136,37 @@ function prepare(given: Readonly<Record<string, unknown>>): Prepared {
 	let known = prepared.get(given);
 	if (known === undefined) {
 		const settings = readSettings(given);
-		known = { settings, validators: new Validators(settings) };
+		const { project, patterns } = settings;
+		const sessions = project === false ? undefined : new Sessions(project, patterns);
+		known = { settings, validators: new Validators(settings), sessions };
 		prepared.set(given, known);
 	}
 	return known;
 }
 
-function analyse(sourceCode: SourceCode, fileName: string, given: Readonly<Record<string, unknown>>): Finding[] {
-	const { settings, validators } = prepare(given);
-	let output;
+/** The file read alone, or in its project's session (project mode). */
+function extracted(text: string, fileName: string, cwd: string, { settings, sessions }: Prepared): AnalysisOutput {
 	try {
-		output = extractStaticConfigs(sourceCode.text, fileName, { patterns: settings.patterns });
+		if (sessions === undefined) return extractStaticConfigs(text, fileName, { patterns: settings.patterns });
+		return sessions.sessionFor(fileName, cwd).analyze(fileName, text);
 	} catch (error) {
 		if (error instanceof PatternError) throw new SettingsError([`settings.chartguard.patterns: ${error.message}`]);
 		throw error;
 	}
-	const reading = { sourceCode, fileName, settings, validators };
-	// A file TypeScript cannot read (syntax errors, limits) yields no use: nothing read from it is reliable.
+}
+
+function analyse(
+	sourceCode: SourceCode,
+	fileName: string,
+	cwd: string,
+	given: Readonly<Record<string, unknown>>
+): Finding[] {
+	const known = prepare(given);
+	const output = extracted(sourceCode.text, fileName, cwd, known);
+	const reading = { sourceCode, fileName, cwd, settings: known.settings, validators: known.validators };
+	// A file TypeScript cannot read (syntax errors, limits): nothing read from its tree is reliable, as
+	// in the CLI. Its uses are still listed (incomplete), and their values would be checked.
+	if (!output.readable) return [];
 	return distinct(
 		output.uses.flatMap((use) => [...validationFindings(use, reading), ...qualityFindings(use, reading)])
 	);
@@ -156,11 +184,12 @@ const analysed = new WeakMap<SourceCode, Analysed>();
 export function analysisOf(
 	sourceCode: SourceCode,
 	settings: Readonly<Record<string, unknown>>,
-	fileName: string
+	fileName: string,
+	cwd: string
 ): readonly Finding[] {
 	const known = analysed.get(sourceCode);
 	if (known?.settings === settings) return known.findings;
-	const findings = analyse(sourceCode, fileName, settings);
+	const findings = analyse(sourceCode, fileName, cwd, settings);
 	analysed.set(sourceCode, { settings, findings });
 	return findings;
 }

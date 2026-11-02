@@ -31,7 +31,7 @@ function findingsRule(rule: RuleName, description: string, offers: Offers = {}):
 			if ((sourceCode.ast as { type?: unknown }).type !== 'Program') return {};
 			return {
 				Program() {
-					for (const finding of analysisOf(sourceCode, context.settings, context.filename)) {
+					for (const finding of analysisOf(sourceCode, context.settings, context.filename, context.cwd)) {
 						if (finding.rule !== rule) continue;
 						const { fix, suggestion } = finding;
 						context.report({

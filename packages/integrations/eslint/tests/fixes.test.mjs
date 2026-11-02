@@ -98,7 +98,11 @@ test('a rename to a name that is not an identifier is not written', () => {
 	const code = call("{ type: 'pie', clockWise: false, data: [1] }");
 	linter.verify(code, [], { filename: 'chart.js' });
 	const [use] = extractStaticConfigs(code, 'chart.js').uses;
-	const edit = (to) => renameEdit(linter.getSourceCode(), use, '$.series[0].clockWise', { kind: 'rename-key', to });
+	const edit = (to) =>
+		renameEdit({ sourceCode: linter.getSourceCode(), fileName: 'chart.js', use }, '$.series[0].clockWise', {
+			kind: 'rename-key',
+			to
+		});
 	assert.deepEqual(edit('clockwise')?.text, 'clockwise');
 	assert.equal(edit('emphasis.scale'), undefined);
 	assert.equal(edit('2d'), undefined);

@@ -1,9 +1,10 @@
-import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 import type { Diagnostic } from '@chartguard/core';
 import ts from 'typescript';
 
-import { type AnalysedFile, type AnalysisOutput, Extraction, type ExtractOptions, refused } from './extract.js';
+import { type AnalysisOutput, Extraction, type ExtractOptions, refused } from './extract.js';
+import { projectHost, type Root } from './host.js';
 import { guarded, inputRefusal, refusal, tooDeep } from './limits.js';
 import { type Rule, rulesOf } from './patterns.js';
 import { READ_ONLY, rootNameOf, sourceFileOf } from './program.js';
@@ -17,6 +18,7 @@ import {
 	type TsconfigChoice
 } from './tsconfig.js';
 
+export { openSession, ProjectSession } from './session.js';
 export { MAX_PROJECT_FILES, ProjectConfigError };
 
 /** A file to analyse and its text (which may differ from the file on disk: an editor's buffer). */
@@ -36,18 +38,10 @@ export interface ProjectAnalysis extends AnalysisOutput {
 	readonly tsconfig: string | undefined;
 }
 
-/**
- * The given files, with their texts, as the roots of one Program built with the project's compiler
- * options: module resolution, lib and types as configured. Other files are read from disk.
- */
-/** One root of a Program: its file, the name the caller gave and the resolved name it is known by. */
-interface Root extends AnalysedFile {
-	readonly root: string;
-}
-
 /** The resolved name a given file is a root of the Program under: `a.ts` and `./a.ts` are one root. */
 const rootKey = (fileName: string): string => rootNameOf(resolve(fileName));
 
+/** The given texts as the roots of one Program; other files are read from disk (`host.ts`). */
 function projectProgram(
 	texts: readonly SourceText[],
 	tsconfig: string | undefined
@@ -59,24 +53,7 @@ function projectProgram(
 			return [root, { file: sourceFileOf(root, source), fileName, root }] as const;
 		})
 	);
-	const host = ts.createCompilerHost(options, true);
-	const fromDisk = host.getSourceFile.bind(host);
-	// TypeScript asks with `/` separators on every platform: compare resolved paths, never strings.
-	host.getSourceFile = (name, ...rest) => roots.get(resolve(name))?.file ?? fromDisk(name, ...rest);
-	// The given texts exist for module resolution too, whether or not they are on disk yet (an editor's buffers).
-	const exists = host.fileExists.bind(host);
-	const read = host.readFile.bind(host);
-	host.fileExists = (name) => roots.has(resolve(name)) || exists(name);
-	const directoryExists = host.directoryExists?.bind(host);
-	// By path segment, never by text (E2): `..cache` is inside; another drive is not.
-	const holdsRoot = (name: string): boolean =>
-		[...roots.keys()].some((root) => {
-			const inside = relative(resolve(name), root);
-			return inside !== '' && !isAbsolute(inside) && inside.split(sep)[0] !== '..';
-		});
-	host.directoryExists = (name) => holdsRoot(name) || (directoryExists?.(name) ?? true);
-	host.readFile = (name) => roots.get(resolve(name))?.file.text ?? read(name);
-	host.writeFile = () => undefined;
+	const host = projectHost(options, roots);
 	return { program: ts.createProgram({ rootNames: [...roots.keys()], options, host }), files: [...roots.values()] };
 }
 

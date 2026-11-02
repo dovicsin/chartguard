@@ -1,6 +1,6 @@
 # @chartguard/eslint-plugin
 
-Partial: three rules, one file at a time, not published yet (CG-06-03 parts 1–2). See `docs/14-roadmap.md` for what is still missing.
+Partial: three rules, not published yet (CG-06-03 parts 1–3). See `docs/14-roadmap.md` for what is still missing.
 
 ```js
 // eslint.config.js
@@ -27,13 +27,15 @@ export default [
 - Info findings are no claim and are never reported (quality rules can be raised to `warning` in `settings.chartguard.quality`).
 - What is checked: the configs a file hands to Chart.js (`new Chart`), ECharts (`setOption` on `init`), Highcharts (`Highcharts.chart` and the other factories), the React wrappers (react-chartjs-2, echarts-for-react, highcharts-react-official), the ChartGuard runtime wrappers and the wrappers `patterns` names, found by where the callee is imported from (ES modules and `require`). A variable merely named `config` is not checked.
 - Each finding stands at the range that wrote the value it is about. The file is read as ESLint holds it, by TypeScript, without running anything; a file TypeScript cannot parse (Flow, a Vue single-file component) yields nothing.
-- One file at a time: an imported value is unknown, so a config built from one is validated as incomplete input, is never reported as missing a key, gets no quality review and no fix.
+- By default one file at a time: an imported value is unknown, so a config built from one is validated as incomplete input, is never reported as missing a key, gets no quality review and no fix. With `project: true` (or a tsconfig path) each file is read with its project's tsconfig through its imports; a value written in another file is reported at the use, naming where it was written, and is never edited. The first file of a project pays for reading it (seconds in a large project), the next ones only for what changed.
 - Highcharts: a file is checked with the schema built for exactly the version its project installs (`chartguard schema build --library highcharts`), else with the curated subset (partial).
 - `settings.chartguard`:
   - `libraryVersion`: exact versions by library, or `"auto"` for the version installed for the linted file (an uninstalled library a file uses stops the lint with the reason);
   - `registries`: what your tree-shaken runtime registered;
   - `extensions`: plugin schemas by library, as `--plugin-schema` takes them (Highcharts takes them with its built schema only);
   - `patterns`: your own wrappers (`module` a package name);
-  - `quality`: rule levels, ignores, page context and ruleset, as `quality --settings` takes them.
+  - `quality`: rule levels, ignores, page context and ruleset, as `quality --settings` takes them;
+  - `project`: `true` for each file's nearest tsconfig, or a tsconfig path relative to ESLint's working directory.
   Settings that cannot be used stop ESLint with every problem listed.
-- Not yet: a project mode that follows imports, `"auto"` from the lockfile when nothing is installed, publishing.
+- `"auto"` reads the install, not a lockfile: under Yarn PnP name the version.
+- Not yet: publishing.

@@ -58,6 +58,11 @@ test('a file in another language is not read; a file TypeScript cannot parse yie
 		new Linter().verify(text, [script], { filename: 'chart.js' }).map(({ ruleId, fatal }) => [ruleId, fatal ?? false]);
 	assert.deepEqual(lint(code), [['chartguard/valid-config', false]]);
 	assert.deepEqual(lint(`${code}a = 08;`), []);
+	// Values read from such a tree would still be checked (ECharts: a confirmed type error): nothing is.
+	const echarts =
+		"const echarts = require('echarts');\necharts.init(el).setOption({ title: { text: 5 }, series: [{ type: 'pie', data: [1] }] });\n";
+	assert.ok(lint(echarts).some(([ruleId]) => ruleId === 'chartguard/valid-config'));
+	assert.deepEqual(lint(`${echarts}a = 08;`), []);
 });
 
 test('both rules read one analysis of a file: one per text and settings, held only as long as ESLint holds the file', () => {
@@ -66,11 +71,11 @@ test('both rules read one analysis of a file: one per text and settings, held on
 	linter.verify(code, [plugin.configs.recommended], { filename: 'chart.js' });
 	const sourceCode = linter.getSourceCode();
 	const settings = {};
-	const first = analysisOf(sourceCode, settings, 'chart.js');
-	assert.equal(analysisOf(sourceCode, settings, 'chart.js'), first);
+	const first = analysisOf(sourceCode, settings, 'chart.js', process.cwd());
+	assert.equal(analysisOf(sourceCode, settings, 'chart.js', process.cwd()), first);
 	assert.equal(first.length, 0);
 	// Other settings are another analysis (a pattern may find other uses).
-	assert.notEqual(analysisOf(sourceCode, { chartguard: {} }, 'chart.js'), first);
+	assert.notEqual(analysisOf(sourceCode, { chartguard: {} }, 'chart.js', process.cwd()), first);
 	linter.verify(`${code}\n`, [plugin.configs.recommended], { filename: 'chart.js' });
-	assert.notEqual(analysisOf(linter.getSourceCode(), settings, 'chart.js'), first);
+	assert.notEqual(analysisOf(linter.getSourceCode(), settings, 'chart.js', process.cwd()), first);
 });

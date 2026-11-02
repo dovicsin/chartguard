@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import type { ChartUse } from '@chartguard/analysis-typescript';
 import type { KeyRename, OptionEdit } from '@chartguard/core';
 import type { Rule, SourceCode } from 'eslint';
@@ -22,6 +24,13 @@ interface Property extends Node {
 	readonly value: Node;
 }
 
+/** Where an edit is made: the linted file as ESLint holds it, and the use whose config it edits. */
+export interface EditSite {
+	readonly sourceCode: SourceCode;
+	readonly fileName: string;
+	readonly use: ChartUse;
+}
+
 const offsetOf = (sourceCode: SourceCode, line: number, column: number): number =>
 	sourceCode.getIndexFromLoc({ line, column: column - 1 });
 
@@ -30,9 +39,10 @@ const offsetOf = (sourceCode: SourceCode, line: number, column: number): number 
  * config read completely: every fact is known, and a getter, computed key or spread of an unknown
  * value would have left it partial.
  */
-function nodeAt(sourceCode: SourceCode, use: ChartUse, path: string): Node | undefined {
+function nodeAt({ sourceCode, fileName, use }: EditSite, path: string): Node | undefined {
 	const fact = use.paths.find((candidate) => candidate.path === path);
-	if (fact === undefined) return undefined;
+	// A value another file wrote (project mode) is not this file's to edit.
+	if (fact === undefined || resolve(fact.file) !== resolve(fileName)) return undefined;
 	const start = offsetOf(sourceCode, fact.line, fact.column);
 	const end = offsetOf(sourceCode, fact.endLine, fact.endColumn);
 	for (let node = sourceCode.getNodeByRangeIndex(start) as Node | null | undefined; node; node = node.parent)
@@ -74,8 +84,9 @@ function writtenInUse(sourceCode: SourceCode, use: ChartUse, literal: Node): boo
  * The property whose value wrote `path`, when the use's own call writes it and its object sets no
  * other key of that name (the last one wins; an edit of another would change nothing or the wrong one).
  */
-function propertyAt(sourceCode: SourceCode, use: ChartUse, path: string): Property | undefined {
-	const property = nodeAt(sourceCode, use, path)?.parent;
+function propertyAt(site: EditSite, path: string): Property | undefined {
+	const { sourceCode, use } = site;
+	const property = nodeAt(site, path)?.parent;
 	const object = property?.parent;
 	if (!isProperty(property) || object?.type !== 'ObjectExpression') return undefined;
 	const name = keyName(property);
@@ -90,13 +101,8 @@ const IDENTIFIER = /^[A-Za-z_$][\w$]*$/u;
  * The runtime's own rename written in source: the key in place, quoted as it was. The engine
  * offers it only while the new key is free in the config read completely, so no other part sets it.
  */
-export function renameEdit(
-	sourceCode: SourceCode,
-	use: ChartUse,
-	path: string,
-	{ to }: KeyRename
-): TextEdit | undefined {
-	const property = propertyAt(sourceCode, use, path);
+export function renameEdit(site: EditSite, path: string, { to }: KeyRename): TextEdit | undefined {
+	const property = propertyAt(site, path);
 	if (property === undefined || !IDENTIFIER.test(to)) return undefined;
 	const { key } = property;
 	const quote = key.type === 'Literal' && typeof key.raw === 'string' ? key.raw.charAt(0) : '';
@@ -104,8 +110,8 @@ export function renameEdit(
 }
 
 /** A quality edit (`set-option`) written in source: the value it replaces, written in the use's own call. */
-export function valueEdit(sourceCode: SourceCode, use: ChartUse, fix: OptionEdit): TextEdit | undefined {
-	const property = propertyAt(sourceCode, use, fix.path);
+export function valueEdit(site: EditSite, fix: OptionEdit): TextEdit | undefined {
+	const property = propertyAt(site, fix.path);
 	return property === undefined ? undefined : { range: property.value.range, text: JSON.stringify(fix.value) };
 }
 

@@ -200,6 +200,41 @@ interface ProjectScan {
     readonly truncated: boolean;
 }
 
+### ProjectSession
+class ProjectSession {
+    readonly tsconfig: string | undefined;
+    private readonly rules;
+    private readonly disk;
+    private readonly options;
+    constructor(tsconfig: string | undefined, rules: readonly Rule[]);
+    analyze(fileName: string, source: string): ProjectAnalysis;
+    private read;
+    private readonly reader;
+}
+// uses ArgumentRule
+type ArgumentRule = number | 'highcharts-options';
+// uses ChartLibrary
+type ChartLibrary = 'chartjs' | 'echarts' | 'highcharts';
+// uses PropRule
+type PropRule = {
+    readonly prop: string;
+} | {
+    readonly chartType: string | undefined;
+};
+// uses Rule
+interface Rule {
+    readonly id: string;
+    readonly library: ChartLibrary;
+    readonly package?: string;
+    readonly file?: string;
+    readonly paths: readonly (readonly string[])[];
+    readonly call?: {
+        readonly argument: ArgumentRule;
+        readonly construct: boolean | 'either';
+    };
+    readonly jsx?: PropRule;
+}
+
 ### ScanOptionError
 class ScanOptionError extends Error {
     readonly name = "ScanOptionError";
@@ -242,3 +277,6 @@ function analyzeProject(source: string, fileName: string, options?: ProjectOptio
 
 ### analyzeProjectFiles
 function analyzeProjectFiles(tsconfig: string, { signal, maxFiles, ...options }?: ScanOptions): Promise<ProjectScan>;
+
+### openSession
+function openSession(fileName: string, { tsconfig, ...options }?: ProjectOptions): ProjectSession;
