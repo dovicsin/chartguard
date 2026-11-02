@@ -98,6 +98,10 @@ export class Origins {
 		if (symbol === undefined || declaration === undefined || hops > MAX_HOPS) return undefined;
 		const path = importedPath(declaration);
 		if (path !== undefined) return this.ofImport(symbol, declaration, path, hops);
+		// In a JavaScript file the checker binds `require` as an alias of a module it may not resolve:
+		// the declaration names the module, as it does in TypeScript.
+		const required = this.ofRequire(declaration);
+		if (required !== undefined) return required;
 		if ((symbol.flags & ts.SymbolFlags.Alias) !== 0)
 			return this.ofSymbol(this.checker.getImmediateAliasedSymbol(symbol), hops + 1);
 		return this.ofDeclaration(declaration, symbol, hops);
@@ -112,7 +116,8 @@ export class Origins {
 
 	private ofDeclaration(declaration: ts.Declaration, symbol: ts.Symbol, hops: number): Origin | undefined {
 		if (ts.isSourceFile(declaration)) return { file: declaration.fileName, path: [] };
-		if (ts.isBindingElement(declaration)) return this.ofBinding(declaration);
+		// A destructured binding not of a package `require` (read by `ofRequire`) is its own declaration.
+		if (ts.isBindingElement(declaration)) return undefined;
 		if (ts.isVariableDeclaration(declaration)) {
 			const origin = this.ofVariable(declaration, hops);
 			if (origin !== 'declared') return origin;
@@ -124,14 +129,20 @@ export class Origins {
 		return { file: file.fileName, path: [symbol.name] };
 	}
 
-	/** `const x = require('m')`, or `const C = Chart` (an alias that cannot be reassigned); otherwise its own declaration. */
+	/** `const C = Chart` (an alias that cannot be reassigned); otherwise its own declaration. */
 	private ofVariable(declaration: ts.VariableDeclaration, hops: number): Origin | undefined | 'declared' {
 		const { initializer } = declaration;
-		const required = requiredModule(initializer);
-		if (required !== undefined) return isBare(required) ? { package: packageOf(required), path: [] } : undefined;
 		if (bindingOf(declaration) === 'const' && initializer !== undefined && this.isAliasExpression(initializer))
 			return this.of(initializer, hops + 1);
 		return 'declared';
+	}
+
+	/** `const x = require('m')` or `const { x } = require('m')` with a bare `m`; undefined for any other declaration. */
+	private ofRequire(declaration: ts.Declaration): Origin | undefined {
+		if (ts.isBindingElement(declaration)) return this.ofBinding(declaration);
+		if (!ts.isVariableDeclaration(declaration)) return undefined;
+		const required = requiredModule(declaration.initializer);
+		return required !== undefined && isBare(required) ? { package: packageOf(required), path: [] } : undefined;
 	}
 
 	/** `const { Chart } = require('chart.js')`. */

@@ -37,6 +37,29 @@ test('Chart.js: new Chart from chart.js, chart.js/auto, a namespace or require; 
 	]);
 });
 
+test('CommonJS in a JavaScript file: a require binding is the module it names, as in TypeScript', () => {
+	// TypeScript binds `require` in JavaScript files as an alias of a module it cannot resolve in memory.
+	for (const filename of ['chart.js', 'chart.cjs', 'chart.mjs', 'chart.jsx', 'chart.ts'])
+		for (const header of [
+			'const { Chart } = require("chart.js");',
+			'const { Chart: C } = require("chart.js");\nconst Chart = C;',
+			'const ChartJs = require("chart.js");\nconst Chart = ChartJs.Chart;'
+		])
+			assert.deepEqual(
+				uses(`${header}\n${CONFIG}new Chart(ctx, config);`, filename).map(({ pattern }) => pattern),
+				['chartjs.new-chart'],
+				`${filename}: ${header}`
+			);
+	assert.deepEqual(
+		uses('const echarts = require("echarts");\necharts.init(el).setOption({ series: [] });', 'chart.js').map(
+			({ pattern }) => pattern
+		),
+		['echarts.set-option']
+	);
+	// A relative require is a project file, never a package.
+	assert.deepEqual(uses(`const { Chart } = require("./chart.js");\n${CONFIG}new Chart(ctx, config);`, 'a.js'), []);
+});
+
 test('a callee that does not come from the library is not a use', () => {
 	assert.deepEqual(uses(`${CONFIG}new Chart(ctx, config);`), []);
 	assert.deepEqual(uses(`class Chart {}\n${CONFIG}new Chart(ctx, config);`), []);

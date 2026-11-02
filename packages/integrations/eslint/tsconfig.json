@@ -4,5 +4,22 @@
 		"rootDir": "./src",
 		"outDir": "./dist"
 	},
-	"include": ["src/**/*.ts"]
+	"include": ["src/**/*.ts"],
+	"references": [
+		{
+			"path": "../../core"
+		},
+		{
+			"path": "../../analysis/typescript"
+		},
+		{
+			"path": "../../config/chartjs"
+		},
+		{
+			"path": "../../config/echarts"
+		},
+		{
+			"path": "../../config/highcharts"
+		}
+	]
 }

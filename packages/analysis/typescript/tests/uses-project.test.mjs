@@ -35,6 +35,34 @@ test('in a project, a library re-exported by a project file and a local wrapper 
 	);
 });
 
+test('in a JavaScript project, a relative require is followed to the project file it names, never taken for a package', (t) => {
+	const root = mkdtempSync(join(tmpdir(), 'chartguard-require-'));
+	t.after(() => rmSync(root, { recursive: true, force: true }));
+	const files = {
+		'tsconfig.json': '{ "compilerOptions": { "allowJs": true } }',
+		'src/charts.js': 'function renderChart(config) { return config; }\nmodule.exports = { renderChart };'
+	};
+	for (const [name, text] of Object.entries(files)) {
+		mkdirSync(join(root, name, '..'), { recursive: true });
+		writeFileSync(join(root, name), text);
+	}
+	const patterns = [
+		{ id: 'local.render', library: 'chartjs', file: join(root, 'src/charts.js'), export: 'renderChart', argument: 0 }
+	];
+	for (const chart of [
+		'const { renderChart } = require("./charts.js");\nrenderChart({ type: "pie" });',
+		'const charts = require("./charts.js");\ncharts.renderChart({ type: "pie" });'
+	])
+		assert.deepEqual(
+			analyzeProject(chart, join(root, 'src/chart.js'), { patterns }).uses.map((use) => [use.pattern, json(use.value)]),
+			[['local.render', { type: 'pie' }]],
+			chart
+		);
+	// A binding destructured from a value the analysis does not know is not the wrapper the pattern names.
+	const local = 'const { renderChart } = helpers;\nrenderChart({ type: "pie" });\nmodule.exports = { renderChart };';
+	assert.deepEqual(analyzeProject(local, join(root, 'src/charts.js'), { patterns }).uses, []);
+});
+
 test('a package member is named as the code reaches it, also when the package exports it under another name', (t) => {
 	const root = mkdtempSync(join(tmpdir(), 'chartguard-renamed-'));
 	t.after(() => rmSync(root, { recursive: true, force: true }));
