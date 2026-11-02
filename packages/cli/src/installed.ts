@@ -1,8 +1,9 @@
 import { readFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 
 import { InputError } from './errors.js';
 import type { Library } from './libraries.js';
+import { lockedVersion } from './lockfile.js';
 
 /** The npm package each library is installed as. */
 const PACKAGES: Readonly<Record<Library, string>> = {
@@ -40,11 +41,23 @@ export async function findInstall(library: Library, file: string): Promise<Insta
 	}
 }
 
-/** The version of `library` installed for the project that contains `file`. */
-export async function installedVersion(library: Library, file: string): Promise<string> {
+/** The version `--library-version auto` chose, and where from: `node_modules`, or the lockfile's path. */
+export interface ResolvedVersion {
+	readonly version: string;
+	readonly source: string;
+}
+
+/**
+ * The version of `library` for the project that contains `file` (CG-06-02 part 4a): the installed
+ * package, which is what runs here; without one, the version the nearest lockfile pins. Neither is
+ * an input error that says to name the version.
+ */
+export async function installedVersion(library: Library, file: string): Promise<ResolvedVersion> {
 	const install = await findInstall(library, file);
-	if (install !== undefined) return install.version;
+	if (install !== undefined) return { version: install.version, source: 'node_modules' };
+	const locked = await lockedVersion(PACKAGES[library], file);
+	if (locked !== undefined) return { version: locked.version, source: relative(process.cwd(), locked.lockfile) };
 	throw new InputError(
-		`${PACKAGES[library]} is not installed for ${dirname(resolve(file))}; pass --library-version <version>.`
+		`${PACKAGES[library]} is not installed for ${dirname(resolve(file))} and no lockfile pins it; pass --library-version <version>.`
 	);
 }

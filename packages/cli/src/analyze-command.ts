@@ -106,7 +106,8 @@ async function checkedEntries(
 ): Promise<{ entries: AnalyzedEntry[]; schema: SchemaSource }> {
 	const { library, file, name } = invocation;
 	const { validate, schema } = await loadConfigValidator(library, file);
-	const check = { validate, options: await validationOptions(invocation), library, name };
+	const { options } = await validationOptions(invocation);
+	const check = { validate, options, library, name };
 	const entries = read.analyses
 		.filter((analysis) => analysis.readable)
 		.flatMap((analysis) => entriesOf(analysis, check));

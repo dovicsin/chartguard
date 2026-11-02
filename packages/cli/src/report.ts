@@ -1,6 +1,7 @@
 import type { Diagnostic, Fix, QualityReport, ValidationResult } from '@chartguard/core';
 
 import { exitStatus } from './exit.js';
+import type { ResolvedVersion } from './installed.js';
 import type { FailOn, Format } from './invocation.js';
 import type { Io } from './io.js';
 import { jsonLocator, type RunProperties, type SarifFinding } from './sarif.js';
@@ -88,6 +89,9 @@ function jsonFindings(diagnostics: readonly Diagnostic[], { file, text }: Output
 	return diagnostics.map((diagnostic) => ({ diagnostic, file, ...locate?.(diagnostic.path) }));
 }
 
+/** Where `--library-version auto` found the version it validated against. */
+const versionNote = ({ version, source }: ResolvedVersion): string => `  version ${version} from ${source}`;
+
 /** What checked a config: library, command, coverage, status and the schema's version and digest. */
 function runProperties(mode: string, checked: ValidationResult): RunProperties {
 	return {
@@ -100,7 +104,14 @@ function runProperties(mode: string, checked: ValidationResult): RunProperties {
 	};
 }
 
-export function checkedResult(checked: ValidationResult, schema: SchemaSource, output: Output): CheckedFile {
+export function checkedResult(
+	checked: ValidationResult,
+	schema: SchemaSource,
+	output: Output,
+	version?: ResolvedVersion
+): CheckedFile {
+	const resolved =
+		version === undefined ? {} : { libraryVersion: version.version, libraryVersionSource: version.source };
 	return {
 		file: output.file,
 		json: validateJson(checked, schema),
@@ -108,11 +119,12 @@ export function checkedResult(checked: ValidationResult, schema: SchemaSource, o
 			io.out(`${checked.library} ${checked.status} (coverage: ${checked.coverage}; schema ${schemaLabel(checked)})`);
 			const note = schemaNote(schema, checked.library);
 			if (note !== undefined) io.out(note);
+			if (version !== undefined) io.out(versionNote(version));
 			for (const diagnostic of checked.diagnostics) io.out(describe(diagnostic));
 			if (checked.status === 'partial') io.out(PARTIAL_NOTE);
 		},
 		findings: jsonFindings(checked.diagnostics, output),
-		properties: runProperties('validate', checked),
+		properties: { ...runProperties('validate', checked), ...resolved },
 		exitCode: exitStatus(output.failOn, { invalid: !checked.valid, diagnostics: checked.diagnostics })
 	};
 }

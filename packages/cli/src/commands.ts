@@ -43,8 +43,8 @@ const validateCommand: CommandHandler = async (invocation, io) => {
 	const results = await checkFiles(invocation, async (file) => {
 		const { value: config, text } = await readJsonText(file);
 		const { validate, schema } = await loadConfigValidator(library, file);
-		const checked = validate(config, await validationOptions({ ...invocation, file }));
-		return checkedResult(checked, schema, outputOf(invocation, file, text, 'error'));
+		const { options, version } = await validationOptions({ ...invocation, file });
+		return checkedResult(validate(config, options), schema, outputOf(invocation, file, text, 'error'), version);
 	});
 	return printFiles('validate', results, invocation, io);
 };

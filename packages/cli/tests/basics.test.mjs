@@ -204,7 +204,7 @@ test('--library-version auto finds the installed package upward from the file', 
 	assert.match(JSON.parse(found.out).diagnostics[0].message, /4\.4\.0 may accept or reject/);
 	const missing = await run(['validate', '--library', 'echarts', '--file', file, '--library-version', 'auto']);
 	assert.equal(missing.code, 2);
-	assert.match(missing.err, /echarts is not installed for .*charts; pass --library-version/);
+	assert.match(missing.err, /echarts is not installed for .*charts and no lockfile pins it; pass --library-version/);
 });
 
 test('analyze passes the version on to every extracted config', async () => {

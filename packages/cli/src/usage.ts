@@ -19,7 +19,8 @@ Config: chartguard.config.json in the working directory, or --config <file>; --n
 --fail-on: what exits 1: a confirmed error (error, the default), also any warning (warning), or
   nothing (never). quality is advisory: never by default, warning makes its warnings fail.
 --library-version: the version you run; another minor/patch turns confirmed errors into warnings,
-  another major is not validated. auto reads node_modules upward from the file.
+  another major is not validated. auto reads node_modules upward from the file; without an install,
+  the nearest lockfile (package-lock.json, pnpm-lock.yaml, yarn.lock) for the file's project.
 --registries: what your runtime registered, { "<registry>": { "names": [...], "complete": true } }
   (echarts: "series.bar", "dataZoom.inside", "title"; chartjs.controllers/scales/plugins: "bar", "legend").
   complete: a tree-shaken build, anything else is rejected; false: extensions on top of the built-ins.
