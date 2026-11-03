@@ -1,0 +1,33 @@
+# A workflow for your repository: copy it to .github/workflows/chartguard.yml and adjust the inputs.
+# Findings become annotations on the pull request; the SARIF upload adds them to code scanning
+# (a public repository, or GitHub Advanced Security for a private one) and may be left out.
+name: chartguard
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  charts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # Only for the SARIF upload to code scanning.
+      security-events: write
+    steps:
+      - uses: actions/checkout@v5
+      # Pin the action to a release tag or a commit SHA of dovicsin/chartguard.
+      - uses: dovicsin/chartguard@main
+        with:
+          command: validate
+          library: chartjs
+          files: |
+            charts/**/*.json
+          fail-on: error
+          sarif-file: chartguard.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: chartguard.sarif
+          category: chartguard

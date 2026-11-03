@@ -13,6 +13,10 @@
 !/.husky/pre-push
 !/.github/workflows/*.yml
 !/package.json
+# The GitHub Action (CG-06-08)
+!/action.yml
+!/action/*.mjs
+!/action/tests/*.mjs
 !/README.md
 !/LICENSE
 !/package-lock.json
@@ -40,6 +44,8 @@
 # Fixtures
 !/examples/*.json
 !/examples/*.ts
+# The workflow users copy for the GitHub Action (CG-06-08)
+!/examples/github/*.yml
 # Before/after examples of the quality fixes (CG-05-06)
 !/examples/quality-fixes/*.json
 # The M3 gate sample app (code only; its README stays local)

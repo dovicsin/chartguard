@@ -11,7 +11,8 @@
 		"tools/conformance/lib/**/*.mjs",
 		"tools/shared/**/*.mjs",
 		"apps/playground/dist/{model,examples,selftest}.js",
-		"apps/reference/scripts/*.mjs"
+		"apps/reference/scripts/*.mjs",
+		"action/*.mjs"
 	],
 	"exclude": [
 		"**/node_modules/**",

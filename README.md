@@ -69,6 +69,24 @@ import { validate } from '@chartguard/config-highcharts';
 const { status, diagnostics } = validate({ chart: { type: 'line' }, series: [{ data: [1, 2] }] });
 ```
 
+## GitHub Actions
+
+The repository is a GitHub Action: findings become annotations on the lines of the values they are about, the step fails as `fail-on` decides, and a SARIF log can go to code scanning. A complete workflow to copy is `examples/github/chartguard.yml`.
+
+```yaml
+- uses: actions/checkout@v5
+- uses: dovicsin/chartguard@main # pin a release tag or a commit SHA
+  with:
+    command: validate # or analyze (JavaScript/TypeScript source), quality (advisory)
+    library: chartjs
+    files: |
+      charts/**/*.json
+    fail-on: error # warning, never
+    sarif-file: chartguard.sarif # optional, for github/codeql-action/upload-sarif
+```
+
+Inputs: `command`, `library`, `files` and `ignore` (one pattern per line), `config` (a `chartguard.config.json`), `project` (a tsconfig for `analyze`), `library-version` (`auto` reads your install or lockfile), `fail-on`, `sarif-file`, `node-version`, and `chartguard-version` (a published `@chartguard/cli` to install; empty builds the CLI from the action's checkout). Output: `exit-code`. Inputs reach the action only as environment variables, never as script text. Outside Actions, `chartguard … --format github` prints the same annotations.
+
 ## Schema generation
 
 `tools/schema-generator` (with the `@chartguard/schema-generator` package) reads the TypeScript declarations of the exact upstream version pinned in `packages/schema-generator/upstream-sources.json`, verifies the installed package against that pin and the lockfile integrity, and writes a SchemaIR artifact to `packages/config/<library>/src/generated/`. Declarations are only type-checked, never executed. Every fact carries provenance (`chart.js/dist/types/index.d.ts:<line>`).

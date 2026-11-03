@@ -5,7 +5,7 @@ Usage:
   chartguard analyze  --library <chartjs|echarts|highcharts> (--file <file|pattern> ... [--ignore <pattern>] | --project tsconfig.json) [--name config] [--project <tsconfig.json>] [--patterns <file.json>] [--library-version <x|auto>] [--registries <file.json>] [--plugin-schema <file.json>] ... [<output>]
   chartguard schema build --library highcharts [--dir <project>] [--json]
   chartguard --version | --help
-<output>: [--format text|json|sarif | --json] [--fail-on error|warning|never]
+<output>: [--format text|json|sarif|github | --json] [--fail-on error|warning|never]
 Config: chartguard.config.json in the working directory, or --config <file>; --no-config reads none.
   Keys: library, files, ignore, format, failOn, libraryVersion, registries, settings, patterns, project,
   name, ruleset, pluginSchemas, cache, cacheLocation, at the top level and in a "validate" / "quality" / "analyze" section; the command line wins,
@@ -14,8 +14,9 @@ Config: chartguard.config.json in the working directory, or --config <file>; --n
   directories), ? (one character), {a,b}; never into node_modules or .git, never through links.
   Several files: text grouped by file, JSON { mode, files: [...] }, SARIF one log, the worst status;
   a file that cannot be read is listed and the others checked (exit 2). --ignore leaves files out.
---format: text (default), json (as --json), or sarif: one SARIF 2.1.0 log for code scanning, each
-  finding at its file and the region of its value; paths relative to the working directory.
+--format: text (default), json (as --json), sarif: one SARIF 2.1.0 log for code scanning, each
+  finding at its file and the region of its value; or github: each finding a GitHub workflow command
+  (an annotation on its line), then a summary line. Paths are relative to the working directory.
 --fail-on: what exits 1: a confirmed error (error, the default), also any warning (warning), or
   nothing (never). quality is advisory: never by default, warning makes its warnings fail.
 --library-version: the version you run; another minor/patch turns confirmed errors into warnings,

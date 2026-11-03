@@ -1,4 +1,5 @@
 import { EXIT_OK, EXIT_USAGE } from './exit-codes.js';
+import { githubCommands } from './github.js';
 import type { Format } from './invocation.js';
 import type { Io } from './io.js';
 import type { CheckedFile, UnusableFile } from './report.js';
@@ -33,6 +34,15 @@ function mergedProperties(files: readonly CheckedFile[], mode: string): RunPrope
 	};
 }
 
+/** The text report: the config file read, then each file's report (under `== <file>` when there are several). */
+function printText(checked: readonly CheckedFile[], { several, config }: Omit<PrintOptions, 'format'>, io: Io): void {
+	if (config !== undefined) io.out(settingsNote(config));
+	for (const result of checked) {
+		if (several) io.out(`== ${result.file}`);
+		result.text(io);
+	}
+}
+
 /**
  * The files one command checked, printed in one format (CG-06-02 part 2). One file as before;
  * several (whenever the invocation can name several): text grouped under `== <file>`, JSON as
@@ -49,23 +59,13 @@ export function printFiles(
 	const checked = results.filter((result): result is CheckedFile => 'findings' in result);
 	const unusable = results.filter((result): result is UnusableFile => 'error' in result);
 	for (const { error } of unusable) io.err(`ChartGuard: ${error}`);
+	const findings = checked.flatMap((result) => result.findings);
 	if (format === 'sarif') {
 		const properties = { ...mergedProperties(checked, mode), ...(config === undefined ? {} : { config }) };
-		printJson(
-			sarifLog(
-				checked.flatMap(({ findings }) => findings),
-				properties
-			),
-			io
-		);
-	} else if (format === 'json') printJson(jsonOf(mode, results, several), io);
-	else {
-		if (config !== undefined) io.out(settingsNote(config));
-		for (const result of checked) {
-			if (several) io.out(`== ${result.file}`);
-			result.text(io);
-		}
-	}
+		printJson(sarifLog(findings, properties), io);
+	} else if (format === 'github') for (const line of githubCommands(findings)) io.out(line);
+	else if (format === 'json') printJson(jsonOf(mode, results, several), io);
+	else printText(checked, { several, config }, io);
 	if (unusable.length > 0) return EXIT_USAGE;
 	return Math.max(EXIT_OK, ...checked.map(({ exitCode }) => exitCode));
 }

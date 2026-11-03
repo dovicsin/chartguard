@@ -1,0 +1,80 @@
+name: ChartGuard
+description: Validate Chart.js, ECharts and Highcharts configs in JSON or source; findings as annotations, optionally SARIF.
+author: ChartGuard
+branding:
+  icon: bar-chart-2
+  color: blue
+inputs:
+  command:
+    description: 'validate (JSON configs), analyze (JavaScript/TypeScript source) or quality (advisory review).'
+    default: validate
+  library:
+    description: 'chartjs, echarts or highcharts (or set it in chartguard.config.json).'
+    default: ''
+  files:
+    description: 'Files or patterns (*, **, ?, {a,b}), one per line, relative to the workspace.'
+    default: ''
+  ignore:
+    description: 'Patterns of files to leave out, one per line.'
+    default: ''
+  config:
+    description: 'A chartguard.config.json other than the one in the working directory.'
+    default: ''
+  project:
+    description: 'analyze: the tsconfig.json to read the source with.'
+    default: ''
+  library-version:
+    description: 'The library version you run, or auto (from node_modules or the lockfile).'
+    default: ''
+  fail-on:
+    description: 'What fails the step: error (default), warning, or never.'
+    default: ''
+  sarif-file:
+    description: 'Also write a SARIF 2.1.0 log here, for github/codeql-action/upload-sarif.'
+    default: ''
+  chartguard-version:
+    description: "A published @chartguard/cli version to install; empty builds the CLI from this action's own checkout."
+    default: ''
+  node-version:
+    description: 'The Node.js version to run on (20.19 or later).'
+    default: '24'
+outputs:
+  exit-code:
+    description: "The CLI's exit code: 0 nothing fails, 1 findings fail (fail-on), 2 unusable input, 3 internal failure."
+    value: ${{ steps.run.outputs.exit-code }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v5
+      with:
+        node-version: ${{ inputs.node-version }}
+    # Inputs reach scripts only as environment variables, never interpolated into them.
+    - name: Prepare ChartGuard
+      shell: bash
+      env:
+        CHARTGUARD_VERSION: ${{ inputs.chartguard-version }}
+      run: |
+        set -euo pipefail
+        if [ -n "$CHARTGUARD_VERSION" ]; then
+          # A published CLI: installed into the runner's temporary directory, without install scripts.
+          npm install --prefix "$RUNNER_TEMP/chartguard" --no-save --ignore-scripts "@chartguard/cli@$CHARTGUARD_VERSION"
+          echo "CHARTGUARD_CLI=$RUNNER_TEMP/chartguard/node_modules/@chartguard/cli/bin/chartguard.mjs" >> "$GITHUB_ENV"
+        else
+          # This action's checkout: its locked dependencies without install scripts, and the CLI's packages compiled.
+          npm ci --prefix "$GITHUB_ACTION_PATH" --ignore-scripts --no-audit --no-fund
+          node "$GITHUB_ACTION_PATH/node_modules/typescript/bin/tsc" -b "$GITHUB_ACTION_PATH/packages/cli"
+        fi
+    - id: run
+      name: Run ChartGuard
+      shell: bash
+      env:
+        INPUT_COMMAND: ${{ inputs.command }}
+        INPUT_LIBRARY: ${{ inputs.library }}
+        INPUT_FILES: ${{ inputs.files }}
+        INPUT_IGNORE: ${{ inputs.ignore }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_PROJECT: ${{ inputs.project }}
+        INPUT_LIBRARY-VERSION: ${{ inputs.library-version }}
+        INPUT_FAIL-ON: ${{ inputs.fail-on }}
+        INPUT_SARIF-FILE: ${{ inputs.sarif-file }}
+      run: node "$GITHUB_ACTION_PATH/action/run.mjs"

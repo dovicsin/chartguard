@@ -9,8 +9,11 @@ import { parse } from 'yaml';
 /** E46: every workflow runs with least privilege and bounded, read on the syntax tree of its YAML. */
 const WORKFLOWS = fileURLToPath(new URL('../../.github/workflows/', import.meta.url));
 
-/** The write scopes a job may ask for, by what it does: deploying Pages (CG-06-06 part 4). */
-const JOB_WRITES = new Set(['pages', 'id-token']);
+/**
+ * The write scopes a job may ask for, by what it does: deploying Pages (CG-06-06 part 4), uploading
+ * SARIF to code scanning (the users' workflow, CG-06-08).
+ */
+const JOB_WRITES = new Set(['pages', 'id-token', 'security-events']);
 
 /** Whether a permissions block only reads: an object of `read`/`none` scopes. */
 const readsOnly = (permissions) =>
@@ -39,6 +42,9 @@ test('every workflow is read-only at the top, bounded per job, and writes only w
 	const files = readdirSync(WORKFLOWS).filter((file) => file.endsWith('.yml') || file.endsWith('.yaml'));
 	assert.ok(files.includes('ci.yml') && files.includes('pages.yml'));
 	const problems = files.flatMap((file) => workflowProblems(file, parse(readFileSync(join(WORKFLOWS, file), 'utf8'))));
+	// The workflow users copy is held to the same rules.
+	const example = join(WORKFLOWS, '..', '..', 'examples', 'github', 'chartguard.yml');
+	problems.push(...workflowProblems('examples/github/chartguard.yml', parse(readFileSync(example, 'utf8'))));
 	assert.deepEqual(problems, []);
 });
 
@@ -65,4 +71,42 @@ test('the guard catches a writing token, a missing timeout and a job that writes
 	assert.deepEqual(workflowProblems('w', { permissions: {}, jobs: { a: { ...job, permissions: 'write-all' } } }), [
 		'w: job a sets permissions to write-all'
 	]);
+});
+
+/** Every `run:` script of a workflow's jobs or a composite action's steps. */
+function scriptsOf(document) {
+	const steps = [
+		...Object.values(document.jobs ?? {}).flatMap((job) => job.steps ?? []),
+		...(document.runs?.steps ?? [])
+	];
+	return steps.flatMap((step) => (typeof step.run === 'string' ? [step.run] : []));
+}
+
+/**
+ * Template injection (CG-06-08): GitHub pastes an expression's value into a `run:` script before the
+ * shell reads it, so an input, a branch name or a pull request title would run as code there. Values
+ * reach scripts as environment variables only.
+ */
+const injectable = (script) => /\$\{\{/u.test(script);
+
+test('no workflow and no action puts an expression into a script: values reach scripts through env', () => {
+	const files = [
+		...readdirSync(WORKFLOWS)
+			.filter((file) => file.endsWith('.yml') || file.endsWith('.yaml'))
+			.map((file) => join(WORKFLOWS, file)),
+		join(WORKFLOWS, '..', '..', 'action.yml'),
+		join(WORKFLOWS, '..', '..', 'examples', 'github', 'chartguard.yml')
+	];
+	const found = files.flatMap((file) =>
+		scriptsOf(parse(readFileSync(file, 'utf8')))
+			.filter(injectable)
+			.map((script) => `${file}: ${script.split('\n')[0] ?? ''}`)
+	);
+	assert.deepEqual(found, []);
+	assert.equal(injectable('echo "${{ github.event.pull_request.title }}"'), true);
+	assert.equal(injectable('echo "$TITLE"'), false);
+	assert.deepEqual(
+		scriptsOf({ runs: { steps: [{ run: 'a' }, { uses: 'x' }] }, jobs: { j: { steps: [{ run: 'b' }] } } }),
+		['b', 'a']
+	);
 });

@@ -11,7 +11,9 @@
 				"tools/api/*.mjs",
 				"tools/api/tests/**/*.test.mjs",
 				"tools/docs/*.mjs",
-				"tools/docs/tests/**/*.test.mjs"
+				"tools/docs/tests/**/*.test.mjs",
+				"action/run.mjs",
+				"action/tests/**/*.test.mjs"
 			],
 			"project": [
 				"scripts/**/*.mjs",
@@ -19,7 +21,8 @@
 				"tools/conformance/**/*.mjs",
 				"tools/shared/**/*.mjs",
 				"tools/api/**/*.mjs",
-				"tools/docs/**/*.mjs"
+				"tools/docs/**/*.mjs",
+				"action/**/*.mjs"
 			]
 		},
 		"packages/schema-generator": {

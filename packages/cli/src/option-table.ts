@@ -3,7 +3,7 @@ export const CONFIG_COMMANDS = ['validate', 'quality', 'analyze'] as const;
 export type ConfigCommand = (typeof CONFIG_COMMANDS)[number];
 export type Command = ConfigCommand | 'schema';
 
-export const FORMATS = ['text', 'json', 'sarif'] as const;
+export const FORMATS = ['text', 'json', 'sarif', 'github'] as const;
 export type Format = (typeof FORMATS)[number];
 export const FAIL_ON = ['error', 'warning', 'never'] as const;
 export type FailOn = (typeof FAIL_ON)[number];

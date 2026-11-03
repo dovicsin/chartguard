@@ -7,6 +7,7 @@ import { type ConfigValidator, isRecord, type ValidationOptions } from '@chartgu
 import { type AnalyzedEntry, analyzeEntry, analyzeUse, printEntries, selectConfigs } from './analyze.js';
 import { InputError } from './errors.js';
 import { exitStatus } from './exit.js';
+import { githubCommands } from './github.js';
 import { describeUnreadable, readJson, readText } from './input.js';
 import { expandInputs } from './inputs.js';
 import type { ConfigInvocation } from './invocation.js';
@@ -118,6 +119,23 @@ async function checkedEntries(
 	return { entries, schema };
 }
 
+/** The findings as a SARIF log or as GitHub workflow commands, when the invocation asks for one: whether it did. */
+function printForMachines(
+	invocation: ConfigInvocation,
+	{ entries, findings }: { entries: AnalyzedEntry[]; findings: SarifFinding[] },
+	io: Io
+): boolean {
+	const { library, config, format } = invocation;
+	if (format === 'sarif') {
+		const properties = { ...analysisProperties(library, entries), ...(config === undefined ? {} : { config }) };
+		printJson(sarifLog(findings, properties), io);
+		return true;
+	}
+	if (format !== 'github') return false;
+	for (const line of githubCommands(findings)) io.out(line);
+	return true;
+}
+
 /** The entries in the invocation's format, with how they were read and checked. */
 function printAnalysis(
 	invocation: ConfigInvocation,
@@ -134,11 +152,7 @@ function printAnalysis(
 		.filter((analysis) => !analysis.readable)
 		.map(({ fileName, diagnostics }) => ({ file: fileName, diagnostics }));
 	const project = { tsconfig: read.tsconfig ?? null, ...(read.truncated ? { truncated: true } : {}) };
-	if (invocation.format === 'sarif') {
-		const properties = { ...analysisProperties(library, entries), ...(config === undefined ? {} : { config }) };
-		printJson(sarifLog(findings, properties), io);
-		return;
-	}
+	if (printForMachines(invocation, { entries, findings }, io)) return;
 	if (invocation.json) {
 		const skipped = unreadable.length > 0 ? { unreadable } : {};
 		printJson({ mode: 'analyze', library, schema, project, entries, ...skipped }, io);
