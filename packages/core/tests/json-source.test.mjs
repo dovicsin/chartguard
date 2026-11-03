@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { locateJsonPath as locate, parseJsonSource as parseJson } from '../dist/index.js';
+import { locateJsonKey as locateKey, locateJsonPath as locate, parseJsonSource as parseJson } from '../dist/index.js';
 
 const text = '{\n  "type": "bar",\n  "data": { "datasets": [ { "data": [1, 2] }, {"label": "x"} ] }\n}';
 const parsed = parseJson(text);
@@ -107,4 +107,18 @@ test('whitespace and escapes JSON does not accept are syntax errors, never a thr
 	}
 	for (const input of ['{ "\\/\\b\\f\\n\\r\\t\\u00e9": 1 }', ' \t\r\n[1]\n'])
 		assert.equal(parseJson(input).ok, true, input);
+});
+
+test('the key token of each entry of an object; a duplicate key the last one, as JSON.parse keeps its value', () => {
+	const source = '{ "a": 1, "b\\u0022c": {"d": [] }, "a": 2 }';
+	const { root } = parseJson(source);
+	assert.equal(slice2(source, locateKey(root, 'b"c')), '"b\\u0022c"');
+	assert.equal(locateKey(root, 'a').start, source.lastIndexOf('"a"'));
+	assert.equal(locateKey(root, 'a').column, source.lastIndexOf('"a"') + 1);
+	assert.equal(slice2(source, root.entries.get('a')), '2');
+	assert.equal(slice2(source, locateKey(root.entries.get('b"c'), 'd')), '"d"');
+	assert.equal(locateKey(root, 'd'), undefined);
+	assert.equal(locateKey(root.entries.get('a'), 'a'), undefined);
+	// A node built by hand, not read by parseJsonSource, has no key tokens to report.
+	assert.equal(locateKey({ ...root }, 'a'), undefined);
 });

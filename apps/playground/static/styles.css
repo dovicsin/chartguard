@@ -96,6 +96,43 @@ body {
 	min-width: 0;
 }
 
+.bar__button,
+.undo,
+.finding__apply {
+	padding: 4px 10px;
+	color: var(--accent);
+	background: var(--surface);
+	border: 1px solid var(--accent);
+	border-radius: 6px;
+	font: inherit;
+	cursor: pointer;
+}
+
+.bar__button:focus-visible,
+.undo:focus-visible,
+.finding__apply:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+.bar__notice {
+	flex-basis: 100%;
+	margin: 0;
+	color: var(--muted);
+}
+
+.bar__notice:empty {
+	display: none;
+}
+
+.undo {
+	align-self: flex-start;
+}
+
+.undo[hidden] {
+	display: none;
+}
+
 .layout {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -321,6 +358,19 @@ body {
 
 .finding__suggestion {
 	color: var(--ok);
+}
+
+.finding__fix {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 10px;
+	align-items: baseline;
+	margin-top: 6px;
+}
+
+.finding__effect {
+	color: var(--muted);
+	font-size: 13px;
 }
 
 @media (max-width: 900px) {

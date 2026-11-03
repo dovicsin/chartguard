@@ -81,7 +81,8 @@ export const POLICY = {
 	/** A browser app: published adapter entry points and the two runtimes it renders with; no Node built-ins. */
 	'@chartguard/playground': rule({
 		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS],
-		external: [...CHART_RUNTIMES.chartjs, ...CHART_RUNTIMES.echarts, 'date-fns']
+		// fflate: deflate for shared links (CG-06-06 part 2), synchronous so the browser gate can await it (E61).
+		external: [...CHART_RUNTIMES.chartjs, ...CHART_RUNTIMES.echarts, 'date-fns', 'fflate']
 	}),
 	...Object.fromEntries(LIBRARIES.flatMap(libraryRules))
 };

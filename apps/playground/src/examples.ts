@@ -37,3 +37,13 @@ export function isJsonSafe(value: unknown, seen = new Set<unknown>()): boolean {
 }
 
 export const formatJson = (config: unknown): string => JSON.stringify(config, null, 2);
+
+/** The example picker's choices: known-valid examples first, then the conformance contract. */
+export const exampleChoices = (
+	examples: readonly Example[]
+): { readonly value: string; readonly label: string; readonly group: string }[] =>
+	examples.map(({ id, title, group }) => ({
+		value: id,
+		label: title,
+		group: group === 'valid' ? 'Known valid' : 'Conformance contract'
+	}));

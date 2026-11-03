@@ -24,12 +24,15 @@
 				>Example
 				<select id="example"></select
 			></label>
+			<button id="share" class="bar__button" type="button">Share link</button>
+			<p id="notice" class="bar__notice" role="status"></p>
 		</header>
 		<main class="layout">
 			<section class="pane pane--editor" aria-labelledby="editor-title">
 				<h2 id="editor-title" class="pane__title">Configuration <small>JSON, validated as you type</small></h2>
 				<textarea id="editor" spellcheck="false" autocomplete="off" aria-describedby="syntax"></textarea>
 				<p id="syntax" class="syntax" role="alert"></p>
+				<button id="undo" class="undo" type="button" hidden>Undo fix</button>
 			</section>
 			<section class="pane pane--preview" aria-labelledby="preview-title">
 				<h2 id="preview-title" class="pane__title">Result</h2>

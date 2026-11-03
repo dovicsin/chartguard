@@ -173,6 +173,9 @@ function isRecord(value: unknown): value is Record<string, unknown>;
 ### keySegment
 function keySegment(key: string): string;
 
+### locateJsonKey
+function locateJsonKey(object: JsonNode, key: string): JsonSpan | undefined;
+
 ### locateJsonPath
 function locateJsonPath(root: JsonNode, path: string): JsonSpan & {
     readonly exact: boolean;

@@ -1,19 +1,30 @@
-import { locateJsonPath, type ValidationStatus } from '@chartguard/core';
+import { type Diagnostic, locateJsonPath, type ValidationStatus } from '@chartguard/core';
 
-import { type Example, formatJson } from './examples.js';
+import { EditorText } from './editor.js';
+import { offerOf } from './edits.js';
+import { type Example, exampleChoices, formatJson } from './examples.js';
 import { LIBRARIES, type Library, libraryById } from './libraries.js';
 import {
 	type Adapter,
 	bySeverity,
 	countBySeverity,
+	fixableFindings,
 	inspect,
 	type Inspection,
 	lineAndColumn,
 	schemaLabel
 } from './model.js';
 import { observe, type Renderer, type RuntimeOutcome } from './runtime.js';
-import { compare, type SelfTestEntry } from './selftest.js';
-import { badge, choiceNodes, diagnosticItems, expectationNodes, messageItems } from './view.js';
+import { selfTest } from './selftest-page.js';
+import {
+	badge,
+	choiceNodes,
+	diagnosticItems,
+	expectationNodes,
+	messageItems,
+	type OfferFor,
+	shownOffers
+} from './view.js';
 
 const INPUT_DELAY_MS = 250;
 const FALLBACK_LINE_HEIGHT = 18;
@@ -29,7 +40,10 @@ function byId<T extends HTMLElement>(id: string, kind: new () => T): T {
 const ui = {
 	library: byId('library', HTMLSelectElement),
 	example: byId('example', HTMLSelectElement),
+	share: byId('share', HTMLButtonElement),
+	notice: byId('notice', HTMLParagraphElement),
 	editor: byId('editor', HTMLTextAreaElement),
+	undo: byId('undo', HTMLButtonElement),
 	syntax: byId('syntax', HTMLParagraphElement),
 	validator: byId('validator-verdict', HTMLSpanElement),
 	runtime: byId('runtime-verdict', HTMLSpanElement),
@@ -53,6 +67,9 @@ let active: Active | undefined;
 let inspection: Inspection | undefined;
 let lastOutcome: RuntimeOutcome | undefined;
 let timer: ReturnType<typeof setTimeout> | undefined;
+/** The last link being opened (the first load, or a fragment that changed). */
+let opening: Promise<void> = Promise.resolve();
+const editor = new EditorText(ui.editor, ui.undo, update);
 
 /** Selects the text of the value a diagnostic points at and scrolls it into view. */
 function reveal(path: string): void {
@@ -93,23 +110,47 @@ function showSyntaxError(message: string, offset: number): void {
 	showRuntime(undefined, 'not run');
 }
 
+/** The fix button of each finding whose fix verifies against the text that was checked. */
+const offersOf =
+	(checked: Extract<Inspection, { kind: 'checked' }>): OfferFor =>
+	(diagnostic: Diagnostic) => {
+		const offer = offerOf(checked, diagnostic);
+		if (offer === undefined) return undefined;
+		const apply = (): void => {
+			editor.apply(offer.edit);
+		};
+		return offer.note === undefined ? { label: offer.label, apply } : { label: offer.label, note: offer.note, apply };
+	};
+
 function showChecked(current: Active, checked: Extract<Inspection, { kind: 'checked' }>): void {
 	const { validation, quality } = checked;
 	const counts = countBySeverity(validation.diagnostics);
+	const offers = offersOf(checked);
 	ui.syntax.textContent = '';
 	ui.validator.replaceChildren(badge(validation.status, STATUS_TONE[validation.status]));
 	ui.schema.textContent = `schema ${schemaLabel(validation)} · coverage ${validation.coverage}`;
 	ui.summary.textContent = `${String(counts.error)} error(s), ${String(counts.warning)} warning(s), ${String(counts.info)} info`;
-	ui.diagnostics.replaceChildren(...diagnosticItems(bySeverity(validation.diagnostics), reveal, 'No findings.'));
-	ui.quality.replaceChildren(...diagnosticItems(quality.diagnostics, reveal, 'No advisory findings.'));
+	ui.diagnostics.replaceChildren(
+		...diagnosticItems(bySeverity(validation.diagnostics), reveal, 'No findings.', offers)
+	);
+	ui.quality.replaceChildren(...diagnosticItems(quality.diagnostics, reveal, 'No advisory findings.', offers));
 	showRuntime(preview(current, checked.config), 'no preview');
 }
 
 function update(): void {
 	if (active === undefined) return;
-	inspection = inspect(ui.editor.value, active.adapter);
+	inspection = inspect(editor.value, active.adapter);
 	if (inspection.kind === 'syntax-error') showSyntaxError(inspection.message, inspection.offset);
 	else showChecked(active, inspection);
+}
+
+/** Shows a text that is no example (a shared link): no pinned outcome, no example selected. */
+function showText(text: string): void {
+	ui.expected.replaceChildren();
+	ui.expected.hidden = true;
+	ui.example.value = '';
+	editor.set(text);
+	update();
 }
 
 /** The example id is kept in the URL fragment, so a case can be linked: `#echarts:contract:axis-type-typo`. */
@@ -121,11 +162,22 @@ function showExample(id: string): void {
 	if (example === undefined) return;
 	ui.example.value = example.id;
 	history.replaceState(null, '', `#${encodeURIComponent(example.id)}`);
-	ui.editor.value = formatJson(example.config);
+	editor.set(formatJson(example.config));
 	update();
 }
 
-async function selectLibrary(id: string, exampleId?: string): Promise<void> {
+interface Start {
+	readonly example?: string;
+	readonly text?: string;
+}
+
+function showStart(own: readonly Example[], start: Start): void {
+	if (start.text === undefined) showExample(start.example ?? own[0]?.id ?? '');
+	else showText(start.text);
+}
+
+/** Loads a library and shows `start`: an example by id, a shared text, or the library's first example. */
+async function selectLibrary(id: string, start: Start = {}): Promise<void> {
 	const library = libraryById(id) ?? LIBRARIES[0];
 	if (library === undefined) return;
 	ui.library.value = library.id;
@@ -134,64 +186,75 @@ async function selectLibrary(id: string, exampleId?: string): Promise<void> {
 	const [adapter, renderer] = await Promise.all([library.adapter(), library.renderer?.()]);
 	active = { library, adapter, renderer };
 	const own = examples.filter((example) => example.library === library.id);
-	const choices = own.map(({ id: value, title, group }) => ({
-		value,
-		label: title,
-		group: group === 'valid' ? 'Known valid' : 'Conformance contract'
-	}));
-	ui.example.replaceChildren(...choiceNodes(choices));
-	showExample(exampleId ?? own[0]?.id ?? '');
+	ui.example.replaceChildren(...choiceNodes(exampleChoices(own)));
+	showStart(own, start);
 }
 
-/**
- * Resolves after the timers a draw started have run (Chart.js updates a chart it has just attached
- * once more from a timer): an order of events, never a time limit. Headless Chrome with virtual
- * time renders no frames, so nothing here waits for one.
- */
-const settled = (): Promise<void> =>
-	new Promise((resolve) => {
-		setTimeout(resolve, 0);
-	});
-
-/** Every error the page does not catch from now on, in order: the self-test takes them per example. */
-function uncaughtErrors(): string[] {
-	const errors: string[] = [];
-	window.addEventListener('error', (event) => {
-		errors.push(event.message);
-	});
-	window.addEventListener('unhandledrejection', (event) => {
-		errors.push(String(event.reason));
-	});
-	return errors;
-}
-
-/** The validator findings and the runtime verdict the page shows now. */
-function shown(): { findings: string[]; runtime: RuntimeOutcome['verdict'] | undefined } {
-	const diagnostics = inspection?.kind === 'checked' ? inspection.validation.diagnostics : [];
-	return { findings: diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`), runtime: lastOutcome?.verdict };
-}
-
-/**
- * `?selftest`: show every example in turn and compare what the page shows with what the fixtures
- * pin, and every error the page left uncaught while it showed it; the JSON report lands in
- * `#selftest` for apps/playground/tests/browser.test.mjs.
- */
-async function selfTest(): Promise<void> {
-	const uncaught = uncaughtErrors();
-	const report: SelfTestEntry[] = [];
-	for (const library of LIBRARIES) {
-		await selectLibrary(library.id);
-		for (const example of examples.filter((candidate) => candidate.library === library.id)) {
-			showExample(example.id);
-			await settled();
-			const observed = { ...shown(), uncaught: uncaught.splice(0), stray: active?.renderer?.stray() };
-			report.push({ id: example.id, ...observed, problems: compare(example, observed) });
-		}
+/** Puts the editor text into the URL fragment and copies the link, when the browser lets the page. */
+async function share(): Promise<void> {
+	if (active === undefined) return;
+	const { shareFragment } = await import('./share.js');
+	const fragment = shareFragment(active.library.id, editor.value);
+	if (typeof fragment !== 'string') {
+		ui.notice.textContent = `Cannot share: ${fragment.reason}.`;
+		return;
 	}
-	const output = document.createElement('pre');
-	output.id = 'selftest';
-	output.textContent = JSON.stringify(report);
-	document.body.append(output);
+	history.replaceState(null, '', `#${fragment}`);
+	try {
+		await navigator.clipboard.writeText(location.href);
+		ui.notice.textContent = 'Link copied.';
+	} catch {
+		ui.notice.textContent = 'The link is in the address bar.';
+	}
+}
+
+/** The page as the self-test drives it. */
+const page = {
+	libraries: LIBRARIES,
+	get examples() {
+		return examples;
+	},
+	selectLibrary: (id: string) => selectLibrary(id),
+	showExample,
+	shown() {
+		const diagnostics = inspection?.kind === 'checked' ? inspection.validation.diagnostics : [];
+		return { findings: diagnostics.map((d) => `${d.severity} ${d.code} ${d.path}`), runtime: lastOutcome?.verdict };
+	},
+	fixable: () => (inspection?.kind === 'checked' ? fixableFindings(inspection) : []),
+	offers: () => shownOffers(ui.diagnostics, ui.quality),
+	stray: () => active?.renderer?.stray(),
+	library: () => ui.library.value,
+	example: () => ui.example.value,
+	notice: () => ui.notice.textContent,
+	opening: () => opening,
+	text: () => editor.value,
+	canUndo: () => !ui.undo.hidden,
+	typed: () => {
+		ui.editor.dispatchEvent(new Event('input'));
+	},
+	undo: () => {
+		editor.undo();
+	}
+};
+
+/** A shared config from the fragment, an example id, or the first example; a link that cannot be read says why. */
+async function open(): Promise<void> {
+	const fragment = location.hash.slice(1);
+	ui.notice.textContent = '';
+	// The deflate code is loaded only for a link that shares a config.
+	const shared = new URLSearchParams(fragment).has('config')
+		? (await import('./share.js')).readShared(
+				fragment,
+				LIBRARIES.map(({ id }) => id)
+			)
+		: undefined;
+	if (shared?.ok === true) {
+		await selectLibrary(shared.library, { text: shared.text });
+		return;
+	}
+	if (shared !== undefined) ui.notice.textContent = `The shared link could not be read: ${shared.reason}.`;
+	const linked = examples.find(({ id }) => id === decodeURIComponent(fragment));
+	await selectLibrary(linked?.library ?? ui.library.value, linked === undefined ? {} : { example: linked.id });
 }
 
 async function boot(): Promise<void> {
@@ -201,16 +264,23 @@ async function boot(): Promise<void> {
 	ui.example.addEventListener('change', () => {
 		showExample(ui.example.value);
 	});
+	ui.share.addEventListener('click', () => void share());
 	ui.editor.addEventListener('input', () => {
+		editor.typed();
 		clearTimeout(timer);
 		timer = setTimeout(update, INPUT_DELAY_MS);
 	});
+	// A link opened in a tab that already shows the playground changes the fragment only, without a
+	// reload; the page's own `replaceState` fires no `hashchange`.
+	window.addEventListener('hashchange', () => {
+		opening = open();
+	});
 	if (new URLSearchParams(location.search).has('selftest')) {
-		await selfTest();
+		await selfTest(page);
 		return;
 	}
-	const linked = examples.find(({ id }) => id === decodeURIComponent(location.hash.slice(1)));
-	await selectLibrary(linked?.library ?? ui.library.value, linked?.id);
+	opening = open();
+	await opening;
 }
 
 void boot();

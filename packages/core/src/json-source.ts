@@ -19,6 +19,9 @@ export type JsonNode =
 	| (JsonSpan & { readonly kind: 'array'; readonly items: readonly JsonNode[] })
 	| (JsonSpan & { readonly kind: 'object'; readonly entries: ReadonlyMap<string, JsonNode> });
 
+/** The key tokens of each object `parseJsonSource` read, by key: what `locateJsonKey` answers from. */
+const KEYS = new WeakMap<JsonNode, ReadonlyMap<string, JsonSpan>>();
+
 export type JsonSource =
 	| { readonly ok: true; readonly root: JsonNode }
 	| {
@@ -97,15 +100,20 @@ class Reader {
 	private object(): JsonNode {
 		const start = this.offset++;
 		const entries = new Map<string, JsonNode>();
+		const keys = new Map<string, JsonSpan>();
 		if (this.peek() !== '}')
 			do {
 				this.skip();
-				const key = this.text.slice(this.offset, this.require(this.scalar(), 'a property name').end);
+				const { kind: _kind, ...token } = this.require(this.scalar(), 'a property name');
+				const key = JSON.parse(this.text.slice(token.start, token.end)) as string;
 				this.expect(':');
-				entries.set(JSON.parse(key) as string, this.value());
+				entries.set(key, this.value());
+				keys.set(key, token);
 			} while (this.consume(','));
 		this.expect('}');
-		return { kind: 'object', ...this.lines.span(start, this.offset), entries };
+		const node: JsonNode = { kind: 'object', ...this.lines.span(start, this.offset), entries };
+		KEYS.set(node, keys);
+		return node;
 	}
 
 	private array(): JsonNode {
@@ -126,7 +134,7 @@ class Reader {
 		return { kind: 'scalar', ...this.lines.span(start, this.offset) };
 	}
 
-	private require(span: JsonSpan, what: string): JsonSpan {
+	private require<T extends JsonSpan>(span: T, what: string): T {
 		if (this.text[span.start] !== '"') throw new SyntaxProblem(`Expected ${what} in double quotes`, span.start);
 		return span;
 	}
@@ -198,4 +206,13 @@ export function locateJsonPath(root: JsonNode, path: string): JsonSpan & { reado
 		node = next;
 	}
 	return { ...span(node), exact: true };
+}
+
+/**
+ * Where the key token of `key` in an object `parseJsonSource` read is (quotes included), so an
+ * editor can rename it (CG-06-06); for a duplicate key the last, whose value `JSON.parse` keeps.
+ * Undefined when the object has no such key, or the node was not read by `parseJsonSource`.
+ */
+export function locateJsonKey(object: JsonNode, key: string): JsonSpan | undefined {
+	return KEYS.get(object)?.get(key);
 }

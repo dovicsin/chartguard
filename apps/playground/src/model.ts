@@ -17,6 +17,8 @@ export type Inspection =
 	| { readonly kind: 'syntax-error'; readonly message: string; readonly offset: number }
 	| {
 			readonly kind: 'checked';
+			/** The text that was parsed: fixes are edits of it. */
+			readonly text: string;
 			readonly config: unknown;
 			readonly tree: JsonNode;
 			readonly validation: ValidationResult;
@@ -30,6 +32,7 @@ export function inspect(text: string, adapter: Adapter): Inspection {
 	const config = JSON.parse(text) as unknown;
 	return {
 		kind: 'checked',
+		text,
 		config,
 		tree: parsed.root,
 		validation: adapter.validate(config),
@@ -66,4 +69,11 @@ export function schemaLabel({ schemaVersion, schemaDigest }: ValidationResult): 
 export function lineAndColumn(text: string, offset: number): { readonly line: number; readonly column: number } {
 	const before = text.slice(0, offset).split('\n');
 	return { line: before.length, column: (before.at(-1)?.length ?? 0) + 1 };
+}
+
+/** The findings (`code path`) the engine offers a fix for, validator and quality. */
+export function fixableFindings({ validation, quality }: Extract<Inspection, { kind: 'checked' }>): string[] {
+	return [...validation.diagnostics, ...quality.diagnostics]
+		.filter(({ fix }) => fix !== undefined)
+		.map(({ code, path }) => `${code} ${path}`);
 }

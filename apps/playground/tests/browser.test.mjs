@@ -50,7 +50,10 @@ test(
 		assert.ok(report !== null, 'the self-test report was not rendered');
 		const entries = JSON.parse(unescape(report[1]));
 		const examples = JSON.parse(readFileSync(join(OUT, 'examples.json'), 'utf8'));
-		assert.equal(entries.length, examples.length);
+		assert.deepEqual(
+			entries.map(({ id }) => id),
+			[...examples.map(({ id }) => id), 'links']
+		);
 		assert.deepEqual(
 			entries.filter(({ problems }) => problems.length > 0),
 			[]
