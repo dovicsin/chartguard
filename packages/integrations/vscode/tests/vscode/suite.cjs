@@ -75,9 +75,18 @@ async function settingsApply(document) {
 	}
 }
 
+/** Runs `check`, naming the step in its error: the editor's own log does not say where a run stopped. */
+async function step(name, check) {
+	try {
+		return await check();
+	} catch (error) {
+		throw new Error(`step "${name}": ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
+	}
+}
+
 /** Runs inside VS Code with the extension under development and `tests/vscode/workspace` open (CG-06-05). */
 exports.run = async () => {
-	const { document, found } = await shownProblems();
-	await quickFix(document, found);
-	await settingsApply(document);
+	const { document, found } = await step('shown problems', shownProblems);
+	await step('quick fix', () => quickFix(document, found));
+	await step('settings', () => settingsApply(document));
 };

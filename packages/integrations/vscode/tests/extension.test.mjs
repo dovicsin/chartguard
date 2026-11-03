@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 import { KEYS, settingsOf } from '../dist/settings.js';
 import { bundle, byCodeUnit, NOTICES } from '../scripts/bundle.mjs';
+import { QUIET_FLAGS, SETTINGS, VSCODE_VERSION } from '../scripts/run-vscode-tests.mjs';
 
 /** The VS Code extension (CG-06-05) outside VS Code: its settings, its bundles and what its VSIX holds. */
 const PACKAGE = fileURLToPath(new URL('..', import.meta.url));
@@ -71,4 +72,13 @@ test('the VSIX holds the manifest, the README, the licence, the two bundles and 
 		}
 	);
 	assert.equal(packed.status, 0, `${packed.stdout}\n${packed.stderr}`);
+});
+
+test('the editor tests run in an exact VS Code with a quiet profile (E75)', () => {
+	// The latest stable changed under the tests: 1.144 opened the chat view at startup, and a view taking
+	// focus cancels `showTextDocument` ("Canceled" in one run of four).
+	assert.match(VSCODE_VERSION, /^\d+\.\d+\.\d+$/u);
+	assert.equal(SETTINGS['workbench.startupEditor'], 'none');
+	assert.equal(SETTINGS['chat.disableAIFeatures'], true);
+	assert.deepEqual(QUIET_FLAGS, ['--skip-welcome', '--skip-release-notes']);
 });
