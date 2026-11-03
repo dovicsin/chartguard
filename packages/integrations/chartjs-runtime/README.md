@@ -7,7 +7,7 @@ import { Chart } from "chart.js";
 import { guard } from "@chartguard/runtime-chartjs";
 
 const chart = new Chart(canvas, guard(config));
-chart.data.datasets[0].borderWidth = "wide";
+chart.data.datasets[0].borderWidth = settings.width; // "wide", read from a settings file
 chart.update(); // warns: $.data.datasets[0].borderWidth (Expected number, got string.)
 ```
 

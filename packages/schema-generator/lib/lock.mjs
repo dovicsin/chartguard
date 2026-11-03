@@ -14,6 +14,7 @@ export class UpstreamError extends Error {
 	name = 'UpstreamError';
 }
 
+/** The upstream pin for `library` from upstream-sources.json; throws `UpstreamError` when there is none. */
 export function pinOf(library) {
 	const pin = PINS.libraries.find((entry) => entry.library === library);
 	if (pin === undefined) throw new UpstreamError(`No upstream pin for ${library}`);

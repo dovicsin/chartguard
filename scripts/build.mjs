@@ -40,6 +40,9 @@ function main() {
 	// The playground bundle needs the compiled packages above.
 	const playground = node(join(ROOT, 'apps', 'playground', 'scripts', 'build.mjs'));
 	if (playground !== 0) return playground;
+	// The reference site reads the compiled declarations and the playground's examples.
+	const reference = node(join(ROOT, 'apps', 'reference', 'scripts', 'build.mjs'));
+	if (reference !== 0) return reference;
 	// The VS Code extension bundles its client and the language server from the compiled packages.
 	const extension = node(join(ROOT, 'packages', 'integrations', 'vscode', 'scripts', 'bundle.mjs'));
 	if (extension !== 0) return extension;

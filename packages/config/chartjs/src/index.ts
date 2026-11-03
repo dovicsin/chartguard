@@ -27,6 +27,7 @@ export function schema(): LoweredSchema {
 	return lowered;
 }
 
+/** Validates a Chart.js config against the chart.js@4.5.1 schema and the adapter's rules over several options. */
 export function validate(input: unknown, options?: ValidationOptions): ValidationResult {
 	const manifest = schema().manifest;
 	return validateConfig(input, withScaleTypes(manifest, input, options?.incomplete === true), options, RULES);

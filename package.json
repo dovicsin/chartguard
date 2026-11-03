@@ -17,7 +17,8 @@
 		"packages/integrations/*",
 		"packages/schema-generator",
 		"packages/cli",
-		"apps/playground"
+		"apps/playground",
+		"apps/reference"
 	],
 	"scripts": {
 		"prepare": "husky",

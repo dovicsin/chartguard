@@ -3,7 +3,9 @@ import type { Coverage } from '@chartguard/core';
 import type { ResolvedExtensions } from './extensions.js';
 import type { SkippedKind } from './ir/types.js';
 
+/** The kind of value a `NodeSchema` accepts; `any` accepts every value and checks nothing below it. */
 export type SchemaKind = 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null' | 'function' | 'union' | 'any';
+/** A value an enum may list. */
 export type EnumValue = string | number | boolean;
 /** 'warn' is correct while the schema is incomplete or extensible. */
 export type AdditionalProperties = 'allow' | 'warn' | 'deny';
@@ -13,6 +15,7 @@ export type AdditionalProperties = 'allow' | 'warn' | 'deny';
  * `nonEmpty` (`p.length > 0` on a list) and `positive` (`p > 0` on a number).
  */
 export const DEFAULT_TESTS = ['truthy', 'nonEmpty', 'positive'] as const;
+/** One of `DEFAULT_TESTS`. */
 export type DefaultTest = (typeof DEFAULT_TESTS)[number];
 
 /** `variant` (an `anyOf` index) applies when `property` passes `test`. */
@@ -65,6 +68,10 @@ export interface DefaultFrom {
 	readonly fallback: EnumValue;
 }
 
+/**
+ * The engine schema the walker validates against: one node per value, written with `s` or lowered from
+ * a `SchemaArtifact` by `lowerArtifact`.
+ */
 export interface NodeSchema {
 	readonly kind: SchemaKind;
 	readonly properties?: Readonly<Record<string, NodeSchema>>;
@@ -114,6 +121,10 @@ export interface NodeSchema {
 	readonly doc?: string;
 }
 
+/**
+ * A schema for one library version, as `validateConfig` uses it. `coverage: 'partial'` means valid options may
+ * be missing from it; `source` names the upstream sources it was read from.
+ */
 export interface SchemaManifest {
 	readonly library: string;
 	readonly version: string;
@@ -131,11 +142,13 @@ export interface SchemaManifest {
 	readonly documentation?: (path: string, config: unknown, deprecation: Deprecation) => string | undefined;
 }
 
+/** Options of `s.object`: unknown keys warn and nothing is required unless set here. */
 export interface ObjectOptions {
 	readonly additional?: AdditionalProperties;
 	readonly required?: readonly string[];
 }
 
+/** Options of `s.union`, copied onto the union node; see the union fields of `NodeSchema`. */
 export interface UnionOptions {
 	readonly discriminator?: string;
 	readonly defaultVariant?: number;
@@ -145,6 +158,10 @@ export interface UnionOptions {
 	readonly registry?: RegistryRef;
 }
 
+/**
+ * Builders for `NodeSchema` nodes, used to describe plugin options for `withExtensions`. `s.object`
+ * warns on unknown keys unless told otherwise.
+ */
 export const s = {
 	object: (properties: Readonly<Record<string, NodeSchema>>, options: ObjectOptions = {}): NodeSchema => ({
 		kind: 'object',

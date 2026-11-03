@@ -2,6 +2,7 @@ import ts from 'typescript';
 
 import { unwrapped } from './literals.js';
 
+/** The keyword a variable is declared with; only `const` (and `using`) holds its initializer for good. */
 export type Binding = 'const' | 'let' | 'var';
 
 /** `const` and `using` bindings cannot be reassigned; their initializer is their value for the whole program. */

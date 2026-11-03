@@ -14,6 +14,7 @@ export interface ConfigRule {
 	check(input: unknown, context: RuleContext): readonly Diagnostic[];
 }
 
+/** What a `ConfigRule` reports through and asks about the caller's registries. */
 export interface RuleContext {
 	/** The runtime rejects the config: a confirmed error, or unresolved when the input is incomplete. */
 	rejected(code: string, path: string, message: string, suggestion?: string): Diagnostic;
@@ -55,6 +56,7 @@ export function readOwn(value: unknown, ...path: readonly (string | number)[]): 
 	return { known: true, value: current };
 }
 
+/** One item of an option `itemsOf` read: its path, its index in the list (0 when given alone) and its value. */
 export interface Item {
 	readonly path: string;
 	readonly index: number;

@@ -14,6 +14,10 @@ export interface ChartEvent {
 	readonly phase: 'create' | 'update' | 'addSeries';
 }
 
+/**
+ * How `update`, `checkUpdate` and `addSeries` validate: the validator, its options, where results go,
+ * whether invalid options are applied, and the Highcharts the chart runs on.
+ */
 export interface ChartGuard {
 	/** Replaces the shipped curated `validate`, e.g. `createValidator(artifact)` for the full local schema. */
 	readonly validator?: ConfigValidator;

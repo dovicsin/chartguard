@@ -14,6 +14,7 @@ export interface JsonSpan {
 	readonly endColumn: number;
 }
 
+/** A JSON value with its span: a scalar, an array of items, or an object of entries by key. */
 export type JsonNode =
 	| (JsonSpan & { readonly kind: 'scalar' })
 	| (JsonSpan & { readonly kind: 'array'; readonly items: readonly JsonNode[] })
@@ -22,6 +23,10 @@ export type JsonNode =
 /** The key tokens of each object `parseJsonSource` read, by key: what `locateJsonKey` answers from. */
 const KEYS = new WeakMap<JsonNode, ReadonlyMap<string, JsonSpan>>();
 
+/**
+ * What `parseJsonSource` read: the root value with every position, or, for a text that is not JSON,
+ * the reason and where it was found.
+ */
 export type JsonSource =
 	| { readonly ok: true; readonly root: JsonNode }
 	| {

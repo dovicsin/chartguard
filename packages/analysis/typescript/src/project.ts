@@ -27,11 +27,13 @@ export interface SourceText {
 	readonly source: string;
 }
 
+/** Options of project analysis: extraction options and the tsconfig whose compiler options the Program uses. */
 export interface ProjectOptions extends ExtractOptions {
 	/** A tsconfig path, `true` for the nearest `tsconfig.json` upward from the (first) file (default), or `false` for none. */
 	readonly tsconfig?: TsconfigChoice;
 }
 
+/** The analysis of one file of a project, under the name the caller gave it. */
 export interface ProjectAnalysis extends AnalysisOutput {
 	readonly fileName: string;
 	/** The tsconfig whose compiler options the Program was built with, if any. */
@@ -141,6 +143,7 @@ export function analyzeProject(source: string, fileName: string, options: Projec
 	return analysis;
 }
 
+/** Options of a project scan (`analyzeProjectFiles`): extraction options, cancellation and a file limit. */
 export interface ScanOptions extends ExtractOptions {
 	/** Cancels the scan between files: the promise rejects with the signal's reason. */
 	readonly signal?: AbortSignal;
@@ -148,6 +151,10 @@ export interface ScanOptions extends ExtractOptions {
 	readonly maxFiles?: number;
 }
 
+/**
+ * A project scan: the resolved tsconfig path and the analysis of each file read, in the tsconfig's order
+ * (a file refused has `readable: false` and why); `truncated` when `maxFiles` left files out.
+ */
 export interface ProjectScan {
 	readonly tsconfig: string;
 	readonly files: readonly ProjectAnalysis[];

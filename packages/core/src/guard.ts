@@ -1,7 +1,9 @@
 import type { ValidationOptions, ValidationResult } from './diagnostic.js';
 import { isConfirmedError } from './result.js';
 
+/** Validates a config for one library and returns the full result; findings are never thrown. */
 export type ConfigValidator = (config: unknown, options?: ValidationOptions) => ValidationResult;
+/** Receives a validation's result before the chart is created or refused. */
 export type ValidationReporter = (validation: ValidationResult) => void;
 /**
  * Validates `config` with `options` (the version the caller runs, what its runtime registered), then

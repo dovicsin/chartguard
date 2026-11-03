@@ -35,6 +35,11 @@ async function execute(invocation: Invocation, io: Io): Promise<number> {
 	}
 }
 
+/**
+ * Runs one CLI invocation and resolves to its exit code: 0, 1 when the findings fail it under
+ * `--fail-on` (a confirmed error by default), 2 for unusable arguments or input, 3 for an internal
+ * failure. Prints only through `io`; never calls `process.exit`.
+ */
 export async function main(argv: readonly string[] = process.argv.slice(2), io: Io = processIo): Promise<number> {
 	if (isHelpRequest(argv)) {
 		io.out(USAGE);

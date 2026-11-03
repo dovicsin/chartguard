@@ -14,6 +14,7 @@ export interface HighchartsNamespace<C extends object> extends HighchartsRuntime
 	ganttChart?(container: unknown, options: unknown): C;
 }
 
+/** `createChart`'s settings: those of `ChartGuard`, and which constructor creates the chart. */
 export interface CreateGuard extends ChartGuard {
 	/** The constructor to call (default `chart`). */
 	readonly factory?: ChartFactory;

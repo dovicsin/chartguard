@@ -29,6 +29,7 @@ export function schema(): LoweredSchema {
 	return lowered;
 }
 
+/** Validates an ECharts option against the echarts@6.1.0 schema and the adapter's rules over several options. */
 export function validate(input: unknown, options?: ValidationOptions): ValidationResult {
 	return validateConfig(input, schema().manifest, options, RULES);
 }

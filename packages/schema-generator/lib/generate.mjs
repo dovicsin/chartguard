@@ -7,11 +7,13 @@ import { generateHighcharts } from './highcharts.mjs';
 
 const GENERATORS = { chartjs: generateChartjs, echarts: generateEcharts, highcharts: generateHighcharts };
 
+/** The libraries this generator builds schema artifacts for: `chartjs`, `echarts`, `highcharts`. */
 export const LIBRARIES = Object.keys(GENERATORS);
 
 /** Upstream licenses under which a derived artifact may be committed and published. */
 const REDISTRIBUTABLE = new Set(['allowed-with-attribution', 'allowed-with-license-and-notice']);
 
+/** Whether the pin's upstream license lets an artifact derived from it be committed and published. */
 export function isRedistributable(pin) {
 	return REDISTRIBUTABLE.has(pin.license.redistribution);
 }

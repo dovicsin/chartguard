@@ -10,8 +10,11 @@ import { addSeries, createChart, update } from "@chartguard/runtime-highcharts";
 // The full schema, generated locally from your installed highcharts (it is never shipped).
 const validator = createValidator(artifact);
 const { chart } = createChart(Highcharts, "container", options, { validator });
-update(chart, { series: [{ data: next }] }, {}, { validator }); // checked as the series it changes
-addSeries(chart, { data: [1, 2] }, {}, { validator });
+// `chart` is undefined only when `{ block: true }` kept invalid options from creating it.
+if (chart !== undefined) {
+	update(chart, { series: [{ data: next }] }, {}, { validator }); // checked as the series it changes
+	addSeries(chart, { data: [1, 2] }, {}, { validator });
+}
 ```
 
 - **Creation** validates with `libraryVersion: Highcharts.version` and remembers it for the chart's later calls. `factory: "stockChart" | "mapChart" | "ganttChart"` picks another constructor.

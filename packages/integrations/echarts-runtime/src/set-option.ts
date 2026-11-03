@@ -28,6 +28,7 @@ export interface EChartsInstance {
 	getOption(): unknown;
 }
 
+/** How `setOption` and `checkOption` validate: the validator, its options, the runtime and where results go. */
 export interface SetOptionGuard {
 	/** Replaces the shipped `validate`, e.g. `withExtensions([...])`. */
 	readonly validator?: ConfigValidator;

@@ -3,6 +3,7 @@ import { isContainer, keySegment, ownDataProperty } from '@chartguard/core';
 import type { ValueAt, ValueSummary } from './chart.js';
 import { type Default, defaulted, type Fact, known, type Listed, unknown, type UnknownFact } from './facts.js';
 
+/** One step of a path into the config: an object key or a list index. */
 export type PathSegment = string | number;
 
 /** The engine path syntax (`keySegment`): `$.series[0].type`, `$.options.scales["y-left"].min` (E29). */
@@ -87,14 +88,17 @@ export function holds(root: unknown, path: readonly PathSegment[]): boolean {
 	return lookup(root, path).state !== 'missing';
 }
 
+/** A string. */
 export const isString = (value: unknown): value is string => typeof value === 'string';
+/** A finite number: `NaN` and infinities are not read as numbers. */
 export const isNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+/** A boolean. */
 export const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 /** Any value the config holds, a function included: a fact that only asks whether an option is set. */
 export const isDefined = (value: unknown): value is unknown => value !== undefined;
-/** A value the config holds that is not a function (a function decides at runtime: `dynamic`). */
 /** A list index: an integer from zero. */
 export const isIndex = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0;
+/** A value the config holds that is not a function (a function decides at runtime: `dynamic`). */
 export const isStaticValue = (value: unknown): value is unknown => value !== undefined && typeof value !== 'function';
 
 /** Whether a fact is set in the config but cannot be read (a getter, a function, another shape): not merely unset. */

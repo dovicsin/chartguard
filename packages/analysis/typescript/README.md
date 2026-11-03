@@ -16,11 +16,7 @@ analysis.tsconfig; // the tsconfig used, if any
 
 `analyzeProject` throws `ProjectConfigError` for a tsconfig that cannot be read or has invalid options. Nothing is emitted, no tsconfig `include` pattern is expanded and no language-service plugin is loaded.
 
-**Status:** see [`docs/00-status.md`](../../../docs/00-status.md) and [`docs/03-packages.md`](../../../docs/03-packages.md) for completed vs planned functionality.
-
-Build: `npm run build -w @chartguard/analysis-typescript` (except CLI which is native ESM). Test: `npm run test -w @chartguard/analysis-typescript`.
-
-Public API is declared in `src/index.ts` and exported via package `package.json`.
+**Status:** pre-release (0.x): not published to npm yet, and the API may still change between minor versions.
 
 ## Paths, several files, limits
 
@@ -28,8 +24,8 @@ Every object and use has `paths`: for each path of its value, the source range t
 
 ```ts
 import { analyzeFiles, analyzeProjectFiles } from "@chartguard/analysis-typescript/project";
-analyzeFiles([{ fileName, source }, …]);                       // read together: each sees the others' writes
-await analyzeProjectFiles("tsconfig.json", { signal });         // every included file; cancellable
+analyzeFiles([{ fileName, source }]);                 // several files read together: each sees the others' writes
+await analyzeProjectFiles("tsconfig.json", { signal }); // every included file; cancellable
 ```
 
 A file longer than `MAX_SOURCE_LENGTH` or nested deeper than `MAX_NESTING` is not read (`readable: false`, with a note); following references is bounded (`MAX_DECODE_STEPS`), values beyond it are `limit`.
@@ -41,6 +37,7 @@ A scan reads only files inside the tsconfig's directory (after following symboli
 `objects` lists the file's object constants; `uses` lists where the file hands a config to a chart library, recognized by where the callee comes from: `new Chart` (chart.js), `setOption` on `echarts.init(…)`, `Highcharts.chart` / `stockChart` / `mapChart` / `ganttChart`, the React wrappers react-chartjs-2, echarts-for-react and highcharts-react-official, and ChartGuard's `validateBeforeCreate`. Your own wrappers are added as patterns:
 
 ```ts
+import { extractStaticConfigs } from "@chartguard/analysis-typescript";
 extractStaticConfigs(source, "chart.tsx", {
   patterns: [{ id: "acme.render", library: "echarts", module: "@acme/charts", export: "render", argument: 1 }]
 });

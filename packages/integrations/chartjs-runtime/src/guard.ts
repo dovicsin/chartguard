@@ -16,6 +16,7 @@ export interface GuardEvent {
 	readonly mode?: string;
 }
 
+/** How `guard` validates a chart: the validator, its options, where results go, whether invalid configs are drawn. */
 export interface GuardOptions {
 	/** Replaces the shipped `validate`, e.g. `withExtensions([...])`. */
 	readonly validator?: ConfigValidator;

@@ -15,6 +15,10 @@ import type { PathFact } from './trace.js';
 import { type ChartUse, UseCollector } from './uses.js';
 import { type Call, withoutWritten } from './writes.js';
 
+/**
+ * An object a variable declaration of the file is initialized with, as far as it is read without running
+ * anything: `name` and its 1-based `line`/`column`, the value with every unknown or written path left out.
+ */
 export interface SourceObject {
 	readonly name: string;
 	readonly line: number;
@@ -30,6 +34,7 @@ export interface SourceObject {
 	readonly paths: readonly PathFact[];
 }
 
+/** What static extraction reads from one file: its objects, its chart uses and file-level findings. */
 export interface AnalysisOutput {
 	/** False when nothing read from the file is reliable: syntax errors, or a file too large or too deep to read. */
 	readonly readable: boolean;
@@ -40,6 +45,7 @@ export interface AnalysisOutput {
 	readonly diagnostics: readonly Diagnostic[];
 }
 
+/** Options of static extraction: the project's own chart patterns. */
 export interface ExtractOptions {
 	/** A project's own wrappers, added to the built-in library patterns; malformed ones throw `PatternError`. */
 	readonly patterns?: readonly ChartPattern[];

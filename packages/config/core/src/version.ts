@@ -3,6 +3,7 @@ const EXACT = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/;
 /** A schema version that only names its major (`13.x (starter subset)`). */
 const MAJOR_ONLY = /^(\d+)\.x\b/;
 
+/** An exact `MAJOR.MINOR.PATCH[-prerelease]` version. */
 export interface Version {
 	readonly major: number;
 	readonly minor: number;
@@ -10,6 +11,7 @@ export interface Version {
 	readonly prerelease: string | undefined;
 }
 
+/** The exact version `text` names (surrounding whitespace ignored); undefined for a range or anything else. */
 export function parseVersion(text: string): Version | undefined {
 	const match = EXACT.exec(text.trim());
 	if (match === null) return undefined;
@@ -26,6 +28,10 @@ export function parseVersion(text: string): Version | undefined {
  */
 export type Compatibility = 'exact' | 'same-major' | 'other-major' | 'malformed';
 
+/**
+ * How the `requested` (installed) version relates to `schemaVersion`; a schema version that names only its
+ * major (`13.x`) is never `exact`.
+ */
 export function compatibility(schemaVersion: string, requested: string): Compatibility {
 	const wanted = parseVersion(requested);
 	if (wanted === undefined) return 'malformed';

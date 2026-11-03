@@ -9,6 +9,7 @@ const MAX_DEPTH = 200;
 const CONFIDENCE_SET: ReadonlySet<unknown> = new Set(CONFIDENCE_TIERS);
 const OPENNESS_SET: ReadonlySet<unknown> = new Set(OPENNESS);
 
+/** The result of `checkArtifact`: the artifact when it is well formed, else every problem found. */
 export interface ArtifactCheck {
 	/** Present only when there are no problems. */
 	readonly artifact: SchemaArtifact | undefined;

@@ -1,6 +1,16 @@
+/** How serious a finding is; only `error` is a confirmed error that makes a result invalid. */
 export type Severity = 'error' | 'warning' | 'info';
+/**
+ * `invalid`: at least one confirmed error; `partial`: none, but coverage is partial or a finding is not
+ * `certain`; `valid`: none, full coverage and every finding certain.
+ */
 export type ValidationStatus = 'valid' | 'invalid' | 'partial';
+/**
+ * How sure a finding is: `certain`, `inferred` (a likely problem read from a schema fact that is not
+ * authoritative) or `unknown` (could not be decided). Anything but `certain` keeps a result from `valid`.
+ */
 export type Confidence = 'certain' | 'inferred' | 'unknown';
+/** Whether the schema checked the whole config (`full`) or only what it describes (`partial`). */
 export type Coverage = 'partial' | 'full';
 
 /**
@@ -29,8 +39,13 @@ export interface OptionEdit {
 	readonly effect: string;
 }
 
+/** An edit a finding offers: a behaviour-preserving `rename-key`, or a `set-option` that changes what is drawn. */
 export type Fix = KeyRename | OptionEdit;
 
+/**
+ * One finding at `path` (the finding notation, `$.series[0].type`), with its `code`, `severity` and
+ * `confidence`; `file`, `line` and `column` locate it when it was read from source.
+ */
 export interface Diagnostic {
 	code: string;
 	severity: Severity;
@@ -64,6 +79,7 @@ export interface RegistryContext {
 	readonly complete: boolean;
 }
 
+/** What the caller knows about its input and runtime, passed to every validation. */
 export interface ValidationOptions {
 	/**
 	 * The input is a partial extraction (unresolved spreads or values were left out), so a
@@ -79,6 +95,10 @@ export interface ValidationOptions {
 	readonly registries?: Readonly<Record<string, RegistryContext>>;
 }
 
+/**
+ * The outcome of one validation. `valid` and `status` are derived from `coverage` and `diagnostics` by
+ * `result()` only, never assembled by hand.
+ */
 export interface ValidationResult {
 	/** No confirmed errors; read `status` for completeness. */
 	valid: boolean;

@@ -121,6 +121,12 @@ const ts = [
 	}
 ];
 
+/** Scripts a site ships to the browser as they are (the reference's search): browser globals, no Node. */
+const browserScripts = {
+	files: ['apps/*/static/**/*.js'],
+	languageOptions: { globals: { ...globals.browser } }
+};
+
 const tests = {
 	files: ['**/tests/**/*.test.mjs'],
 	rules: {
@@ -148,4 +154,4 @@ const consoleCapture = {
 	}
 };
 
-export default [ignores, imports, js, ...ts, tests, tooling, consoleCapture, prettierConfig];
+export default [ignores, imports, js, ...ts, browserScripts, tests, tooling, consoleCapture, prettierConfig];

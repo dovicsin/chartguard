@@ -2,11 +2,32 @@
 
 Shared diagnostics, statuses and runtime contracts.
 
-**Status:** see [`docs/00-status.md`](../../docs/00-status.md) and [`docs/03-packages.md`](../../docs/03-packages.md) for completed vs planned functionality.
+Every ChartGuard package speaks the types defined here: a `Diagnostic` (code, severity, path, message, confidence, an optional fix), a `ValidationResult` (`valid`, `status`, `coverage`, the schema that checked it) and a `QualityReport`. You use it directly to apply a fix, to locate a finding in JSON text, or to stop a chart from being created with an invalid config.
 
-Build: `npm run build -w @chartguard/core` (except CLI which is native ESM). Test: `npm run test -w @chartguard/core`.
+**Status:** pre-release (0.x): not published to npm yet, and the API may still change between minor versions.
 
-Public API is declared in `src/index.ts` and exported via package `package.json`.
+```ts
+import { Chart, type ChartConfiguration } from "chart.js";
+import { createValidateBeforeCreate, locateJsonPath, parseJsonSource } from "@chartguard/core";
+import { validate } from "@chartguard/config-chartjs";
+
+// Creates the chart only when the config has no confirmed errors; otherwise throws
+// ConfigValidationError, which carries the full result.
+const validateBeforeCreate = createValidateBeforeCreate("chartjs", validate);
+const chart = validateBeforeCreate(config, (checked) => new Chart(canvas, checked as ChartConfiguration));
+
+// Where a finding is in the JSON text it came from (1-based line and column).
+const text = '{ "type": "bar", "options": { "responsive": "yes" } }';
+const parsed = parseJsonSource(text);
+if (parsed.ok) {
+	const { line, column } = locateJsonPath(parsed.root, "$.options.responsive");
+	console.log(line, column);
+}
+```
+
+- **Status and validity:** `valid` is true when nothing is a confirmed error; `status` is `valid`, `partial` (something could not be checked: an unknown schema part, a dynamic value) or `invalid`. Read `status` before trusting a `valid`.
+- **Confidence:** `certain` findings rest on a schema fact from the library's own declarations; `inferred` on a derived or hand-written one (reported as warnings); `unknown` findings claim nothing.
+- **Paths** use one notation everywhere: `$.series[0].type`, `$.title["te.xt"]`; `pathSegments` and `keySegment` read and write it.
 
 ## Fixes
 

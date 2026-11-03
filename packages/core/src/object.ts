@@ -5,10 +5,12 @@ export type OwnProperty =
 const MISSING: OwnProperty = { found: false, accessor: false };
 const ACCESSOR: OwnProperty = { found: false, accessor: true };
 
+/** Whether `value` is a non-null object that is not an array. */
 export function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** Whether `value` is a non-null object, arrays included: something that can hold properties. */
 export function isContainer(value: unknown): value is object {
 	return typeof value === 'object' && value !== null;
 }

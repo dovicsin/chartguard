@@ -24,11 +24,16 @@ jobs:
       # The lockfile is written by npm 11.
       - run: npm install --global npm@11.6.2
       - run: npm ci
-      # Builds every package and the playground, with THIRD-PARTY-NOTICES.txt; no Highcharts-derived file.
+      # Builds every package, the playground (with THIRD-PARTY-NOTICES.txt) and the reference; no
+      # Highcharts-derived file. The site: the playground at /, the reference at /reference/.
       - run: npm run build
+      - run: |
+          mkdir site
+          cp -R apps/playground/dist/web/. site/
+          cp -R apps/reference/dist/web site/reference
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: apps/playground/dist/web
+          path: site
   deploy:
     needs: build
     runs-on: ubuntu-latest

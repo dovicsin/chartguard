@@ -34,6 +34,10 @@
 			"entry": ["src/main.ts", "src/frame.ts", "scripts/*.mjs", "tests/**/*.test.mjs"],
 			"project": ["src/**/*.ts", "scripts/*.mjs"]
 		},
+		"apps/reference": {
+			"entry": ["static/search.js", "tests/**/*.test.mjs"],
+			"project": ["scripts/*.mjs", "static/*.js"]
+		},
 		"packages/integrations/*-runtime": {
 			"entry": ["tests/**/*.test.mjs", "src/sources.ts"],
 			"project": ["src/**/*.ts"]

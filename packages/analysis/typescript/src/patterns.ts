@@ -2,6 +2,7 @@ import { isRecord } from '@chartguard/core';
 
 import { type Origin, packageOf } from './origins.js';
 
+/** The chart libraries a config can be handed to: a pattern's and a chart use's `library`. */
 export type ChartLibrary = 'chartjs' | 'echarts' | 'highcharts';
 const LIBRARIES: readonly ChartLibrary[] = ['chartjs', 'echarts', 'highcharts'];
 

@@ -39,6 +39,8 @@ An extension may not replace a built-in plugin, scale or chart type, and two ext
 A plugin chart type (`Chart.register(FunnelController)`) is described by the built-in type it builds on; its chart config and its dataset both inherit from it, and an untyped dataset of the new chart type is checked as the new dataset type, as the runtime resolves it:
 
 ```ts
+import { s } from "@chartguard/config-core";
+import { withExtensions } from "@chartguard/config-chartjs";
 withExtensions([{ id: "funnel", controllers: { funnel: { extends: "bar", dataset: s.object({ shrinkFraction: s.number() }) } } }]);
 ```
 

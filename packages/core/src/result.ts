@@ -1,5 +1,6 @@
 import type { Coverage, Diagnostic, ValidationResult, ValidationStatus } from './diagnostic.js';
 
+/** Whether the finding is a confirmed error: severity `error`, whatever its code. */
 export function isConfirmedError(diagnostic: Diagnostic): boolean {
 	return diagnostic.severity === 'error';
 }

@@ -37,6 +37,10 @@ const series = object({
 	color: union() // ColorString | GradientColorObject | PatternObject
 });
 
+/**
+ * The hand-written starter subset of the Highcharts options (partial coverage): no Highcharts-derived
+ * schema ships with this package. Union-typed fields stay open.
+ */
 export const manifest: SchemaManifest = {
 	library: 'highcharts',
 	version: '13.x (starter subset)',
@@ -60,6 +64,7 @@ export const manifest: SchemaManifest = {
 	})
 };
 
+/** Validates Highcharts options against the curated subset `manifest`; `createValidator` checks the full schema. */
 export function validate(input: unknown, options?: ValidationOptions): ValidationResult {
 	return validateConfig(input, manifest, options);
 }

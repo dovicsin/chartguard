@@ -9,9 +9,9 @@ const result = validate(option);
 
 - Series types are an extensible registry: a type registered by an extension (`wordCloud`, `liquidFill`) is a warning, not an error.
 - Components and series may be one object or an array of them.
-- Options for components that `echarts/core` + `use([...])` did not register are not rejected; module-aware validation is CG-02-04.
+- Options for components that `echarts/core` + `use([...])` did not register are not rejected unless you name what is registered (`registries`, or `registriesOf` from `@chartguard/runtime-echarts`).
 
-The schema artifact is derived from Apache-2.0 licensed declarations; see `NOTICE`. See `docs/specs/CG-01-04-echarts-generator.md` for the contract adjustments and known limits.
+The schema artifact is derived from Apache-2.0 licensed declarations; see `NOTICE`, which also lists the adjustments made where the declarations and the runtime disagree.
 
 ## Extension components and series
 

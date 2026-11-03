@@ -1,6 +1,6 @@
 # @chartguard/eslint-plugin
 
-Partial: three rules, not published yet (CG-06-03 parts 1–3). See `docs/14-roadmap.md` for what is still missing.
+Partial: three rules (`valid-config`, `config-warnings`, `chart-quality`), not published yet.
 
 ```js
 // eslint.config.js

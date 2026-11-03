@@ -45,8 +45,10 @@ export interface Default<T> {
 /** A list read from the config (series, axes): its items, or why the list is not known. */
 export type Listed<T> = { readonly known: true; readonly path: string; readonly items: readonly T[] } | UnknownFact;
 
+/** A fact the config sets, read from `path`. */
 export const known = <T>(value: T, path: string): KnownFact<T> => ({ known: true, value, path, source: 'config' });
 
+/** The runtime default for a fact the config does not set at `path`, with its pointer into the pinned package. */
 export const defaulted = <T>({ value, pointer }: Default<T>, path: string): KnownFact<T> => ({
 	known: true,
 	value,
@@ -55,6 +57,7 @@ export const defaulted = <T>({ value, pointer }: Default<T>, path: string): Know
 	pointer
 });
 
+/** A fact not known at `path`, with why. */
 export const unknown = (path: string, reason: UnknownReason): UnknownFact => ({ known: false, path, reason });
 
 /** The value of a known fact, or undefined: for rules, which claim nothing on an unknown fact. */

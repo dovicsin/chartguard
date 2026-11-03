@@ -2,18 +2,26 @@ import type { Coverage } from '@chartguard/core';
 
 import type { DefaultChoice, DefaultFrom, Deprecation, Handler, RegistryRef } from '../schema.js';
 
+/** The IR format version this engine reads; `checkArtifact` rejects an artifact with any other `irVersion`. */
 export const SCHEMA_IR_VERSION = 1;
 
 export const CONFIDENCE_TIERS = ['authoritative', 'derived', 'manual', 'unknown'] as const;
+/**
+ * How sure a schema fact is (CG-02-07): `authoritative` comes from the library's own pinned declarations and
+ * yields confirmed findings; `derived` and `manual` only likely ones (warnings); `unknown` makes no claim.
+ */
 export type ConfidenceTier = (typeof CONFIDENCE_TIERS)[number];
 
 /** `closed`: unknown keys are wrong; `open`: documented extension point; `unknown`: not established. */
 export const OPENNESS = ['closed', 'open', 'unknown'] as const;
+/** Whether an object accepts keys it does not list; see `OPENNESS`. */
 export type Openness = (typeof OPENNESS)[number];
 
 export const SOURCE_KINDS = ['npm-package', 'docs-tree', 'manual'] as const;
+/** Where a source comes from: a pinned npm package, a documentation tree or a hand-written entry. */
 export type SourceKind = (typeof SOURCE_KINDS)[number];
 
+/** An upstream source schema facts are read from, keyed by id in `SchemaArtifact.sources`. */
 export interface SourceRecord {
 	readonly kind: SourceKind;
 	/** `package@version` or a URL. */
@@ -25,12 +33,17 @@ export interface SourceRecord {
 	readonly retrieved?: string;
 }
 
+/** A citation of a fact: `source` is a key of `SchemaArtifact.sources`. */
 export interface SourceRef {
 	readonly source: string;
 	/** Where in the source, e.g. `ChartOptions.height`. */
 	readonly pointer?: string;
 }
 
+/**
+ * How sure a fact is and where it was read. `authoritative` needs at least one source, each with an
+ * `integrity` pin (`checkArtifact`).
+ */
 export interface Provenance {
 	readonly confidence: ConfidenceTier;
 	readonly sources: readonly SourceRef[];
@@ -41,10 +54,12 @@ interface NodeBase {
 	readonly docs?: string;
 }
 
+/** A value of one primitive kind; `unknown` is a value whose shape is not established (checked as any). */
 export interface PrimitiveNode extends NodeBase {
 	readonly kind: 'string' | 'number' | 'boolean' | 'null' | 'function' | 'unknown';
 }
 
+/** Exactly one value; a union of same-typed literals lowers to an enum. */
 export interface LiteralNode extends NodeBase {
 	readonly kind: 'literal';
 	readonly value: string | number | boolean | null;
@@ -52,6 +67,10 @@ export interface LiteralNode extends NodeBase {
 
 export type { Deprecation } from '../schema.js';
 
+/**
+ * A named option of an object: its value, its own provenance (which covers the value and everything below it)
+ * and the runtime facts about it. A property with `unknown` provenance is never required.
+ */
 export interface PropertyNode {
 	readonly node: IrNode;
 	readonly provenance: Provenance;
@@ -73,11 +92,16 @@ export interface PropertyNode {
 export type SkippedKind = 'null' | 'falsy' | 'truthy';
 export const SKIPPED_KINDS: ReadonlySet<string> = new Set<SkippedKind>(['null', 'falsy', 'truthy']);
 
+/** The non-object values a list option's runtime skips, given alone (`value`) or as list entries (`entries`). */
 export interface Skips {
 	readonly value: readonly SkippedKind[];
 	readonly entries: readonly SkippedKind[];
 }
 
+/**
+ * An object with listed properties. `additional` decides unknown keys: only a `closed` object with
+ * `authoritative` provenance rejects them; `open` accepts them; anything else warns.
+ */
 export interface ObjectNode extends NodeBase {
 	readonly kind: 'object';
 	readonly properties: Readonly<Record<string, PropertyNode>>;
@@ -104,11 +128,16 @@ export interface RecordNode extends NodeBase {
 	readonly values: IrNode;
 }
 
+/** A list whose entries all match `items`. */
 export interface ArrayNode extends NodeBase {
 	readonly kind: 'array';
 	readonly items: IrNode;
 }
 
+/**
+ * A value matching one of `anyOf`, each member checked as the runtime tells them apart: by `discriminator`,
+ * its defaults and `selectWhen` rules for object members.
+ */
 export interface UnionNode extends NodeBase {
 	readonly kind: 'union';
 	readonly anyOf: readonly IrNode[];
@@ -140,8 +169,10 @@ export interface UnionNode extends NodeBase {
 	readonly extensionPoint?: string;
 }
 
+/** A `defaultWhen` or `selectWhen` rule of a union; the IR name of `DefaultChoice`. */
 export type DefaultRule = DefaultChoice;
 
+/** A reference to `SchemaArtifact.definitions[ref]`; definitions may refer to themselves (recursive shapes). */
 export interface RefNode extends NodeBase {
 	readonly kind: 'ref';
 	readonly ref: string;
@@ -153,6 +184,7 @@ export interface ScriptableNode extends NodeBase {
 	readonly value: IrNode;
 }
 
+/** Any node of the schema IR, told apart by `kind`. */
 export type IrNode =
 	PrimitiveNode | LiteralNode | ObjectNode | RecordNode | ArrayNode | UnionNode | RefNode | ScriptableNode;
 
@@ -172,6 +204,10 @@ export const NODE_KINDS: ReadonlySet<string> = new Set<IrNode['kind']>([
 	'scriptable'
 ]);
 
+/**
+ * A generated schema (the IR): a versioned, provenance-carrying description of one exact version of a
+ * library's options. Check it with `checkArtifact`, then turn it into an engine schema with `lowerArtifact`.
+ */
 export interface SchemaArtifact {
 	readonly irVersion: typeof SCHEMA_IR_VERSION;
 	readonly library: string;

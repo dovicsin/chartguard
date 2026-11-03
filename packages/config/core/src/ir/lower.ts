@@ -11,6 +11,7 @@ import type {
 	UnionNode
 } from './types.js';
 
+/** The result of `lowerArtifact`. */
 export interface LoweredSchema {
 	readonly manifest: SchemaManifest;
 	/**
@@ -223,6 +224,11 @@ class Lowerer {
 	}
 }
 
+/**
+ * Turns a checked artifact into the schema manifest the engine validates against. Constructs the engine
+ * cannot express become `any` and are listed in `lossy`; coverage is `full` only when the artifact says so and
+ * nothing is lossy. Provenance tiers carry over: `derived`/`manual` facts are `inferred`, `unknown` ones `any`.
+ */
 export function lowerArtifact(artifact: SchemaArtifact): LoweredSchema {
 	const lowerer = new Lowerer(artifact.definitions);
 	const root = lowerer.lower(artifact.root, '$');

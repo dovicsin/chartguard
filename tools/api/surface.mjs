@@ -63,19 +63,7 @@ function internalsOf(declarations, { checker, exported, inPackage }) {
  * (default: the declaration file's directory).
  */
 export function surfaceOf(declarationFile, packageDir = dirname(declarationFile)) {
-	const program = ts.createProgram([declarationFile], {
-		noEmit: true,
-		noLib: true,
-		types: [],
-		module: ts.ModuleKind.NodeNext,
-		moduleResolution: ts.ModuleResolutionKind.NodeNext,
-		target: ts.ScriptTarget.ES2022
-	});
-	const checker = program.getTypeChecker();
-	const file = program.getSourceFile(declarationFile);
-	const module = file === undefined ? undefined : checker.getSymbolAtLocation(file);
-	if (module === undefined) throw new Error(`Not a module: ${declarationFile}`);
-	const exports = checker.getExportsOfModule(module).map((symbol) => [symbol.name, resolved(checker, symbol)]);
+	const { checker, exports } = moduleExports(declarationFile);
 	const root = realpathSync(packageDir);
 	const inPackage = (source) => {
 		const path = relative(root, realpathSync(source.fileName));
@@ -88,6 +76,63 @@ export function surfaceOf(declarationFile, packageDir = dirname(declarationFile)
 		surface.set(name, [...declarations.map(printed), ...internalsOf(declarations, context)].join('\n'));
 	}
 	return surface;
+}
+
+/** The exports of a declaration file, each with the symbol it resolves to (re-exports followed). */
+function moduleExports(declarationFile) {
+	const program = ts.createProgram([declarationFile], {
+		noEmit: true,
+		noLib: true,
+		types: [],
+		module: ts.ModuleKind.NodeNext,
+		moduleResolution: ts.ModuleResolutionKind.NodeNext,
+		target: ts.ScriptTarget.ES2022
+	});
+	const checker = program.getTypeChecker();
+	const file = program.getSourceFile(declarationFile);
+	const module = file === undefined ? undefined : checker.getSymbolAtLocation(file);
+	if (module === undefined) throw new Error(`Not a module: ${declarationFile}`);
+	return {
+		checker,
+		exports: checker.getExportsOfModule(module).map((symbol) => [symbol.name, resolved(checker, symbol)])
+	};
+}
+
+/** What an export is, as a reader names it. */
+function kindOf(symbol) {
+	const { flags } = symbol;
+	if (flags & ts.SymbolFlags.Class) return 'class';
+	if (flags & ts.SymbolFlags.Function) return 'function';
+	if (flags & ts.SymbolFlags.Interface) return 'interface';
+	if (flags & ts.SymbolFlags.TypeAlias) return 'type';
+	if (flags & ts.SymbolFlags.Enum) return 'enum';
+	if (flags & ts.SymbolFlags.Variable) return 'const';
+	return flags & ts.SymbolFlags.Module ? 'namespace' : 'export';
+}
+
+/** A declaration as written in the `.d.ts`, its members' doc comments kept, without `export`/`declare`. */
+const withMemberDocs = (declaration) =>
+	declaration.getText(declaration.getSourceFile()).replace(/^(export )?(declare )?/, '');
+
+/** A JSDoc tag as written: `@param name text`, `@deprecated text`. */
+const tagText = (tag) => `@${tag.name}${tag.text === undefined ? '' : ` ${ts.displayPartsToString(tag.text)}`}`;
+
+/**
+ * The exports of an entry point as a reference documents them (CG-06-07): the same exports as
+ * `surfaceOf`, each with its kind, its declaration text and its doc comment (with tags), in code-point
+ * order of their names. Read from the emitted `.d.ts`, where the comments are kept.
+ */
+export function documentedExports(declarationFile) {
+	const { checker, exports } = moduleExports(declarationFile);
+	return exports
+		.map(([name, target]) => ({
+			name,
+			kind: kindOf(target),
+			declaration: (target.declarations ?? []).map(withMemberDocs).join('\n'),
+			doc: ts.displayPartsToString(target.getDocumentationComment(checker)).trim(),
+			tags: target.getJsDocTags(checker).map(tagText)
+		}))
+		.sort((a, b) => byCodePoint(a.name, b.name));
 }
 
 /** Code-point order, never the locale's (D13). */
