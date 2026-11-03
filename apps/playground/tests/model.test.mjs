@@ -5,6 +5,7 @@ import { validate } from '@chartguard/config-chartjs';
 import { analyze } from '@chartguard/quality-chartjs';
 
 import { bySeverity, countBySeverity, inspect, lineAndColumn, schemaLabel } from '../dist/model.js';
+import { shownJson } from '../dist/shown.js';
 
 const adapter = { validate, analyze };
 const diagnostic = (severity, code) => ({ severity, code, path: '$', message: '', confidence: 'certain' });
@@ -58,4 +59,23 @@ test('the schema label names the digest when there is one', () => {
 test('offsets become 1-based lines and columns', () => {
 	assert.deepEqual(lineAndColumn('ab\ncd', 0), { line: 1, column: 1 });
 	assert.deepEqual(lineAndColumn('ab\ncd', 4), { line: 2, column: 2 });
+});
+
+test('the JSON view: findings by severity at their values, the suggestion, the summary and schema; a syntax error where it is', () => {
+	const text = '{"type": "bar", "data": {"datasets": []}, "options": {"responsiv": true, "responsive": "yes"}}';
+	const view = shownJson(text, inspect(text, adapter), 'chartjs');
+	assert.deepEqual(
+		view.validator.map(({ severity, code }) => `${severity} ${code}`),
+		['error CFG_TYPE', 'warning CFG_UNKNOWN_KEY']
+	);
+	const [type, unknown] = view.validator;
+	assert.equal(text.slice(type.range.start, type.range.end), '"yes"');
+	assert.equal(unknown.suggestion, 'Did you mean "responsive"?');
+	assert.equal(view.summary, '1 error(s), 1 warning(s), 0 info');
+	assert.match(view.schema, /^schema 4\.5\.1 · sha256-[0-9a-f]{12} · coverage (full|partial)$/u);
+	assert.deepEqual(view.verdict, { text: 'invalid', tone: 'error' });
+	assert.deepEqual(view.draw.kind, 'config');
+	const broken = shownJson('{\n  "type": bar}', inspect('{\n  "type": bar}', adapter), 'chartjs');
+	assert.equal(broken.syntax, 'Expected a JSON value (line 2, column 11)');
+	assert.deepEqual(broken.draw, { kind: 'none', reason: '' });
 });

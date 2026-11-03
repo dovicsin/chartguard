@@ -2,6 +2,7 @@ import { deflateSync, Inflate } from 'fflate';
 
 /**
  * A config shared as a link (CG-06-06 part 2): `#library=<id>&config=<base64url>`, the editor text
+ * (with `&mode=<input>` for source text, part 3)
  * deflated. The fragment never reaches a server. Reading one is bounded: the encoded length before
  * decoding, the inflated size while inflating (a small link may inflate to gigabytes), and the text
  * must be UTF-8. What it yields only ever goes into the editor, which parses it as JSON. Synchronous
@@ -12,7 +13,7 @@ export const MAX_FRAGMENT_LENGTH = 100_000;
 export const MAX_SHARED_BYTES = 1_000_000;
 
 export type Shared =
-	| { readonly ok: true; readonly library: string; readonly text: string }
+	| { readonly ok: true; readonly library: string; readonly mode: string; readonly text: string }
 	| { readonly ok: false; readonly reason: string };
 
 const BASE64URL = /^[A-Za-z0-9_-]*$/u;
@@ -59,14 +60,17 @@ function inflateBounded(deflated: Uint8Array, limit: number): Uint8Array | undef
  * The fragment (without `#`) that opens `text` in `library`'s editor, or why there is none: a link
  * `readShared` would refuse is never made.
  */
-export function shareFragment(library: string, text: string): string | { readonly reason: string } {
+export function shareFragment(
+	{ library, mode }: { readonly library: string; readonly mode: string },
+	text: string
+): string | { readonly reason: string } {
 	const bytes = new TextEncoder().encode(text);
 	if (bytes.byteLength > MAX_SHARED_BYTES)
 		return { reason: `the config is larger than ${String(MAX_SHARED_BYTES)} bytes` };
 	const encoded = base64url(deflateSync(bytes, { level: 9 }));
 	if (encoded.length > MAX_FRAGMENT_LENGTH)
 		return { reason: `the link would be longer than ${String(MAX_FRAGMENT_LENGTH)} characters` };
-	return new URLSearchParams({ library, config: encoded }).toString();
+	return new URLSearchParams({ library, ...(mode === 'json' ? {} : { mode }), config: encoded }).toString();
 }
 
 /** The bytes a link's `config` inflates to, or why it cannot be read. */
@@ -85,18 +89,24 @@ function inflate(encoded: string): Uint8Array | string {
 
 /**
  * The config a fragment shares, why it cannot be read, or `undefined` when the fragment shares none
- * (an example id). `libraries`: the ids the page knows; any other is refused.
+ * (an example id). `known`: the libraries and input modes the page knows (`json` when the link names
+ * none); any other is refused.
  */
-export function readShared(fragment: string, libraries: readonly string[]): Shared | undefined {
+export function readShared(
+	fragment: string,
+	known: { readonly libraries: readonly string[]; readonly modes: readonly string[] }
+): Shared | undefined {
 	const parameters = new URLSearchParams(fragment);
 	const encoded = parameters.get('config');
 	if (encoded === null) return undefined;
 	const library = parameters.get('library') ?? '';
-	if (!libraries.includes(library)) return { ok: false, reason: `unknown library "${library}"` };
+	if (!known.libraries.includes(library)) return { ok: false, reason: `unknown library "${library}"` };
+	const mode = parameters.get('mode') ?? 'json';
+	if (!known.modes.includes(mode)) return { ok: false, reason: `unknown input "${mode}"` };
 	const bytes = inflate(encoded);
 	if (typeof bytes === 'string') return { ok: false, reason: bytes };
 	try {
-		return { ok: true, library, text: new TextDecoder('utf-8', { fatal: true }).decode(bytes) };
+		return { ok: true, library, mode, text: new TextDecoder('utf-8', { fatal: true }).decode(bytes) };
 	} catch {
 		return { ok: false, reason: 'the config is not UTF-8 text' };
 	}

@@ -76,7 +76,8 @@ body {
 	color: var(--muted);
 }
 
-.bar__field select {
+.bar__field select,
+.chart-field select {
 	max-width: 100%;
 	padding: 4px 6px;
 	color: var(--text);
@@ -242,6 +243,18 @@ body {
 	font: 12px var(--mono);
 }
 
+.chart-field {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 8px;
+	color: var(--muted);
+}
+
+.chart-field[hidden] {
+	display: none;
+}
+
 .preview {
 	position: relative;
 	height: 320px;
@@ -260,6 +273,12 @@ body {
 	background: var(--warn-bg);
 	border-radius: 6px;
 	font: 12px var(--mono);
+}
+
+.runtime-note {
+	margin: 8px 0 0;
+	color: var(--muted);
+	font-size: 13px;
 }
 
 .expectation {

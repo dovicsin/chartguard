@@ -4,12 +4,13 @@ import {
 	parseJsonSource,
 	type QualityReport,
 	type Severity,
+	type ValidationOptions,
 	type ValidationResult
 } from '@chartguard/core';
 
 /** What the playground needs from a library: its published validate and analyze entry points. */
 export interface Adapter {
-	readonly validate: (config: unknown) => ValidationResult;
+	readonly validate: (config: unknown, options?: ValidationOptions) => ValidationResult;
 	readonly analyze: (config: unknown) => QualityReport;
 }
 
@@ -69,11 +70,4 @@ export function schemaLabel({ schemaVersion, schemaDigest }: ValidationResult): 
 export function lineAndColumn(text: string, offset: number): { readonly line: number; readonly column: number } {
 	const before = text.slice(0, offset).split('\n');
 	return { line: before.length, column: (before.at(-1)?.length ?? 0) + 1 };
-}
-
-/** The findings (`code path`) the engine offers a fix for, validator and quality. */
-export function fixableFindings({ validation, quality }: Extract<Inspection, { kind: 'checked' }>): string[] {
-	return [...validation.diagnostics, ...quality.diagnostics]
-		.filter(({ fix }) => fix !== undefined)
-		.map(({ code, path }) => `${code} ${path}`);
 }

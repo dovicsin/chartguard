@@ -1,6 +1,4 @@
-import { resolve } from 'node:path';
-
-import type { ChartUse } from '@chartguard/analysis-typescript';
+import type { ChartUse, SourceRange } from '@chartguard/analysis-typescript';
 import type { KeyRename, OptionEdit } from '@chartguard/core';
 import ts from 'typescript';
 
@@ -11,10 +9,13 @@ export interface TextEdit {
 	readonly text: string;
 }
 
-/** Where an edit is made: the checked text as TypeScript parses it, its file name, and the use whose config it edits. */
+/**
+ * Where an edit is made: the checked text as TypeScript parses it, whether a range the analysis read
+ * is in it (the caller compares file names its own way), and the use whose config it edits.
+ */
 export interface EditSite {
 	readonly file: ts.SourceFile;
-	readonly fileName: string;
+	readonly inFile: (range: SourceRange) => boolean;
 	readonly use: ChartUse;
 }
 
@@ -37,9 +38,9 @@ function deepestAt(file: ts.SourceFile, position: number): ts.Node {
  * value another file wrote is not this file's to edit). Edits are made only for a config read
  * completely: a getter, computed key or spread of an unknown value would have left it partial.
  */
-function nodeAt({ file, fileName, use }: EditSite, path: string): ts.Node | undefined {
+function nodeAt({ file, inFile, use }: EditSite, path: string): ts.Node | undefined {
 	const fact = use.paths.find((candidate) => candidate.path === path);
-	if (fact === undefined || resolve(fact.file) !== resolve(fileName)) return undefined;
+	if (fact === undefined || !inFile(fact)) return undefined;
 	const start = offsetOf(file, fact.line, fact.column);
 	const end = offsetOf(file, fact.endLine, fact.endColumn);
 	// The source file's parent is undefined at run time, whatever the declarations say.

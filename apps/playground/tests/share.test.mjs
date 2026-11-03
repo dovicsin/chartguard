@@ -8,17 +8,33 @@ import { deflateSync, Inflate } from 'fflate';
 import { MAX_FRAGMENT_LENGTH, MAX_SHARED_BYTES, readShared, shareFragment } from '../dist/share.js';
 
 /** Shared links (CG-06-06 part 2): the editor text in the fragment, read back bounded and as text only. */
-const LIBRARIES = ['chartjs', 'echarts'];
+const LIBRARIES = { libraries: ['chartjs', 'echarts'], modes: ['json', 'javascript'] };
+const JSON_INPUT = (library) => ({ library, mode: 'json' });
 const link = (library, bytes) =>
 	new URLSearchParams({ library, config: Buffer.from(bytes).toString('base64url') }).toString();
 
 test('a shared config reads back as the same text in the same library', () => {
 	for (const text of ['', '{"type": "bar"}', '{\n\t"title": {"text": "Ünnep \u2028 😀"}\n}', ' not json at all ']) {
-		const fragment = shareFragment('echarts', text);
+		const fragment = shareFragment(JSON_INPUT('echarts'), text);
 		assert.equal(typeof fragment, 'string');
 		assert.match(fragment, /^library=echarts&config=[A-Za-z0-9_-]+$/u);
-		assert.deepEqual(readShared(fragment, LIBRARIES), { ok: true, library: 'echarts', text });
+		assert.deepEqual(readShared(fragment, LIBRARIES), { ok: true, library: 'echarts', mode: 'json', text });
 	}
+});
+
+test('source text is shared with its input mode; a link without one is JSON', () => {
+	const fragment = shareFragment({ library: 'chartjs', mode: 'javascript' }, 'new Chart(c, {});');
+	assert.match(fragment, /^library=chartjs&mode=javascript&config=/u);
+	assert.deepEqual(readShared(fragment, LIBRARIES), {
+		ok: true,
+		library: 'chartjs',
+		mode: 'javascript',
+		text: 'new Chart(c, {});'
+	});
+	assert.deepEqual(readShared(fragment.replace('mode=javascript', 'mode=python'), LIBRARIES), {
+		ok: false,
+		reason: 'unknown input "python"'
+	});
 });
 
 test('a fragment without a config shares nothing: it is an example id', () => {
@@ -72,13 +88,13 @@ test('a small link that inflates beyond the bound is refused while inflating', (
 });
 
 test('no link is made that a reader would refuse: too large a text, too long a link', () => {
-	assert.deepEqual(shareFragment('chartjs', ' '.repeat(MAX_SHARED_BYTES + 1)), {
+	assert.deepEqual(shareFragment(JSON_INPUT('chartjs'), ' '.repeat(MAX_SHARED_BYTES + 1)), {
 		reason: `the config is larger than ${String(MAX_SHARED_BYTES)} bytes`
 	});
-	assert.equal(typeof shareFragment('chartjs', ' '.repeat(MAX_SHARED_BYTES)), 'string');
+	assert.equal(typeof shareFragment(JSON_INPUT('chartjs'), ' '.repeat(MAX_SHARED_BYTES)), 'string');
 	// Random text barely compresses: 90 kB of it cannot fit in 100 000 characters of base64.
 	const noise = randomBytes(90_000).toString('latin1');
-	assert.deepEqual(shareFragment('chartjs', noise), {
+	assert.deepEqual(shareFragment(JSON_INPUT('chartjs'), noise), {
 		reason: `the link would be longer than ${String(MAX_FRAGMENT_LENGTH)} characters`
 	});
 });
@@ -98,9 +114,9 @@ test('at the bound: the longest link is made, one that would be longer is not', 
 		else high = middle;
 	}
 	assert.ok(encodedLength(high) > MAX_FRAGMENT_LENGTH && encodedLength(high) < MAX_FRAGMENT_LENGTH + 100);
-	assert.equal(typeof shareFragment('chartjs', digits.slice(0, low)), 'string');
-	assert.equal(typeof shareFragment('chartjs', digits.slice(0, high)), 'object');
-	const fitting = shareFragment('chartjs', randomBytes(30_000).toString('hex'));
+	assert.equal(typeof shareFragment(JSON_INPUT('chartjs'), digits.slice(0, low)), 'string');
+	assert.equal(typeof shareFragment(JSON_INPUT('chartjs'), digits.slice(0, high)), 'object');
+	const fitting = shareFragment(JSON_INPUT('chartjs'), randomBytes(30_000).toString('hex'));
 	assert.equal(typeof fitting, 'string');
 	assert.ok(fitting.length <= MAX_FRAGMENT_LENGTH + 'library=chartjs&config='.length);
 });

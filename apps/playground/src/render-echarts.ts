@@ -19,5 +19,8 @@ export const echartsRenderer: Renderer = {
 		chart = undefined;
 	},
 	// `init` returns the instance before `setOption` can throw, so `dispose` always reaches it.
-	stray: () => 0
+	stray: () => 0,
+	held: () => (chart === undefined || chart.isDisposed() ? 0 : 1),
+	// echarts/lib/util/log.js: `outputLog` keeps every message printed with `onlyOnce` in `storedLogs`.
+	logsOnce: true
 };

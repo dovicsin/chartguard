@@ -24,6 +24,10 @@
 		".": {
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
+		},
+		"./text": {
+			"types": "./dist/text.d.ts",
+			"import": "./dist/text.js"
 		}
 	},
 	"scripts": {

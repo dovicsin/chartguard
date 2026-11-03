@@ -35,27 +35,38 @@ function serve() {
 const unescape = (text) =>
 	text.replaceAll('&quot;', '"').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&');
 
+/** The self-test report of one page load (`?selftest=<mode>`). */
+async function selfTest(port, mode) {
+	const html = await dumpDom(`http://127.0.0.1:${String(port)}/?selftest=${mode}`);
+	const report = /<pre id="selftest">([\s\S]*?)<\/pre>/.exec(html);
+	assert.ok(report !== null, `the ${mode} self-test report was not rendered`);
+	return JSON.parse(unescape(report[1]));
+}
+
 test(
-	'in a real browser every example reproduces its pinned validator findings and runtime verdict',
+	'in a real browser every example reproduces its pinned validator findings and runtime verdict, as JSON and as source',
 	{
 		// On CI a missing browser or bundle fails the gate instead of skipping it (E22).
 		skip: browserSkipReason() ?? (existsSync(join(OUT, 'main.js')) ? false : skipOutsideCi('needs a built playground')),
-		timeout: 180_000
+		timeout: 300_000
 	},
 	async (t) => {
 		const server = await serve();
 		t.after(() => server.close());
-		const html = await dumpDom(`http://127.0.0.1:${String(server.address().port)}/?selftest`);
-		const report = /<pre id="selftest">([\s\S]*?)<\/pre>/.exec(html);
-		assert.ok(report !== null, 'the self-test report was not rendered');
-		const entries = JSON.parse(unescape(report[1]));
+		const { port } = server.address();
 		const examples = JSON.parse(readFileSync(join(OUT, 'examples.json'), 'utf8'));
+		const json = await selfTest(port, 'json');
 		assert.deepEqual(
-			entries.map(({ id }) => id),
-			[...examples.map(({ id }) => id), 'links']
+			json.map(({ id }) => id),
+			[...examples.map(({ id }) => id), 'links', 'repeat']
+		);
+		const source = await selfTest(port, 'javascript');
+		assert.deepEqual(
+			source.map(({ id }) => id),
+			examples.map(({ id }) => `javascript:${id}`)
 		);
 		assert.deepEqual(
-			entries.filter(({ problems }) => problems.length > 0),
+			[...json, ...source].filter(({ problems }) => problems.length > 0),
 			[]
 		);
 	}

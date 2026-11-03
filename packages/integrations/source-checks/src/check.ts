@@ -1,95 +1,12 @@
 import { relative, resolve } from 'node:path';
 
-import {
-	type AnalysisOutput,
-	type ChartUse,
-	extractStaticConfigs,
-	PatternError,
-	rangeAt
-} from '@chartguard/analysis-typescript';
-import type { Diagnostic, ValidationOptions } from '@chartguard/core';
+import { type AnalysisOutput, extractStaticConfigs, PatternError } from '@chartguard/analysis-typescript';
 import ts from 'typescript';
 
-import { offsetOf, renameEdit, type TextEdit, valueEdit } from './edits.js';
+import { type Engine, findingsOf, type Reading, type SourceFinding } from './findings.js';
 import { Sessions } from './sessions.js';
 import { type ChartGuardSettings, readSettings, SettingsError } from './settings.js';
 import { reviewOf, Validators } from './validators.js';
-
-/** What a finding is: the validator's error, its warning, or the advisory quality review's warning. */
-export type FindingKind = 'valid-config' | 'config-warnings' | 'chart-quality';
-
-/** One finding in the checked text, from `start` to `end` (offsets), with the edit it may offer. */
-export interface SourceFinding {
-	readonly kind: FindingKind;
-	readonly message: string;
-	readonly start: number;
-	readonly end: number;
-	/** A behaviour-preserving edit a tool may apply: the runtime's own rename. */
-	readonly fix?: TextEdit;
-	/** An edit that changes the drawing, offered and never applied without the user. */
-	readonly suggestion?: { readonly description: string; readonly edit: TextEdit };
-}
-
-/** One text being checked. */
-interface Reading {
-	readonly file: ts.SourceFile;
-	readonly fileName: string;
-	/** The caller's working directory: other files are named relative to it. */
-	readonly cwd: string;
-}
-
-const describe = ({ code, path, message, suggestion }: Diagnostic): string =>
-	`${code} ${path}: ${message}${suggestion === undefined ? '' : ` ${suggestion}`}`;
-
-/**
- * Where a finding stands and what it says: at the range that wrote its value or the nearest value
- * above it, when that is in the checked file; a value written in another file (project mode) is
- * reported at the use, naming where it was written.
- */
-function placed(
-	diagnostic: Diagnostic,
-	use: ChartUse,
-	{ file, fileName, cwd }: Reading
-): Pick<SourceFinding, 'message' | 'start' | 'end'> {
-	const message = describe(diagnostic);
-	const range = rangeAt(use.paths, diagnostic.path);
-	if (range !== undefined && resolve(range.file) === resolve(fileName))
-		return {
-			message,
-			start: offsetOf(file, range.line, range.column),
-			end: offsetOf(file, range.endLine, range.endColumn)
-		};
-	const at = offsetOf(file, use.line, use.column);
-	if (range === undefined) return { message, start: at, end: at };
-	const where = `${relative(cwd, range.file).split('\\').join('/')}:${String(range.line)}:${String(range.column)}`;
-	return { message: `${message} (written in ${where})`, start: at, end: at };
-}
-
-/** A finding with its edit: only for a config read completely (an unread part may hold what the edit changes). */
-function findingOf(kind: FindingKind, diagnostic: Diagnostic, use: ChartUse, reading: Reading): SourceFinding {
-	const finding = { kind, ...placed(diagnostic, use, reading) };
-	const { fix } = diagnostic;
-	if (fix === undefined || !use.complete) return finding;
-	const site = { file: reading.file, fileName: reading.fileName, use };
-	if (fix.kind === 'rename-key') {
-		const edit = renameEdit(site, diagnostic.path, fix);
-		return edit === undefined ? finding : { ...finding, fix: edit };
-	}
-	const edit = valueEdit(site, fix);
-	const description = `Set ${fix.path} to ${JSON.stringify(fix.value)}: ${fix.effect}`;
-	return edit === undefined ? finding : { ...finding, suggestion: { description, edit } };
-}
-
-/** Each finding once: one config handed to two charts is one claim. */
-function distinct(findings: readonly SourceFinding[]): SourceFinding[] {
-	const seen = new Set<string>();
-	return findings.filter((finding) => {
-		const key = JSON.stringify(finding);
-		if (seen.has(key)) return false;
-		seen.add(key);
-		return true;
-	});
-}
 
 /**
  * Checks chart configs in JavaScript and TypeScript source (CG-06-04): the configs a file hands to
@@ -119,8 +36,29 @@ export class SourceChecker {
 		// A file TypeScript cannot read (syntax errors, limits): nothing read from its tree is reliable, as
 		// in the CLI. Its uses are still listed (incomplete), and their values would be checked (A7).
 		if (!output.readable) return [];
-		const reading = { file: ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true), fileName, cwd };
-		return distinct(output.uses.flatMap((use) => [...this.validated(use, reading), ...this.reviewed(use, reading)]));
+		const reading: Reading = {
+			file: ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true),
+			inFile: (range) => resolve(range.file) === resolve(fileName),
+			where: (range) =>
+				`${relative(cwd, range.file).split('\\').join('/')}:${String(range.line)}:${String(range.column)}`
+		};
+		return findingsOf(output.uses, reading, this.engineFor(fileName));
+	}
+
+	/** The validators and review for one file: the version it runs (`"auto"`: its install) and the registries. */
+	private engineFor(fileName: string): Engine {
+		const { validators, settings } = this;
+		return {
+			validate: (library, config, options) => {
+				const version = validators.versionFor(library, fileName);
+				return validators.validatorFor(library, fileName)(config, {
+					...options,
+					...(version === undefined ? {} : { libraryVersion: version }),
+					...(settings.registries === undefined ? {} : { registries: settings.registries })
+				});
+			},
+			review: (library, config) => reviewOf(library)(config, settings.quality)
+		};
 	}
 
 	/** The file read alone, or in its project's session (project mode). */
@@ -134,34 +72,5 @@ export class SourceChecker {
 				throw new SettingsError(this.prefix, [`${this.prefix}.patterns: ${error.message}`]);
 			throw error;
 		}
-	}
-
-	/** The validator's claims about one use: errors and warnings; info findings are no claim. */
-	private validated(use: ChartUse, reading: Reading): SourceFinding[] {
-		const { validators, settings } = this;
-		const version = validators.versionFor(use.library, reading.fileName);
-		const options: ValidationOptions = {
-			incomplete: !use.complete,
-			...(version === undefined ? {} : { libraryVersion: version }),
-			...(settings.registries === undefined ? {} : { registries: settings.registries })
-		};
-		const { diagnostics } = validators.validatorFor(use.library, reading.fileName)(use.value, options);
-		return diagnostics.flatMap((diagnostic) => {
-			if (diagnostic.severity === 'info') return [];
-			const kind = diagnostic.severity === 'error' ? 'valid-config' : 'config-warnings';
-			return [findingOf(kind, diagnostic, use, reading)];
-		});
-	}
-
-	/**
-	 * The quality review's warnings about a config read completely: of a partial one, an absent option
-	 * may be one the analysis could not read, and a review would take it for unset.
-	 */
-	private reviewed(use: ChartUse, reading: Reading): SourceFinding[] {
-		if (!use.complete) return [];
-		const report = reviewOf(use.library)(use.value, this.settings.quality);
-		return report.diagnostics.flatMap((diagnostic) =>
-			diagnostic.severity === 'warning' ? [findingOf('chart-quality', diagnostic, use, reading)] : []
-		);
 	}
 }

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import test from 'node:test';
 
+import { codeFromText } from './browser-guards.mjs';
 import {
 	argvScript,
 	codeNames,
@@ -197,6 +198,35 @@ test('R17 catches network and process modules and network globals however they a
 			'function fetchAll(fetch) { return 1; }',
 			"// fetch('https://example.com') in a comment",
 			"const text = 'fetch';"
+		]
+	});
+});
+
+test('R18 catches code and markup made from text, not the names in comments or strings', () => {
+	expectGuard(codeFromText, {
+		bad: [
+			'eval(source);',
+			'const run = new Function("a", body);',
+			'Function(body)();',
+			'globalThis.eval(source);',
+			"window['Function'](body);",
+			"setTimeout('tick()', 10);",
+			'setInterval(`tick()`, 10);',
+			'node.innerHTML = text;',
+			"node['outerHTML'] += text;",
+			"node.insertAdjacentHTML('beforeend', text);",
+			'document.write(text);',
+			'document.writeln(text);'
+		],
+		good: [
+			'// eval(source) is never called',
+			"const name = 'eval';",
+			"if (callee.text === 'eval') return true;",
+			'setTimeout(tick, 10);',
+			'node.textContent = text;',
+			'const html = node.innerHTML;',
+			'stream.write(text);',
+			'const options = { innerHTML: 1 };'
 		]
 	});
 });

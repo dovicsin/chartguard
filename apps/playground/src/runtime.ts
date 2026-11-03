@@ -13,6 +13,10 @@ export interface Renderer {
 	dispose(): void;
 	/** How many charts the runtime still holds besides the one shown; a draw that throws must leave none. */
 	stray(): number;
+	/** How many charts the runtime holds, the one shown included. */
+	held(): number;
+	/** The runtime prints a message only the first time in a page (ECharts' `deprecateLog`, E28). */
+	readonly logsOnce: boolean;
 }
 
 type Channel = 'warn' | 'error';

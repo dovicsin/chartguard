@@ -31,5 +31,7 @@ export const chartjsRenderer: Renderer = {
 		chart?.destroy();
 		chart = undefined;
 	},
-	stray: () => Object.values(Chart.instances).filter((instance) => instance !== chart).length
+	stray: () => Object.values(Chart.instances).filter((instance) => instance !== chart).length,
+	held: () => Object.keys(Chart.instances).length,
+	logsOnce: false
 };

@@ -13,6 +13,7 @@
 		{ "path": "../../packages/config/highcharts" },
 		{ "path": "../../packages/quality/chartjs" },
 		{ "path": "../../packages/quality/echarts" },
-		{ "path": "../../packages/quality/highcharts" }
+		{ "path": "../../packages/quality/highcharts" },
+		{ "path": "../../packages/integrations/source-checks" }
 	]
 }

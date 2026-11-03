@@ -1,6 +1,6 @@
-import type { Diagnostic } from '@chartguard/core';
-
+import type { Offer } from './edits.js';
 import type { Example } from './examples.js';
+import type { Item } from './shown.js';
 
 /**
  * DOM builders: each returns new nodes and changes nothing it was given; `main.ts` places them.
@@ -24,53 +24,46 @@ export function badge(text: string, tone: string): HTMLSpanElement {
 	return node;
 }
 
-/** A verified fix the page offers for a finding: `note` says what changes when it changes the drawing. */
-interface FixOffer {
-	readonly label: string;
-	readonly note?: string;
-	readonly apply: () => void;
-}
-
-export type OfferFor = (diagnostic: Diagnostic) => FixOffer | undefined;
-
-function fixNode({ label, note, apply }: FixOffer): HTMLElement {
+function fixNode(offer: Offer, onApply: (offer: Offer) => void): HTMLElement {
 	const node = element('div', 'finding__fix');
-	const button = element('button', 'finding__apply', label);
+	const button = element('button', 'finding__apply', offer.label);
 	button.type = 'button';
-	button.addEventListener('click', apply);
+	button.addEventListener('click', () => {
+		onApply(offer);
+	});
 	node.append(button);
-	if (note !== undefined) node.append(element('span', 'finding__effect', note));
+	if (offer.note !== undefined) node.append(element('span', 'finding__effect', offer.note));
 	return node;
 }
 
-function diagnosticItem(diagnostic: Diagnostic, onSelect: (path: string) => void, offerFor?: OfferFor): HTMLLIElement {
-	const item = element('li', `finding finding--${diagnostic.severity}`);
+/** What a finding's controls do: select the text it is about, apply its fix. */
+export interface ItemActions {
+	readonly select: (item: Item) => void;
+	readonly apply: (offer: Offer) => void;
+}
+
+function findingItem(item: Item, actions: ItemActions): HTMLLIElement {
+	const node = element('li', `finding finding--${item.severity}`);
 	const button = element('button', 'finding__select');
 	button.type = 'button';
 	button.title = 'Show in the editor';
 	button.append(
-		element('span', 'finding__severity', diagnostic.severity),
-		element('code', 'finding__code', diagnostic.code),
-		element('code', 'finding__path', diagnostic.path)
+		element('span', 'finding__severity', item.severity),
+		element('code', 'finding__code', item.code),
+		element('code', 'finding__path', item.path)
 	);
 	button.addEventListener('click', () => {
-		onSelect(diagnostic.path);
+		actions.select(item);
 	});
-	item.append(button, element('p', 'finding__message', diagnostic.message));
-	if (diagnostic.suggestion !== undefined) item.append(element('p', 'finding__suggestion', diagnostic.suggestion));
-	const offer = offerFor?.(diagnostic);
-	if (offer !== undefined) item.append(fixNode(offer));
-	return item;
+	node.append(button, element('p', 'finding__message', item.message));
+	if (item.suggestion !== undefined) node.append(element('p', 'finding__suggestion', item.suggestion));
+	if (item.offer !== undefined) node.append(fixNode(item.offer, actions.apply));
+	return node;
 }
 
-export function diagnosticItems(
-	diagnostics: readonly Diagnostic[],
-	onSelect: (path: string) => void,
-	empty: string,
-	offerFor?: OfferFor
-): HTMLLIElement[] {
-	if (diagnostics.length === 0) return [element('li', 'finding finding--none', empty)];
-	return diagnostics.map((diagnostic) => diagnosticItem(diagnostic, onSelect, offerFor));
+export function findingItems(items: readonly Item[], actions: ItemActions, empty: string): HTMLLIElement[] {
+	if (items.length === 0) return [element('li', 'finding finding--none', empty)];
+	return items.map((item) => findingItem(item, actions));
 }
 
 /**

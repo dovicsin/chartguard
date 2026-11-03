@@ -276,7 +276,7 @@ const NETWORK_MODULES = new Set([
 ]);
 /** Globals that reach the network. */
 const NETWORK_GLOBALS = new Set(['fetch', 'WebSocket', 'XMLHttpRequest', 'EventSource']);
-const GLOBAL_OBJECTS = new Set(['globalThis', 'global', 'window', 'self']);
+export const GLOBAL_OBJECTS = new Set(['globalThis', 'global', 'window', 'self']);
 
 const isNetworkModule = (specifier) =>
 	specifier !== undefined && NETWORK_MODULES.has(specifier.replace(/^node:/u, '').split('/')[0]);

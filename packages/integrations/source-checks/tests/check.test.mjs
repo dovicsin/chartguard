@@ -51,7 +51,10 @@ test('a rename to a name that is not an identifier is not written', () => {
 	const file = ts.createSourceFile('chart.js', text, ts.ScriptTarget.Latest, true);
 	const [use] = extractStaticConfigs(text, 'chart.js').uses;
 	const edit = (to) =>
-		renameEdit({ file, fileName: 'chart.js', use }, '$.series[0].clockWise', { kind: 'rename-key', to });
+		renameEdit({ file, inFile: (range) => range.file === 'chart.js', use }, '$.series[0].clockWise', {
+			kind: 'rename-key',
+			to
+		});
 	assert.equal(edit('clockwise')?.text, 'clockwise');
 	assert.equal(edit('emphasis.scale'), undefined);
 	assert.equal(edit('2d'), undefined);

@@ -36,7 +36,20 @@ export function dumpDom(url, { offline = false, virtualTime = 120_000, binary = 
 	const sandbox = process.getuid?.() === 0 ? ['--no-sandbox'] : [];
 	const network = offline ? ['--host-resolver-rules=MAP * ~NOTFOUND'] : [];
 	const budget = `--virtual-time-budget=${String(virtualTime)}`;
-	const args = ['--headless=new', '--disable-gpu', '--no-first-run', ...sandbox, ...network, budget, '--dump-dom', url];
+	// Virtual time runs a page's self-test in seconds; Chrome would take its URL updates for a flood
+	// (more than 200 navigations in 10 s) and drop them, a fragment change included.
+	const flooding = '--disable-ipc-flooding-protection';
+	const args = [
+		'--headless=new',
+		'--disable-gpu',
+		'--no-first-run',
+		...sandbox,
+		...network,
+		budget,
+		flooding,
+		'--dump-dom',
+		url
+	];
 	return new Promise((resolve, reject) => {
 		const chrome = spawn(binary, args, { stdio: ['ignore', 'pipe', 'pipe'] });
 		const html = collect(chrome.stdout);

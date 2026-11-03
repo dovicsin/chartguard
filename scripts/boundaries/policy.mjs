@@ -52,11 +52,14 @@ export const POLICY = {
 		external: ['typescript'],
 		node: ['src/project.ts', 'src/tsconfig.ts', 'src/host.ts', 'src/session.ts']
 	}),
-	/** The source checks editors and linters share (CG-06-04): Node, reads what a file's project installs. */
+	/**
+	 * The source checks editors and linters share (CG-06-04): Node where they read what a file's project
+	 * installs; the findings and `./text` (one text read alone, for the playground) run without it.
+	 */
 	[SOURCE_CHECKS]: rule({
 		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, ANALYSIS, SCHEMA_GENERATOR],
 		external: ['typescript'],
-		node: true
+		node: ['src/index.ts', 'src/check.ts', 'src/sessions.ts', 'src/install.ts', 'src/validators.ts']
 	}),
 	/** ESLint's adapter over the source checks; runs where ESLint runs. */
 	'@chartguard/eslint-plugin': rule({ internal: [SOURCE_CHECKS], peer: ['eslint'] }),
@@ -80,7 +83,7 @@ export const POLICY = {
 	}),
 	/** A browser app: published adapter entry points and the two runtimes it renders with; no Node built-ins. */
 	'@chartguard/playground': rule({
-		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS],
+		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, SOURCE_CHECKS],
 		// fflate: deflate for shared links (CG-06-06 part 2), synchronous so the browser gate can await it (E61).
 		external: [...CHART_RUNTIMES.chartjs, ...CHART_RUNTIMES.echarts, 'date-fns', 'fflate']
 	}),

@@ -20,6 +20,14 @@
 				>Library
 				<select id="library"></select
 			></label>
+			<label class="bar__field"
+				>Input
+				<select id="mode">
+					<option value="json">JSON config</option>
+					<option value="javascript">JavaScript</option>
+					<option value="typescript">TypeScript</option>
+				</select></label
+			>
 			<label class="bar__field bar__field--wide"
 				>Example
 				<select id="example"></select
@@ -29,7 +37,9 @@
 		</header>
 		<main class="layout">
 			<section class="pane pane--editor" aria-labelledby="editor-title">
-				<h2 id="editor-title" class="pane__title">Configuration <small>JSON, validated as you type</small></h2>
+				<h2 id="editor-title" class="pane__title">
+					Configuration <small id="editor-hint">JSON, validated as you type</small>
+				</h2>
 				<textarea id="editor" spellcheck="false" autocomplete="off" aria-describedby="syntax"></textarea>
 				<p id="syntax" class="syntax" role="alert"></p>
 				<button id="undo" class="undo" type="button" hidden>Undo fix</button>
@@ -41,8 +51,13 @@
 					<span class="verdict">Runtime <span id="runtime-verdict"></span></span>
 					<span id="schema" class="schema"></span>
 				</div>
+				<label id="chart-field" class="chart-field" hidden
+					>Chart
+					<select id="chart"></select
+				></label>
 				<div id="preview" class="preview"></div>
 				<ul id="runtime-messages" class="runtime-messages" hidden></ul>
+				<p id="runtime-note" class="runtime-note" hidden></p>
 				<aside id="expected" class="expectation" hidden></aside>
 			</section>
 			<section class="pane pane--findings" aria-labelledby="findings-title">
