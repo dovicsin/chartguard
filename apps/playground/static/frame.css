@@ -1,0 +1,30 @@
+/*
+ * The frame never scrolls: a chart taller than the frame (Chart.js keeps its aspect ratio) would show a
+ * scrollbar that narrows the frame, which resizes the chart, which hides the scrollbar; with a
+ * non-boolean `responsive` Chart.js rebinds its listeners on every update (`_checkEventBindings`
+ * compares with `!==`) and that cycle recursed until the stack overflowed.
+ */
+html,
+body {
+	height: 100%;
+	margin: 0;
+	overflow: hidden;
+	background: transparent;
+}
+
+/* Every place a chart may be drawn fills the frame; the unused ones stay empty and transparent. */
+#stage,
+#canvas,
+#chart,
+#container {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+
+#stage canvas,
+.echarts-host {
+	width: 100%;
+	height: 100%;
+}

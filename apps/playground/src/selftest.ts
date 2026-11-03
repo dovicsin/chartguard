@@ -1,16 +1,14 @@
 import type { Example } from './examples.js';
-import type { Verdict } from './runtime.js';
-
 /**
- * What the page showed for one example: every validator finding, the runtime verdict, if rendered,
- * and every error the page did not catch while it showed the example (a runtime callback that throws
- * after the draw the verdict was taken from).
+ * What the page showed for one example: every validator finding, the runtime verdict, if drawn
+ * (`unfinished` when the frame did not answer), and every error nothing caught while it showed the
+ * example, in the page or in the frame (a runtime timer that throws after the draw).
  */
 export interface Observed {
 	readonly findings: readonly string[];
-	readonly runtime: Verdict | undefined;
+	readonly runtime: string | undefined;
 	readonly uncaught: readonly string[];
-	/** Charts the runtime still holds besides the one shown, if rendered. */
+	/** Drawing frames the page holds besides the one shown (each draw has one, the last only). */
 	readonly stray: number | undefined;
 }
 
@@ -26,9 +24,9 @@ const same = (left: readonly string[], right: readonly string[]): boolean =>
  * How the browser result differs from what the fixtures pin (`claimsOnly`: the page lists only
  * errors and warnings, source mode). A known-valid example must have no
  * warning or error and render silently; a contract example must reproduce its pinned findings and
- * runtime verdict exactly. Without a renderer (Highcharts) only the findings are compared. An
- * uncaught error, or a chart the runtime holds that the page no longer shows, is a problem of every
- * example: the page never leaves an error unhandled nor a chart behind.
+ * runtime verdict exactly. Without a runtime (Highcharts) only the findings are compared. An
+ * uncaught error, or a frame the page no longer shows, is a problem of every example: the page never
+ * leaves an error unhandled nor a drawing behind.
  */
 export function compare(example: Example, observed: Observed, { claimsOnly = false } = {}): string[] {
 	const problems: string[] = [];
@@ -42,10 +40,10 @@ export function compare(example: Example, observed: Observed, { claimsOnly = fal
 	return [...problems, ...leftovers(observed)];
 }
 
-/** What the page left behind: errors it did not catch and charts the runtime holds but the page no longer shows. */
+/** What the page left behind: errors nothing caught and frames besides the one shown. */
 function leftovers({ uncaught, stray = 0 }: Observed): string[] {
 	const problems = uncaught.map((error) => `uncaught error: ${error}`);
-	if (stray > 0) problems.push(`the runtime still holds ${String(stray)} chart(s) the page does not show`);
+	if (stray > 0) problems.push(`the page holds ${String(stray)} drawing frame(s) besides the one shown`);
 	return problems;
 }
 

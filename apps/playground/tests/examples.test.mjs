@@ -87,7 +87,7 @@ test('self-test comparison: an error the page did not catch is a problem of any 
 	assert.equal(compare(valid, { findings: [], runtime: undefined, uncaught: ['boom'], stray: undefined }).length, 1);
 });
 
-test('self-test comparison: a chart the runtime still holds besides the one shown is a problem', () => {
+test('self-test comparison: a drawing frame besides the one shown is a problem', () => {
 	const contract = {
 		id: 'c',
 		library: 'chartjs',
@@ -97,7 +97,7 @@ test('self-test comparison: a chart the runtime still holds besides the one show
 		expected: { findings: [], runtime: 'rejected' }
 	};
 	assert.deepEqual(compare(contract, { findings: [], runtime: 'rejected', uncaught: [], stray: 1 }), [
-		'the runtime still holds 1 chart(s) the page does not show'
+		'the page holds 1 drawing frame(s) besides the one shown'
 	]);
 	assert.deepEqual(compare(contract, { findings: [], runtime: 'rejected', uncaught: [], stray: 0 }), []);
 });

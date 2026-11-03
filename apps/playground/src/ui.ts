@@ -21,6 +21,7 @@ export const ui = {
 	schema: byId('schema', HTMLSpanElement),
 	chartField: byId('chart-field', HTMLLabelElement),
 	chart: byId('chart', HTMLSelectElement),
+	run: byId('run', HTMLButtonElement),
 	preview: byId('preview', HTMLDivElement),
 	messages: byId('runtime-messages', HTMLUListElement),
 	runtimeNote: byId('runtime-note', HTMLParagraphElement),

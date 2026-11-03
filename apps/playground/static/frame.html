@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<!-- A drawing frame, loaded only in <iframe sandbox="allow-scripts">: an opaque origin. Scripts from
+		     the site only, plus eval for the user's code on request (the frame exists to hold it); no
+		     network, no forms, no base. ECharts writes style attributes into its markup. -->
+		<meta
+			http-equiv="Content-Security-Policy"
+			content="default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+		/>
+		<title>ChartGuard drawing frame</title>
+		<link rel="stylesheet" href="./frame.css" />
+		<!-- Fetched with CORS: in an opaque origin every script is cross-origin, and the browser would
+		     hide what an error thrown later says ("Script error.") unless the site allows it. -->
+		<script src="./frame.js" crossorigin="anonymous" defer></script>
+	</head>
+	<body>
+		<!-- A config is drawn into #stage; a source run finds what the examples' sources reach for. -->
+		<div id="stage"></div>
+		<canvas id="canvas"></canvas>
+		<div id="chart"></div>
+		<div id="container"></div>
+	</body>
+</html>

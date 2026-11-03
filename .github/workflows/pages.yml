@@ -1,0 +1,44 @@
+name: pages
+# Publishes the playground (apps/playground/dist/web) to GitHub Pages. Only when started by hand
+# (Actions → pages → Run workflow): whether and where to publish is the maintainer's decision.
+on:
+  workflow_dispatch:
+# Read-only by default; only the deploy job may write Pages, with an OIDC token for it.
+permissions:
+  contents: read
+# One deployment at a time; a running one finishes.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # A hang guard far above an honest build, never a time budget.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      # The lockfile is written by npm 11.
+      - run: npm install --global npm@11.6.2
+      - run: npm ci
+      # Builds every package and the playground, with THIRD-PARTY-NOTICES.txt; no Highcharts-derived file.
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: apps/playground/dist/web
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

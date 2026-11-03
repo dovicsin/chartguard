@@ -31,7 +31,7 @@
 			"project": ["src/**/*.ts"]
 		},
 		"apps/playground": {
-			"entry": ["src/main.ts", "scripts/*.mjs", "tests/**/*.test.mjs"],
+			"entry": ["src/main.ts", "src/frame.ts", "scripts/*.mjs", "tests/**/*.test.mjs"],
 			"project": ["src/**/*.ts", "scripts/*.mjs"]
 		},
 		"packages/integrations/*-runtime": {

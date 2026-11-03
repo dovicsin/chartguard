@@ -16,7 +16,10 @@ const TYPES = {
 	'.map': 'application/json'
 };
 
-/** Serves the built playground from OUT on a free loopback port. */
+/**
+ * Serves the built playground from OUT on a free loopback port, with the header static hosts such as
+ * GitHub Pages send: the drawing frame (an opaque origin) fetches its script with CORS.
+ */
 function serve() {
 	const server = createServer((request, response) => {
 		const path = normalize(new URL(request.url ?? '/', 'http://localhost').pathname).replace(/^(\.\.[/\\])+/, '');
@@ -26,7 +29,10 @@ function serve() {
 			return;
 		}
 		response
-			.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream' })
+			.writeHead(200, {
+				'content-type': TYPES[extname(file)] ?? 'application/octet-stream',
+				'access-control-allow-origin': '*'
+			})
 			.end(readFileSync(file));
 	});
 	return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
@@ -35,16 +41,8 @@ function serve() {
 const unescape = (text) =>
 	text.replaceAll('&quot;', '"').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&');
 
-/** The self-test report of one page load (`?selftest=<mode>`). */
-async function selfTest(port, mode) {
-	const html = await dumpDom(`http://127.0.0.1:${String(port)}/?selftest=${mode}`);
-	const report = /<pre id="selftest">([\s\S]*?)<\/pre>/.exec(html);
-	assert.ok(report !== null, `the ${mode} self-test report was not rendered`);
-	return JSON.parse(unescape(report[1]));
-}
-
 test(
-	'in a real browser every example reproduces its pinned validator findings and runtime verdict, as JSON and as source',
+	'in a real browser every example reproduces its pinned findings and runtime verdict, as JSON and as source, each draw in a sandboxed frame',
 	{
 		// On CI a missing browser or bundle fails the gate instead of skipping it (E22).
 		skip: browserSkipReason() ?? (existsSync(join(OUT, 'main.js')) ? false : skipOutsideCi('needs a built playground')),
@@ -53,20 +51,17 @@ test(
 	async (t) => {
 		const server = await serve();
 		t.after(() => server.close());
-		const { port } = server.address();
+		const html = await dumpDom(`http://127.0.0.1:${String(server.address().port)}/?selftest`);
+		const report = /<pre id="selftest">([\s\S]*?)<\/pre>/.exec(html);
+		assert.ok(report !== null, 'the self-test report was not rendered');
+		const entries = JSON.parse(unescape(report[1]));
 		const examples = JSON.parse(readFileSync(join(OUT, 'examples.json'), 'utf8'));
-		const json = await selfTest(port, 'json');
 		assert.deepEqual(
-			json.map(({ id }) => id),
-			[...examples.map(({ id }) => id), 'links', 'repeat']
-		);
-		const source = await selfTest(port, 'javascript');
-		assert.deepEqual(
-			source.map(({ id }) => id),
-			examples.map(({ id }) => `javascript:${id}`)
+			entries.map(({ id }) => id),
+			[...examples.map(({ id }) => id), ...examples.map(({ id }) => `javascript:${id}`), 'links', 'repeat', 'sandbox']
 		);
 		assert.deepEqual(
-			[...json, ...source].filter(({ problems }) => problems.length > 0),
+			entries.filter(({ problems }) => problems.length > 0),
 			[]
 		);
 	}

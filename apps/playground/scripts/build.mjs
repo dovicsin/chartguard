@@ -5,10 +5,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 
 import { runAsEntryPoint } from '../../../tools/shared/entry.mjs';
+import { noticesOf, noticesText } from '../../../tools/shared/notices.mjs';
 import { isJsonSafe } from '../dist/examples.js';
 
-const APP = fileURLToPath(new URL('..', import.meta.url));
-const ROOT = join(APP, '..', '..');
+export const APP = fileURLToPath(new URL('..', import.meta.url));
+export const ROOT = join(APP, '..', '..');
 export const OUT = join(APP, 'dist', 'web');
 
 /**
@@ -83,6 +84,18 @@ export function bundleOptions(outdir) {
 	};
 }
 
+/**
+ * The drawing frame (CG-06-06 part 4): one classic script with both runtimes, so a document with an
+ * opaque origin (`sandbox="allow-scripts"`) loads it without CORS, and each frame parses it from the
+ * HTTP cache. Development build, as above.
+ */
+export function frameOptions(outdir) {
+	const shared = bundleOptions(outdir);
+	delete shared.splitting;
+	delete shared.chunkNames;
+	return { ...shared, entryPoints: { frame: join(APP, 'src', 'frame.ts') }, format: 'iife' };
+}
+
 /** Writes the static files and examples.json into `outdir`. */
 export async function prepare(outdir) {
 	rmSync(outdir, { recursive: true, force: true });
@@ -91,10 +104,18 @@ export async function prepare(outdir) {
 	writeFileSync(join(outdir, 'examples.json'), JSON.stringify(await collectExamples()));
 }
 
+export const NOTICES = 'THIRD-PARTY-NOTICES.txt';
+
+/**
+ * The page's and the frame's bundles, with the licences and notices of every package they hold
+ * (E58: a deployed site publishes their code); their metafiles' inputs and outputs merged.
+ */
 export async function buildPlayground(outdir = OUT) {
 	await prepare(outdir);
-	const { metafile } = await build(bundleOptions(outdir));
-	return metafile;
+	const [page, frame] = await Promise.all([build(bundleOptions(outdir)), build(frameOptions(outdir))]);
+	const inputs = { ...page.metafile.inputs, ...frame.metafile.inputs };
+	writeFileSync(join(outdir, NOTICES), noticesText(noticesOf(Object.keys(inputs), APP)));
+	return { inputs, outputs: { ...page.metafile.outputs, ...frame.metafile.outputs } };
 }
 
 await runAsEntryPoint(import.meta.url, async () => {

@@ -1,5 +1,4 @@
 import type { Adapter } from './model.js';
-import type { Renderer } from './runtime.js';
 
 export type LibraryId = 'chartjs' | 'echarts' | 'highcharts';
 
@@ -8,9 +7,7 @@ export interface Library {
 	readonly label: string;
 	/** The published adapter entry points; loaded on first use so each library is its own chunk. */
 	readonly adapter: () => Promise<Adapter>;
-	/** Undefined when the runtime is not bundled. */
-	readonly renderer: (() => Promise<Renderer>) | undefined;
-	/** Why there is no preview, shown instead of the chart. */
+	/** Why there is no preview, shown instead of the chart, when the runtime is not bundled into the frame. */
 	readonly noPreview?: string;
 }
 
@@ -24,8 +21,7 @@ export const LIBRARIES: readonly Library[] = [
 				import('@chartguard/quality-chartjs')
 			]);
 			return { validate: config.validate, analyze: quality.analyze };
-		},
-		renderer: async () => (await import('./render-chartjs.js')).chartjsRenderer
+		}
 	},
 	{
 		id: 'echarts',
@@ -36,8 +32,7 @@ export const LIBRARIES: readonly Library[] = [
 				import('@chartguard/quality-echarts')
 			]);
 			return { validate: config.validate, analyze: quality.analyze };
-		},
-		renderer: async () => (await import('./render-echarts.js')).echartsRenderer
+		}
 	},
 	{
 		id: 'highcharts',
@@ -49,7 +44,6 @@ export const LIBRARIES: readonly Library[] = [
 			]);
 			return { validate: config.validate, analyze: quality.analyze };
 		},
-		renderer: undefined,
 		noPreview: 'No preview: the Highcharts runtime is not bundled (no license for redistribution).'
 	}
 ];

@@ -85,7 +85,8 @@ export const POLICY = {
 	'@chartguard/playground': rule({
 		internal: [CORE, ...CONFIG_ADAPTERS, ...QUALITY_ADAPTERS, SOURCE_CHECKS],
 		// fflate: deflate for shared links (CG-06-06 part 2), synchronous so the browser gate can await it (E61).
-		external: [...CHART_RUNTIMES.chartjs, ...CHART_RUNTIMES.echarts, 'date-fns', 'fflate']
+		// typescript: the source a user runs in the sandbox is transpiled in the page (CG-06-06 part 4).
+		external: [...CHART_RUNTIMES.chartjs, ...CHART_RUNTIMES.echarts, 'date-fns', 'fflate', 'typescript']
 	}),
 	...Object.fromEntries(LIBRARIES.flatMap(libraryRules))
 };

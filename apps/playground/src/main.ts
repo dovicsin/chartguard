@@ -1,23 +1,14 @@
+import { Drawing } from './drawing.js';
 import { EditorText } from './editor.js';
 import { type Example, exampleChoices, formatJson } from './examples.js';
 import { LIBRARIES, type Library, libraryById, type LibraryId } from './libraries.js';
 import { inspect, lineAndColumn } from './model.js';
-import { Preview } from './preview.js';
-import type { RuntimeOutcome } from './runtime.js';
 import { selfTest } from './selftest-page.js';
 import { type Shown, shownJson } from './shown.js';
 import { sourceOf } from './source.js';
 import { type Mode, MODES, Tools } from './tools.js';
 import { ui } from './ui.js';
-import {
-	badge,
-	choiceNodes,
-	expectationNodes,
-	findingItems,
-	type ItemActions,
-	messageItems,
-	shownOffers
-} from './view.js';
+import { badge, choiceNodes, expectationNodes, findingItems, type ItemActions, shownOffers } from './view.js';
 
 const INPUT_DELAY_MS = 250;
 const FALLBACK_LINE_HEIGHT = 18;
@@ -31,12 +22,11 @@ let examples: readonly Example[] = [];
 let library: Library | undefined;
 let mode: Mode = 'json';
 let shown: Shown | undefined;
-let lastOutcome: RuntimeOutcome | undefined;
 let timer: ReturnType<typeof setTimeout> | undefined;
 /** The last link being opened (the first load, or a fragment that changed). */
 let opening: Promise<void> = Promise.resolve();
 const tools = new Tools();
-const preview = new Preview(ui.preview);
+const drawing = new Drawing({ preview: ui.preview, runtime: ui.runtime, messages: ui.messages, note: ui.runtimeNote });
 const editor = new EditorText(ui.editor, ui.undo, update);
 
 /** Selects the text a finding is about and scrolls it into view. */
@@ -47,20 +37,6 @@ function reveal({ start, end }: { readonly start: number; readonly end: number }
 	ui.editor.focus();
 	ui.editor.setSelectionRange(start, end);
 	ui.editor.scrollTop = Math.max(0, (line - 4) * lineHeight);
-}
-
-function showRuntime(outcome: RuntimeOutcome | undefined, absent: string): void {
-	lastOutcome = outcome;
-	ui.runtime.replaceChildren(badge(outcome?.verdict ?? absent, outcome?.verdict ?? 'muted'));
-	ui.messages.replaceChildren(...messageItems(outcome?.messages ?? []));
-	ui.messages.hidden = (outcome?.messages.length ?? 0) === 0;
-	showNote(outcome === undefined ? undefined : preview.note());
-}
-
-/** Why the verdict may miss messages, under it (a runtime that prints some only once in a page). */
-function showNote(note: string | undefined): void {
-	ui.runtimeNote.textContent = note ?? '';
-	ui.runtimeNote.hidden = note === undefined;
 }
 
 const actions: ItemActions = {
@@ -80,13 +56,7 @@ function render(view: Shown): void {
 	ui.summary.textContent = view.summary;
 	ui.diagnostics.replaceChildren(...findingItems(view.validator, actions, 'No findings.'));
 	ui.quality.replaceChildren(...findingItems(view.quality, actions, 'No advisory findings.'));
-	const target = view.draw.kind === 'config' ? libraryById(view.draw.library) : undefined;
-	const outcome = preview.show(
-		view.draw,
-		target === undefined ? undefined : tools.renderer(target.id),
-		target?.noPreview ?? ''
-	);
-	showRuntime(outcome, view.draw.kind === 'none' ? 'not run' : 'no preview');
+	drawing.show(view.draw);
 }
 
 function update(): void {
@@ -140,6 +110,7 @@ async function select(id: string, next: Mode, start: Start = {}): Promise<void> 
 	ui.library.value = chosen.id;
 	ui.mode.value = next;
 	ui.hint.textContent = HINTS[next];
+	ui.run.hidden = next === 'json';
 	ui.validator.replaceChildren(badge('loading…', 'muted'));
 	await tools.load(next === 'json' ? [chosen] : LIBRARIES, next !== 'json');
 	[library, mode] = [chosen, next];
@@ -155,6 +126,13 @@ async function selectMode(next: Mode): Promise<void> {
 	const example = ui.example.value;
 	const text = example === '' ? editor.value : undefined;
 	await select(library?.id ?? '', next, text === undefined ? { example } : { text });
+}
+
+/** Runs the source in a sandboxed frame: only on the user's request (the button). */
+function run(): void {
+	if (mode === 'json') return;
+	const code = tools.transpiled(editor.value, mode);
+	if (code !== undefined) drawing.run(code);
 }
 
 /** Puts the editor text into the URL fragment and copies the link, when the browser lets the page. */
@@ -183,14 +161,21 @@ const page = {
 	},
 	select: (id: LibraryId, next: Mode) => select(id, next),
 	showExample,
+	showText,
 	shown() {
 		const items = shown?.validator ?? [];
-		return { findings: items.map((d) => `${d.severity} ${d.code} ${d.path}`), runtime: lastOutcome?.verdict };
+		return { findings: items.map((d) => `${d.severity} ${d.code} ${d.path}`), runtime: drawing.outcome?.verdict };
 	},
 	fixable: () => shown?.fixable ?? [],
 	offers: () => shownOffers(ui.diagnostics, ui.quality),
-	stray: () => preview.stray(),
-	leftover: () => preview.leftover(),
+	frames: () => drawing.frameCount(),
+	drawn: () => drawing.done,
+	frameErrors: () => (drawing.outcome !== undefined && 'uncaught' in drawing.outcome ? drawing.outcome.uncaught : []),
+	run: () => {
+		run();
+		return drawing.done;
+	},
+	runtimeMessages: () => [...ui.messages.children].map((item) => item.textContent),
 	library: () => ui.library.value,
 	mode: () => mode,
 	example: () => ui.example.value,
@@ -232,6 +217,7 @@ function listen(): void {
 	});
 	ui.chart.addEventListener('change', update);
 	ui.share.addEventListener('click', () => void share());
+	ui.run.addEventListener('click', run);
 	ui.editor.addEventListener('input', () => {
 		editor.typed();
 		clearTimeout(timer);
@@ -248,9 +234,8 @@ async function boot(): Promise<void> {
 	examples = (await (await fetch('./examples.json')).json()) as Example[];
 	ui.library.replaceChildren(...choiceNodes(LIBRARIES.map(({ id, label }) => ({ value: id, label }))));
 	listen();
-	const selftest = new URLSearchParams(location.search).get('selftest');
-	if (selftest !== null) {
-		await selfTest(page, MODES.find((candidate) => candidate === selftest) ?? 'json');
+	if (new URLSearchParams(location.search).has('selftest')) {
+		await selfTest(page);
 		return;
 	}
 	opening = open();

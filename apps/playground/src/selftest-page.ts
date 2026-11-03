@@ -1,7 +1,7 @@
 import type { Example } from './examples.js';
 import type { Library, LibraryId } from './libraries.js';
-import type { Verdict } from './runtime.js';
 import { compare, type SelfTestEntry } from './selftest.js';
+import { sandboxProblems } from './selftest-sandbox.js';
 import { readShared, shareFragment } from './share.js';
 import { type Mode, MODES } from './tools.js';
 
@@ -12,15 +12,24 @@ export interface Page {
 	/** Loads a library in an input mode and shows its first example. */
 	select(id: LibraryId, mode: Mode): Promise<void>;
 	showExample(id: string): void;
+	/** Shows a text of the user's (no example). */
+	showText(text: string): void;
 	/** The validator findings (`severity code path`) and the runtime verdict the page shows now. */
-	shown(): { readonly findings: string[]; readonly runtime: Verdict | undefined };
-	/** Every finding the page shows (validator and quality, `code path`), each with its fix button if offered. */
+	shown(): { readonly findings: string[]; readonly runtime: string | undefined };
 	/** The findings (`code path`) the engine offers a fix for. */
 	fixable(): readonly string[];
+	/** Every finding the page shows (validator and quality, `code path`), each with its fix button if offered. */
 	offers(): readonly { readonly finding: string; readonly apply: (() => void) | undefined }[];
-	stray(): number | undefined;
-	/** Charts the runtimes not drawing now still hold. */
-	leftover(): number;
+	/** The drawing frames the page holds. */
+	frames(): number;
+	/** Settles when the last draw has been shown. */
+	drawn(): Promise<void>;
+	/** Errors nothing caught in the frame of the draw shown. */
+	frameErrors(): readonly string[];
+	/** "Run the source in a sandbox", settling when its frame answered. */
+	run(): Promise<void>;
+	/** The messages under the runtime's verdict. */
+	runtimeMessages(): readonly string[];
 	library(): string;
 	mode(): Mode;
 	example(): string;
@@ -36,16 +45,6 @@ export interface Page {
 	typed(): void;
 	undo(): void;
 }
-
-/**
- * Resolves after the timers a draw started have run (Chart.js updates a chart it has just attached
- * once more from a timer): an order of events, never a time limit. Headless Chrome with virtual
- * time renders no frames, so nothing here waits for one.
- */
-const settled = (): Promise<void> =>
-	new Promise((resolve) => {
-		setTimeout(resolve, 0);
-	});
 
 /** Every error the page does not catch from now on, in order: the self-test takes them per example. */
 function uncaughtErrors(): string[] {
@@ -77,14 +76,14 @@ async function oneFix(page: Page, finding: string, apply: () => void): Promise<s
 	const original = page.text();
 	const problems: string[] = [];
 	apply();
-	await settled();
+	await page.drawn();
 	if (page.offers().some((after) => after.finding === finding)) problems.push(`fix kept its finding: ${finding}`);
 	if (!page.canUndo()) problems.push(`no undo after: ${finding}`);
 	page.undo();
-	await settled();
+	await page.drawn();
 	if (page.text() !== original) problems.push(`undo did not restore the text after: ${finding}`);
 	if (page.canUndo()) problems.push(`undo still offered with nothing to undo after: ${finding}`);
-	if ((page.stray() ?? 0) > 0) problems.push(`the runtime holds charts the page does not show after: ${finding}`);
+	if (page.frames() > 1) problems.push(`the page holds ${String(page.frames())} drawing frames after: ${finding}`);
 	return problems;
 }
 
@@ -105,7 +104,7 @@ async function typedProblems(page: Page): Promise<string[]> {
 	if (apply === undefined) return [];
 	apply();
 	page.typed();
-	await settled();
+	await page.drawn();
 	return page.canUndo() ? ['undo still offered after typing'] : [];
 }
 
@@ -151,24 +150,23 @@ async function linkProblems(page: Page): Promise<string[]> {
 }
 
 /**
- * An example shown again in the same page: ECharts printed its warning the first time and stays
- * silent now, so its verdict carries the note; a Chart.js chart, whose runtime prints every time, none.
+ * An example shown again in the same page gives its pinned verdict again: each draw has a runtime of
+ * its own, so ECharts prints the deprecation it printed the first time (E64), and no note is shown.
  */
 async function repeatProblems(page: Page): Promise<string[]> {
 	const problems: string[] = [];
 	await page.select('echarts', 'json');
-	page.showExample('echarts:contract:pie-clockwise');
-	await settled();
-	if (!page.runtimeNote().startsWith('This runtime prints some messages only once'))
-		problems.push(`no note on a verdict ECharts may miss messages in: "${page.runtimeNote()}"`);
-	await page.select('chartjs', 'json');
-	if (page.runtimeNote() !== '') problems.push(`a note on a Chart.js verdict: "${page.runtimeNote()}"`);
-	if (page.leftover() > 0)
-		problems.push(`ECharts holds ${String(page.leftover())} chart(s) after a switch to Chart.js`);
+	for (let time = 0; time < 2; time++) {
+		page.showExample('echarts:contract:pie-clockwise');
+		await page.drawn();
+		const { runtime } = page.shown();
+		if (runtime !== 'complained') problems.push(`shown again, the pie with clockWise is ${String(runtime)}`);
+	}
+	if (page.runtimeNote() !== '') problems.push(`a note under a drawn config: "${page.runtimeNote()}"`);
 	return problems;
 }
 
-/** The checks of the page itself, after the examples: links opened in place, an example shown again. */
+/** The checks of the page itself, after the examples: links opened in place, an example shown again, the sandbox. */
 async function pageEntries(page: Page): Promise<SelfTestEntry[]> {
 	const entry = (id: string, problems: string[]): SelfTestEntry => ({
 		id,
@@ -178,19 +176,11 @@ async function pageEntries(page: Page): Promise<SelfTestEntry[]> {
 		stray: undefined,
 		problems
 	});
-	return [entry('links', await linkProblems(page)), entry('repeat', await repeatProblems(page))];
-}
-
-/**
- * Right after a library is selected: the first chart a runtime draws in a page can have missed nothing
- * it printed before (no note), and the runtime drawn before holds no chart any more (E51).
- */
-function switchProblems(page: Page, library: string): string[] {
-	const problems =
-		page.runtimeNote() === '' ? [] : [`a note on the first chart of ${library}: "${page.runtimeNote()}"`];
-	if (page.leftover() > 0)
-		problems.push(`switching to ${library} left ${String(page.leftover())} chart(s) in another runtime`);
-	return problems;
+	return [
+		entry('links', await linkProblems(page)),
+		entry('repeat', await repeatProblems(page)),
+		entry('sandbox', await sandboxProblems(page))
+	];
 }
 
 /**
@@ -199,8 +189,12 @@ function switchProblems(page: Page, library: string): string[] {
  */
 async function exampleEntry(page: Page, example: Example, uncaught: string[]): Promise<SelfTestEntry> {
 	page.showExample(example.id);
-	await settled();
-	const observed = { ...page.shown(), uncaught: uncaught.splice(0), stray: page.stray() };
+	await page.drawn();
+	const observed = {
+		...page.shown(),
+		uncaught: [...uncaught.splice(0), ...page.frameErrors()],
+		stray: Math.max(0, page.frames() - 1)
+	};
 	const more = [...(await fixProblems(page)), ...shareProblems(page, example.library)];
 	const late = uncaught.splice(0).map((error) => `uncaught error: ${error}`);
 	const mode = page.mode();
@@ -209,25 +203,22 @@ async function exampleEntry(page: Page, example: Example, uncaught: string[]): P
 }
 
 /**
- * `?selftest` (`=javascript` for source input): show every example in turn and compare what the page
- * shows with what the fixtures pin, and every error the page left uncaught while it showed it; apply
- * every fix it offers and undo it; share it; in the JSON run, then open links as a pasted one opens
- * (entry `links`). One input mode per page load: ECharts logs a message once per page (E28), so an
- * example shown twice in one page would show its runtime's warning only the first time. The JSON
- * report lands in `#selftest` for apps/playground/tests/browser.test.mjs.
+ * `?selftest`: show every example in turn, as JSON and then as JavaScript source in the same page
+ * (each draw has a runtime of its own, E64), and compare what the page shows with what the fixtures
+ * pin, and every error nothing caught while it showed it; apply every fix it offers and undo it;
+ * share it; then open links as a pasted one opens, show an example again, and run sources in the
+ * sandbox. The JSON report lands in `#selftest` for apps/playground/tests/browser.test.mjs.
  */
-export async function selfTest(page: Page, mode: Mode): Promise<void> {
+export async function selfTest(page: Page): Promise<void> {
 	const uncaught = uncaughtErrors();
 	const report: SelfTestEntry[] = [];
-	for (const library of page.libraries) {
-		await page.select(library.id, mode);
-		const first = switchProblems(page, library.id);
-		for (const example of page.examples.filter((candidate) => candidate.library === library.id)) {
-			const entry = await exampleEntry(page, example, uncaught);
-			report.push({ ...entry, problems: [...first.splice(0), ...entry.problems] });
+	for (const mode of ['json', 'javascript'] as const)
+		for (const library of page.libraries) {
+			await page.select(library.id, mode);
+			for (const example of page.examples.filter((candidate) => candidate.library === library.id))
+				report.push(await exampleEntry(page, example, uncaught));
 		}
-	}
-	if (mode === 'json') report.push(...(await pageEntries(page)));
+	report.push(...(await pageEntries(page)));
 	const output = document.createElement('pre');
 	output.id = 'selftest';
 	output.textContent = JSON.stringify(report);

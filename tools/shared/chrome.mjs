@@ -39,6 +39,9 @@ export function dumpDom(url, { offline = false, virtualTime = 120_000, binary = 
 	// Virtual time runs a page's self-test in seconds; Chrome would take its URL updates for a flood
 	// (more than 200 navigations in 10 s) and drop them, a fragment change included.
 	const flooding = '--disable-ipc-flooding-protection';
+	// A sandboxed iframe gets a process of its own, whose tasks virtual time does not wait for: the
+	// page would see its frames never answer. In the page's process, virtual time runs them too.
+	const isolation = '--disable-features=IsolateSandboxedIframes';
 	const args = [
 		'--headless=new',
 		'--disable-gpu',
@@ -47,6 +50,7 @@ export function dumpDom(url, { offline = false, virtualTime = 120_000, binary = 
 		...network,
 		budget,
 		flooding,
+		isolation,
 		'--dump-dom',
 		url
 	];
