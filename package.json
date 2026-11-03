@@ -8,7 +8,7 @@
 		"node": ">=20.19",
 		"npm": ">=11"
 	},
-	"packageManager": "npm@11.6.2",
+	"packageManager": "npm@11.21.1",
 	"workspaces": [
 		"packages/core",
 		"packages/config/*",

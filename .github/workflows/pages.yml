@@ -22,7 +22,7 @@ jobs:
           node-version: 24
           cache: npm
       # The lockfile is written by npm 11.
-      - run: npm install --global npm@11.6.2
+      - run: npm install --global npm@11.21.1
       - run: npm ci
       # Builds every package, the playground (with THIRD-PARTY-NOTICES.txt) and the reference; no
       # Highcharts-derived file. The site: the playground at /, the reference at /reference/.

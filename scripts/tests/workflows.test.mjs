@@ -110,3 +110,33 @@ test('no workflow and no action puts an expression into a script: values reach s
 		['b', 'a']
 	);
 });
+
+/** Every `npm install --global npm@<version>` step in the parsed workflows. */
+function npmPins(workflow) {
+	return Object.values(workflow.jobs ?? {}).flatMap((job) =>
+		(job.steps ?? []).flatMap(({ run }) =>
+			[...String(run ?? '').matchAll(/npm install --global npm@(\S+)/gu)].map((m) => m[1])
+		)
+	);
+}
+
+test('one npm writes and checks the lockfile: the workflows install the version packageManager pins (E73)', () => {
+	// A newer npm checks peer dependencies an older one let through: a lockfile written by the older one
+	// fails `npm ci` wherever the newer one runs (the GitHub Action runs with the runner's bundled npm).
+	const root = fileURLToPath(new URL('../../', import.meta.url));
+	const pinned = /^npm@(\d+\.\d+\.\d+)$/u.exec(
+		JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).packageManager
+	)?.[1];
+	assert.ok(pinned !== undefined, 'packageManager pins an exact npm');
+	const pins = readdirSync(WORKFLOWS)
+		.filter((file) => /\.ya?ml$/u.test(file))
+		.flatMap((file) =>
+			npmPins(parse(readFileSync(join(WORKFLOWS, file), 'utf8'))).map((version) => `${file} ${version}`)
+		);
+	assert.ok(pins.length > 0);
+	assert.deepEqual(
+		pins.filter((pin) => !pin.endsWith(` ${pinned}`)),
+		[]
+	);
+	assert.ok(readFileSync(join(root, 'CONTRIBUTING.md'), 'utf8').includes(`pins npm ${pinned}`));
+});
