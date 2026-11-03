@@ -102,6 +102,25 @@ test('cartesian series: other coordinate systems, axis ids and series types with
 	);
 });
 
+test('legend: hints for many unknown names come from the run budget: every name is reported, the late ones without a hint', () => {
+	// Each search is cheap, but how many there are is the caller's: the run, not each call, bounds them.
+	const series = Array.from({ length: 50 }, (_, index) => ({
+		type: 'line',
+		name: `series ${String(index)}`,
+		data: []
+	}));
+	const names = Array.from(
+		{ length: 5_000 },
+		(_, index) => `series ${String(index % 50)}${String.fromCharCode(0x4e00 + Math.floor(index / 50))}`
+	);
+	const warned = validate({ legend: { data: names }, series }).diagnostics.filter(
+		(d) => d.code === 'CFG_UNKNOWN_REFERENCE'
+	);
+	assert.equal(warned.length, 5_000);
+	assert.equal(warned[0].suggestion, 'Did you mean "series 0"?');
+	assert.equal(warned.at(-1).suggestion, undefined);
+});
+
 test('legend: a name that matches no series and no data item the runtime reads names from is a warning', () => {
 	const option = {
 		legend: { data: ['Sales', 'Costs', 'Apples', '', '\n', { name: 'Pears' }, 'Sales'] },

@@ -1,5 +1,5 @@
 import { type ConfigRule, type Item, itemsOf, readOwn, type RuleContext } from '@chartguard/config-core';
-import { type Diagnostic, suggestion } from '@chartguard/core';
+import type { Diagnostic } from '@chartguard/core';
 
 import { isWholeOption, itemsAt, textAt } from './read.js';
 
@@ -127,11 +127,12 @@ function unknownEntries(legend: Item, names: ReadonlySet<string>, context: RuleC
 	const data = readOwn(legend.value, 'data');
 	const entries = data.known ? itemsOf(data.value, `${legend.path}.data`) : undefined;
 	const seen = new Set<string>();
+	const candidates = [...names];
 	return (entries ?? []).flatMap((entry) => {
 		const name = entryName(entry.value);
 		if (name === undefined || isLineBreak(name) || seen.has(name) || names.has(name)) return [];
 		seen.add(name);
-		const match = suggestion(name, [...names]);
+		const match = context.suggestion(name, candidates);
 		const message = `"${name}" names no series and no data item; the runtime warns and draws no legend entry for it.`;
 		return [
 			context.warned(

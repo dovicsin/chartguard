@@ -116,7 +116,9 @@ test('an option or variant that is not a schema is refused at setup, not met dur
 	assert.throws(
 		() => withExtensions(manifest(), [{ id: 'x', options: { 'demo.plugins': { labels: 1 } } }]),
 		(error) => {
-			assert.deepEqual(error.problems, ['x: option "labels" at demo.plugins is not a schema']);
+			assert.deepEqual(error.problems, [
+				'x: option "labels" at demo.plugins: labels: not a schema (an object with a kind)'
+			]);
 			return true;
 		}
 	);

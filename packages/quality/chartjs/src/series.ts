@@ -7,7 +7,6 @@ import {
 	isStaticValue,
 	isString,
 	type Item,
-	type Listed,
 	type Orientation,
 	readFact,
 	sameShades,
@@ -186,7 +185,12 @@ const colors = (color: Fact<string>): Pick<SeriesSemantics, 'color' | 'shades'> 
 	shades: sameShades(color)
 });
 
-export function seriesOf(config: unknown, item: Item, scales: Scales, datasets: Listed<Item>): SeriesSemantics {
+export function seriesOf(
+	config: unknown,
+	item: Item,
+	scales: Scales,
+	colorsDefined: () => Fact<boolean>
+): SeriesSemantics {
 	const type = typeOf(config, item);
 	const layout = layoutOf(config, item, type, scales);
 	const kind = kindOf(config, item, type);
@@ -197,7 +201,7 @@ export function seriesOf(config: unknown, item: Item, scales: Scales, datasets: 
 		name: readFact(config, [...item.segments, 'label'], isString),
 		...layout,
 		base: baseOf(config, item, kind),
-		...colors(colorOf(config, item, type, datasets)),
+		...colors(colorOf(config, item, type, colorsDefined)),
 		values: valuesOf(config, item, type, layout.orientation)
 	};
 }

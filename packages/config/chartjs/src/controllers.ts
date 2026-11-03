@@ -3,6 +3,7 @@ import {
 	ExtensionError,
 	type NodeSchema,
 	type SchemaManifest,
+	schemaProblems,
 	type VariantSpec
 } from '@chartguard/config-core';
 
@@ -80,11 +81,14 @@ function controllerConfig(config: NodeSchema, dataset: NodeSchema, options: Node
 const isObjectSchema = (value: unknown): value is NodeSchema =>
 	typeof value === 'object' && value !== null && (value as { kind?: unknown }).kind === 'object';
 
-/** Why a controller's chart options are refused: they must be an object schema, or nothing would be added (K13). */
-function optionsProblem(id: string, name: string, options: unknown): string | undefined {
-	return options === undefined || isObjectSchema(options)
-		? undefined
-		: `${id}: controller "${name}" options must be an object schema`;
+/**
+ * Why a controller's chart options are refused: they must be an object schema, or nothing would be
+ * added (K13), and of the engine's shape all the way down, as every extension schema (C6).
+ */
+function optionsProblems(id: string, name: string, options: unknown): string[] {
+	if (options === undefined) return [];
+	if (!isObjectSchema(options)) return [`${id}: controller "${name}" options must be an object schema`];
+	return schemaProblems(options, `${name}.options`).map((problem) => `${id}: controller "${name}": ${problem}`);
 }
 
 /** The resolved extensions with each controller's chart variant completed from its dataset variant and options. */
@@ -94,7 +98,7 @@ export function withControllers(manifest: SchemaManifest, extensions: readonly C
 	const datasets = resolved?.variants.get(DATASETS);
 	if (resolved === undefined || charts === undefined || datasets === undefined) return manifest;
 	const problems = extensions.flatMap(({ id, controllers: own = {} }) =>
-		Object.entries(own).flatMap(([name, { options }]) => optionsProblem(id, name, options) ?? [])
+		Object.entries(own).flatMap(([name, { options }]) => optionsProblems(id, name, options))
 	);
 	if (problems.length > 0) throw new ExtensionError(problems);
 	const controllers = new Map(extensions.flatMap(({ controllers: own = {} }) => Object.entries(own)));

@@ -8,7 +8,8 @@ import {
 	isRecord,
 	ownDataProperty,
 	result,
-	suggestion
+	suggestion,
+	suggestionBudget
 } from '../dist/index.js';
 
 const error = (path) => ({ code: 'E', severity: 'error', message: 'x', path, confidence: 'certain' });
@@ -34,6 +35,77 @@ test('nearest known key suggestion', () =>
 	assert.equal(suggestion('beginAtZerro', ['beginAtZero', 'display']), 'beginAtZero'));
 
 test('no suggestion beyond typo distance', () => assert.equal(suggestion('legend', ['scales', 'plugins']), undefined));
+
+/** The plain Levenshtein search the bounded one must agree with: the first closest candidate within a quarter of the input. */
+function naiveSuggestion(input, candidates) {
+	const distance = (a, b) => {
+		const rows = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array.from({ length: b.length }, () => 0)]);
+		for (let k = 0; k <= b.length; k++) rows[0][k] = k;
+		for (let i = 1; i <= a.length; i++)
+			for (let k = 1; k <= b.length; k++)
+				rows[i][k] = Math.min(
+					rows[i - 1][k] + 1,
+					rows[i][k - 1] + 1,
+					rows[i - 1][k - 1] + (a[i - 1] === b[k - 1] ? 0 : 1)
+				);
+		return rows[a.length][b.length];
+	};
+	let best;
+	let bestDistance = Infinity;
+	for (const candidate of candidates) {
+		const found = distance(input, candidate);
+		if (found < bestDistance) [best, bestDistance] = [candidate, found];
+	}
+	return bestDistance <= Math.max(1, Math.floor(input.length / 4)) ? best : undefined;
+}
+
+test('the bounded suggestion picks what the plain Levenshtein search picks (seeded)', () => {
+	let state = 7;
+	const next = () => (state = (state * 1103515245 + 12345) % 2147483648) / 2147483648;
+	const word = () => Array.from({ length: 1 + Math.floor(next() * 14) }, () => 'abcd'[Math.floor(next() * 4)]).join('');
+	const differences = [];
+	for (let index = 0; index < 3000; index++) {
+		const input = word();
+		const candidates = Array.from({ length: Math.floor(next() * 8) }, word);
+		const [found, expected] = [suggestion(input, candidates), naiveSuggestion(input, candidates)];
+		if (found !== expected)
+			differences.push(`${input} in ${candidates.join(',')}: ${String(found)} != ${String(expected)}`);
+	}
+	assert.deepEqual(differences.slice(0, 5), []);
+});
+
+test('a suggestion for an untrusted name is bounded: long names get none', () => {
+	// Two long names the plain search compares cell by cell (8e8 cells, unlike none here).
+	const budget = suggestionBudget();
+	assert.equal(suggestion('a'.repeat(20_000), ['a'.repeat(19_999), 'b'.repeat(20_000)], budget), undefined);
+	assert.equal(budget.cells, suggestionBudget().cells, 'no cell computed for a name over 100 characters');
+	assert.equal(suggestion('x'.repeat(100), ['x'.repeat(99)]), 'x'.repeat(99));
+	assert.equal(suggestion('x'.repeat(101), ['x'.repeat(100)]), undefined);
+});
+
+test('the work of suggestions stops at a run budget', () => {
+	// A run's budget is spent by every call: once it is spent, no hint is searched for.
+	const small = suggestionBudget(10_000);
+	const candidates = Array.from({ length: 50 }, (_, index) => `option${String(index).padStart(3, '0')}`);
+	assert.equal(suggestion('option01x', candidates, small), 'option010');
+	assert.ok(small.cells < 10_000);
+	// Counted, never timed: the calls a spent budget still answers (a bounded loop, so a defect fails, never hangs).
+	let calls = 0;
+	while (calls < 10 && suggestion('option01x', candidates, small) !== undefined) calls += 1;
+	assert.ok(calls < 10, `hints after the budget: ${String(calls)}`);
+	assert.ok(small.cells >= 0);
+	assert.equal(suggestion('option01x', candidates), 'option010', 'without a run budget a call has its own');
+});
+
+test('the work of a suggestion is counted cell by cell', () => {
+	// A candidate whose length alone rules it out costs nothing, and a distance stops at the first row
+	// past the limit (two rows of four cells here).
+	const counted = suggestionBudget(100);
+	assert.equal(suggestion('abcd', ['abcdef'], counted), undefined);
+	assert.equal(counted.cells, 100);
+	assert.equal(suggestion('abcd', ['wxyz'], counted), undefined);
+	assert.equal(counted.cells, 92);
+});
 
 test('pre-create guard blocks confirmed errors with a typed error carrying the full result', () => {
 	const failing = () => result('demo', '1', 'full', [error('$.type')]);

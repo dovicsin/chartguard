@@ -76,29 +76,34 @@ function proposedEdit(finding: Diagnostic, config: unknown, remedies: Remedies):
 }
 
 /**
- * The edit for one finding, offered only when it is verified: applied to the config and analysed
- * again, the finding is gone and no finding appears that was not there before (CG-05-06).
+ * The findings of one report whose fix is verified: each costs an analysis of the whole config, and
+ * how many findings there are is the caller's (CG-07-02). Later ones keep their finding, without a fix.
  */
-function verifiedFix(
+export const MAX_VERIFIED_FIXES = 50;
+
+/**
+ * Whether `edit` is verified for `finding`: applied to the config and analysed again, the finding is
+ * gone and no finding appears that was not there before (CG-05-06).
+ */
+function verified(
 	finding: Diagnostic,
+	edit: OptionEdit,
 	config: unknown,
-	remedies: Remedies,
 	{ before, analyze }: { before: ReadonlySet<string>; analyze: (config: unknown) => QualityReport }
-): OptionEdit | undefined {
-	const edit = proposedEdit(finding, config, remedies);
-	if (edit === undefined) return undefined;
+): boolean {
 	try {
 		const after = new Set(findingsOf(analyze(applyFix(config, edit))).map(keyOf));
-		return !after.has(keyOf(finding)) && [...after].every((key) => before.has(key)) ? edit : undefined;
+		return !after.has(keyOf(finding)) && [...after].every((key) => before.has(key));
 	} catch (error) {
-		if (error instanceof FixError) return undefined;
+		if (error instanceof FixError) return false;
 		throw error;
 	}
 }
 
 /**
  * The report with a verified `set-option` fix on each finding an adapter remedies (reported or
- * suppressed). `analyze` reviews a config the way the report was made (same adapter, same options).
+ * suppressed), for the first `MAX_VERIFIED_FIXES` that propose one. `analyze` reviews a config the way
+ * the report was made (same adapter, same options).
  */
 export function withFixes(
 	report: QualityReport,
@@ -107,9 +112,12 @@ export function withFixes(
 	analyze: (config: unknown) => QualityReport
 ): QualityReport {
 	const before = new Set(findingsOf(report).map(keyOf));
+	let left = MAX_VERIFIED_FIXES;
 	const fixed = (finding: Diagnostic): Diagnostic => {
-		const fix = verifiedFix(finding, config, remedies, { before, analyze });
-		return fix === undefined ? finding : { ...finding, fix };
+		const edit = left === 0 ? undefined : proposedEdit(finding, config, remedies);
+		if (edit === undefined) return finding;
+		left -= 1;
+		return verified(finding, edit, config, { before, analyze }) ? { ...finding, fix: edit } : finding;
 	};
 	return {
 		...report,

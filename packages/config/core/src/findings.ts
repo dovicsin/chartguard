@@ -1,4 +1,4 @@
-import { type Coverage, type Diagnostic, suggestion } from '@chartguard/core';
+import { type Coverage, type Diagnostic, suggestion, type SuggestionBudget } from '@chartguard/core';
 
 import { confirmed, inconclusive, unresolved } from './diagnostics.js';
 import { kindOf } from './kind.js';
@@ -66,14 +66,15 @@ export function registrationFinding(
 
 export function variantFinding(
 	selection: Extract<Selection, { kind: 'unknown-variant' | 'invalid-variant' }>,
-	path: string
+	path: string,
+	hints: SuggestionBudget
 ): Diagnostic {
 	const keyPath = `${path}${keySegment(selection.key)}`;
 	const known = selection.known.map(String);
 	if (selection.kind === 'invalid-variant')
 		return confirmed('CFG_ENUM', keyPath, `Value must be one of: ${known.join(', ')}.`);
 	const value = typeof selection.value === 'string' ? selection.value : kindOf(selection.value);
-	const match = typeof selection.value === 'string' ? suggestion(selection.value, known) : undefined;
+	const match = typeof selection.value === 'string' ? suggestion(selection.value, known, hints) : undefined;
 	return {
 		...unresolved('CFG_UNKNOWN_VARIANT', keyPath, `"${value}" is not a built-in variant; it may come from a plugin.`),
 		...(match === undefined ? {} : { suggestion: `Did you mean "${match}"?` })
@@ -85,11 +86,11 @@ export function unknownKeyFinding(
 	key: string,
 	schema: NodeSchema,
 	coverage: Coverage,
-	path: string
+	{ path, hints }: { path: string; hints: SuggestionBudget }
 ): Diagnostic | undefined {
 	if (schema.additionalProperties === 'allow') return undefined;
 	const certain = schema.additionalProperties === 'deny' && coverage === 'full';
-	const match = suggestion(key, Object.keys(schema.properties ?? {}));
+	const match = suggestion(key, Object.keys(schema.properties ?? {}), hints);
 	return {
 		code: 'CFG_UNKNOWN_KEY',
 		severity: certain ? 'error' : 'warning',

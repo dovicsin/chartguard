@@ -1,4 +1,4 @@
-import { type Diagnostic, ownDataProperty, suggestion } from '@chartguard/core';
+import { type Diagnostic, ownDataProperty, suggestion, type SuggestionBudget } from '@chartguard/core';
 
 import { unresolved } from './diagnostics.js';
 import { isPlainData } from './kind.js';
@@ -106,7 +106,7 @@ export interface RegistryContextReading {
  * Reads the caller's `registries` option. A malformed context is ignored as a whole and reported
  * once; an id the schema does not use is reported, so a typo never silently disables the check.
  */
-export function readRegistries(input: unknown, root: NodeSchema): RegistryContextReading {
+export function readRegistries(input: unknown, root: NodeSchema, hints: SuggestionBudget): RegistryContextReading {
 	if (input === undefined) return { registries: new Map(), diagnostics: [] };
 	// A Map or a class instance has no own keys to read: refused as a whole, never silently empty.
 	if (!isPlainData(input))
@@ -119,15 +119,15 @@ export function readRegistries(input: unknown, root: NodeSchema): RegistryContex
 			return { registries: new Map(), diagnostics: [unresolved('CFG_REGISTRY_CONTEXT', '$', MALFORMED)] };
 		registries.set(id, registry);
 	}
-	return { registries, diagnostics: unknownIds(registries, root) };
+	return { registries, diagnostics: unknownIds(registries, root, hints) };
 }
 
-function unknownIds(registries: Registries, root: NodeSchema): Diagnostic[] {
+function unknownIds(registries: Registries, root: NodeSchema, hints: SuggestionBudget): Diagnostic[] {
 	const known = [...registryIds(root)];
 	return [...registries.keys()]
 		.filter((id) => !known.includes(id))
 		.map((id) => {
-			const match = suggestion(id, known);
+			const match = suggestion(id, known, hints);
 			const message = `Registry "${id}" is not used by this schema (known: ${known.length === 0 ? 'none' : known.join(', ')}); ignored.`;
 			return {
 				...unresolved('CFG_UNKNOWN_REGISTRY', '$', message),

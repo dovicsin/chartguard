@@ -54,11 +54,36 @@ export function readFact<T>(
 	return unknown(at, typeof found.value === 'function' ? 'dynamic' : 'shape');
 }
 
+/**
+ * The most items a list is read item by item. Rules relate items to each other (a series to its axis,
+ * an axis to the series on it), so a longer list, whose length the caller chooses, is unknown rather
+ * than reviewed at a cost that grows with its square (CG-07-02).
+ */
+export const MAX_ITEMS = 1000;
+
 /** An item of a list in the config: its value and where it is. */
 export interface Item {
 	readonly value: unknown;
 	readonly segments: readonly PathSegment[];
 	readonly path: string;
+}
+
+/** Whether a list has holes: fewer own index keys than its length (counted without walking the length). */
+function hasHoles(list: readonly unknown[]): boolean {
+	return Object.keys(list).filter((key) => /^(?:0|[1-9]\d*)$/u.test(key)).length !== list.length;
+}
+
+/** The items of a list read at `path`, item by item. */
+function listItems(root: unknown, path: readonly PathSegment[], list: readonly unknown[]): Listed<Item> {
+	const at = formatPath(path);
+	// A hole is no item: what the runtime does with one differs (skipped, or a throw), so the list is unknown (A3).
+	if (hasHoles(list)) return unknown(at, 'shape');
+	if (list.length > MAX_ITEMS) return unknown(at, 'unmodelled');
+	const items = list.map((_, index) => {
+		const segments = [...path, index];
+		return { value: readPath(root, segments), segments, path: formatPath(segments) };
+	});
+	return { known: true, path: at, items };
 }
 
 /**
@@ -71,13 +96,7 @@ export function itemsAt(root: unknown, path: readonly PathSegment[], { single = 
 	const found = lookup(root, path);
 	if (found.state === 'missing') return { known: true, path: at, items: [] };
 	if (found.state !== 'value') return unknown(at, found.state);
-	if (Array.isArray(found.value)) {
-		const items = (found.value as unknown[]).map((_, index) => {
-			const segments = [...path, index];
-			return { value: readPath(root, segments), segments, path: formatPath(segments) };
-		});
-		return { known: true, path: at, items };
-	}
+	if (Array.isArray(found.value)) return listItems(root, path, found.value);
 	if (single && isContainer(found.value))
 		return { known: true, path: at, items: [{ value: found.value, segments: path, path: at }] };
 	return unknown(at, typeof found.value === 'function' ? 'dynamic' : 'shape');

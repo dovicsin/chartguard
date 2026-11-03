@@ -14,6 +14,7 @@ import {
 } from '@chartguard/quality-core';
 
 import { asText, axesOf, isText } from './axes.js';
+import { colorsDefinedOnce } from './color.js';
 import { REMEDIES } from './fixes.js';
 import { motionOf } from './motion.js';
 import { scalesOf } from './scales.js';
@@ -28,8 +29,9 @@ const TITLE_SHOWN: Default<boolean> = {
 export function normalize(config: unknown): ChartSemantics {
 	const datasets = itemsAt(config, ['data', 'datasets']);
 	const scales = scalesOf(config, datasets, addedScales(config));
+	const colorsDefined = colorsDefinedOnce(config, datasets);
 	const series: Listed<SeriesSemantics> = datasets.known
-		? { ...datasets, items: datasets.items.map((item) => seriesOf(config, item, scales, datasets)) }
+		? { ...datasets, items: datasets.items.map((item) => seriesOf(config, item, scales, colorsDefined)) }
 		: datasets;
 	const titleAt = ['options', 'plugins', 'title'];
 	return {

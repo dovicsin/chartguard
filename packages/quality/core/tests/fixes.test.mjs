@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { currentAt, RULE_CATALOG, withFixes } from '../dist/index.js';
+import { currentAt, MAX_VERIFIED_FIXES, RULE_CATALOG, withFixes } from '../dist/index.js';
 
 /** Verified fixes (CG-05-06): a remedy's edit is offered only when the config with it no longer has the finding nor a new one. */
 const finding = (code, path, ruleId = 'r') => ({
@@ -127,4 +127,26 @@ test('every rule says whether it offers a fix: the edit, or why there is none', 
 			'long-motion'
 		]
 	);
+});
+
+test('fixes are verified for a bounded number of findings: each costs one analysis, and the findings are the caller’s', () => {
+	// 120 findings a remedy could fix: one analysis each would make the review quadratic in the config.
+	const paths = Array.from({ length: 120 }, (_, index) => `$.y${String(index)}.min`);
+	const config = Object.fromEntries(paths.map((_, index) => [`y${String(index)}`, { min: 50 }]));
+	let analyses = 0;
+	const each = (current) => {
+		analyses += 1;
+		return report(paths.filter((_, index) => current[`y${String(index)}`]?.min > 0).map((path) => finding('X', path)));
+	};
+	const base = report(paths.map((path) => finding('X', path)));
+	const fixes = withFixes(base, config, toZero, each).diagnostics.map(({ fix }) => fix !== undefined);
+	assert.equal(analyses, MAX_VERIFIED_FIXES);
+	assert.deepEqual(
+		fixes,
+		paths.map((_, index) => index < MAX_VERIFIED_FIXES)
+	);
+	// A finding without a proposed edit spends nothing.
+	analyses = 0;
+	withFixes(base, config, {}, each);
+	assert.equal(analyses, 0);
 });

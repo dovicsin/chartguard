@@ -23,7 +23,7 @@ export { defaulted, known, unknown, valueOf } from './facts.js';
 export type { ValueRange } from './fit.js';
 export { dataRange, zeroFit } from './fit.js';
 export type { Current, Remedies, Remedy } from './fixes.js';
-export { currentAt, currentNumber, withFixes } from './fixes.js';
+export { currentAt, currentNumber, MAX_VERIFIED_FIXES, withFixes } from './fixes.js';
 export { LONG_MOTION_MS, SHORT_MOTION_MS } from './motion.js';
 export type { ElementReader, Item, PathSegment } from './read.js';
 export {
@@ -37,6 +37,7 @@ export {
 	isStaticValue,
 	isString,
 	itemsAt,
+	MAX_ITEMS,
 	numberElement,
 	numberOr,
 	readFact,

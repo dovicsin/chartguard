@@ -20,6 +20,7 @@ export type {
 	UnionOptions
 } from './schema.js';
 export { DEFAULT_TESTS, s } from './schema.js';
+export { MAX_SCHEMA_DEPTH, MAX_SCHEMA_NODES, schemaProblems } from './schema-check.js';
 export { validateConfig } from './validate.js';
 export type { Compatibility, Version } from './version.js';
 export { compatibility, parseVersion } from './version.js';

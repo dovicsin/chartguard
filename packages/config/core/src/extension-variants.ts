@@ -35,7 +35,7 @@ export function catalogVariantPoint(node: NodeSchema, points: Map<string, Varian
 	]);
 }
 
-export const isSchema = (value: unknown): value is NodeSchema =>
+const isSchema = (value: unknown): value is NodeSchema =>
 	typeof value === 'object' && value !== null && typeof (value as { kind?: unknown }).kind === 'string';
 
 /** The variant schema with its discriminator literal, or the problem that keeps it out. */
@@ -65,7 +65,7 @@ function inherit(base: NodeSchema, added: unknown, discriminator: string): NodeS
 	return { ...base, properties: { ...properties, ...extra?.properties }, required };
 }
 
-const isExtending = (spec: unknown): spec is { readonly extends: unknown; readonly schema?: unknown } =>
+export const isExtending = (spec: unknown): spec is { readonly extends: unknown; readonly schema?: unknown } =>
 	typeof spec === 'object' && spec !== null && 'extends' in spec;
 
 /** The schema an extension's variant `name` resolves to at `point`, or the problem that refuses it. */

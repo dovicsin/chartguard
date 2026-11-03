@@ -124,6 +124,12 @@ interface LoweredSchema {
     readonly lossy: readonly string[];
 }
 
+### MAX_SCHEMA_DEPTH
+MAX_SCHEMA_DEPTH = 256
+
+### MAX_SCHEMA_NODES
+MAX_SCHEMA_NODES = 100000
+
 ### NodeSchema
 interface NodeSchema {
     readonly kind: SchemaKind;
@@ -258,6 +264,7 @@ interface RuleContext {
     rejected(code: string, path: string, message: string, suggestion?: string): Diagnostic;
     warned(code: string, path: string, message: string, suggestion?: string): Diagnostic;
     registered(id: string, name: string): boolean | undefined;
+    suggestion(input: string, candidates: readonly string[]): string | undefined;
 }
 
 ### SCHEMA_IR_VERSION
@@ -416,6 +423,9 @@ s: {
     union: (anyOf: readonly NodeSchema[], options?: UnionOptions) => NodeSchema;
     any: () => NodeSchema;
 }
+
+### schemaProblems
+function schemaProblems(schema: unknown, at: string): string[];
 
 ### validateConfig
 function validateConfig(input: unknown, manifest: SchemaManifest, options?: ValidationOptions, rules?: readonly ConfigRule[]): ValidationResult;

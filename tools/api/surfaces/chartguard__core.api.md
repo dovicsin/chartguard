@@ -120,6 +120,14 @@ interface RegistryContext {
 ### Severity
 type Severity = 'error' | 'warning' | 'info';
 
+### SuggestionBudget
+class SuggestionBudget {
+    private left;
+    constructor(left: number);
+    get cells(): number;
+    spend(cells: number): boolean;
+}
+
 ### Suppression
 interface Suppression {
     readonly diagnostic: Diagnostic;
@@ -194,4 +202,7 @@ function pathSegments(path: string): (string | number)[] | undefined;
 function result(library: string, schemaVersion: string, coverage: Coverage, diagnostics: Diagnostic[]): ValidationResult;
 
 ### suggestion
-function suggestion(input: string, candidates: readonly string[]): string | undefined;
+function suggestion(input: string, candidates: readonly string[], budget?: SuggestionBudget): string | undefined;
+
+### suggestionBudget
+function suggestionBudget(cells?: number): SuggestionBudget;

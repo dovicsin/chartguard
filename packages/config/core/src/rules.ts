@@ -1,4 +1,10 @@
-import { type Diagnostic, isContainer, ownDataProperty } from '@chartguard/core';
+import {
+	type Diagnostic,
+	isContainer,
+	ownDataProperty,
+	suggestion as closest,
+	type SuggestionBudget
+} from '@chartguard/core';
 
 import { isListLike, isPlainData } from './kind.js';
 import { isHandled, type Registries } from './registry.js';
@@ -22,6 +28,8 @@ export interface RuleContext {
 	warned(code: string, path: string, message: string, suggestion?: string): Diagnostic;
 	/** Whether `name` (or a subtype) is in registry `id`; undefined unless the caller gave a complete registry. */
 	registered(id: string, name: string): boolean | undefined;
+	/** The closest of `candidates` to a mistyped `input`, from the run's shared budget (none once it is spent). */
+	suggestion(input: string, candidates: readonly string[]): string | undefined;
 }
 
 /** A value read without running code: `known: false` when a getter or a non-plain step is on the way. */
@@ -81,7 +89,7 @@ export function itemsOf(value: unknown, path: string): readonly Item[] | undefin
 }
 
 /** The context rules run in: incomplete input turns their findings into unresolved ones. */
-export function ruleContext(incomplete: boolean, registries: Registries): RuleContext {
+export function ruleContext(incomplete: boolean, registries: Registries, hints: SuggestionBudget): RuleContext {
 	const finding =
 		(severity: 'error' | 'warning') =>
 		(code: string, path: string, message: string, suggestion?: string): Diagnostic => ({
@@ -95,6 +103,7 @@ export function ruleContext(incomplete: boolean, registries: Registries): RuleCo
 	return {
 		rejected: finding('error'),
 		warned: finding('warning'),
-		registered: (id, name) => isHandled(registries, { id, name, enforced: true })
+		registered: (id, name) => isHandled(registries, { id, name, enforced: true }),
+		suggestion: (input, candidates) => closest(input, candidates, hints)
 	};
 }

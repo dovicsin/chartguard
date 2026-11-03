@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { pathSegments } from '@chartguard/core';
 
-import { formatPath, itemsAt, readFact, readPath, review, valueOf } from '../dist/index.js';
+import { formatPath, itemsAt, MAX_ITEMS, readFact, readPath, review, valueOf } from '../dist/index.js';
 import { axis, chart, fact, none, series } from './fixtures/semantics.mjs';
 
 const isNumber = (value) => typeof value === 'number';
@@ -215,4 +215,27 @@ test('the README lists every rule of the catalog', async () => {
 	const { RULE_CATALOG } = await import('../dist/index.js');
 	const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
 	for (const { id, code } of RULE_CATALOG) assert.ok(readme.includes(`| \`${id}\` | \`${code}\` |`), id);
+});
+
+test('a list with holes is unknown: a hole is no item, and nothing about the list is claimed (A3)', () => {
+	const holes = [{ a: 1 }];
+	holes[3] = { a: 2 };
+	assert.deepEqual(itemsAt({ series: holes }, ['series']), { known: false, path: '$.series', reason: 'shape' });
+	// A hole far out is found without walking the length.
+	const far = [];
+	far[2 ** 32 - 2] = 1;
+	assert.equal(itemsAt({ series: far }, ['series']).reason, 'shape');
+	// A dense list with an extra named property is still read item by item.
+	const named = Object.assign([{ a: 1 }], { extra: true });
+	assert.equal(itemsAt({ series: named }, ['series']).items.length, 1);
+});
+
+test('a list longer than MAX_ITEMS is unknown: rules relate items to each other, and their number is the caller’s', () => {
+	const list = (length) => Array.from({ length }, () => ({ a: 1 }));
+	assert.equal(itemsAt({ series: list(MAX_ITEMS) }, ['series']).items.length, MAX_ITEMS);
+	assert.deepEqual(itemsAt({ series: list(MAX_ITEMS + 1) }, ['series']), {
+		known: false,
+		path: '$.series',
+		reason: 'unmodelled'
+	});
 });

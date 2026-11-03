@@ -1,4 +1,11 @@
-import { type Diagnostic, result, type ValidationOptions, type ValidationResult } from '@chartguard/core';
+import {
+	type Diagnostic,
+	result,
+	type SuggestionBudget,
+	suggestionBudget,
+	type ValidationOptions,
+	type ValidationResult
+} from '@chartguard/core';
 
 import { unresolved } from './diagnostics.js';
 import { readRegistries, type Registries } from './registry.js';
@@ -12,13 +19,15 @@ interface Context {
 	readonly options: ValidationOptions;
 	readonly registries: Registries;
 	readonly rules: readonly ConfigRule[];
+	/** One budget for every typo hint of the run: the names and how many are compared come from the input. */
+	readonly hints: SuggestionBudget;
 }
 
 /** The schema's findings, then the rules' findings over several options at once. */
-function walk(input: unknown, manifest: SchemaManifest, { options, registries, rules }: Context): Diagnostic[] {
-	const walker = new ConfigWalker(manifest, options, registries);
+function walk(input: unknown, manifest: SchemaManifest, { options, registries, rules, hints }: Context): Diagnostic[] {
+	const walker = new ConfigWalker(manifest, options, registries, hints);
 	walker.walk(input, manifest.root);
-	const context = ruleContext(options.incomplete === true, registries);
+	const context = ruleContext(options.incomplete === true, registries, hints);
 	return [...walker.diagnostics, ...rules.flatMap((rule) => rule.check(input, context))];
 }
 
@@ -82,8 +91,9 @@ export function validateConfig(
 	options: ValidationOptions = {},
 	rules: readonly ConfigRule[] = []
 ): ValidationResult {
-	const reading = readRegistries(options.registries, manifest.root);
-	const context = { options, registries: reading.registries, rules };
+	const hints = suggestionBudget();
+	const reading = readRegistries(options.registries, manifest.root, hints);
+	const context = { options, registries: reading.registries, rules, hints };
 	const { libraryVersion } = options;
 	const fit = libraryVersion === undefined ? undefined : compatibility(manifest.version, libraryVersion);
 	const diagnostics = [...reading.diagnostics, ...versionedDiagnostics(input, manifest, context, fit)];

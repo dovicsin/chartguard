@@ -1,5 +1,5 @@
 import { isContainer, ownDataProperty } from '@chartguard/core';
-import { type Fact, isString, type Item, type Listed, readFact, unknown } from '@chartguard/quality-core';
+import { type Fact, isString, type Item, type Listed, MAX_ITEMS, readFact, unknown } from '@chartguard/quality-core';
 
 export type Axis = 'x' | 'y' | 'r';
 
@@ -54,11 +54,16 @@ function axisOf(id: string, scale: unknown, datasets: Listed<Item>): Axis | unde
 /** Configured scales Chart.js builds: plain objects only (`if (!isObject(scaleConf))` skips the rest). */
 const isPlainObject = (value: unknown): boolean => Object.prototype.toString.call(value) === '[object Object]';
 
-/** The configured scales, in key order; an unreadable `options.scales` is one unread entry. */
+/**
+ * The configured scales, in key order; an unreadable `options.scales` is one unread entry, and so are
+ * more scales than a list is read with (`MAX_ITEMS`): each is matched against the datasets.
+ */
 function configuredScales(config: unknown, datasets: Listed<Item>): Scales['entries'] {
 	const configured = readFact(config, ['options', 'scales'], isContainer);
 	if (!configured.known) return configured.reason === 'unset' ? [] : [UNREAD];
-	return Object.keys(configured.value).flatMap((id) => {
+	const ids = Object.keys(configured.value);
+	if (ids.length > MAX_ITEMS) return [UNREAD];
+	return ids.flatMap((id) => {
 		const scale = ownDataProperty(configured.value, id);
 		if (!scale.found) return [{ id, axis: undefined }];
 		return isPlainObject(scale.value) ? [{ id, axis: axisOf(id, scale.value, datasets) }] : [];

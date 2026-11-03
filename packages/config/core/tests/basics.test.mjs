@@ -117,3 +117,27 @@ test('a non-enumerable own property is noted, never checked nor counted as valid
 		['CFG_DYNAMIC unknown $.type']
 	);
 });
+
+test('typo hints share one budget per validation: many unknown keys stay cheap, and the next run has its own', () => {
+	const names = Array.from({ length: 200 }, (_, index) => `p${String(index).padStart(3, '0')}`);
+	const wide = {
+		library: 'test',
+		version: '1',
+		coverage: 'partial',
+		source: 'test',
+		root: s.object(Object.fromEntries(names.map((name) => [name, s.number()])))
+	};
+	// 20000 unknown keys, each one edit from a known one: the plain search would compare ~4e7 cells.
+	const input = Object.fromEntries(
+		Array.from({ length: 20_000 }, (_, index) => [
+			`${names[index % 200]}${String.fromCharCode(0x4e00 + Math.floor(index / 200))}`,
+			1
+		])
+	);
+	const hinted = (result) => result.diagnostics.map((d) => d.suggestion !== undefined);
+	const first = validateConfig(input, wide);
+	assert.equal(first.diagnostics.length, 20_000);
+	assert.equal(first.diagnostics[0].suggestion, 'Did you mean "p000"?');
+	assert.equal(first.diagnostics.at(-1).suggestion, undefined, 'the budget is spent before the last key');
+	assert.deepEqual(hinted(validateConfig(input, wide)), hinted(first));
+});

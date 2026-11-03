@@ -78,6 +78,15 @@ function colorsDefined(config: unknown, datasets: Listed<Item>): Fact<boolean> {
 }
 
 /**
+ * `colorsDefined` for one analysis, read at most once: every dataset's colour may depend on it, and
+ * reading every dataset again for each one is quadratic in a number the caller chooses.
+ */
+export function colorsDefinedOnce(config: unknown, datasets: Listed<Item>): () => Fact<boolean> {
+	let defined: Fact<boolean> | undefined;
+	return () => (defined ??= colorsDefined(config, datasets));
+}
+
+/**
  * The colour a dataset is drawn in: its own (`borderColor` for lines, `backgroundColor` for bars and
  * points), else the options for its type, its element or the chart; else, when the config colours
  * anything, Chart.js's own `rgba(0,0,0,0.1)`. Without any colour in the config the Colors plugin
@@ -99,7 +108,12 @@ function forcedOver(config: unknown): UnknownFact | undefined {
 		: unknown(force.path, 'unmodelled');
 }
 
-export function colorOf(config: unknown, item: Item, type: Fact<string>, datasets: Listed<Item>): Fact<string> {
+export function colorOf(
+	config: unknown,
+	item: Item,
+	type: Fact<string>,
+	definedAnywhere: () => Fact<boolean>
+): Fact<string> {
 	if (!type.known) return unknown(`${item.path}.backgroundColor`, type.reason);
 	const forced = forcedOver(config);
 	if (forced !== undefined) return unknown(`${item.path}.backgroundColor`, forced.reason);
@@ -114,7 +128,7 @@ export function colorOf(config: unknown, item: Item, type: Fact<string>, dataset
 	]);
 	if (own.known) return typeof own.value === 'string' ? (own as Fact<string>) : unknown(own.path, 'unmodelled');
 	if (own.reason !== 'unset') return own;
-	const defined = colorsDefined(config, datasets);
+	const defined = definedAnywhere();
 	const path = formatPath([...item.segments, by.key]);
 	if (!defined.known) return unknown(path, defined.reason);
 	return defined.value

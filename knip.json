@@ -12,6 +12,7 @@
 				"tools/api/tests/**/*.test.mjs",
 				"tools/docs/*.mjs",
 				"tools/docs/tests/**/*.test.mjs",
+				"tools/fuzz/tests/**/*.test.mjs",
 				"action/run.mjs",
 				"action/tests/**/*.test.mjs"
 			],
@@ -22,7 +23,8 @@
 				"tools/shared/**/*.mjs",
 				"tools/api/**/*.mjs",
 				"tools/docs/**/*.mjs",
-				"action/**/*.mjs"
+				"action/**/*.mjs",
+				"tools/fuzz/**/*.mjs"
 			]
 		},
 		"packages/schema-generator": {

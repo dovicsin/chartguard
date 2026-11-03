@@ -23,4 +23,4 @@ export type { OwnProperty } from './object.js';
 export { isContainer, isRecord, ownDataProperty } from './object.js';
 export { keySegment, pathSegments } from './paths.js';
 export { isConfirmedError, result } from './result.js';
-export { suggestion } from './suggestion.js';
+export { suggestion, type SuggestionBudget, suggestionBudget } from './suggestion.js';

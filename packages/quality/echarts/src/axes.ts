@@ -51,7 +51,11 @@ export function axisType(config: unknown, direction: Direction, index: number): 
 	const axes = axisItems(config, direction);
 	if (!axes.known) return axes;
 	const axis = axes.items[index];
-	if (axis === undefined) return unknown(formatPath([`${direction}Axis`, index]), 'unmodelled');
+	return axis === undefined ? unknown(formatPath([`${direction}Axis`, index]), 'unmodelled') : typeOf(config, axis);
+}
+
+/** `axisType` of an axis already read (`axesOf` reads each list once, not once per axis). */
+function typeOf(config: unknown, axis: Item): Fact<string> {
 	const own = readFact(config, [...axis.segments, 'type'], isString);
 	if (own.known || own.reason !== 'unset') return own;
 	const value = readPath(config, [...axis.segments, 'data']) === undefined ? 'value' : 'category';
@@ -129,7 +133,7 @@ export function axesOf(config: unknown, series: Listed<SeriesSemantics>): AxisSe
 		const axes = axisItems(config, direction);
 		if (!axes.known) return [];
 		return axes.items.map((axis, index) => {
-			const type = axisType(config, direction, index);
+			const type = typeOf(config, axis);
 			const key = `${direction}Axis[${String(index)}]`;
 			return {
 				key,

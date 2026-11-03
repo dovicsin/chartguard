@@ -117,6 +117,20 @@ test('a controller redefines an option for its own chart type only; the built-in
 			return true;
 		}
 	);
+	// And of the engine's shape all the way down (C6): a malformed node below is refused, where it is.
+	assert.throws(
+		() =>
+			withExtensions([
+				{ id: 'x', controllers: { funnel: { extends: 'bar', options: s.object({ shrink: { kind: 'numbr' } }) } } }
+			]),
+		(error) => {
+			assert.ok(error instanceof ExtensionError);
+			assert.deepEqual(error.problems, [
+				'x: controller "funnel": funnel.options.properties.shrink: kind "numbr" is not one of object, array, string, number, boolean, null, function, union, any'
+			]);
+			return true;
+		}
+	);
 });
 
 test('a controller must extend a built-in type, and its registration is the controllers registry', () => {

@@ -2,12 +2,13 @@ import { isRecord } from '@chartguard/core';
 
 import {
 	catalogVariantPoint,
-	isSchema,
+	isExtending,
 	resolveVariant,
 	type VariantSpec,
 	type VariantUnion
 } from './extension-variants.js';
 import type { NodeSchema, SchemaManifest } from './schema.js';
+import { schemaProblems } from './schema-check.js';
 
 export type { VariantSpec } from './extension-variants.js';
 
@@ -125,10 +126,12 @@ function addOptions(extension: Extension, catalog: Catalog, owners: Owners, prob
 			continue;
 		}
 		for (const [name, schema] of entries) {
+			const shape = schemaProblems(schema, name);
 			if (builtIn.has(name))
 				problems.push(`${extension.id}: "${name}" is a built-in option of ${point} and cannot be replaced`);
-			else if (!isSchema(schema)) problems.push(`${extension.id}: option "${name}" at ${point} is not a schema`);
-			else own(owners, point, { id: extension.id, name, schema });
+			else if (shape.length > 0)
+				problems.push(...shape.map((problem) => `${extension.id}: option "${name}" at ${point}: ${problem}`));
+			else own(owners, point, { id: extension.id, name, schema: schema as NodeSchema });
 		}
 	}
 }
@@ -151,6 +154,13 @@ function addVariants(extension: Extension, catalog: Catalog, owners: Owners, pro
 			continue;
 		}
 		for (const [name, schema] of entries) {
+			// An extending variant's own part is its `schema` (absent: it adds nothing to the built-in).
+			const part = isExtending(schema) ? schema.schema : schema;
+			const shape = part === undefined ? [] : schemaProblems(part, name);
+			if (shape.length > 0) {
+				problems.push(...shape.map((problem) => `${extension.id}: variant "${name}" of ${registry}: ${problem}`));
+				continue;
+			}
 			const resolved = resolveVariant(registry, unions, name, schema);
 			if (typeof resolved === 'string') problems.push(`${extension.id}: ${resolved}`);
 			else own(owners, registry, { id: extension.id, name, schema: resolved });

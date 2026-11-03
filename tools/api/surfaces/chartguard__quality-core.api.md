@@ -121,6 +121,12 @@ type Listed<T> = {
     readonly items: readonly T[];
 } | UnknownFact;
 
+### MAX_ITEMS
+MAX_ITEMS = 1000
+
+### MAX_VERIFIED_FIXES
+MAX_VERIFIED_FIXES = 50
+
 ### MotionSemantics
 interface MotionSemantics {
     readonly endless: Fact<boolean>;

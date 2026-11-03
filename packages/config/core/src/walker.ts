@@ -1,4 +1,10 @@
-import { type Diagnostic, isContainer, ownDataProperty, type ValidationOptions } from '@chartguard/core';
+import {
+	type Diagnostic,
+	isContainer,
+	ownDataProperty,
+	type SuggestionBudget,
+	type ValidationOptions
+} from '@chartguard/core';
 
 import { deprecationFinding } from './deprecation.js';
 import { asInferred, confirmed, inconclusive, unresolved } from './diagnostics.js';
@@ -62,8 +68,10 @@ export class ConfigWalker {
 
 	constructor(
 		private readonly manifest: SchemaManifest,
-		private readonly options: ValidationOptions = {},
-		private readonly registries: Registries = new Map()
+		private readonly options: ValidationOptions,
+		private readonly registries: Registries,
+		/** The run's budget for typo hints, shared with the rules. */
+		private readonly hints: SuggestionBudget
 	) {}
 
 	walk(value: unknown, schema: NodeSchema, from: Cursor = ROOT): void {
@@ -138,7 +146,7 @@ export class ConfigWalker {
 				return;
 			case 'unknown-variant':
 			case 'invalid-variant':
-				this.report(cursor, variantFinding(selection, path));
+				this.report(cursor, variantFinding(selection, path, this.hints));
 				return;
 			case 'registered':
 			case 'unregistered':
@@ -275,7 +283,8 @@ export class ConfigWalker {
 		const known = schema.properties ?? {};
 		const field = Object.hasOwn(known, key) ? known[key] : (this.extensionOption(schema, key) ?? schema.values);
 		if (field === undefined) {
-			const unknown = unknownKeyFinding(key, schema, this.manifest.coverage, cursor.path);
+			const where = { path: cursor.path, hints: this.hints };
+			const unknown = unknownKeyFinding(key, schema, this.manifest.coverage, where);
 			if (unknown !== undefined) this.report(cursor, unknown);
 			return;
 		}

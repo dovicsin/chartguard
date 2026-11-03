@@ -169,3 +169,16 @@ test('access: a canvas gets its text alternative and keyboard access from the pa
 	const { dataDescribed, keyboard } = normalize({}).access;
 	assert.deepEqual([brief(dataDescribed), brief(keyboard)], ['? page $', '? page $']);
 });
+
+test('more configured scales than MAX_ITEMS are not read one by one: the scale a dataset is on is unknown', async () => {
+	const { MAX_ITEMS } = await import('@chartguard/quality-core');
+	const scales = (count) => ({
+		y: { type: 'linear' },
+		...Object.fromEntries(Array.from({ length: count - 1 }, (_, index) => [`x${String(index)}`, { type: 'category' }]))
+	});
+	const valueAxis = (count) =>
+		normalize({ type: 'line', data: { datasets: [{ data: [1] }] }, options: { scales: scales(count) } }).series.items[0]
+			.valueAxis;
+	assert.equal(valueAxis(MAX_ITEMS).value, 'y');
+	assert.deepEqual([valueAxis(MAX_ITEMS + 1).known, valueAxis(MAX_ITEMS + 1).reason], [false, 'unmodelled']);
+});

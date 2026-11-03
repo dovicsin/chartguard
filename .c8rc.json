@@ -10,6 +10,7 @@
 		"tools/docs/**/*.mjs",
 		"tools/conformance/lib/**/*.mjs",
 		"tools/shared/**/*.mjs",
+		"tools/fuzz/lib/*.mjs",
 		"apps/playground/dist/{model,examples,selftest}.js",
 		"apps/reference/scripts/*.mjs",
 		"action/*.mjs"
