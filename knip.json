@@ -38,6 +38,10 @@
 			"entry": ["tests/**/*.test.mjs", "src/sources.ts"],
 			"project": ["src/**/*.ts"]
 		},
+		"packages/integrations/vscode": {
+			"entry": ["src/server.ts", "scripts/*.mjs", "tests/**/*.test.mjs", "tests/vscode/*.cjs"],
+			"project": ["src/**/*.ts", "scripts/*.mjs"]
+		},
 		"packages/*/*": {
 			"entry": ["tests/**/*.test.mjs"],
 			"project": ["src/**/*.ts"]

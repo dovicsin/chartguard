@@ -1,0 +1,99 @@
+{
+	"name": "chartguard",
+	"displayName": "ChartGuard",
+	"description": "Chart.js, ECharts and Highcharts configs checked in JavaScript and TypeScript as you type, with the runtime's own renames as quick fixes",
+	"version": "0.1.0",
+	"private": true,
+	"publisher": "chartguard",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dovicsin/chartguard.git",
+		"directory": "packages/integrations/vscode"
+	},
+	"type": "module",
+	"engines": {
+		"vscode": "^1.91.0",
+		"node": ">=20.19"
+	},
+	"categories": [
+		"Linters"
+	],
+	"main": "./dist/extension.cjs",
+	"activationEvents": [
+		"onLanguage:javascript",
+		"onLanguage:javascriptreact",
+		"onLanguage:typescript",
+		"onLanguage:typescriptreact"
+	],
+	"capabilities": {
+		"untrustedWorkspaces": {
+			"supported": "limited",
+			"description": "In a workspace you have not trusted, ChartGuard reads only your user settings: a workspace could otherwise point it at files to read (a tsconfig, plugin schemas).",
+			"restrictedConfigurations": [
+				"chartguard.libraryVersion",
+				"chartguard.registries",
+				"chartguard.extensions",
+				"chartguard.patterns",
+				"chartguard.quality",
+				"chartguard.project"
+			]
+		}
+	},
+	"contributes": {
+		"commands": [
+			{
+				"command": "chartguard.restart",
+				"title": "ChartGuard: Restart the language server"
+			}
+		],
+		"configuration": {
+			"title": "ChartGuard",
+			"properties": {
+				"chartguard.libraryVersion": {
+					"type": "object",
+					"description": "Exact versions by library (chartjs, echarts, highcharts), or \"auto\" for the version installed for each file."
+				},
+				"chartguard.registries": {
+					"type": "object",
+					"description": "What your tree-shaken runtime registered (ValidationOptions.registries)."
+				},
+				"chartguard.extensions": {
+					"type": "object",
+					"description": "Plugin schemas by library, as --plugin-schema takes them."
+				},
+				"chartguard.patterns": {
+					"type": "array",
+					"description": "Your own wrappers that hand a config to a chart library."
+				},
+				"chartguard.quality": {
+					"type": "object",
+					"description": "Rule levels, ignores, page context and ruleset for the quality review, as quality --settings takes them."
+				},
+				"chartguard.project": {
+					"type": [
+						"boolean",
+						"string"
+					],
+					"description": "Read each file with its project's tsconfig through its imports: true for the nearest tsconfig, or a tsconfig path relative to the workspace.",
+					"default": false
+				}
+			}
+		}
+	},
+	"scripts": {
+		"build": "tsc -b && node scripts/bundle.mjs",
+		"test": "node --test tests/*.test.mjs",
+		"test:vscode": "node scripts/run-vscode-tests.mjs",
+		"package": "vsce package --no-dependencies"
+	},
+	"dependencies": {
+		"@chartguard/language-server": "0.1.0",
+		"vscode-languageclient": "11.0.0"
+	},
+	"devDependencies": {
+		"@types/vscode": "1.91.0",
+		"@vscode/test-electron": "3.1.0",
+		"@vscode/vsce": "4.1.0"
+	}
+}

@@ -61,6 +61,12 @@
 !/packages/**/tests/**/*.mjs
 !/packages/cli/bin/*.mjs
 !/packages/integrations/language-server/bin/*.mjs
+# The VS Code extension: its packaging list, licence, scripts, in-editor tests and test workspace.
+!/packages/integrations/vscode/.vscodeignore
+!/packages/integrations/vscode/LICENSE
+!/packages/integrations/vscode/scripts/*.mjs
+!/packages/integrations/vscode/tests/vscode/*.cjs
+!/packages/integrations/vscode/tests/vscode/workspace/*.js
 # The schema generator is JavaScript with JSDoc (types are emitted from it); its pin file ships with it.
 !/packages/schema-generator/index.mjs
 !/packages/schema-generator/lib/*.mjs

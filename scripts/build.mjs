@@ -40,6 +40,9 @@ function main() {
 	// The playground bundle needs the compiled packages above.
 	const playground = node(join(ROOT, 'apps', 'playground', 'scripts', 'build.mjs'));
 	if (playground !== 0) return playground;
+	// The VS Code extension bundles its client and the language server from the compiled packages.
+	const extension = node(join(ROOT, 'packages', 'integrations', 'vscode', 'scripts', 'bundle.mjs'));
+	if (extension !== 0) return extension;
 	console.log('Build successful; CLI is native ESM.');
 	return 0;
 }

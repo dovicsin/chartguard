@@ -20,8 +20,9 @@ export function chartRuntimeOf(name) {
 	return LIBRARIES.find((library) => CHART_RUNTIMES[library].some((pattern) => pattern.test(name)));
 }
 
-function rule({ internal = [], external = [], peer = [], node = false } = {}) {
-	return { internal, external, peer, node };
+/** `provided`: modules the host the package runs in provides at run time (never installed, never declared). */
+function rule({ internal = [], external = [], peer = [], provided = [], node = false } = {}) {
+	return { internal, external, peer, provided, node };
 }
 
 function libraryRules(library) {
@@ -61,6 +62,16 @@ export const POLICY = {
 	'@chartguard/eslint-plugin': rule({ internal: [SOURCE_CHECKS], peer: ['eslint'] }),
 	/** A language server over stdio (CG-06-04): the source checks for any editor that speaks LSP; no dependency beyond them. */
 	'@chartguard/language-server': rule({ internal: [SOURCE_CHECKS], node: true }),
+	/**
+	 * The VS Code extension (CG-06-05): the language client, and the server it bundles and runs apart.
+	 * `vscode` is the editor's own module, provided at run time, never installed.
+	 */
+	chartguard: rule({
+		internal: ['@chartguard/language-server'],
+		external: ['vscode-languageclient'],
+		provided: ['vscode'],
+		node: true
+	}),
 	/** Reads a chart library's declarations and runtime files from a project; never imports or runs them. */
 	[SCHEMA_GENERATOR]: rule({ internal: [CONFIG_CORE], external: ['typescript'], node: true }),
 	'@chartguard/cli': rule({

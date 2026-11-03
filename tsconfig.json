@@ -26,6 +26,9 @@
 			"path": "./packages/integrations/language-server"
 		},
 		{
+			"path": "./packages/integrations/vscode"
+		},
+		{
 			"path": "./packages/config/chartjs"
 		},
 		{

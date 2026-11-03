@@ -34,3 +34,6 @@ jobs:
           # GitHub limits unauthenticated API calls per IP, which every hosted runner shares (HTTP 403).
           GITHUB_TOKEN: ${{ github.token }}
       - run: npm run check
+      # The extension in a real VS Code (downloaded once per run; it needs Node 22+ and a display).
+      - if: matrix.node == 24
+        run: xvfb-run -a npm run test:vscode -w packages/integrations/vscode

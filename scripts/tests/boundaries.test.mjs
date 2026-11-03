@@ -76,6 +76,16 @@ test('imports must be declared in package.json', () => {
 	);
 });
 
+test('a module the host provides is imported undeclared only where the policy names it (the VS Code extension and vscode)', () => {
+	assert.equal(importViolation('chartguard', 'vscode'), undefined);
+	assert.equal(importViolation('@chartguard/language-server', 'vscode'), 'imports undeclared package vscode');
+	// Provided is not a licence to import anything else undeclared.
+	assert.equal(
+		importViolation('chartguard', 'vscode-languageclient'),
+		'imports undeclared package vscode-languageclient'
+	);
+});
+
 test('a runtime wrapper may peer-depend on its own library only', () => {
 	const runtime = (peerDependencies) =>
 		checkManifest({ name: '@chartguard/runtime-echarts', peerDependencies }, POLICY);

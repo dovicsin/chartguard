@@ -85,11 +85,12 @@ export function publicEntryPoints(manifests) {
 	);
 }
 
+/** A package import: an internal one through its entry points, every one declared or provided by the host. */
 function checkPackageImport(specifier, rule, declared, entryPoints) {
 	const name = packageNameOf(specifier);
 	if (name.startsWith(INTERNAL_SCOPE) && name !== specifier && !entryPoints.has(specifier))
 		return `deep import "${specifier}"; import the package entry point`;
-	if (!declared.has(name))
+	if (!declared.has(name) && !rule.provided.includes(name))
 		return chartRuntimeOf(name) === undefined ? `imports undeclared package ${name}` : runtimeMessage(name);
 	return undefined;
 }

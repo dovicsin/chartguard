@@ -5,7 +5,16 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 const ignores = {
-	ignores: ['examples/**', '**/node_modules/**', '**/dist/**', '**/coverage/**', '**/*.d.ts', '**/*.tsbuildinfo']
+	ignores: [
+		'examples/**',
+		// A workspace the VS Code tests open: chart code with the mistakes they look for.
+		'packages/integrations/vscode/tests/vscode/workspace/**',
+		'**/node_modules/**',
+		'**/dist/**',
+		'**/coverage/**',
+		'**/*.d.ts',
+		'**/*.tsbuildinfo'
+	]
 };
 
 const imports = {
