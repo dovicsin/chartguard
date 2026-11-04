@@ -23,11 +23,14 @@ export function createEntryProgram(root, entryText, previous) {
 	const host = ts.createCompilerHost(COMPILER_OPTIONS);
 	const readSourceFile = host.getSourceFile.bind(host);
 	const fileExists = host.fileExists.bind(host);
+	// TypeScript hands the host its own spelling of a path (`D:/a/b.ts` for `D:\a\b.ts` on Windows):
+	// a name is the entry when it resolves to the same path, never by its text.
+	const isEntry = (fileName) => resolve(fileName) === entryPath;
 	host.getSourceFile = (fileName, languageVersion, ...rest) =>
-		fileName === entryPath
+		isEntry(fileName)
 			? ts.createSourceFile(fileName, entryText, languageVersion, true)
 			: readSourceFile(fileName, languageVersion, ...rest);
-	host.fileExists = (fileName) => fileName === entryPath || fileExists(fileName);
+	host.fileExists = (fileName) => isEntry(fileName) || fileExists(fileName);
 	const program = ts.createProgram([entryPath], COMPILER_OPTIONS, host, previous);
 	const entry = program.getSourceFile(entryPath);
 	return { program, checker: program.getTypeChecker(), entry };
