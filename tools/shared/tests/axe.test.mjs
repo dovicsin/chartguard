@@ -27,7 +27,7 @@ test('a report is read in shape: anything else is an error, never a pass', () =>
 });
 
 /** A one-page site of `body`, with a strict policy like the real sites (no inline style or script). */
-function site(t, body) {
+function site(t, body, css = '') {
 	const root = mkdtempSync(join(tmpdir(), 'chartguard-axe-'));
 	t.after(() => rmSync(root, { recursive: true, force: true }));
 	writeFileSync(
@@ -36,7 +36,7 @@ function site(t, body) {
 	);
 	writeFileSync(
 		join(root, 'styles.css'),
-		'.wide { width: 900px; } .bare:focus { outline: none; } .cut { height: 1.2em; overflow: hidden; width: 200px; } .scroller { overflow-x: auto; } .scroller div { width: 900px; }'
+		`.wide { width: 900px; } .bare:focus { outline: none; } .cut { height: 1.2em; overflow: hidden; width: 200px; } .scroller { overflow-x: auto; } .scroller div { width: 900px; }${css}`
 	);
 	return root;
 }
@@ -66,5 +66,20 @@ test(
 		assert.deepEqual(await audit(good, '/index.html', narrow), []);
 		// Without the narrow window and its checks, only what applies everywhere is checked.
 		assert.deepEqual(ids(await audit(bad, '/index.html')), ['focus-visible']);
+	}
+);
+
+test(
+	'a page whose root scrolls sideways itself is not exempt from reflow: the whole page scrolls (CG-07-04)',
+	browser,
+	async (t) => {
+		const narrow = { windowSize: [320, 640], reflow: true };
+		// With both roots scrolling, the body is a scroll container of its own: nothing was found.
+		for (const root of ['html, body', 'body', 'html']) {
+			const page = site(t, '<p class="wide">Too wide for a narrow screen.</p>', ` ${root} { overflow-x: auto; }`);
+			const found = await audit(page, '/index.html', narrow);
+			assert.deepEqual(ids(found), ['reflow'], root);
+			assert.deepEqual(found[0].nodes, ['p.wide'], root);
+		}
 	}
 );

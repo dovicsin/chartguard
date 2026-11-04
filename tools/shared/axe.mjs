@@ -19,7 +19,8 @@ export const AUDITED = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 
  * - `focus-visible` (WCAG 2.4.7): every element the keyboard reaches shows an outline or a shadow when
  *   it has the focus;
  * - `reflow` (WCAG 1.4.10), in a narrow window: nothing sticks out sideways, except inside an element
- *   that scrolls sideways itself (code, tables: two-dimensional content the criterion exempts);
+ *   that scrolls sideways itself (code, tables: two-dimensional content the criterion exempts), never
+ *   the page's `html` or `body`, which scroll the whole page;
  * - `text-spacing` (WCAG 1.4.12): with the criterion's spacing applied, no text is cut off by an
  *   element that hides what overflows (a visually hidden element of a pixel is left out).
  */
@@ -41,8 +42,9 @@ const CHECKS = `
 		}
 		return violation('focus-visible', 'Every focusable element shows where the focus is (WCAG 2.4.7)', unmarked);
 	};
+	// The page's roots are not content that scrolls itself: when they scroll sideways, the page does.
 	const scrollsItself = (element) => {
-		for (let node = element.parentElement; node !== null; node = node.parentElement) {
+		for (let node = element.parentElement; node !== null && node !== document.body; node = node.parentElement) {
 			const overflow = getComputedStyle(node).overflowX;
 			if (overflow === 'auto' || overflow === 'scroll') return true;
 		}
