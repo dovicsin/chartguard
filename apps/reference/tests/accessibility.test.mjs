@@ -49,3 +49,17 @@ for (const colorScheme of ['light', 'dark'])
 		test(`${path}${query}, ${colorScheme}: no accessibility violation`, { skip, timeout: 120_000 }, async () => {
 			assert.deepEqual(await audit(OUT, path, { query, ready, colorScheme }), []);
 		});
+
+// A narrow screen (or a 1280-pixel window zoomed to 400 %): nothing sticks out sideways (WCAG 1.4.10),
+// and no text is cut off with WCAG text spacing applied (WCAG 1.4.12).
+for (const { path, query = '', ready } of PAGES)
+	test(
+		`${path}${query}, 320 CSS pixels wide, text spaced: no accessibility violation`,
+		{ skip, timeout: 120_000 },
+		async () => {
+			assert.deepEqual(
+				await audit(OUT, path, { query, ready, windowSize: [320, 640], reflow: true, spacing: true }),
+				[]
+			);
+		}
+	);

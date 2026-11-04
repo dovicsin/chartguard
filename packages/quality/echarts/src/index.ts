@@ -9,6 +9,7 @@ import {
 	isString,
 	isTransparent,
 	itemsAt,
+	linearScale,
 	type Listed,
 	type QualityOptions,
 	readFact,
@@ -25,7 +26,7 @@ import {
 import { axesOf } from './axes.js';
 import { seriesColors } from './color.js';
 import { legendOf, legendsOf } from './entries.js';
-import { REMEDIES } from './fixes.js';
+import { LINEAR, REMEDIES } from './fixes.js';
 import { motionOf } from './motion.js';
 import { seriesOf } from './series.js';
 
@@ -126,5 +127,10 @@ export { assertQualityOptions, QualityOptionsError } from '@chartguard/quality-c
 export function analyze(config: unknown, options?: QualityOptions): QualityReport {
 	const reviewed = (input: unknown): QualityReport => review(normalize(input), options);
 	// Each fix is offered only when the config with it applied, reviewed the same way, no longer has the finding nor a new one.
-	return withFixes(reviewed(config), config, REMEDIES, reviewed);
+	return withFixes(
+		reviewed(config),
+		config,
+		{ ...REMEDIES, 'bar-log-scale': linearScale(normalize, LINEAR) },
+		reviewed
+	);
 }

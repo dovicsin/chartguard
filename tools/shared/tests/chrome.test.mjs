@@ -53,6 +53,21 @@ test('a page Chrome dumped completely is returned', posix, async (t) => {
 	assert.equal(await dumpDom('http://127.0.0.1/', { binary }), '<html></html>');
 });
 
+test('the window is sized only when asked, as a narrow screen or a zoomed page is', posix, async (t) => {
+	const directory = mkdtempSync(join(tmpdir(), 'chartguard-chrome-'));
+	t.after(() => rmSync(directory, { recursive: true, force: true }));
+	const binary = join(directory, 'chrome');
+	// A stand-in that prints the arguments it was started with, one per line.
+	writeFileSync(binary, `#!/bin/sh\nfor argument in "$@"; do printf '%s\\n' "$argument"; done\n`);
+	chmodSync(binary, 0o755);
+	const sizes = async (options) =>
+		(await dumpDom('http://127.0.0.1/', { binary, ...options }))
+			.split('\n')
+			.filter((line) => line.startsWith('--window-size'));
+	assert.deepEqual(await sizes({}), []);
+	assert.deepEqual(await sizes({ windowSize: [320, 640] }), ['--window-size=320,640']);
+});
+
 test('a Chrome that fails is a failure with its status and stderr, never partial HTML', posix, async (t) => {
 	const binary = fakeChrome(t, { stdout: '<html><body>half', stderr: 'crashed: out of memory', status: 3 });
 	await assert.rejects(dumpDom('http://127.0.0.1/', { binary }), /exited with 3.*crashed: out of memory/s);

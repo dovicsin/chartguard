@@ -81,3 +81,16 @@ test('no fix where the finding needs the author', () => {
 	assert.deepEqual(fixes({ ...chart(), title: { text: '' } }), ['VIS_EMPTY_TITLE -']);
 	assert.deepEqual(fixes({ ...chart(), legend: undefined }), ['VIS_LEGEND_PLACEHOLDER -']);
 });
+
+/** The log-scale finding's fix, or 'none' when it has no fix (CG-05-07 Q2.2). */
+const logFix = (config) => {
+	const finding = analyze(config).diagnostics.find(({ code }) => code === 'VIS_BAR_LOG_SCALE');
+	assert.ok(finding !== undefined);
+	return finding.fix === undefined ? 'none' : finding.fix.value;
+};
+
+test('a linear axis is offered only while the bars span less than one order of magnitude (CG-05-07 Q2.2)', () => {
+	const bars = (data) => ({ chart: { type: 'column' }, yAxis: { type: 'logarithmic' }, series: [{ name: 'S', data }] });
+	assert.equal(logFix(bars([2, 15])), 'linear');
+	assert.equal(logFix(bars([1, 100])), 'none');
+});

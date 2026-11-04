@@ -73,7 +73,8 @@ const barBaseline = rule(
 		limits: [
 			"A range fitted to the data (Chart.js `beginAtZero: false`, ECharts `scale: true`) is reported only when the runtime's tick algorithm leaves zero out at every chart size; where it depends on the size, nothing is claimed. Highcharts ranges fitted to the data (`threshold: null`, `softThreshold: false`) depend on the size and are not reported.",
 			'A non-zero baseline can be deliberate when the differences matter more than the magnitudes (for example a narrow band of values far from zero); the finding asks to verify, it does not say the chart is wrong.',
-			'Logarithmic axes have no zero; they are reported by `bar-log-scale` instead.'
+			'Logarithmic axes have no zero; they are reported by `bar-log-scale` instead.',
+			'Columns growing from a reference value (a target, 100 %) can be meant as deviations from it, but the axis still shows absolute values, so their lengths read as magnitudes: label the reference, or plot the deviations themselves; ignore the finding with a reason where the design is deliberate.'
 		]
 	},
 	(chart, report) => {
@@ -113,7 +114,7 @@ const barLogScale = rule(
 		context: [],
 		fix: {
 			offered: true,
-			edit: 'Sets the axis type to linear (Chart.js and Highcharts `linear`, ECharts `value`). Values far apart may then make the smallest bars too short to see.'
+			edit: 'Sets the axis type to linear (Chart.js and Highcharts `linear`, ECharts `value`), offered only while the bars on the axis span less than one order of magnitude (largest / smallest < 10): wider data would make the smallest bars too short to see.'
 		},
 		title: 'Bars on a logarithmic axis',
 		rationale:

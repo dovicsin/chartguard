@@ -6,7 +6,7 @@ import { withContext } from './context.js';
 import { QUALITY_RULES } from './rules.js';
 import { checkQualityOptions, type QualityOptions, type Settings } from './settings.js';
 
-const RULES_VERSION = 'quality-0.7';
+const RULES_VERSION = 'quality-0.8';
 
 /** The rule catalog: what each rule reports, why, on which sources, and where it is knowingly wrong. */
 export const RULE_CATALOG: readonly RuleInfo[] = QUALITY_RULES.map(({ check: _check, ...info }) => info);

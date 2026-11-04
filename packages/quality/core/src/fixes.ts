@@ -10,6 +10,8 @@ import {
 	type QualityReport
 } from '@chartguard/core';
 
+import type { ChartSemantics, SeriesSemantics } from './chart.js';
+
 /** What a finding's option holds now: nothing, or a JSON primitive. */
 export type Current = { readonly set: false } | { readonly set: true; readonly value: OptionValue };
 
@@ -124,4 +126,54 @@ export function withFixes(
 		diagnostics: report.diagnostics.map(fixed),
 		suppressed: report.suppressed.map((suppression) => ({ ...suppression, diagnostic: fixed(suppression.diagnostic) }))
 	};
+}
+
+/** The smallest and largest value a bar series on one of `keys` draws; undefined where it cannot be read. */
+function barRange(
+	{ kind, valueAxis, values }: SeriesSemantics,
+	keys: ReadonlySet<string>
+): [number, number] | null | undefined {
+	if (!kind.known || !valueAxis.known) return undefined;
+	if (kind.value !== 'bar' || !keys.has(valueAxis.value)) return null;
+	const { min, max } = values.known ? values.value : {};
+	return min === undefined || max === undefined ? undefined : [min.value, max.value];
+}
+
+/**
+ * Whether the bars measured on the axis whose scale type is at `scalePath` span less than one order
+ * of magnitude (largest / smallest < 10, every value positive): then a linear axis keeps every bar
+ * visible (CG-05-07 Q2.2). False when anything that decides it is unknown: a series that may be on the
+ * axis, or values that cannot be read.
+ */
+function narrowSpan({ series, axes }: ChartSemantics, scalePath: string): boolean {
+	const keys = new Set(axes.filter(({ scale }) => scale.path === scalePath).map(({ key }) => key));
+	if (!series.known || keys.size === 0) return false;
+	const ranges = series.items.map((item) => barRange(item, keys));
+	if (ranges.includes(undefined)) return false;
+	const known = ranges.filter((range): range is [number, number] => Array.isArray(range));
+	if (known.length === 0) return false;
+	// A loop, not a spread: the caller decides how many series there are (E73).
+	const smallest = known.reduce((low, [value]) => Math.min(low, value), Infinity);
+	const largest = known.reduce((high, [, value]) => Math.max(high, value), -Infinity);
+	return smallest > 0 && largest / smallest < 10;
+}
+
+/** What a logarithmic scale is called in a library, what makes it linear there, and what that changes. */
+export interface LinearScale {
+	readonly log: string;
+	readonly linear: string;
+	readonly effect: string;
+}
+
+/**
+ * The `bar-log-scale` remedy (CG-05-07 Q2.2): the scale made linear, only while the bars on it span
+ * less than one order of magnitude, read from the chart `normalize` gives; wider data would leave the
+ * smallest bars too short to see, so no fix is offered then.
+ */
+export function linearScale(
+	normalize: (config: unknown) => ChartSemantics,
+	{ log, linear, effect }: LinearScale
+): Remedies[string] {
+	return (now, path, config) =>
+		now.set && now.value === log && narrowSpan(normalize(config), path) ? { value: linear, effect } : undefined;
 }

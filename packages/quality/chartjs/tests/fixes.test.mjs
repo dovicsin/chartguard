@@ -60,3 +60,24 @@ test('no fix where the finding needs the author or the page, or where one edit w
 		'VIS_BAR_BASELINE $.data.datasets[0].base 20→0'
 	]);
 });
+
+/** The log-scale finding's fix, or 'none' when it has no fix (CG-05-07 Q2.2). */
+const logFix = (config) => {
+	const finding = analyze(config).diagnostics.find(({ code }) => code === 'VIS_BAR_LOG_SCALE');
+	assert.ok(finding !== undefined);
+	return finding.fix === undefined ? 'none' : finding.fix.value;
+};
+
+test('a linear scale is offered only while the bars span less than one order of magnitude (CG-05-07 Q2.2)', () => {
+	const logBars = (data, more = []) => ({
+		type: 'bar',
+		data: { labels: ['a', 'b'], datasets: [{ label: 'S', data }, ...more] },
+		options: { scales: { y: { type: 'logarithmic' } } }
+	});
+	assert.equal(logFix(logBars([2, 15])), 'linear');
+	assert.equal(logFix(logBars([1, 100])), 'none');
+	// Every bar on the axis counts; a value that cannot be read leaves the span unknown: no fix.
+	assert.equal(logFix(logBars([2, 15], [{ label: 'T', data: [3, 200] }])), 'none');
+	assert.equal(logFix(logBars([2, 15], [{ label: 'T', data: [{ x: 'a', y: 3 }] }])), 'linear');
+	assert.equal(logFix(logBars([2, 15], [{ label: 'T', parsing: { yAxisKey: 'v' }, data: [{ v: 3 }] }])), 'none');
+});

@@ -55,7 +55,7 @@ function collect(stream) {
 }
 
 /** The command line of a headless Chrome that dumps the DOM of `url`, with its profile in `profile`. */
-function chromeArgs(url, profile, { offline, virtualTime, colorScheme }) {
+function chromeArgs(url, profile, { offline, virtualTime, colorScheme, windowSize }) {
 	const sandbox = process.getuid?.() === 0 ? ['--no-sandbox'] : [];
 	const network = offline ? ['--host-resolver-rules=MAP * ~NOTFOUND'] : [];
 	const budget = `--virtual-time-budget=${String(virtualTime)}`;
@@ -78,6 +78,7 @@ function chromeArgs(url, profile, { offline, virtualTime, colorScheme }) {
 		scheme,
 		flooding,
 		isolation,
+		...(windowSize === undefined ? [] : [`--window-size=${windowSize.join(',')}`]),
 		'--dump-dom',
 		url
 	];
@@ -88,12 +89,16 @@ function chromeArgs(url, profile, { offline, virtualTime, colorScheme }) {
  * host name lookup, for pages that run upstream code: nothing it does can reach the network. A
  * Chrome that exits with a failure rejects with its status and stderr: what it printed before is
  * a partial page, never a result. `colorScheme` (`light` or `dark`) is what the page's
- * `prefers-color-scheme` answers. `binary` replaces the Chrome found here (tests). Each Chrome runs
+ * `prefers-color-scheme` answers. `windowSize` (`[width, height]` in CSS pixels) sizes the window, as a
+ * narrow screen or a zoomed page does. `binary` replaces the Chrome found here (tests). Each Chrome runs
  * in a profile of its own, removed when it exits however it exits: without one, headless Chrome
  * leaves a profile with its cache under ~/.cache for every run (E76). A process that exits while its
  * Chrome runs stops it and removes the profile.
  */
-export function dumpDom(url, { offline = false, virtualTime = 120_000, binary = CHROME, colorScheme = 'light' } = {}) {
+export function dumpDom(
+	url,
+	{ offline = false, virtualTime = 120_000, binary = CHROME, colorScheme = 'light', windowSize } = {}
+) {
 	const profile = mkdtempSync(join(tmpdir(), 'chartguard-chrome-profile-'));
 	const removeProfile = () => {
 		running.delete(profile);
@@ -101,7 +106,7 @@ export function dumpDom(url, { offline = false, virtualTime = 120_000, binary = 
 		if (running.size === 0) process.off('exit', stopRunning);
 		rmSync(profile, { recursive: true, force: true });
 	};
-	const args = chromeArgs(url, profile, { offline, virtualTime, colorScheme });
+	const args = chromeArgs(url, profile, { offline, virtualTime, colorScheme, windowSize });
 	return new Promise((resolve, reject) => {
 		const chrome = start(binary, args, profile, removeProfile);
 		const html = collect(chrome.stdout);

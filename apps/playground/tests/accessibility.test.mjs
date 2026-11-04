@@ -53,3 +53,22 @@ for (const colorScheme of ['light', 'dark'])
 			});
 			assert.deepEqual(violations, []);
 		});
+
+// A narrow screen (or a 1280-pixel window zoomed to 400 %): nothing sticks out sideways (WCAG 1.4.10),
+// and no text is cut off with WCAG text spacing applied (WCAG 1.4.12).
+for (const { name, hash, ready } of STATES)
+	test(
+		`${name}, 320 CSS pixels wide, text spaced: no accessibility violation`,
+		{ skip, timeout: 120_000 },
+		async () => {
+			const violations = await audit(OUT, '/index.html', {
+				hash,
+				ready,
+				windowSize: [320, 640],
+				reflow: true,
+				spacing: true,
+				headers: { 'access-control-allow-origin': '*' }
+			});
+			assert.deepEqual(violations, []);
+		}
+	);

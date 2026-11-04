@@ -69,6 +69,18 @@ export const SCALE_CASES = [
 		highcharts: { config: hcBars([10, 1000], { type: 'logarithmic' }), findings: ['VIS_BAR_LOG_SCALE $.yAxis.type'] }
 	},
 	{
+		// The bars span less than one order of magnitude: the linear axis is offered (CG-05-07 Q2.2).
+		name: 'bars on a logarithmic axis, within one order of magnitude',
+		rule: 'bar-log-scale',
+		kind: 'triggers',
+		chartjs: {
+			config: cjBars([20, 150], { type: 'logarithmic' }),
+			findings: ['VIS_BAR_LOG_SCALE $.options.scales.y.type']
+		},
+		echarts: { config: ecBars([20, 150], { type: 'log' }), findings: ['VIS_BAR_LOG_SCALE $.yAxis.type'] },
+		highcharts: { config: hcBars([20, 150], { type: 'logarithmic' }), findings: ['VIS_BAR_LOG_SCALE $.yAxis.type'] }
+	},
+	{
 		name: 'a reversed value axis',
 		rule: 'reversed-value-axis',
 		kind: 'triggers',

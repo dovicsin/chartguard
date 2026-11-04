@@ -37,7 +37,7 @@ export const sameColorSeries = rule(
 			return [
 				report(
 					color.path,
-					'This series is drawn in the same colour as an earlier one: readers cannot tell them apart; give it its own colour.'
+					'This series is drawn in the same colour as an earlier one: readers may not tell them apart unless the series differ in another way (dash, markers, labels); give it its own colour.'
 				)
 			];
 		});
@@ -80,7 +80,7 @@ export const lowContrastSeries = rule(
 		evidence: [SOURCES.wcag22Contrast],
 		limits: [
 			'Only the chart background is compared, not gridlines or other series. A page showing through (Chart.js canvases, ECharts without `backgroundColor`, a transparent Highcharts background) is compared only when the caller declares it (`context.background`); a scheme the declaration leaves out is not compared.',
-			'Information given another way (data labels, a table) meets the criterion without the contrast; several default palettes have colours below 3:1 on white, so the finding is a note.',
+			'Information given another way (data labels, a table) meets the criterion without the contrast; several default palettes have colours below 3:1 on white, so the finding is a note. WCAG 2.2 SC 1.4.11 is a Level AA criterion: a team bound by AA can raise the rule to `warning` in its settings.',
 			'Only hex and rgb() colours are compared.',
 			'An ECharts grid that draws its own background (`grid.show`, one grid or several) is not modelled: the background is then unknown.'
 		]

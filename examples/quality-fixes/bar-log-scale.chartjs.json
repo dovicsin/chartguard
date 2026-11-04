@@ -9,7 +9,7 @@
 			"datasets": [
 				{
 					"label": "Sales",
-					"data": [12, 340, 5600],
+					"data": [120, 340, 560],
 					"backgroundColor": "#1f77b4",
 					"borderColor": "#1f77b4"
 				}
@@ -53,7 +53,7 @@
 			"datasets": [
 				{
 					"label": "Sales",
-					"data": [12, 340, 5600],
+					"data": [120, 340, 560],
 					"backgroundColor": "#1f77b4",
 					"borderColor": "#1f77b4"
 				}

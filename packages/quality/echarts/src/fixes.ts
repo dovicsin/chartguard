@@ -2,6 +2,7 @@ import {
 	type Current,
 	currentAt,
 	currentNumber,
+	type LinearScale,
 	LONG_MOTION_MS,
 	type Remedies,
 	type Remedy,
@@ -47,14 +48,6 @@ export const REMEDIES: Remedies = {
 			? { value: false, effect: 'The value axis includes zero again (`scale: false`), so the bars grow from it.' }
 			: undefined;
 	},
-	'bar-log-scale': (now) =>
-		now.set && now.value === 'log'
-			? {
-					value: 'value',
-					effect:
-						'The value axis is linear, so bar lengths encode the values; very small values may become hard to see.'
-				}
-			: undefined,
 	'reversed-value-axis': (now) =>
 		now.set && now.value === true
 			? { value: false, effect: 'Larger values are drawn higher (or further right) again.' }
@@ -64,4 +57,11 @@ export const REMEDIES: Remedies = {
 			? { value: true, effect: 'ECharts describes the chart and its data to assistive technology (`aria`).' }
 			: undefined,
 	'long-motion': motionRemedy
+};
+
+/** The linear axis `bar-log-scale` proposes (CG-05-07 Q2.2: only while the bars span less than 10×). */
+export const LINEAR: LinearScale = {
+	log: 'log',
+	linear: 'value',
+	effect: 'The value axis is linear, so bar lengths encode the values; very small values may become hard to see.'
 };

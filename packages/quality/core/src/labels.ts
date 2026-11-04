@@ -34,17 +34,26 @@ export const placeholderText = rule(
 	},
 	(chart, report) => {
 		const axes = measuredAxes(chart, CARTESIAN).map(({ axis }) => axis.title);
-		return [chart.title, ...axes].flatMap((title) => {
-			const path = placeholder(title);
-			return path === undefined
+		const chartTitle = placeholder(chart.title);
+		// Hiding is advised for an axis title only: a chart without a title says nothing of what it shows.
+		return [
+			...(chartTitle === undefined
 				? []
 				: [
-						report(
-							path,
-							"This title shows the library's placeholder text; set a title that says what is shown, or hide it."
-						)
-					];
-		});
+						report(chartTitle, "This title shows the library's placeholder text; set a title that says what is shown.")
+					]),
+			...axes.flatMap((title) => {
+				const path = placeholder(title);
+				return path === undefined
+					? []
+					: [
+							report(
+								path,
+								"This axis title shows the library's placeholder text; set one that says what is measured, or hide it when the chart title names the quantity."
+							)
+						];
+			})
+		];
 	}
 );
 
@@ -94,7 +103,7 @@ export const emptyTitle = rule(
 		title: 'An empty chart title',
 		rationale:
 			'A title the config sets to blank text shows nothing; the chart needs its context (what, where, when) from somewhere, and assistive technology needs a text alternative.',
-		evidence: [SOURCES.wcag22],
+		evidence: [SOURCES.wcag22Labels],
 		limits: [
 			'The context may be given next to the chart, outside the config; the finding is a reminder, not a defect.',
 			'A title known to be hidden is not reported.'
@@ -102,7 +111,12 @@ export const emptyTitle = rule(
 	},
 	({ title: { text, shown } }, report) => {
 		if (configured(text)?.trim() !== '' || valueOf(shown) === false) return [];
-		return [report(text.path, 'Chart title is empty; ensure context is supplied nearby.')];
+		return [
+			report(
+				text.path,
+				'The chart title is set to blank text: readers get no title saying what is shown; write one, or make sure the text next to the chart says it.'
+			)
+		];
 	}
 );
 

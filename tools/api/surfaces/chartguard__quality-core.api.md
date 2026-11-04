@@ -114,6 +114,13 @@ type KnownFact<T> = {
 ### LONG_MOTION_MS
 LONG_MOTION_MS = 5000
 
+### LinearScale
+interface LinearScale {
+    readonly log: string;
+    readonly linear: string;
+    readonly effect: string;
+}
+
 ### Listed
 type Listed<T> = {
     readonly known: true;
@@ -335,6 +342,9 @@ function itemsAt(root: unknown, path: readonly PathSegment[], { single }?: {
 
 ### known
 known: <T>(value: T, path: string) => KnownFact<T>
+
+### linearScale
+function linearScale(normalize: (config: unknown) => ChartSemantics, { log, linear, effect }: LinearScale): Remedies[string];
 
 ### numberElement
 function numberElement(element: unknown, path: readonly PathSegment[]): ValueAt | null | undefined;
