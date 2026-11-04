@@ -29,6 +29,18 @@ export function fastest(bodies, runs = 15, now = () => performance.now()) {
 	return best;
 }
 
+/** `fastest` for bodies that return a promise: each is awaited before the next starts. */
+export async function fastestAsync(bodies, runs = 15, now = () => performance.now()) {
+	const best = bodies.map(() => Number.POSITIVE_INFINITY);
+	for (let run = 0; run < runs; run += 1)
+		for (const [index, body] of bodies.entries()) {
+			const start = now();
+			await body();
+			best[index] = Math.min(best[index], now() - start);
+		}
+	return best;
+}
+
 /** The time of `body` in reference units: the fastest of `runs` interleaved timings of each. */
 export function inUnits(body, runs) {
 	const [time, unit] = fastest([body, reference], runs);

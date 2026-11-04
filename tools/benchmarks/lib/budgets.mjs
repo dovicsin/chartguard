@@ -27,6 +27,13 @@ export const BUDGETS = {
 	'editor-project-50-files-open': { budget: 15, measured: 3.6 },
 	'editor-project-50-files-edit': { budget: 0.35, measured: 0.083 },
 	'editor-project-50-files-memory': { budget: 360, measured: 224 },
+	'server-edit': { budget: 0.45, measured: 0.106 },
+	'server-start': { budget: 40, measured: 9.8 },
+	'cli-validate': { budget: 40, measured: 10.7 },
+	'bundle-runtime-chartjs-gzip': { budget: 76, measured: 60.9 },
+	'bundle-runtime-echarts-gzip': { budget: 146, measured: 116.3 },
+	'bundle-runtime-highcharts-gzip': { budget: 12, measured: 9.5 },
+	'bundle-playground-gzip': { budget: 2125, measured: 1699 },
 	'schema-chartjs-gzip': { budget: 62, measured: 49 },
 	'schema-echarts-gzip': { budget: 136, measured: 108 }
 };

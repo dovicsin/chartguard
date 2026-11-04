@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os';
 import test from 'node:test';
 
 import { main } from '../bench.mjs';
-import { fastest, judge, probe, probeResult } from '../lib/measure.mjs';
-import { cold, project } from '../lib/probes.mjs';
+import { fastest, fastestAsync, judge, probe, probeResult } from '../lib/measure.mjs';
+import { cli, cold, project, server } from '../lib/probes.mjs';
 
 test('the fastest of interleaved runs is kept for each body', () => {
 	const costs = [
@@ -90,4 +90,27 @@ test('the probes measure in this process too: a cold start, and a project remove
 
 test('a probe that fails is an error naming it, never a number', () => {
 	assert.throws(() => probe('no-such-probe', [], ['ms']), /the probe no-such-probe failed \(2\).*unknown probe/su);
+});
+
+test('the fastest of interleaved runs of bodies that return promises, each awaited in turn', async () => {
+	const clock = { now: 0 };
+	const order = [];
+	const body = (name, costs) => {
+		let call = 0;
+		return async () => {
+			order.push(name);
+			await Promise.resolve();
+			clock.now += costs[call++];
+		};
+	};
+	const best = await fastestAsync([body('a', [4, 2, 3]), body('b', [1, 5, 1])], 3, () => clock.now);
+	assert.deepEqual(best, [2, 1]);
+	assert.deepEqual(order, ['a', 'b', 'a', 'b', 'a', 'b']);
+});
+
+test('the CLI and the language server are measured as processes of their own, none left running', async () => {
+	const validated = cli();
+	assert.ok(validated.ms > 0 && validated.unit > 0, JSON.stringify(validated));
+	const answered = await server();
+	assert.ok(answered.start > 0 && answered.unit > 0, JSON.stringify(answered));
 });

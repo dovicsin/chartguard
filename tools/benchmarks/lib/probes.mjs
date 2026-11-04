@@ -1,6 +1,8 @@
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { runAsEntryPoint } from '../../shared/entry.mjs';
 import { fastest, reference } from './measure.mjs';
@@ -94,7 +96,85 @@ export async function project(files) {
 	}
 }
 
-const PROBES = { cold, project };
+const ROOT = fileURLToPath(new URL('../../..', import.meta.url));
+const CLI = join(ROOT, 'packages', 'cli', 'bin', 'chartguard.mjs');
+const SERVER = join(ROOT, 'packages', 'integrations', 'language-server', 'bin', 'chartguard-language-server.mjs');
+
+/** `chartguard validate` of a known-valid example, a process of its own, as a user or a hook runs it. */
+export function cli() {
+	const example = join(ROOT, 'examples', 'chartjs-valid-subset.json');
+	const validate = () => {
+		const run = spawnSync(process.execPath, [CLI, 'validate', '--library', 'chartjs', '--file', example], {
+			encoding: 'utf8',
+			timeout: 60_000
+		});
+		if (run.status !== 0) throw new Error(`chartguard validate exited with ${String(run.status)}: ${run.stderr}`);
+	};
+	const [ms, unit] = fastest([validate, reference], 3);
+	return { ms, unit };
+}
+
+/** One LSP message as the protocol frames it. */
+const frame = (message) => {
+	const body = Buffer.from(JSON.stringify(message), 'utf8');
+	return Buffer.concat([Buffer.from(`Content-Length: ${String(body.length)}\r\n\r\n`, 'ascii'), body]);
+};
+
+/** Resolves once `stream` has carried a whole framed message (the answer to the only request sent). */
+const answered = (stream) =>
+	new Promise((resolve, reject) => {
+		let seen = Buffer.alloc(0);
+		stream.on('error', reject);
+		stream.on('data', (chunk) => {
+			seen = Buffer.concat([seen, chunk]);
+			const end = seen.indexOf('\r\n\r\n');
+			const length = Number(/Content-Length: (\d+)/u.exec(seen.subarray(0, Math.max(end, 0)).toString('ascii'))?.[1]);
+			if (end !== -1 && seen.length >= end + 4 + length) resolve();
+		});
+	});
+
+/**
+ * The milliseconds of the language server's start: from starting its process to its answer to
+ * `initialize`, as an editor waits for it. The server is then shut down and exits, or is killed if
+ * it does not.
+ */
+async function started() {
+	const start = performance.now();
+	const child = spawn(process.execPath, [SERVER, '--stdio'], { stdio: ['pipe', 'pipe', 'ignore'] });
+	try {
+		const answer = answered(child.stdout);
+		child.stdin.write(
+			frame({
+				jsonrpc: '2.0',
+				id: 1,
+				method: 'initialize',
+				params: { processId: null, rootUri: null, capabilities: {} }
+			})
+		);
+		await answer;
+		const ms = performance.now() - start;
+		const exited = new Promise((resolve) => child.on('exit', resolve));
+		child.stdin.write(frame({ jsonrpc: '2.0', id: 2, method: 'shutdown' }));
+		child.stdin.write(frame({ jsonrpc: '2.0', method: 'exit' }));
+		await exited;
+		return ms;
+	} finally {
+		if (child.exitCode === null) child.kill('SIGKILL');
+	}
+}
+
+/** The fastest of 3 server starts, each followed by the reference unit. */
+export async function server() {
+	let start = Number.POSITIVE_INFINITY;
+	let unit = Number.POSITIVE_INFINITY;
+	for (let round = 0; round < 3; round += 1) {
+		start = Math.min(start, await started());
+		unit = Math.min(unit, fastest([reference], 1)[0]);
+	}
+	return { start, unit };
+}
+
+const PROBES = { cold, project, cli, server };
 
 await runAsEntryPoint(import.meta.url, async ([name, ...args]) => {
 	const run = PROBES[name];
