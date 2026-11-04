@@ -36,8 +36,8 @@ inputs:
     description: "A published @chartguard/cli version to install; empty builds the CLI from this action's own checkout."
     default: ''
   node-version:
-    description: 'The Node.js version to run on (20.19 or later).'
-    default: '24'
+    description: 'The Node.js version to run on (22.12 or later).'
+    default: '26'
 outputs:
   exit-code:
     description: "The CLI's exit code: 0 nothing fails, 1 findings fail (fail-on), 2 unusable input, 3 internal failure."

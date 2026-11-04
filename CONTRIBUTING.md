@@ -4,7 +4,7 @@ ChartGuard is a portfolio project maintained by one person. Issues and pull requ
 
 ## Setup
 
-- Node.js 20.19 or later, npm 11 or later (the lockfile is written by npm 11; `packageManager` pins npm 11.21.1).
+- Node.js 22.12 or later (development targets Node 26, the active LTS; CI also runs 22 and 24), npm 11 or later (the lockfile is written by npm 11; `packageManager` pins npm 11.21.1).
 - `npm ci`, then `npm run check`: build, package boundaries, schema artifacts, lint, format, unused code, and every test with coverage. A pull request is ready when `npm run check` passes.
 - The full Highcharts schema cannot be distributed (license); `npm run build` generates it locally from the installed `highcharts`. Never commit anything under `packages/config/highcharts/src/generated/`.
 

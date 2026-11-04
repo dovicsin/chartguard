@@ -11,7 +11,7 @@
 	},
 	"sideEffects": false,
 	"engines": {
-		"node": ">=20.19"
+		"node": ">=22.12.0"
 	},
 	"files": [
 		"index.mjs",
@@ -25,11 +25,13 @@
 	"exports": {
 		".": {
 			"types": "./dist/index.d.mts",
-			"import": "./index.mjs"
+			"import": "./index.mjs",
+			"default": "./index.mjs"
 		},
 		"./paths": {
 			"types": "./dist/lib/paths.d.mts",
-			"import": "./lib/paths.mjs"
+			"import": "./lib/paths.mjs",
+			"default": "./lib/paths.mjs"
 		}
 	},
 	"scripts": {

@@ -31,7 +31,7 @@ const PROCESSES = [
 	{ pid: 11, parent: 10, kb: 2000, command: 'node a.test.mjs' },
 	{ pid: 12, parent: 10, kb: 9000, command: 'node\0--test-isolation=process\0--stack-trace-limit=10\0b.test.mjs' },
 	{ pid: 13, parent: 12, command: 'zombie' },
-	{ pid: 14, parent: 13, kb: 500, command: 'chrome' },
+	{ pid: 14, parent: 13, kb: 500, command: `chrome --type=renderer ${'--x '.repeat(100)}` },
 	{ pid: 20, parent: 1, kb: 99_000, command: 'editor' }
 ];
 
@@ -73,6 +73,12 @@ test('a process over the bound is killed once and named; the largest is kept; ot
 	gone.read();
 	// Every process with memory is over a bound of 0 (the zombie has none).
 	assert.equal(gone.seen.killed.length, 4);
+});
+
+test('a command written as one argument, as Chrome rewrites its own, is cut short in a message', (t) => {
+	const { seen, read } = watcher(14, { limit: 0, proc: fakeProc(t, PROCESSES), kill: () => {} });
+	read();
+	assert.equal(seen.command.length, 160);
 });
 
 test('without /proc the run says it is unbounded, never silently', (t) => {

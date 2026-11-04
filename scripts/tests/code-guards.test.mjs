@@ -20,7 +20,8 @@ import {
 	recordCasts,
 	resultFields,
 	rewritesFiles,
-	scriptsAmong
+	scriptsAmong,
+	sharedTempListings
 } from './syntax-guards.mjs';
 
 /**
@@ -265,4 +266,11 @@ test('R17 published packages never reach the network nor start a process: --no-n
 	);
 	assert.ok(published.some(({ path }) => path === join('packages', 'cli', 'bin', 'chartguard.mjs')));
 	assert.deepEqual(networkAccess(published), []);
+});
+
+test('R19 a test lists only directories it owns, never the shared temporary directory other processes write (E82)', () => {
+	const tests = [...sources('packages'), ...sources('apps'), ...sources('tools'), ...sources('scripts')].filter(
+		({ path }) => path.split(sep).includes('tests')
+	);
+	assert.deepEqual(sharedTempListings(tests), []);
 });

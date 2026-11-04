@@ -17,15 +17,16 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
+      # The newest of each supported line; Node 26, the active LTS, is the target (CG-07-05).
       matrix:
-        node: [20, 22, 24]
+        node: [22, 24, 26]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      # The lockfile is written by npm 11; npm 10 (bundled with Node 20/22) rejects it.
+      # The lockfile is written by npm 11; npm 10 (bundled with Node 22) rejects it.
       - run: npm install --global npm@11.21.1
       - run: npm ci
       # The Highcharts demos may not be committed (license); each run imports them at the pinned commit.
@@ -35,8 +36,29 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
       - run: npm run check
       # The extension in a real VS Code (downloaded once per run; it needs Node 22+ and a display).
-      - if: matrix.node == 24
+      - if: matrix.node == 26
         run: xvfb-run -a npm run test:vscode -w packages/integrations/vscode
+  # Each published package as its users get it (CG-07-05): packed, installed alone by npm in a fresh
+  # project, loaded with import and require, its bin run, its declarations compiled; on every
+  # platform, on the lowest Node the packages support (engines) and on the target.
+  consumers:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: ['22.12.0', 26]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm install --global npm@11.21.1
+      - run: npm ci
+      - run: npm run build
+      - run: node --test scripts/tests/consumers.test.mjs scripts/tests/smoke.test.mjs
   # Trends across commits (CG-07-03): every commit to main is measured and recorded in a history
   # that runs hand on through the Actions cache; a value that rose while still within its budget is
   # shown in the job summary, never a failure (the check job fails what is over budget).
@@ -47,10 +69,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
-      # The Node the budgets were measured on; a trend compares runs on one Node major only.
+      # The target Node; a trend compares runs on one Node major only.
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 26
           cache: npm
       - run: npm install --global npm@11.21.1
       - run: npm ci

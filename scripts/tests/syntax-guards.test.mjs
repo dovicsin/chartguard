@@ -15,7 +15,8 @@ import {
 	recordCasts,
 	resultFields,
 	rewritesFiles,
-	scriptsAmong
+	scriptsAmong,
+	sharedTempListings
 } from './syntax-guards.mjs';
 
 /**
@@ -227,6 +228,22 @@ test('R18 catches code and markup made from text, not the names in comments or s
 			'const html = node.innerHTML;',
 			'stream.write(text);',
 			'const options = { innerHTML: 1 };'
+		]
+	});
+});
+
+test('R19 catches a listing of the whole shared temporary directory, however fs and tmpdir are reached', () => {
+	expectGuard(sharedTempListings, {
+		bad: [
+			'const left = readdirSync(tmpdir());',
+			'const left = fs.readdirSync(os.tmpdir()).filter(Boolean);',
+			'const left = await readdir(tmpdir());',
+			'const dir = opendirSync(os.tmpdir());'
+		],
+		good: [
+			'const left = readdirSync(own);',
+			"const left = readdirSync(join(tmpdir(), 'mine'));",
+			"const own = mkdtempSync(join(tmpdir(), 'chartguard-x-'));"
 		]
 	});
 });

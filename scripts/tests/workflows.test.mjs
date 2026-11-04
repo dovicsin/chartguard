@@ -140,3 +140,25 @@ test('one npm writes and checks the lockfile: the workflows install the version 
 	);
 	assert.ok(readFileSync(join(root, 'CONTRIBUTING.md'), 'utf8').includes(`pins npm ${pinned}`));
 });
+
+/** The Node version a workflow's `actions/setup-node` step of `job` runs on. */
+const setupNode = (job) =>
+	job.steps.find((step) => step.uses?.startsWith('actions/setup-node@'))?.with?.['node-version'];
+
+test('CI runs the lowest Node the packages support on every platform, and one target Node everywhere (CG-07-05)', () => {
+	const read = (path) => readFileSync(join(WORKFLOWS, '..', '..', path), 'utf8');
+	const ci = parse(read('.github/workflows/ci.yml'));
+	const floor = /^>=(\d+)\.\d+\.\d+$/u.exec(JSON.parse(read('package.json')).engines.node);
+	assert.ok(floor, 'engines.node is a lowest version, >=x.y.z');
+	const { os, node } = ci.jobs.consumers.strategy.matrix;
+	assert.deepEqual([...os].sort(), ['macos-latest', 'ubuntu-latest', 'windows-latest']);
+	assert.ok(node.includes(floor[0].slice(2)), `consumers run on ${floor[0].slice(2)}`);
+	// The full check covers each supported line from the lowest; its newest is the target everywhere else.
+	const lines = ci.jobs.check.strategy.matrix.node;
+	assert.equal(Math.min(...lines), Number(floor[1]));
+	const target = Math.max(...lines);
+	assert.ok(node.includes(target));
+	assert.equal(setupNode(ci.jobs.trend), target);
+	assert.equal(setupNode(parse(read('.github/workflows/pages.yml')).jobs.build), target);
+	assert.equal(parse(read('action.yml')).inputs['node-version'].default, String(target));
+});

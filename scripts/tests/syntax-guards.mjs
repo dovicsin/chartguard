@@ -225,6 +225,30 @@ export const jsonRoundTrips = (entries) =>
 		return isJson(node, 'stringify') && node.arguments.length > 0 && isJson(node.arguments[0], 'parse');
 	});
 
+/** Calls that list a directory, as `fs` and `fs/promises` name them. */
+const LISTINGS = new Set(['readdirSync', 'readdir', 'opendirSync', 'opendir']);
+
+/** The name a call is made through: `f(...)`, `fs.f(...)`; undefined for anything else. */
+const calleeName = (call) => {
+	if (ts.isIdentifier(call.expression)) return call.expression.text;
+	return memberOf(call.expression)?.member;
+};
+
+/**
+ * R19: a test that lists the whole shared temporary directory (`readdirSync(tmpdir())`): other test
+ * processes write there at the same time, so what it finds is not its own (E82).
+ */
+export const sharedTempListings = (entries) =>
+	offences(
+		entries,
+		(node) =>
+			ts.isCallExpression(node) &&
+			LISTINGS.has(calleeName(node) ?? '') &&
+			node.arguments[0] !== undefined &&
+			ts.isCallExpression(node.arguments[0]) &&
+			calleeName(node.arguments[0]) === 'tmpdir'
+	);
+
 const REWRITING = new Set(['--write', '-w', '--fix', '--fix-dry-run', 'update-index', '--apply']);
 
 /**

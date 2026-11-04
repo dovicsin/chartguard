@@ -35,13 +35,7 @@ export function processTree(root, proc = '/proc') {
 		.filter((name) => /^\d+$/u.test(name))
 		.map((pid) => statusOf(proc, pid))
 		.filter((status) => status !== undefined);
-	// Grouped by hand: Map.groupBy is not in Node 20, which the run supports.
-	const children = new Map();
-	for (const status of all) {
-		const siblings = children.get(status.parent) ?? [];
-		siblings.push(status);
-		children.set(status.parent, siblings);
-	}
+	const children = Map.groupBy(all, (status) => status.parent);
 	const tree = all.filter((status) => status.pid === root);
 	for (let index = 0; index < tree.length; index++) tree.push(...(children.get(tree[index].pid) ?? []));
 	return tree;
@@ -53,14 +47,21 @@ export function processTree(root, proc = '/proc') {
  */
 function commandOf(proc, pid) {
 	try {
-		return readFileSync(join(proc, String(pid), 'cmdline'), 'utf8')
-			.split('\0')
-			.filter((arg) => arg !== '' && !arg.startsWith('-'))
-			.join(' ');
+		return (
+			readFileSync(join(proc, String(pid), 'cmdline'), 'utf8')
+				.split('\0')
+				.filter((arg) => arg !== '' && !arg.startsWith('-'))
+				.join(' ')
+				// Chrome rewrites its arguments into one, options included.
+				.slice(0, COMMAND_LENGTH)
+		);
 	} catch {
 		return `process ${String(pid)}`;
 	}
 }
+
+/** Characters of a command a message shows. */
+const COMMAND_LENGTH = 160;
 
 const gb = (bytes) => `${(bytes / 1024 ** 3).toFixed(2)} GB`;
 

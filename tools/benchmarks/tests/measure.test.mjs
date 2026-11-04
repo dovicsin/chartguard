@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { readdirSync } from 'node:fs';
+import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 
 import { main } from '../bench.mjs';
@@ -76,16 +77,21 @@ test('bench prints every measurement with its budget and fails when one is over'
 	assert.match(errors.join('\n'), /no budget for slow/u);
 });
 
-test('the probes measure in this process too: a cold start, and a project removed after its check', async () => {
+test('the probes measure in this process too: a cold start, and a project removed after its check', async (t) => {
 	const started = await cold('highcharts');
 	assert.ok(started.ms > 0 && started.rss > 0 && started.unit > 0, JSON.stringify(started));
-	const checked = await project('2');
+	// Only the probe's own directory is looked at: other test processes run the same probe at the same
+	// time in the shared temporary directory (one is made here, as they do), which failed CI in turn.
+	const parent = mkdtempSync(join(tmpdir(), 'chartguard-probe-test-'));
+	const neighbour = mkdtempSync(join(tmpdir(), 'chartguard-bench-'));
+	t.after(() => {
+		rmSync(parent, { recursive: true, force: true });
+		rmSync(neighbour, { recursive: true, force: true });
+	});
+	const checked = await project('2', parent);
 	assert.equal(checked.findings, 1, 'the edit is checked: its wrong value is found');
 	assert.ok(checked.open > 0 && checked.edit > 0, JSON.stringify(checked));
-	assert.deepEqual(
-		readdirSync(tmpdir()).filter((name) => name.startsWith('chartguard-bench-')),
-		[]
-	);
+	assert.deepEqual(readdirSync(parent), []);
 });
 
 test('a probe that fails is an error naming it, never a number', () => {

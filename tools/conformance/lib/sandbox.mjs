@@ -5,7 +5,7 @@ const ROOT = fileURLToPath(new URL('../../..', import.meta.url));
 const CHILD = fileURLToPath(new URL('../sandbox/child.mjs', import.meta.url));
 const TIMEOUT_MS = 300_000;
 
-/** `--permission` (Node 22.13+), `--experimental-permission` (Node 20); undefined when neither exists. */
+/** `--permission` (Node 22.13+), `--experimental-permission` (Node 22.12); undefined when neither exists. */
 function permissionFlag() {
 	const flags = process.allowedNodeEnvironmentFlags;
 	if (flags.has('--permission')) return '--permission';

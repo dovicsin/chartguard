@@ -22,7 +22,7 @@ Every adapter installs on its own and never pulls in another chart library.
 
 ## Requirements
 
-Node.js 20.19+ and npm 11+.
+Node.js 22.12+ (developed and tested on Node 26, the active LTS; also 22 and 24) and npm 11+. Every package loads with `import` and with `require`.
 
 ## Setup
 

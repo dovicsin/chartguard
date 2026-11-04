@@ -77,11 +77,11 @@ function editing(checker, file, directory) {
  * most of it is compiling TypeScript itself (about 300 ms, then about 130 ms an opening), which load
  * stretches more than it stretches the reference. Peak memory is read after that first opening. The
  * count of findings shows the edit was checked: a re-check that found nothing would measure no
- * work. The project is removed however the probe ends.
+ * work. The project is written below `parent` and removed however the probe ends.
  */
-export async function project(files) {
+export async function project(files, parent = tmpdir()) {
 	const { SourceChecker } = await import('@chartguard/source-checks');
-	const directory = mkdtempSync(join(tmpdir(), 'chartguard-bench-'));
+	const directory = mkdtempSync(join(parent, 'chartguard-bench-'));
 	try {
 		writeProject(directory, Number(files));
 		const file = join(directory, 'c0.ts');
