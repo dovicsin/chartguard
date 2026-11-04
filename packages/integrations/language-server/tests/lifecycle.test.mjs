@@ -37,22 +37,29 @@ test('a malformed notification is logged, never a crash: the server serves on', 
 	assert.equal((await client.request('shutdown')).result, null);
 });
 
+const at = (line, character) => ({ line, character });
+const ok = { range: { start: at(0, 0), end: at(0, 0) }, text: '// ok\n' };
+const malformed = [
+	{ range: { start: at(0, 0) }, text: '' },
+	{ range: { start: at(0, 1), end: at(0, 0) }, text: '' },
+	{ range: { start: at(-1, 0), end: at(0, 0) }, text: '' },
+	{ range: { start: at(0, 0.5), end: at(0, 1) }, text: '' },
+	{ range: { start: at(0, 0), end: at(0, 0) } },
+	null
+].map((change) => [ok, change]);
+// Changes that each overlap the one before take a pass each, more than the batch's bound (E73).
+const overrun = Array.from({ length: 20_000 }, () => ({ range: { start: at(0, 0), end: at(0, 1) }, text: '/' }));
+/** Content changes the server cannot apply: each malformed one after one that is fine, and a batch over its bound. */
+const UNAPPLICABLE = [...malformed, overrun];
+
 test('a change the server cannot apply leaves the text unknown: its findings are withdrawn until it is opened again', async () => {
-	const at = (line, character) => ({ line, character });
-	for (const change of [
-		{ range: { start: at(0, 0) }, text: '' },
-		{ range: { start: at(0, 1), end: at(0, 0) }, text: '' },
-		{ range: { start: at(-1, 0), end: at(0, 0) }, text: '' },
-		{ range: { start: at(0, 0.5), end: at(0, 1) }, text: '' },
-		{ range: { start: at(0, 0), end: at(0, 0) } },
-		null
-	]) {
+	for (const contentChanges of UNAPPLICABLE) {
 		const client = connect();
 		await client.initialize();
 		await client.open(uri('chart.js'), WRONG);
 		client.notify('textDocument/didChange', {
 			textDocument: { uri: uri('chart.js'), version: 2 },
-			contentChanges: [{ range: { start: at(0, 0), end: at(0, 0) }, text: '// ok\n' }, change]
+			contentChanges
 		});
 		assert.deepEqual((await client.next('textDocument/publishDiagnostics')).params, {
 			uri: uri('chart.js'),
@@ -66,7 +73,7 @@ test('a change the server cannot apply leaves the text unknown: its findings are
 		});
 		// A check it scheduled would publish before that of a document opened after it, with the same wait.
 		await client.open(uri('other.js'), WRONG);
-		assert.deepEqual(published(client, uri('chart.js')), [], JSON.stringify(change));
+		assert.deepEqual(published(client, uri('chart.js')), [], JSON.stringify(contentChanges.at(-1)));
 		const reopened = await client.open(uri('chart.js'), WRONG);
 		assert.equal(reopened.params.diagnostics.length, 1);
 	}

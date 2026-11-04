@@ -1,6 +1,7 @@
 import { SettingsError, SourceChecker, type SourceFinding } from '@chartguard/source-checks';
 
-import { actionsOf, changedText, diagnosticOf, fileNameOf, isChecked, type OpenDocument } from './documents.js';
+import { changedText } from './changes.js';
+import { actionsOf, diagnosticOf, fileNameOf, isChecked, type OpenDocument } from './documents.js';
 import { framed, FramingError, MessageReader } from './framing.js';
 import { Lines, type Range } from './positions.js';
 import {
@@ -178,10 +179,12 @@ class Server {
 		if (changed === undefined) {
 			// The editor's text is no longer known: what was found in it is withdrawn, nothing is claimed.
 			this.closed(known.uri);
-			throw new Error('a content change that cannot be applied; the document is checked again once reopened');
+			throw new Error(
+				'content changes that cannot be applied (one malformed, or more passes over the text than they hold); the document is checked again once reopened'
+			);
 		}
 		const version = textDocument.version ?? known.version;
-		this.documents.set(known.uri, { ...known, version, ...changed });
+		this.documents.set(known.uri, { ...known, version, text: changed.text, lines: changed.lines });
 		this.schedule(known.uri);
 	}
 

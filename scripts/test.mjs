@@ -1,9 +1,11 @@
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { runAsEntryPoint } from '../tools/shared/entry.mjs';
+import { guard, report } from './memory-guard.mjs';
 
 /** This checkout, wherever the script is run from (E7). */
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -35,11 +37,16 @@ export function testFiles(root = ROOT) {
 	return ['packages', 'apps', 'scripts', 'tools'].flatMap((directory) => findTests(join(root, directory)));
 }
 
-function main() {
+/** Runs every test file, each process bounded in memory (E80); a process the bound stopped fails the run. */
+async function main() {
 	const tests = testFiles();
 	console.log('TEST', tests.length, 'files');
-	const { status } = spawnSync(process.execPath, ['--test', ...tests], { stdio: 'inherit', cwd: ROOT });
-	return status ?? 1;
+	const child = spawn(process.execPath, ['--test', ...tests], { stdio: 'inherit', cwd: ROOT });
+	const watch = guard(child.pid);
+	const [status] = await once(child, 'exit');
+	const seen = watch.stop();
+	for (const line of report(watch, seen)) console.error(line);
+	return seen.killed.length > 0 ? 1 : (status ?? 1);
 }
 
 await runAsEntryPoint(import.meta.url, main);
