@@ -4,7 +4,7 @@ import type { AxisSemantics, ChartSemantics } from './chart.js';
 import { lowContrastSeries, sameColorSeries } from './colors.js';
 import { valueOf } from './facts.js';
 import { dataRange } from './fit.js';
-import { emptyTitle, placeholderText, valueAxisUntitled } from './labels.js';
+import { emptyTitle, legendPlaceholder, placeholderText, valueAxisUntitled } from './labels.js';
 import { CARTESIAN, configured, measuredAxes } from './measure.js';
 import { longMotion } from './motion.js';
 import { percentWithoutUnit } from './units.js';
@@ -255,6 +255,7 @@ export const QUALITY_RULES: readonly QualityRule[] = [
 	sameColorSeries,
 	lowContrastSeries,
 	placeholderText,
+	legendPlaceholder,
 	valueAxisUntitled,
 	emptyTitle,
 	percentWithoutUnit,

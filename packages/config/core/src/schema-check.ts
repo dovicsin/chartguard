@@ -43,6 +43,7 @@ const FIELDS = new Set([
 	'handledBy',
 	'deprecated',
 	'doc',
+	'onMismatch',
 	...UNION_FIELDS
 ]);
 
@@ -100,6 +101,7 @@ const SCALAR_FIELDS: readonly [string, (value: unknown, node: Node) => boolean, 
 	['nullAsAbsent', isBoolean, 'nullAsAbsent must be a boolean'],
 	['host', isString, 'host must be a string'],
 	['doc', isString, 'doc must be a string'],
+	['onMismatch', isString, 'onMismatch must be a string'],
 	[
 		'skips',
 		(value) => Array.isArray(value) && value.every((kind) => SKIPPED_KINDS.has(kind as string)),

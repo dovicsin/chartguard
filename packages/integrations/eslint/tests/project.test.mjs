@@ -42,13 +42,15 @@ async function lint(root, file, code, chartguard) {
 const CHART = "import { Chart } from 'chart.js';\nimport { options } from './options';\n";
 const USE = `${CHART}new Chart(ctx, { type: 'bar', data: { datasets: [] }, options });`;
 
+/** What Chart.js does with a responsive that is not a boolean, as the schema says (A73). */
+const RESPONSIVE =
+	'Chart.js compares responsive with !== to whether it listens for resizes (a boolean), so any other value makes every update unbind and bind all its event listeners again; a truthy one also runs its resize step each time, which can recurse when the container size follows the chart.';
 test('project: a value written in an imported file is checked, reported at the use with where it was written', async (t) => {
 	const root = project(t, { 'src/options.ts': "export const options = { responsive: 'yes' };" });
 	assert.deepEqual(await lint(root, 'src/chart.ts', USE, {}), []);
 	assert.deepEqual(await lint(root, 'src/chart.ts', USE, { project: true }), [
 		{
-			message:
-				'CFG_TYPE $.options.responsive: Expected boolean | function, got string. (written in src/options.ts:1:38)',
+			message: `CFG_TYPE $.options.responsive: Expected boolean | function, got string. ${RESPONSIVE} (written in src/options.ts:1:38)`,
 			line: 3,
 			column: 1,
 			fixed: false

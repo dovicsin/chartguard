@@ -3,6 +3,7 @@ import type { Diagnostic, QualityReport, ValidationOptions, ValidationResult } f
 import type ts from 'typescript';
 
 import { type EditSite, offsetOf, renameEdit, type TextEdit, valueEdit } from './edits.js';
+import { insertEdit } from './insert.js';
 
 /** What a finding is: the validator's error, its warning, or the advisory quality review's warning. */
 export type FindingKind = 'valid-config' | 'config-warnings' | 'chart-quality';
@@ -76,7 +77,7 @@ function findingOf(kind: FindingKind, diagnostic: Diagnostic, use: ChartUse, rea
 		const edit = renameEdit(site, diagnostic.path, fix);
 		return edit === undefined ? finding : { ...finding, fix: edit };
 	}
-	const edit = valueEdit(site, fix);
+	const edit = valueEdit(site, fix) ?? insertEdit(site, fix);
 	const description = `Set ${fix.path} to ${JSON.stringify(fix.value)}: ${fix.effect}`;
 	return edit === undefined ? finding : { ...finding, suggestion: { description, edit } };
 }

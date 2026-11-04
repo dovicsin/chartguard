@@ -15,6 +15,8 @@ const chart = (extra = {}, yAxis = {}) => ({
 	palette: { colors: ['#1f77b4', '#d62728'] },
 	yAxis: { title: { text: 'U' }, ...yAxis },
 	series: [{ data: [60, 70] }],
+	// The series here are unnamed: the legend that would draw "Series 1" is off (legend-placeholder has cases of its own).
+	legend: { enabled: false },
 	...extra
 });
 
@@ -77,4 +79,5 @@ test('percent without unit: {value}% only where the axis has no format of its ow
 test('no fix where the finding needs the author', () => {
 	assert.deepEqual(fixes({ ...chart(), title: undefined }), ['VIS_PLACEHOLDER_TEXT -']);
 	assert.deepEqual(fixes({ ...chart(), title: { text: '' } }), ['VIS_EMPTY_TITLE -']);
+	assert.deepEqual(fixes({ ...chart(), legend: undefined }), ['VIS_LEGEND_PLACEHOLDER -']);
 });

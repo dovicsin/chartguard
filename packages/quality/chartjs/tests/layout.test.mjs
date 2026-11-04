@@ -4,9 +4,10 @@ import test from 'node:test';
 
 import { analyze, normalize } from '../dist/index.js';
 
-/** The label, access and contrast rules (CG-05-04 parts 3, 5, 6) fire on most bare test configs; they have tests of their own. */
+/** The label, legend, access and contrast rules (CG-05-04 parts 3, 5, 6, 9) fire on most bare test configs; they have tests of their own. */
 const LABELS = new Set([
 	'VIS_PLACEHOLDER_TEXT',
+	'VIS_LEGEND_PLACEHOLDER',
 	'VIS_VALUE_AXIS_UNTITLED',
 	'VIS_DATA_NOT_DESCRIBED',
 	'VIS_LOW_CONTRAST_SERIES'

@@ -164,7 +164,7 @@ function baseOf(config: unknown, item: Item, kind: Fact<SeriesKind>, valueAxis: 
 	return valueAxis.known ? startOf(config, valueAxis.value, at) : unknown(at, valueAxis.reason);
 }
 
-export function seriesOf(config: unknown, item: Item, color: Fact<string>): SeriesSemantics {
+export function seriesOf(config: unknown, item: Item, color: Fact<string>): Omit<SeriesSemantics, 'legend'> {
 	const type = readFact(config, [...item.segments, 'type'], isString);
 	const kind = kindOf(config, item, type);
 	const layout = layoutOf(config, item, type);

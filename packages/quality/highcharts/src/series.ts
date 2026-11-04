@@ -142,7 +142,12 @@ function layoutOf(config: unknown, item: Item, type: Fact<string>, chart: ChartL
 	};
 }
 
-export function seriesOf(config: unknown, item: Item, chart: ChartLayout, color: Fact<string>): SeriesSemantics {
+export function seriesOf(
+	config: unknown,
+	item: Item,
+	chart: ChartLayout,
+	color: Fact<string>
+): Omit<SeriesSemantics, 'legend'> {
 	const type = seriesType(config, item);
 	const layout = layoutOf(config, item, type, chart);
 	return {

@@ -100,3 +100,7 @@ export function unknownKeyFinding(
 		...(match === undefined ? {} : { suggestion: `Did you mean "${match}"?` })
 	};
 }
+
+/** A `CFG_TYPE` message, saying what the runtime does with the value where the schema knows it (`onMismatch`, A73). */
+export const typeMismatch = (expected: string, actual: string, effect: string | undefined): string =>
+	`Expected ${expected}, got ${actual}.${effect === undefined ? '' : ` ${effect}`}`;

@@ -187,12 +187,13 @@ class Lowerer {
 
 	/** A property's value with its metadata; the property's tier covers its value and everything below. */
 	private lowerProperty(property: PropertyNode, path: string): NodeSchema {
-		const { handledBy, deprecated, provenance } = property;
+		const { handledBy, deprecated, onMismatch, provenance } = property;
 		if (provenance.confidence === 'unknown') return this.approximate(path);
 		const value = this.lower(property.node, path);
 		return this.annotated(property.skips === undefined ? value : this.skipping(value, property.skips), {
 			...(handledBy === undefined ? {} : { handledBy }),
 			...(deprecated === undefined ? {} : { deprecated }),
+			...(onMismatch === undefined ? {} : { onMismatch }),
 			...(isInferredTier(provenance.confidence) ? { inferred: true as const } : {})
 		});
 	}

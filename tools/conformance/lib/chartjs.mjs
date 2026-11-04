@@ -35,11 +35,15 @@ _adapters._date.override({
 	endOf: (time, unit) => time - (time % (UNIT_MS[unit] ?? 1)) + (UNIT_MS[unit] ?? 1) - 1
 });
 
-/** A 2D context whose drawing calls do nothing, except that rectangles filled are kept in `canvas.fills`; text measures as 10px wide. */
+/**
+ * A 2D context whose drawing calls do nothing, except that rectangles filled are kept in `canvas.fills`
+ * and the texts filled, as Chart.js passes them, in `canvas.texts`; text measures as 10px wide.
+ */
 function fakeContext(canvas) {
 	const state = new Map();
 	const methods = {
 		fillRect: (x, y, width, height) => canvas.fills.push([x, y, width, height]),
+		fillText: (text) => canvas.texts.push(text),
 		measureText: () => ({ width: 10, actualBoundingBoxAscent: 8, actualBoundingBoxDescent: 2 }),
 		createLinearGradient: () => ({ addColorStop() {} }),
 		createRadialGradient: () => ({ addColorStop() {} }),
@@ -76,7 +80,7 @@ export function runChartjs(config) {
  * destroys the chart.
  */
 export function createChartjs(config, { width = 400, height = 300 } = {}) {
-	const canvas = { width, height, fills: [], style: {}, addEventListener() {}, removeEventListener() {} };
+	const canvas = { width, height, fills: [], texts: [], style: {}, addEventListener() {}, removeEventListener() {} };
 	const context = fakeContext(canvas);
 	canvas.getContext = () => context;
 	return new Chart(canvas, config);

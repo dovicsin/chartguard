@@ -29,6 +29,7 @@ import {
 
 import { seriesColors } from './color.js';
 import { REMEDIES } from './fixes.js';
+import { entryOf, legendOf } from './legend.js';
 import { motionOf } from './motion.js';
 import { FROM_SERIES, seriesOf } from './series.js';
 import { backgroundOf } from './shades.js';
@@ -260,13 +261,14 @@ function keyboardOf(config: unknown, unread: UnknownFact | undefined): Fact<bool
 export function normalize(config: unknown): ChartSemantics {
 	const items = itemsAt(config, ['series']);
 	const chart = { coordinateSystem: coordinateSystemOf(config), orientation: orientationOf(config, items) };
-	const colors = seriesColors(config, items);
+	const [colors, legend] = [seriesColors(config, items), legendOf(config, items)];
 	const series: Listed<SeriesSemantics> = items.known
 		? {
 				...items,
-				items: items.items.map((item, index) =>
-					seriesOf(config, item, chart, colors[index] ?? unknown(item.path, 'unmodelled'))
-				)
+				items: items.items.map((item, index) => ({
+					...seriesOf(config, item, chart, colors[index] ?? unknown(item.path, 'unmodelled')),
+					legend: entryOf(config, item, legend)
+				}))
 			}
 		: items;
 	return {

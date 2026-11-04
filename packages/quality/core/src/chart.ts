@@ -65,6 +65,12 @@ export interface SeriesSemantics {
 	readonly shades: Fact<Shades>;
 	/** Its values as the runtime reads them from `data`; `unmodelled` for shapes not read yet (datasets, parsing keys, ranges). */
 	readonly values: Fact<ValueSummary>;
+	/**
+	 * Its entry in the legend (CG-05-04 part 9): the text drawn for it, its name or what the runtime
+	 * makes up for a series without one (`source: 'default'`); and whether the legend draws an entry for
+	 * the series itself (`inapplicable` where the legend lists its points instead).
+	 */
+	readonly legend: TitleSemantics;
 }
 
 /**
@@ -108,7 +114,7 @@ export interface AxisSemantics {
 	readonly title: TitleSemantics;
 }
 
-/** A title (of the chart or an axis): its text and whether it is shown. */
+/** A title or label (of the chart, an axis, a series' legend entry): its text and whether it is shown. */
 export interface TitleSemantics {
 	readonly text: Fact<string>;
 	readonly shown: Fact<boolean>;

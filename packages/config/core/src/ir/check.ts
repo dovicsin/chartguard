@@ -143,7 +143,14 @@ class NodeChecker {
 		this.checkDeprecation(property['deprecated'], path, siblings);
 		if (property['skips'] !== undefined && !isSkips(property['skips']))
 			this.report(path, 'skips must be { value: <kinds>, entries: <kinds> } of "null", "falsy", "truthy"');
+		this.checkMismatch(property['onMismatch'], path);
 		this.checkNode(property['node'], `${path}.node`, depth + 1);
+	}
+
+	/** What the runtime does with a value of another type (A73): a sentence, never empty. */
+	private checkMismatch(onMismatch: unknown, path: string): void {
+		if (onMismatch !== undefined && (typeof onMismatch !== 'string' || onMismatch.trim() === ''))
+			this.report(path, 'onMismatch must be a non-empty string');
 	}
 
 	/** A deprecation is strings only; a rename target must be a sibling the same object declares. */

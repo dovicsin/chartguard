@@ -41,7 +41,7 @@ test('without options every rule runs at its catalog severity; nothing is suppre
 	]);
 	assert.deepEqual([report.suppressed, report.disabled], [[], []]);
 	assert.deepEqual(reported(review(bars(), {})), reported(report));
-	assert.equal(report.rulesVersion, 'quality-0.6');
+	assert.equal(report.rulesVersion, 'quality-0.7');
 });
 
 test('levels: off does not run the rule; info and warning set the severity of its findings', () => {

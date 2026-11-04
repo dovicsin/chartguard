@@ -26,7 +26,7 @@ export const RUNTIME_CONTRACT = [
 		config: { type: 'bar', data: { datasets: [] }, options: { responsive: 'yes' } },
 		findings: ['error CFG_TYPE $.options.responsive'],
 		runtime: 'accepted',
-		why: 'Type contract: declared `boolean`; the runtime renders it without an error or warning.'
+		why: 'Type contract: declared `boolean`; the runtime renders it without an error or warning, but compares it with `!==` to a boolean at every update and binds all its listeners again each time (the finding says so, A73; checked in tools/conformance/tests/chartjs-effects.test.mjs).'
 	},
 	{
 		name: 'background color boolean',

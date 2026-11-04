@@ -24,6 +24,7 @@ import {
 
 import { axesOf } from './axes.js';
 import { seriesColors } from './color.js';
+import { legendOf, legendsOf } from './entries.js';
 import { REMEDIES } from './fixes.js';
 import { motionOf } from './motion.js';
 import { seriesOf } from './series.js';
@@ -93,12 +94,14 @@ export function normalize(config: unknown): ChartSemantics {
 	const items = itemsAt(config, ['series'], { single: true });
 	const colors = seriesColors(config, items);
 	const several = Array.isArray(readPath(config, ['title']));
+	const legends = legendsOf(config);
 	const series: Listed<SeriesSemantics> = items.known
 		? {
 				...items,
-				items: items.items.map((item, index) =>
-					seriesOf(config, item, colors[index] ?? unknown(item.path, 'unmodelled'))
-				)
+				items: items.items.map((item, index) => {
+					const semantics = seriesOf(config, item, colors[index] ?? unknown(item.path, 'unmodelled'));
+					return { ...semantics, legend: legendOf(config, item, semantics, legends) };
+				})
 			}
 		: items;
 	return {

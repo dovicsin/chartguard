@@ -3,6 +3,7 @@ import {
 	type ChartSemantics,
 	type Default,
 	isBoolean,
+	isString,
 	itemsAt,
 	type Listed,
 	type QualityOptions,
@@ -16,6 +17,7 @@ import {
 import { asText, axesOf, isText } from './axes.js';
 import { colorsDefinedOnce } from './color.js';
 import { REMEDIES } from './fixes.js';
+import { legendOf, legendShown } from './legend.js';
 import { motionOf } from './motion.js';
 import { scalesOf } from './scales.js';
 import { addedScales, seriesOf } from './series.js';
@@ -30,8 +32,15 @@ export function normalize(config: unknown): ChartSemantics {
 	const datasets = itemsAt(config, ['data', 'datasets']);
 	const scales = scalesOf(config, datasets, addedScales(config));
 	const colorsDefined = colorsDefinedOnce(config, datasets);
+	const [chartType, legendDrawn] = [readFact(config, ['type'], isString), legendShown(config)];
 	const series: Listed<SeriesSemantics> = datasets.known
-		? { ...datasets, items: datasets.items.map((item) => seriesOf(config, item, scales, colorsDefined)) }
+		? {
+				...datasets,
+				items: datasets.items.map((item) => ({
+					...seriesOf(config, item, scales, colorsDefined),
+					legend: legendOf(config, item, chartType, legendDrawn)
+				}))
+			}
 		: datasets;
 	const titleAt = ['options', 'plugins', 'title'];
 	return {

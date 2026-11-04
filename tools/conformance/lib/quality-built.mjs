@@ -29,6 +29,9 @@ export const PREMISES = {
 		[title, ...valueAxes.map((axis) => axis.title)].some(
 			(text) => text !== '' && !JSON.stringify(config).includes(JSON.stringify(text))
 		),
+	// A drawn legend entry whose text appears nowhere in the config: the library made it up.
+	VIS_LEGEND_PLACEHOLDER: ({ legend, config }) =>
+		legend.some((text) => text.trim() !== '' && !JSON.stringify(config).includes(JSON.stringify(text))),
 	VIS_VALUE_AXIS_UNTITLED: ({ title, valueAxes }) => title === '' && valueAxes.some((axis) => axis.title === ''),
 	// Two cartesian series the runtime drew in one colour.
 	VIS_SAME_COLOR_SERIES: ({ colors }) => new Set(colors.map(colorKey)).size < colors.length,
@@ -114,6 +117,12 @@ const chartjsPieMisdrawn = (metas) =>
 		.filter(({ type }) => type === 'pie' || type === 'doughnut')
 		.some((meta) => meta._parsed.some((value, index) => value < 0 && meta.data[index].circumference > 0));
 
+/** The legend entries Chart.js draws (none without a displayed legend), as the canvas writes their text: a string. */
+const chartjsLegend = (chart) =>
+	chart.legend !== undefined && chart.legend.options.display === true
+		? chart.legend.legendItems.map(({ text }) => String(text))
+		: [];
+
 /** The value scales Chart.js built for the datasets, and whether an arc was drawn for a negative value. */
 export function builtChartjs(config, options) {
 	const chart = createChartjs(copyPlain(config));
@@ -131,6 +140,7 @@ export function builtChartjs(config, options) {
 			valueAxes: cartesian.map(chartjsAxis),
 			pieMisdrawn: chartjsPieMisdrawn(metas),
 			title: drawnText(chart.options.plugins.title),
+			legend: chartjsLegend(chart),
 			config
 		};
 	} finally {
@@ -174,6 +184,19 @@ function echartsTitle(chart) {
 	return component === undefined || component.get('show') === false ? '' : (component.get('text') ?? '');
 }
 
+/** The legend entries echarts draws: the names each shown legend lists that a series answers to (its own, or its data's). */
+export function echartsLegend(chart) {
+	const model = chart.getModel();
+	const names = new Set(
+		model.getSeries().flatMap((series) => [series.name, ...(series.legendVisualProvider?.getAllNames() ?? [])])
+	);
+	return model
+		.findComponents({ mainType: 'legend' })
+		.filter((legend) => legend.get('show') !== false)
+		.flatMap((legend) => legend.getData().map((item) => String(item.get('name'))))
+		.filter((name) => names.has(name));
+}
+
 /** The value axes echarts built for its grid series. */
 export function builtEcharts(option, browserOutcome, options) {
 	const chart = echarts.init(null, null, { renderer: 'svg', ssr: true, width: 400, height: 300 });
@@ -191,6 +214,7 @@ export function builtEcharts(option, browserOutcome, options) {
 			valueAxes: measured,
 			pieMisdrawn,
 			title: echartsTitle(chart),
+			legend: echartsLegend(chart),
 			config: option,
 			colors,
 			described: browserOutcome === undefined ? undefined : browserOutcome.label !== '',
@@ -237,7 +261,7 @@ function highchartsContrasts(series, shades, options) {
 }
 
 /** The y axes Highcharts built for its series (recorded by the page runner). */
-export function builtHighcharts({ series, yAxes, title, access, shades, durations }, config, options) {
+export function builtHighcharts({ series, yAxes, title, legend, access, shades, durations }, config, options) {
 	const measured = highchartsAxes(series, yAxes);
 	// Highcharts leaves negative pie points out (`isValid`: `y >= 0`).
 	const pieMisdrawn = series.some(
@@ -249,6 +273,7 @@ export function builtHighcharts({ series, yAxes, title, access, shades, duration
 		valueAxes: measured,
 		pieMisdrawn,
 		title,
+		legend: legend.map(({ text }) => text),
 		config,
 		colors: series.filter(({ type, yAxis }) => type !== 'pie' && yAxis !== null).map(({ color }) => color),
 		described: access.points > 0,

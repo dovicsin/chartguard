@@ -150,6 +150,23 @@ test('a built-in plugin entry may be a boolean or null: getOpts disables it with
 	}
 });
 
+test('responsive says what the runtime does with a value that is not a boolean, citing _checkEventBindings (A73)', () => {
+	const configs = Object.keys(artifact.definitions).filter((name) => name.startsWith('Config_'));
+	assert.ok(configs.length >= 8);
+	for (const name of configs) {
+		const options = resolve(artifact.definitions[name].properties.options.node);
+		const { onMismatch, provenance } = options.properties.responsive;
+		assert.match(onMismatch ?? '', /compares responsive with !==/, name);
+		const pointers = provenance.sources.map(({ pointer }) => pointer);
+		assert.ok(pointers.includes('chart.js/dist/chart.js:5968'), `${name} cites the comparison`);
+	}
+	// Only the options the runtime mishandles carry an effect.
+	const annotated = Object.values(artifact.definitions).flatMap((definition) =>
+		Object.entries(definition.properties ?? {}).filter(([, property]) => property.onMismatch !== undefined)
+	);
+	assert.deepEqual([...new Set(annotated.map(([key]) => key))], ['responsive']);
+});
+
 test('the artifact never embeds local paths', () => {
 	assert.equal(first.text.includes(ROOT), false);
 	assert.equal(first.text.includes('__chartguard_schema_entry__'), false);

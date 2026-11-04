@@ -202,3 +202,37 @@ test('included definitions add their properties; own properties win', () => {
 	assert.deepEqual(codes({ radius: 'x', label: 1 }), ['CFG_TYPE $.radius', 'CFG_TYPE $.label']);
 	assert.deepEqual(codes({ radios: 1 }), ['CFG_UNKNOWN_KEY $.radios']);
 });
+
+test('onMismatch says what the runtime does with a value of another type, at that value only (A73)', () => {
+	const effect = 'The runtime rebinds its listeners at every update.';
+	const scriptable = { kind: 'union', anyOf: [{ kind: 'boolean' }, { kind: 'function' }] };
+	const root = {
+		kind: 'object',
+		additional: 'closed',
+		provenance: typed('Options'),
+		properties: {
+			flag: prop(scriptable, { onMismatch: effect }),
+			plain: prop({ kind: 'boolean' }, { onMismatch: effect }),
+			nested: prop({
+				kind: 'object',
+				additional: 'closed',
+				provenance: typed('Nested'),
+				properties: { flag: prop({ kind: 'boolean' }) }
+			})
+		}
+	};
+	assert.deepEqual(problems(artifact(root)), []);
+	const manifest = manifestFromArtifact(artifact(root));
+	const messages = (config) => validateConfig(config, manifest).diagnostics.map((d) => `${d.code} ${d.message}`);
+	assert.deepEqual(messages({ flag: 'yes', plain: 1 }), [
+		`CFG_TYPE Expected boolean | function, got string. ${effect}`,
+		`CFG_TYPE Expected boolean, got number. ${effect}`
+	]);
+	// Below the annotated value the effect does not apply.
+	assert.deepEqual(messages({ nested: { flag: 'yes' } }), ['CFG_TYPE Expected boolean, got string.']);
+	assert.deepEqual(messages({ flag: true, plain: false }), []);
+	for (const onMismatch of [1, '', '  '])
+		assert.deepEqual(problems(artifact({ ...root, properties: { flag: prop(scriptable, { onMismatch }) } })), [
+			'$.root.properties.flag: onMismatch must be a non-empty string'
+		]);
+});

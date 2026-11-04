@@ -44,12 +44,10 @@ function compareForms(example, language) {
 		id
 	);
 	assert.deepEqual(offered(fromSource.validator), offered(fromJson.validator), id);
-	// The source edits replace a value the call writes; a missing option (`aria.enabled`) is
-	// inserted only in JSON so far (roadmap follow-up of CG-06-06 part 3).
-	const replacing = fromJson.quality.filter(
-		({ severity, offer }) => severity === 'warning' && (offer === undefined || offer.edit.start !== offer.edit.end)
-	);
-	assert.deepEqual(offered(fromSource.quality), offered(replacing), id);
+	// Every quality fix JSON offers is offered in source too: a value the call writes is replaced, a
+	// missing option (`aria.enabled`) inserted into the object the call writes.
+	const warnings = fromJson.quality.filter(({ severity }) => severity === 'warning');
+	assert.deepEqual(offered(fromSource.quality), offered(warnings), id);
 	assert.deepEqual(plain(fromSource.draw), plain(fromJson.draw), id);
 	const call = text.indexOf('(', text.lastIndexOf('\n', text.length - 2));
 	for (const { range } of [...fromSource.validator, ...fromSource.quality]) assert.ok(range.start > call, id);

@@ -190,7 +190,7 @@ export function seriesOf(
 	item: Item,
 	scales: Scales,
 	colorsDefined: () => Fact<boolean>
-): SeriesSemantics {
+): Omit<SeriesSemantics, 'legend'> {
 	const type = typeOf(config, item);
 	const layout = layoutOf(config, item, type, scales);
 	const kind = kindOf(config, item, type);

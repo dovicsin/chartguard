@@ -1,3 +1,4 @@
+import { withMismatchEffects } from './chartjs-effects.mjs';
 import { planPluginHandlers, pluginDefinitions } from './chartjs-plugins.mjs';
 import { ELEMENT_SCOPE, planOptionScopes } from './chartjs-scopes.mjs';
 import { TypeEmitter } from './emitter.mjs';
@@ -210,7 +211,7 @@ function withFontFacts(root, definitions) {
  * What the declarations leave out, read from the runtime: element options in every scope the
  * runtime reads them from, open per-property animations, built-in plugin options that take effect
  * only when the plugin is registered, the plugin extension point; then every option value becomes
- * scriptable, and fonts take what `toFont` handles.
+ * scriptable, fonts take what `toFont` handles, and options the runtime mishandles say how (A73).
  */
 function withRuntimeFacts(root, definitions, configNames) {
 	const scopes = planOptionScopes(root, definitions, configNames);
@@ -229,7 +230,7 @@ function withRuntimeFacts(root, definitions, configNames) {
 	for (const name of pluginDefinitions(definitions, configNames))
 		next[name] = { ...next[name], extensionPoint: 'chartjs.plugins' };
 	makeOptionsScriptable(next, configNames);
-	return withFontFacts(root, next);
+	return withMismatchEffects(root, withFontFacts(root, next), configNames);
 }
 
 export function generateChartjs(root, pin) {

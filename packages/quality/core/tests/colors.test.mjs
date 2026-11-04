@@ -31,7 +31,8 @@ const series = (kind, color, index) => ({
 	valueAxis: none('$.a'),
 	orientation: none('$.o'),
 	color,
-	values: none('$.v')
+	values: none('$.v'),
+	legend: { text: none('$.n'), shown: none('$.legend') }
 });
 const chart = (items) => ({
 	library: 't',

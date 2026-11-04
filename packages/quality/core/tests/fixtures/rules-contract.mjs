@@ -11,6 +11,7 @@ import { COLOR_CASES } from './colors-cases.mjs';
 import { CONTEXT_CASES, SETTING_CASES } from './context-cases.mjs';
 import { CONTRAST_CASES } from './contrast-cases.mjs';
 import { LABEL_CASES } from './labels-cases.mjs';
+import { LEGEND_CASES } from './legend-cases.mjs';
 import { MOTION_CASES } from './motion-cases.mjs';
 import { PIE_CASES } from './pie-cases.mjs';
 import { RANGE_CASES } from './ranges-cases.mjs';
@@ -56,12 +57,57 @@ const DESCRIBED = (key, option) => (key === 'echarts' ? { aria: { enabled: true 
 const CONTRASTED = (key, config) =>
 	key === 'highcharts' ? { palette: { colors: ACCESSIBLE_COLORS }, ...config } : config;
 
+/** A copy of `object` with `key` set, its other properties (getters too) as they are: a getter is never run. */
+const withOwn = (object, key, value) =>
+	Object.create(Object.getPrototypeOf(object), {
+		...Object.getOwnPropertyDescriptors(object),
+		[key]: { value, writable: true, enumerable: true, configurable: true }
+	});
+/** The value of the data property `key` of `holder` (never a getter), or undefined. */
+const ownValue = (holder, key) =>
+	holder !== null && typeof holder === 'object' ? Object.getOwnPropertyDescriptor(holder, key)?.value : undefined;
+/** The list at `key` of `holder`, or undefined. */
+function listAt(holder, key) {
+	const value = ownValue(holder, key);
+	return Array.isArray(value) ? value : undefined;
+}
+/** The list with every plain item that has no own `nameKey` named; elements behind getters and holes stay as they are. */
+function namedItems(list, nameKey) {
+	const descriptors = Object.getOwnPropertyDescriptors(list);
+	for (const [index, descriptor] of Object.entries(descriptors)) {
+		const item = descriptor.value;
+		if (index !== 'length' && item !== null && typeof item === 'object' && !Object.hasOwn(item, nameKey))
+			descriptor.value = withOwn(item, nameKey, `Sales ${index}`);
+	}
+	return Object.defineProperties([], descriptors);
+}
 /**
- * A case as a real chart would be written: titled unless it is about labels, described to assistive
- * technology unless it is about access, in colours with contrast unless it is about contrast.
+ * Every case that is not about legends names its series, as a real chart does (echarts lists no unnamed
+ * series): without names, legend-placeholder would add its findings to most Chart.js and Highcharts cases.
+ */
+const NAMED = {
+	chartjs: (config) => {
+		const data = ownValue(config, 'data');
+		const datasets = listAt(data, 'datasets');
+		return datasets === undefined
+			? config
+			: withOwn(config, 'data', withOwn(data, 'datasets', namedItems(datasets, 'label')));
+	},
+	echarts: (option) => option,
+	highcharts: (config) => {
+		const series = listAt(config, 'series');
+		return series === undefined ? config : withOwn(config, 'series', namedItems(series, 'name'));
+	}
+};
+
+/**
+ * A case as a real chart would be written: titled unless it is about labels, its series named unless it
+ * is about legends, described to assistive technology unless it is about access, in colours with
+ * contrast unless it is about contrast.
  */
 function realistic(entry) {
-	const config = (key, value) => {
+	const config = (key, original) => {
+		const value = entry.legend === true ? original : NAMED[key](original);
 		const titled = entry.labels === true ? value : TITLED[key](value);
 		const described = entry.access === true ? titled : DESCRIBED(key, titled);
 		return entry.contrast === true ? described : CONTRASTED(key, described);
@@ -79,6 +125,7 @@ export const RULES_CONTRACT = [
 	...COLOR_CASES,
 	...CONTRAST_CASES,
 	...LABEL_CASES,
+	...LEGEND_CASES,
 	...ACCESS_CASES,
 	...MOTION_CASES,
 	...RANGE_CASES,

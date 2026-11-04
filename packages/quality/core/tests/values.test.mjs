@@ -21,7 +21,8 @@ const series = (kind, valueAxis, orientation = fact('vertical', '$.o')) => ({
 	base: none('$.base'),
 	valueAxis,
 	orientation,
-	color: none('$.color')
+	color: none('$.color'),
+	legend: { text: none('$.n'), shown: none('$.legend') }
 });
 const chart = ({ items = [], axes = [], text = none('$.title.text'), shown = none('$.title.show') } = {}) => ({
 	library: 't',

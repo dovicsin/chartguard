@@ -135,7 +135,7 @@ test('ruleset in the config file: a list for quality; the command line replaces 
 	const root = sourceProject(t, {
 		'chart.json': JSON.stringify({
 			type: 'bar',
-			data: { datasets: [{ data: [5, 6] }] },
+			data: { datasets: [{ label: 'Price', data: [5, 6] }] },
 			options: { scales: { y: { min: 4 } } }
 		}),
 		'chartguard.config.json': JSON.stringify({

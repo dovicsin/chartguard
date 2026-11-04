@@ -34,7 +34,8 @@ const line = {
 	base: none('$.base'),
 	valueAxis: fact('y', '$.a'),
 	orientation: fact('vertical', '$.o'),
-	color: none('$.color')
+	color: none('$.color'),
+	legend: title(none('$.s.name'), none('$.legend'))
 };
 const chart = (chartTitle, axisTitle) => ({
 	library: 't',
@@ -72,4 +73,28 @@ test('value axis untitled: only when neither the axis nor the chart has a title 
 		codes(chart(title(fact('', '$.title', 'default')), title(fact('Units', '$.y.title'), fact(false, '$.y.display')))),
 		['VIS_VALUE_AXIS_UNTITLED $.y.title']
 	);
+});
+
+const legended = (legend) => ({
+	...chart(title(fact('Sales', '$.title')), title(fact('Units', '$.y.title'))),
+	series: { known: true, path: '$.series', items: [{ ...line, legend }] }
+});
+
+test('legend placeholder: a drawn legend entry whose non-blank text is the runtime default', () => {
+	const drawn = fact(true, '$.legend.display', 'default');
+	assert.deepEqual(codes(legended(title(fact('Series 1', '$.s.name', 'default'), drawn))), [
+		'VIS_LEGEND_PLACEHOLDER $.s.name'
+	]);
+	// The author's name, however generic, is the author's.
+	assert.deepEqual(codes(legended(title(fact('Series 1', '$.s.name'), drawn))), []);
+	// Not drawn, not known to be drawn, or the series has no entry of its own: no claim.
+	assert.deepEqual(
+		codes(legended(title(fact('Series 1', '$.s.name', 'default'), fact(false, '$.legend.enabled')))),
+		[]
+	);
+	assert.deepEqual(codes(legended(title(fact('Series 1', '$.s.name', 'default'), none('$.legend', 'dynamic')))), []);
+	assert.deepEqual(codes(legended(title(fact('Series 1', '$.s.name', 'default'), none('$.s', 'inapplicable')))), []);
+	// A blank default, or a text not known, is no placeholder.
+	assert.deepEqual(codes(legended(title(fact(' ', '$.s.name', 'default'), drawn))), []);
+	assert.deepEqual(codes(legended(title(none('$.s.name', 'accessor'), drawn))), []);
 });

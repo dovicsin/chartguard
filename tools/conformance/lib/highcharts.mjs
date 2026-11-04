@@ -76,6 +76,8 @@ for (const options of CASES.map(revive)) {
 			series: chart.series.map((series) => ({ type: series.type, yAxis: series.yAxis ? series.yAxis.index : null, stacking: series.options.stacking ?? null, color: typeof series.color === 'string' ? series.color : null, fromZero: typeof series.translatedThreshold === 'number' ? Math.abs(series.translatedThreshold - series.yAxis.translate(0, 0, 1, 0, 1)) < 0.5 : null, threshold: series.options.threshold ?? null, points: series.points.map((point) => ({ y: point.y ?? null, valid: point.isValid() })) })),
 			yAxes: chart.yAxis.map((axis) => ({ horiz: axis.horiz === true, top: axis.top, left: axis.left, len: axis.len, min: axis.min, max: axis.max, reversed: axis.reversed === true, log: axis.logarithmic !== undefined, title: axis.axisTitle?.textStr ?? '', percent: axis.stacking?.usePercentage === true, labels: (axis.tickPositions ?? []).flatMap((position) => { const text = axis.ticks[position]?.label?.textStr; return text === undefined ? [] : [String(text)]; }) })),
 			title: chart.title?.textStr ?? '',
+			// The legend entries drawn (none when the legend is off or empty): the series each is for (-1: a point's) and its text.
+			legend: chart.legend.display ? chart.legend.allItems.map((item) => ({ series: chart.series.indexOf(item), text: String(item.legendItem?.label?.textStr ?? '') })) : [],
 			// What assistive technology gets: labelled data points, and anything taking keyboard focus.
 			access: {
 				points: [...chart.renderTo.querySelectorAll('path[aria-label], rect[aria-label]')].length,

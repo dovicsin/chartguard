@@ -6,11 +6,13 @@ import {
 	type ValidationOptions
 } from '@chartguard/core';
 
+import { at, type Cursor, descend, ROOT } from './cursor.js';
 import { deprecationFinding } from './deprecation.js';
 import { asInferred, confirmed, inconclusive, unresolved } from './diagnostics.js';
 import {
 	registrationFinding,
 	skippedFinding,
+	typeMismatch,
 	unhandledFinding,
 	unknownKeyFinding,
 	variantFinding
@@ -34,26 +36,6 @@ function skippedKind(value: unknown): SkippedKind | undefined {
 const MAX_ENTRIES = 20_000;
 /** Values one validation visits at most, whatever their shape: a bound on the whole walk, not only per container. */
 const MAX_VISITS = 1_000_000;
-
-interface Cursor {
-	readonly path: string;
-	readonly depth: number;
-	/** A schema fact on the way here is not authoritative: findings below are likely, not confirmed (CG-02-07). */
-	readonly inferred: boolean;
-	/** The unions already choosing a variant for the value here: one reached again would choose without end (H6). */
-	readonly choosing?: ReadonlySet<NodeSchema>;
-}
-
-const ROOT: Cursor = { path: '$', depth: 0, inferred: false };
-
-function descend({ path, depth, inferred }: Cursor, segment: string): Cursor {
-	return { path: `${path}${segment}`, depth: depth + 1, inferred };
-}
-
-/** The cursor at `schema`: inferred from there on when the schema's own facts are. */
-function at(cursor: Cursor, schema: NodeSchema | undefined): Cursor {
-	return schema?.inferred === true && !cursor.inferred ? { ...cursor, inferred: true } : cursor;
-}
 
 /**
  * Walks a config against a schema without invoking getters or recursing through cycles.
@@ -136,7 +118,10 @@ export class ConfigWalker {
 			case 'accepted':
 				return;
 			case 'mismatch':
-				this.report(cursor, confirmed('CFG_TYPE', path, `Expected ${selection.expected}, got ${kindOf(value)}.`));
+				this.report(
+					cursor,
+					confirmed('CFG_TYPE', path, typeMismatch(selection.expected, kindOf(value), cursor.onMismatch))
+				);
 				return;
 			case 'ambiguous':
 				this.report(
@@ -183,7 +168,7 @@ export class ConfigWalker {
 		const actual = kindOf(value);
 		const { path } = cursor;
 		if (actual !== schema.kind) {
-			this.report(cursor, confirmed('CFG_TYPE', path, `Expected ${schema.kind}, got ${actual}.`));
+			this.report(cursor, confirmed('CFG_TYPE', path, typeMismatch(schema.kind, actual, cursor.onMismatch)));
 			return false;
 		}
 		if (schema.enum !== undefined && !schema.enum.some((allowed) => allowed === value))

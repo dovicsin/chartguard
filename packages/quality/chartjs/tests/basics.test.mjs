@@ -4,9 +4,10 @@ import test from 'node:test';
 import { checkPackagePointers } from '../../core/tests/pointers.mjs';
 import { analyze, normalize } from '../dist/index.js';
 
-/** The label, access and contrast rules (CG-05-04 parts 3, 5, 6) fire on most bare test configs; they have tests of their own. */
+/** The label, legend, access and contrast rules (CG-05-04 parts 3, 5, 6, 9) fire on most bare test configs; they have tests of their own. */
 const LABELS = new Set([
 	'VIS_PLACEHOLDER_TEXT',
+	'VIS_LEGEND_PLACEHOLDER',
 	'VIS_VALUE_AXIS_UNTITLED',
 	'VIS_DATA_NOT_DESCRIBED',
 	'VIS_LOW_CONTRAST_SERIES'
@@ -163,7 +164,7 @@ test('getters are never run and leave their facts unknown', () => {
 });
 
 test('every runtime default points at the line of the pinned chart.js that applies it', () =>
-	assert.equal(checkPackagePointers(import.meta.url), 26));
+	assert.equal(checkPackagePointers(import.meta.url), 28));
 
 test('access: a canvas gets its text alternative and keyboard access from the page', () => {
 	const { dataDescribed, keyboard } = normalize({}).access;

@@ -16,7 +16,8 @@ export const series = (kind, valueAxis, orientation = fact('vertical', '$.o')) =
 	base: none('$.base'),
 	valueAxis,
 	orientation,
-	color: none('$.color')
+	color: none('$.color'),
+	legend: { text: none('$.n'), shown: none('$.legend') }
 });
 export const axis = (key, min, extra = {}) => ({
 	key,

@@ -86,6 +86,12 @@ export interface PropertyNode {
 	 * `mappingToExists`, CG-02-10).
 	 */
 	readonly skips?: Skips;
+	/**
+	 * What the runtime does with a value of another type than the declared one, as the runtime line
+	 * cited in `provenance` shows (A73): added to the `CFG_TYPE` finding, so it says what happens,
+	 * not only what was expected.
+	 */
+	readonly onMismatch?: string;
 }
 
 /** A value that is not an object, by how a runtime tells it apart: `null`, a falsy primitive, any other primitive. */

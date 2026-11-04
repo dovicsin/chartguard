@@ -227,6 +227,7 @@ interface SeriesSemantics {
     readonly color: Fact<string>;
     readonly shades: Fact<Shades>;
     readonly values: Fact<ValueSummary>;
+    readonly legend: TitleSemantics;
 }
 
 ### Shades

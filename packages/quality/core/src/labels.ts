@@ -105,3 +105,44 @@ export const emptyTitle = rule(
 		return [report(text.path, 'Chart title is empty; ensure context is supplied nearby.')];
 	}
 );
+
+/** Whether a legend entry is drawn with a text the runtime made up: from its default, not blank, and known to be drawn. */
+const madeUp = ({ text, shown }: TitleSemantics): boolean =>
+	text.known && text.source === 'default' && text.value.trim() !== '' && valueOf(shown) === true;
+
+export const legendPlaceholder = rule(
+	{
+		id: 'legend-placeholder',
+		code: 'VIS_LEGEND_PLACEHOLDER',
+		severity: 'warning',
+		impact: 'misleads',
+		context: [],
+		fix: {
+			offered: false,
+			why: 'The name has to say what the series shows, which only the author knows; hiding the entry would leave the reader no key to the series.'
+		},
+		title: "A legend entry showing the library's placeholder for an unnamed series",
+		rationale:
+			'A series the config does not name still gets an entry in the legend, labelled with what the library makes up (Highcharts draws "Series 1", "Series 2" …, Chart.js the text "undefined"). The legend is the key to which series is which: a made-up label tells the reader nothing, and assistive technology reads it out as the series\' name.',
+		evidence: [SOURCES.wcag22Labels],
+		limits: [
+			'Names and legend settings outside the config (a global `Highcharts.setOptions` or language pack, `Chart.defaults`, a plugin) are not seen: the finding is wrong when they name the series.',
+			'A legend whose entries a function or a template decides (Chart.js `labels.generateLabels` or `labels.filter`, Highcharts `labelFormatter` or `labelFormat`, ECharts `formatter`), or one that lists names of its own (ECharts `legend.data`), is not checked.',
+			'Only a series\' own entry is checked: the entries for the points of a pie (Chart.js `data.labels`, Highcharts "Slice") are not.',
+			'Chart.js draws a legend only with its Legend plugin registered (`chart.js/auto` registers it): a build without it draws none, and the finding is wrong there.'
+		]
+	},
+	(chart, report) => {
+		if (!chart.series.known) return [];
+		return chart.series.items.flatMap(({ legend }) =>
+			madeUp(legend)
+				? [
+						report(
+							legend.text.path,
+							`This series has no name: its legend entry shows "${valueOf(legend.text) ?? ''}", which the library made up. Name the series.`
+						)
+					]
+				: []
+		);
+	}
+);

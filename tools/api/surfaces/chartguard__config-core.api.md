@@ -154,6 +154,7 @@ interface NodeSchema {
     readonly registry?: RegistryRef;
     readonly handledBy?: Handler;
     readonly deprecated?: Deprecation;
+    readonly onMismatch?: string;
     readonly doc?: string;
 }
 
@@ -207,6 +208,7 @@ interface PropertyNode {
     readonly docs?: string;
     readonly handledBy?: Handler;
     readonly skips?: Skips;
+    readonly onMismatch?: string;
 }
 
 ### Provenance

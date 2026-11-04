@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { extractStaticConfigs } from '@chartguard/analysis-typescript';
+import { applyFix } from '@chartguard/core';
 import ts from 'typescript';
 
 import { renameEdit } from '../dist/edits.js';
@@ -87,4 +88,62 @@ test('a key whose value is an object is renamed: the edit finds the property thr
 test('info findings are no claim: a config the analysis read in part reports nothing it cannot confirm', () => {
 	const text = `${CHART}import { data } from './d';\nnew Chart(ctx, { type: 'bar', data, options: { scales: { y: { min: 'x' } } } });`;
 	assert.deepEqual(check(text), []);
+});
+
+/** The config the edited text hands to the library, read again by the analysis. */
+const configAfter = (text, edit) => extractStaticConfigs(apply(text, edit), 'chart.js').uses[0]?.value;
+
+/** A value as JSON data, prototypes aside. */
+const asData = (value) => JSON.parse(JSON.stringify(value));
+
+/** The suggestion setting `path` in `text`, if one is offered. */
+const insertionAt = (text, path) =>
+	check(text).find((finding) => finding.path === path && finding.suggestion !== undefined)?.suggestion;
+
+test('a suggestion that sets an unset option inserts it where the call writes the object, meaning what applyFix means', () => {
+	const pie = (option) => `${ECHARTS}echarts.init(el).setOption(${option});`;
+	const cases = [
+		// The parent is missing: the option is inserted into the root object with its parent.
+		["{ series: [{ type: 'pie', data: [1] }] }", "{ series: [{ type: 'pie', data: [1] }], aria: { enabled: true } }"],
+		// The parent is there: the option is inserted into it.
+		[
+			"{ series: [{ type: 'pie', data: [1] }], aria: {} }",
+			"{ series: [{ type: 'pie', data: [1] }], aria: { enabled: true } }"
+		],
+		[
+			"{ aria: { label: { enabled: true } }, series: [{ type: 'pie', data: [1] }] }",
+			"{ aria: { label: { enabled: true }, enabled: true }, series: [{ type: 'pie', data: [1] }] }"
+		],
+		// One member per line: the new one takes the last one's indentation; a trailing comma stays.
+		[
+			"{\n\tseries: [{ type: 'pie', data: [1] }],\n}",
+			"{\n\tseries: [{ type: 'pie', data: [1] }],\n\taria: { enabled: true },\n}"
+		]
+	];
+	for (const [option, expected] of cases) {
+		const text = pie(option);
+		const suggestion = insertionAt(text, '$.aria.enabled');
+		assert.ok(suggestion !== undefined, option);
+		assert.equal(apply(text, suggestion.edit), pie(expected), option);
+		const before = extractStaticConfigs(text, 'chart.js').uses[0].value;
+		const fix = { kind: 'set-option', path: '$.aria.enabled', value: true, effect: '' };
+		// As data: the analysis reads objects without a prototype, applyFix creates plain ones.
+		assert.deepEqual(asData(configAfter(text, suggestion.edit)), asData(applyFix(before, fix)), option);
+	}
+});
+
+test('an unset option is not inserted where another part of the code holds the object it goes into', () => {
+	const series = "series: [{ type: 'pie', data: [1] }]";
+	for (const text of [
+		// The parent comes from a spread: inserting a new aria would replace it.
+		`${ECHARTS}const base = { aria: { label: { enabled: true } } };\necharts.init(el).setOption({ ...base, ${series} });`,
+		// The parent is another variable's object.
+		`${ECHARTS}const aria = {};\necharts.init(el).setOption({ aria, ${series} });`,
+		// The whole option is another variable's object.
+		`${ECHARTS}const option = { ${series} };\necharts.init(el).setOption(option);`
+	]) {
+		const finding = check(text).find(({ path }) => path === '$.aria.enabled');
+		assert.ok(finding !== undefined, text);
+		assert.equal(finding.suggestion, undefined, text);
+	}
 });

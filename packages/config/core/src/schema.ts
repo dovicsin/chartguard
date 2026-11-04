@@ -118,6 +118,8 @@ export interface NodeSchema {
 	readonly handledBy?: Handler;
 	/** The value of an option the upstream deprecates. */
 	readonly deprecated?: Deprecation;
+	/** What the runtime does with a value of another type: added to the `CFG_TYPE` finding here (A73). */
+	readonly onMismatch?: string;
 	readonly doc?: string;
 }
 

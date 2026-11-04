@@ -7,7 +7,7 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-f8692c412853bba5bee3e613d3e06b87cd1ad6de0b89f2ac62b359ffd4d0857c",
+	"digest": "sha256-7b750a3437c3272c1565e690c39284977cd7d83a158e19f3ab699e884379bbf3",
 	"sources": {
 		"chartjs": {
 			"kind": "npm-package",
@@ -12101,9 +12101,14 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1650"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5968"
 							}
 						]
-					}
+					},
+					"onMismatch": "Chart.js compares responsive with !== to whether it listens for resizes (a boolean), so any other value makes every update unbind and bind all its event listeners again; a truthy one also runs its resize step each time, which can recurse when the container size follows the chart."
 				},
 				"maintainAspectRatio": {
 					"node": {
@@ -34720,9 +34725,14 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1650"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5968"
 							}
 						]
-					}
+					},
+					"onMismatch": "Chart.js compares responsive with !== to whether it listens for resizes (a boolean), so any other value makes every update unbind and bind all its event listeners again; a truthy one also runs its resize step each time, which can recurse when the container size follows the chart."
 				},
 				"maintainAspectRatio": {
 					"node": {
@@ -40828,9 +40838,14 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1650"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5968"
 							}
 						]
-					}
+					},
+					"onMismatch": "Chart.js compares responsive with !== to whether it listens for resizes (a boolean), so any other value makes every update unbind and bind all its event listeners again; a truthy one also runs its resize step each time, which can recurse when the container size follows the chart."
 				},
 				"maintainAspectRatio": {
 					"node": {
@@ -46821,9 +46836,14 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1650"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5968"
 							}
 						]
-					}
+					},
+					"onMismatch": "Chart.js compares responsive with !== to whether it listens for resizes (a boolean), so any other value makes every update unbind and bind all its event listeners again; a truthy one also runs its resize step each time, which can recurse when the container size follows the chart."
 				},
 				"maintainAspectRatio": {
 					"node": {
@@ -52358,9 +52378,14 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1650"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5968"
 							}
 						]
-					}
+					},
+					"onMismatch": "Chart.js compares responsive with !== to whether it listens for resizes (a boolean), so any other value makes every update unbind and bind all its event listeners again; a truthy one also runs its resize step each time, which can recurse when the container size follows the chart."
 				},
 				"maintainAspectRatio": {
 					"node": {
@@ -58485,9 +58510,14 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1650"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5968"
 							}
 						]
-					}
+					},
+					"onMismatch": "Chart.js compares responsive with !== to whether it listens for resizes (a boolean), so any other value makes every update unbind and bind all its event listeners again; a truthy one also runs its resize step each time, which can recurse when the container size follows the chart."
 				},
 				"maintainAspectRatio": {
 					"node": {
@@ -64873,9 +64903,14 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1650"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5968"
 							}
 						]
-					}
+					},
+					"onMismatch": "Chart.js compares responsive with !== to whether it listens for resizes (a boolean), so any other value makes every update unbind and bind all its event listeners again; a truthy one also runs its resize step each time, which can recurse when the container size follows the chart."
 				},
 				"maintainAspectRatio": {
 					"node": {
@@ -70642,9 +70677,14 @@
 							{
 								"source": "chartjs",
 								"pointer": "chart.js/dist/types/index.d.ts:1650"
+							},
+							{
+								"source": "chartjs",
+								"pointer": "chart.js/dist/chart.js:5968"
 							}
 						]
-					}
+					},
+					"onMismatch": "Chart.js compares responsive with !== to whether it listens for resizes (a boolean), so any other value makes every update unbind and bind all its event listeners again; a truthy one also runs its resize step each time, which can recurse when the container size follows the chart."
 				},
 				"maintainAspectRatio": {
 					"node": {

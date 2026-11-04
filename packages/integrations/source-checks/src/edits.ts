@@ -77,6 +77,13 @@ function writtenInUse({ file, use }: EditSite, literal: ts.Node): boolean {
 	return ts.isJsxExpression(holder) && ts.isJsxAttribute(holder.parent);
 }
 
+/** The object literal that wrote the value at `path`, when the use's own call writes it. */
+export function objectWrittenInUse(site: EditSite, path: string): ts.ObjectLiteralExpression | undefined {
+	const node = nodeAt(site, path);
+	if (node === undefined || !ts.isObjectLiteralExpression(node)) return undefined;
+	return writtenInUse(site, outermostLiteral(node)) ? node : undefined;
+}
+
 /**
  * The property whose value wrote `path`, when the use's own call writes it and its object sets no
  * other key of that name (the last one wins; an edit of another would change nothing or the wrong one).

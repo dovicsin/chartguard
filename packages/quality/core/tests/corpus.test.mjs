@@ -41,6 +41,12 @@ const NO_CASE = [
 		why: 'neither draws a text the config does not set: their titles default to empty (Chart.js `text: ""`, ECharts `text: ""`) and they make no axis title of their own'
 	},
 	{
+		rule: 'legend-placeholder',
+		libraries: ['echarts'],
+		kinds: ['triggers'],
+		why: "a legend without `data` lists only the series with a name of their own (`isNameSpecified`), and a name in `legend.data` is the config's own text: echarts never draws an entry the config does not name (its counterexample checks this on the runtime)"
+	},
+	{
 		rule: 'percent-without-unit',
 		libraries: ['chartjs', 'echarts'],
 		kinds: ['triggers', 'counterexample', 'unknown'],
