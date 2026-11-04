@@ -37,6 +37,53 @@ jobs:
       # The extension in a real VS Code (downloaded once per run; it needs Node 22+ and a display).
       - if: matrix.node == 24
         run: xvfb-run -a npm run test:vscode -w packages/integrations/vscode
+  # Trends across commits (CG-07-03): every commit to main is measured and recorded in a history
+  # that runs hand on through the Actions cache; a value that rose while still within its budget is
+  # shown in the job summary, never a failure (the check job fails what is over budget).
+  trend:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # A hang guard far above an honest run (build and every scenario), never a time budget.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      # The Node the budgets were measured on; a trend compares runs on one Node major only.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@11.21.1
+      - run: npm ci
+      - run: npm run build
+      # The history of the latest earlier run: a cache key is written once, so each run saves its own.
+      - uses: actions/cache/restore@v4
+        with:
+          path: bench-history.jsonl
+          key: bench-history-${{ github.run_id }}
+          restore-keys: bench-history-
+      - name: Measure and record
+        env:
+          LABEL: ${{ github.sha }}
+        run: npm run --silent bench -- --history bench-history.jsonl --label "$LABEL" | tee bench.txt
+      - name: Trend in the job summary
+        if: always() && hashFiles('bench.txt') != ''
+        run: |
+          {
+            echo '```'
+            cat bench.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - if: always() && hashFiles('bench-history.jsonl') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: bench-history.jsonl
+          key: bench-history-${{ github.run_id }}
+      - if: always() && hashFiles('bench-history.jsonl') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-history
+          path: bench-history.jsonl
+          retention-days: 90
   # The GitHub Action on this repository's own examples (CG-06-08): a valid file passes with exit
   # code 0 and a SARIF log; an invalid one fails its step with 1 and its annotations.
   action:

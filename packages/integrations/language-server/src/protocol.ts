@@ -30,7 +30,8 @@ export interface InitializeParams {
 
 export interface NotificationParams {
 	readonly textDocument?: { uri: string; languageId?: string; version?: number; text?: string };
-	readonly contentChanges?: { text: string }[];
+	/** Read in shape where applied (`changedText`): a client's message is checked, never trusted. */
+	readonly contentChanges?: unknown;
 	readonly settings?: Record<string, unknown>;
 }
 

@@ -1,4 +1,6 @@
 const assert = require('node:assert/strict');
+const { join } = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const vscode = require('vscode');
 
@@ -61,7 +63,9 @@ async function quickFix(document, found) {
 	await diagnosticsWhen(document.uri, (list) => codes(list).join() === 'valid-config');
 }
 
-/** Settings from the editor: another major is not validated, only said. */
+const hasError = (list) => codes(list).includes('valid-config');
+
+/** Settings from the editor: another major is not validated, only said; restored, it is validated again. */
 async function settingsApply(document) {
 	const settings = vscode.workspace.getConfiguration('chartguard');
 	await settings.update('libraryVersion', { chartjs: '3.9.1' }, vscode.ConfigurationTarget.Global);
@@ -72,6 +76,66 @@ async function settingsApply(document) {
 		assert.deepEqual(codes(old), ['config-warnings']);
 	} finally {
 		await settings.update('libraryVersion', undefined, vscode.ConfigurationTarget.Global);
+	}
+	// What follows starts from the diagnostics of the restored settings, never from those still on their way.
+	await diagnosticsWhen(document.uri, hasError);
+}
+
+/** A module of the benchmarks (E77), imported into the extension host: one way of measuring, one set of budgets. */
+const benchmarks = (name) =>
+	import(pathToFileURL(join(__dirname, '..', '..', '..', '..', '..', 'tools', 'benchmarks', 'lib', name)).href);
+
+/** The server's wait before it checks (200 ms, so typing does not check every key): a wait, not work. */
+const SERVER_WAIT_MS = 200;
+
+/** An edit that removes the wrong value or puts it back, until the editor shows what it changed. */
+function toggleEdit(document) {
+	let wrong = true;
+	return async () => {
+		const [from, to] = wrong ? ["min: 'x'", 'min: 1'] : ['min: 1', "min: 'x'"];
+		const start = document.positionAt(document.getText().indexOf(from));
+		const edit = new vscode.WorkspaceEdit();
+		edit.replace(document.uri, new vscode.Range(start, start.translate(0, from.length)), to);
+		wrong = !wrong;
+		const shown = diagnosticsWhen(document.uri, (list) => hasError(list) === wrong);
+		assert.equal(await vscode.workspace.applyEdit(edit), true);
+		await shown;
+	};
+}
+
+/** `ChartGuard: Restart the language server`, until the new server's diagnostics are shown. */
+async function restart(document) {
+	const cleared = diagnosticsWhen(document.uri, (list) => !hasError(list));
+	await vscode.commands.executeCommand('chartguard.restart');
+	await cleared;
+	await diagnosticsWhen(document.uri, hasError);
+}
+
+/**
+ * What the user waits for in VS Code itself (CG-07-03, E77), in reference units against the budgets
+ * of `EDITOR_BUDGETS`, an overrun measured again before it fails: an edit until its diagnostics are
+ * shown, and a restart of the server (the bundled server starting, its first check) until they are
+ * shown again. The server's fixed wait is left out of both.
+ */
+async function latency(document) {
+	const [{ fastestAsync, judge, reference }, { EDITOR_BUDGETS }] = await Promise.all([
+		benchmarks('measure.mjs'),
+		benchmarks('budgets.mjs')
+	]);
+	const toggle = toggleEdit(document);
+	const measures = { 'vscode-edit': toggle, 'vscode-restart': () => restart(document) };
+	assert.deepEqual(Object.keys(measures).sort(), Object.keys(EDITOR_BUDGETS).sort());
+	for (const [id, body] of Object.entries(measures)) {
+		// Each measurement starts with the wrong value in place: an odd number of edits removed it.
+		if (!hasError(await diagnosticsWhen(document.uri, () => true))) await toggle();
+		const { budget } = EDITOR_BUDGETS[id];
+		const measure = async ({ runs }) => {
+			const [time, unit] = await fastestAsync([body, async () => reference()], runs);
+			return (time - SERVER_WAIT_MS) / unit;
+		};
+		const { value, within } = await judge(measure, budget);
+		console.log(`${id} ${value.toFixed(2)} units  budget ${String(budget)} units  ${within ? 'ok' : 'OVER'}`);
+		assert.ok(within, `${id}: ${value.toFixed(2)} units against a budget of ${String(budget)}`);
 	}
 }
 
@@ -89,4 +153,5 @@ exports.run = async () => {
 	const { document, found } = await step('shown problems', shownProblems);
 	await step('quick fix', () => quickFix(document, found));
 	await step('settings', () => settingsApply(document));
+	await step('latency', () => latency(document));
 };

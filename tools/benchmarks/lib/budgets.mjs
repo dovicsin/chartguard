@@ -37,3 +37,15 @@ export const BUDGETS = {
 	'schema-chartjs-gzip': { budget: 62, measured: 49 },
 	'schema-echarts-gzip': { budget: 136, measured: 108 }
 };
+
+/**
+ * What the user waits for in VS Code itself, measured in a real VS Code by the extension's editor
+ * test (`npm run test:vscode`, packages/integrations/vscode/tests/vscode/suite.cjs; VS Code 1.144.1,
+ * same machine and day), set and raised like the budgets above. The server's 200 ms wait before it
+ * checks is left out. The edit's budget is below 4×: with full text sync (VS Code's client holds a
+ * full text up to 250 ms for more) an edit measured 5.5–6.7 units, and the budget catches that.
+ */
+export const EDITOR_BUDGETS = {
+	'vscode-edit': { budget: 3.5, measured: 1.4 },
+	'vscode-restart': { budget: 48, measured: 12 }
+};

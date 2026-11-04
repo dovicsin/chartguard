@@ -2,8 +2,7 @@ import { join } from 'node:path';
 
 import type { SourceFinding, TextEdit } from '@chartguard/source-checks';
 
-import type { Lines } from './positions.js';
-import { overlaps, type Range } from './positions.js';
+import { Lines, overlaps, type Position, type Range } from './positions.js';
 import { pathOf } from './protocol.js';
 
 /** The languages whose documents are checked, with the extension a document without a file name is read as. */
@@ -115,4 +114,40 @@ export function actionsOf(document: OpenDocument, range: Range, annotations: boo
 			});
 		return actions;
 	});
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+const isPosition = (value: unknown): value is Position =>
+	isRecord(value) &&
+	Number.isSafeInteger(value['line']) &&
+	Number.isSafeInteger(value['character']) &&
+	(value['line'] as number) >= 0 &&
+	(value['character'] as number) >= 0;
+
+/** One change applied to `text`: a whole text, or a text for a range of it; undefined when malformed. */
+function applied(text: string, lines: Lines, change: unknown): string | undefined {
+	if (!isRecord(change) || typeof change['text'] !== 'string') return undefined;
+	if (!Object.hasOwn(change, 'range')) return change['text'];
+	const range = change['range'];
+	if (!isRecord(range) || !isPosition(range['start']) || !isPosition(range['end'])) return undefined;
+	const start = lines.offsetOf(range['start']);
+	const end = lines.offsetOf(range['end']);
+	return end < start ? undefined : text.slice(0, start) + change['text'] + text.slice(end);
+}
+
+/**
+ * The text after an editor's content changes (CG-07-03: incremental sync, which VS Code sends at once,
+ * where a full text waits 250 ms for more): each change in order, its range in LSP positions of the
+ * text the change before it left. Undefined when a change cannot be applied: the text is then unknown.
+ */
+export function changedText(text: string, lines: Lines, changes: unknown): { text: string; lines: Lines } | undefined {
+	if (!Array.isArray(changes)) return undefined;
+	let current = { text, lines };
+	for (const change of changes) {
+		const next = applied(current.text, current.lines, change);
+		if (next === undefined) return undefined;
+		current = { text: next, lines: new Lines(next) };
+	}
+	return current;
 }

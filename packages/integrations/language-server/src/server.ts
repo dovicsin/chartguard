@@ -1,6 +1,6 @@
 import { SettingsError, SourceChecker, type SourceFinding } from '@chartguard/source-checks';
 
-import { actionsOf, diagnosticOf, fileNameOf, isChecked, type OpenDocument } from './documents.js';
+import { actionsOf, changedText, diagnosticOf, fileNameOf, isChecked, type OpenDocument } from './documents.js';
 import { framed, FramingError, MessageReader } from './framing.js';
 import { Lines, type Range } from './positions.js';
 import {
@@ -28,7 +28,7 @@ export interface ServeOptions {
 
 /**
  * A language server over a stream pair (CG-06-04 part 2): open documents are checked as they change
- * (full text sync), each finding published as a diagnostic at LSP positions, with the engine's
+ * (incremental text sync), each finding published as a diagnostic at LSP positions, with the engine's
  * verified edits as code actions. Nothing a document holds is ever run.
  */
 class Server {
@@ -119,7 +119,7 @@ class Server {
 		this.state = 'running';
 		return {
 			capabilities: {
-				textDocumentSync: { openClose: true, change: 1 },
+				textDocumentSync: { openClose: true, change: 2 },
 				codeActionProvider: { codeActionKinds: ['quickfix'] }
 			},
 			serverInfo: { name: meta.name, version: meta.version }
@@ -171,13 +171,17 @@ class Server {
 		this.schedule(uri);
 	}
 
-	private changed(textDocument: { uri: string; version?: number }, changes: { text: string }[] | undefined): void {
+	private changed(textDocument: { uri: string; version?: number }, changes: unknown): void {
 		const known = this.documents.get(textDocument.uri);
-		// Full sync: the last change holds the whole text.
-		const text = changes?.at(-1)?.text;
-		if (known === undefined || text === undefined) return;
+		if (known === undefined || (Array.isArray(changes) && changes.length === 0)) return;
+		const changed = changedText(known.text, known.lines, changes);
+		if (changed === undefined) {
+			// The editor's text is no longer known: what was found in it is withdrawn, nothing is claimed.
+			this.closed(known.uri);
+			throw new Error('a content change that cannot be applied; the document is checked again once reopened');
+		}
 		const version = textDocument.version ?? known.version;
-		this.documents.set(known.uri, { ...known, version, text, lines: new Lines(text) });
+		this.documents.set(known.uri, { ...known, version, ...changed });
 		this.schedule(known.uri);
 	}
 

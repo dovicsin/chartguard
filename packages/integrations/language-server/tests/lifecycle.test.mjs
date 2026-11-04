@@ -25,7 +25,7 @@ test('a malformed notification is logged, never a crash: the server serves on', 
 	const logged = await client.next('window/logMessage');
 	assert.equal(logged.params.type, 1);
 	assert.match(logged.params.message, /^ChartGuard could not handle textDocument\/didChange: /u);
-	// A change without text changes nothing; the document is still served.
+	// A change without text changes nothing; the server serves on.
 	client.notify('textDocument/didChange', { textDocument: { uri: uri('chart.js'), version: 3 }, contentChanges: [] });
 	assert.equal(client.notifications.filter(({ method }) => method === 'window/logMessage').length, 0);
 	const { result } = await client.request('textDocument/codeAction', {
@@ -35,6 +35,41 @@ test('a malformed notification is logged, never a crash: the server serves on', 
 	});
 	assert.deepEqual(result, []);
 	assert.equal((await client.request('shutdown')).result, null);
+});
+
+test('a change the server cannot apply leaves the text unknown: its findings are withdrawn until it is opened again', async () => {
+	const at = (line, character) => ({ line, character });
+	for (const change of [
+		{ range: { start: at(0, 0) }, text: '' },
+		{ range: { start: at(0, 1), end: at(0, 0) }, text: '' },
+		{ range: { start: at(-1, 0), end: at(0, 0) }, text: '' },
+		{ range: { start: at(0, 0.5), end: at(0, 1) }, text: '' },
+		{ range: { start: at(0, 0), end: at(0, 0) } },
+		null
+	]) {
+		const client = connect();
+		await client.initialize();
+		await client.open(uri('chart.js'), WRONG);
+		client.notify('textDocument/didChange', {
+			textDocument: { uri: uri('chart.js'), version: 2 },
+			contentChanges: [{ range: { start: at(0, 0), end: at(0, 0) }, text: '// ok\n' }, change]
+		});
+		assert.deepEqual((await client.next('textDocument/publishDiagnostics')).params, {
+			uri: uri('chart.js'),
+			diagnostics: []
+		});
+		assert.match((await client.next('window/logMessage')).params.message, /could not handle textDocument\/didChange/u);
+		// A later change finds no document: the editor's text is no longer known.
+		client.notify('textDocument/didChange', {
+			textDocument: { uri: uri('chart.js'), version: 3 },
+			contentChanges: [{ text: WRONG }]
+		});
+		// A check it scheduled would publish before that of a document opened after it, with the same wait.
+		await client.open(uri('other.js'), WRONG);
+		assert.deepEqual(published(client, uri('chart.js')), [], JSON.stringify(change));
+		const reopened = await client.open(uri('chart.js'), WRONG);
+		assert.equal(reopened.params.diagnostics.length, 1);
+	}
 });
 
 test('responses from the client are not requests; after exit nothing is answered', async () => {

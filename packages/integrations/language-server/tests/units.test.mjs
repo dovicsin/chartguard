@@ -24,6 +24,19 @@ test('positions: a line starts after \\n, \\r\\n or \\r, and an offset at a line
 	]);
 });
 
+test('offsets: a position is its line start plus its UTF-16 character, past the line end or the text its end', () => {
+	const text = 'ab\ncd\r\nef\rg\u2028h😀';
+	const lines = new Lines(text);
+	const of = (line, character) => lines.offsetOf({ line, character });
+	assert.deepEqual(
+		[of(0, 0), of(0, 2), of(1, 0), of(1, 2), of(2, 0), of(3, 0), of(3, 3), of(3, 5)],
+		[0, 2, 3, 5, 7, 10, 13, 15]
+	);
+	// Past its line's end (its terminator excluded): the line's end, for each kind of terminator.
+	assert.deepEqual([of(0, 9), of(1, 9), of(2, 9), of(3, 99), of(9, 0)], [2, 5, 9, 15, 15]);
+	for (const offset of [0, 2, 3, 5, 7, 10, 15]) assert.equal(lines.offsetOf(lines.positionOf(offset)), offset);
+});
+
 test('ranges overlap when they share a position, on one line or across lines', () => {
 	const range = (a, b, c, d) => ({ start: { line: a, character: b }, end: { line: c, character: d } });
 	assert.equal(overlaps(range(0, 0, 0, 5), range(0, 5, 0, 9)), true);

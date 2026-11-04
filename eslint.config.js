@@ -154,4 +154,23 @@ const consoleCapture = {
 	}
 };
 
-export default [ignores, imports, js, ...ts, browserScripts, tests, tooling, consoleCapture, prettierConfig];
+/** The editor test runs in VS Code's extension host, whose console is the only output its runner shows. */
+const editorTest = {
+	files: ['packages/integrations/vscode/tests/vscode/suite.cjs'],
+	rules: {
+		'no-console': 'off'
+	}
+};
+
+export default [
+	ignores,
+	imports,
+	js,
+	...ts,
+	browserScripts,
+	tests,
+	tooling,
+	consoleCapture,
+	editorTest,
+	prettierConfig
+];

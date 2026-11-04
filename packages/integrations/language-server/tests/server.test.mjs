@@ -12,12 +12,12 @@ const WRONG = `${CHART}new Chart(ctx, { type: 'bar', data: { datasets: [] }, opt
 const uri = (name) => pathToFileURL(join(process.cwd(), name)).href;
 const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
-test('initialize: full text sync, quick fixes, and the server named as its package', async () => {
+test('initialize: incremental text sync, quick fixes, and the server named as its package', async () => {
 	const client = connect();
 	const { result } = await client.initialize();
 	assert.deepEqual(result, {
 		capabilities: {
-			textDocumentSync: { openClose: true, change: 1 },
+			textDocumentSync: { openClose: true, change: 2 },
 			codeActionProvider: { codeActionKinds: ['quickfix'] }
 		},
 		serverInfo: { name: 'chartguard-language-server', version: manifest.version }
@@ -56,6 +56,46 @@ test('an opened document gets its findings at LSP positions; a changed one again
 		uri: uri('chart.js'),
 		diagnostics: []
 	});
+});
+
+test('incremental changes apply in order, each at LSP positions in the text the one before left (CG-07-03)', async () => {
+	const client = connect();
+	await client.initialize();
+	const document = uri('chart.js');
+	await client.open(document, WRONG);
+	const column = WRONG.split('\n')[1].indexOf("'x'");
+	const at = (line, character) => ({ line, character });
+	// VS Code sends a full text only after waiting 250 ms for more; changes with ranges it sends at once.
+	client.notify('textDocument/didChange', {
+		textDocument: { uri: document, version: 2 },
+		contentChanges: [
+			{ range: { start: at(1, column), end: at(1, column + 3) }, text: '0' },
+			// After the first change: the value is one character now, and a line is added before the code.
+			{ range: { start: at(0, 0), end: at(0, 0) }, text: '// 😀\r\n' },
+			{ range: { start: at(2, column), end: at(2, column + 1) }, text: "'y'" }
+		]
+	});
+	const { params } = await client.next('textDocument/publishDiagnostics');
+	assert.equal(params.version, 2);
+	assert.deepEqual(
+		params.diagnostics.map(({ range }) => range),
+		[{ start: at(2, column), end: at(2, column + 3) }]
+	);
+	// A character past the end of its line is the line's end (LSP), never the next line; a full text still replaces.
+	client.notify('textDocument/didChange', {
+		textDocument: { uri: document, version: 3 },
+		contentChanges: [{ range: { start: at(0, 99), end: at(0, 99) }, text: ' end' }]
+	});
+	const clamped = await client.next('textDocument/publishDiagnostics');
+	assert.deepEqual(
+		clamped.params.diagnostics.map(({ range }) => range.start),
+		[at(2, column)]
+	);
+	client.notify('textDocument/didChange', {
+		textDocument: { uri: document, version: 4 },
+		contentChanges: [{ text: WRONG.replace("'x'", '0') }]
+	});
+	assert.deepEqual((await client.next('textDocument/publishDiagnostics')).params.diagnostics, []);
 });
 
 test('positions count lines as LSP does (\\n, \\r\\n, \\r), not as TypeScript does (also U+2028, U+2029)', async () => {

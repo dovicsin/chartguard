@@ -16,13 +16,26 @@ export interface Range {
  */
 export class Lines {
 	private readonly starts: number[] = [0];
+	/** Where each line's text ends, before its terminator. */
+	private readonly ends: number[] = [];
 
 	constructor(text: string) {
 		for (let index = 0; index < text.length; index++) {
 			const code = text.charCodeAt(index);
+			if (code !== 13 && code !== 10) continue;
+			this.ends.push(index);
 			if (code === 13 && text.charCodeAt(index + 1) === 10) index++;
-			if (code === 13 || code === 10) this.starts.push(index + 1);
+			this.starts.push(index + 1);
 		}
+		this.ends.push(text.length);
+	}
+
+	/** The offset of an LSP position: a character past its line's end is that end, a line past the text the text's end. */
+	offsetOf({ line, character }: Position): number {
+		const start = this.starts[line];
+		const end = this.ends[line];
+		if (start === undefined || end === undefined) return this.ends.at(-1) ?? 0;
+		return Math.min(start + character, end);
 	}
 
 	positionOf(offset: number): Position {
