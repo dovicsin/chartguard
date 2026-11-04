@@ -7,7 +7,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { checkWorkspace } from '../boundaries/workspace.mjs';
-import { testFiles } from '../test.mjs';
+import { phases, testFiles } from '../test.mjs';
 
 /**
  * The repository's own scripts find the root from `import.meta.url`, never from the working
@@ -78,4 +78,12 @@ test('the test runner runs every test file under tests/, nested ones too', (t) =
 	}
 	assert.deepEqual(testFiles(root).sort(), files.map((file) => join(root, file)).sort());
 	assert.deepEqual(testFiles().sort(), recursiveFind(ROOT));
+});
+
+test('the files that measure time run alone after all the others; every file runs exactly once (E84)', () => {
+	const tests = testFiles();
+	const [parallel, alone] = phases(tests);
+	assert.deepEqual(alone, [join(ROOT, 'tools', 'benchmarks', 'tests', 'budgets.test.mjs')]);
+	assert.deepEqual([...parallel, ...alone].sort(), [...tests].sort());
+	assert.equal(new Set([...parallel, ...alone]).size, tests.length);
 });
