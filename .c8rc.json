@@ -11,6 +11,7 @@
 		"tools/conformance/lib/**/*.mjs",
 		"tools/shared/**/*.mjs",
 		"tools/fuzz/lib/*.mjs",
+		"tools/benchmarks/**/*.mjs",
 		"apps/playground/dist/{model,examples,selftest}.js",
 		"apps/reference/scripts/*.mjs",
 		"action/*.mjs"

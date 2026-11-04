@@ -13,6 +13,8 @@
 				"tools/docs/*.mjs",
 				"tools/docs/tests/**/*.test.mjs",
 				"tools/fuzz/tests/**/*.test.mjs",
+				"tools/benchmarks/lib/probes.mjs",
+				"tools/benchmarks/tests/**/*.test.mjs",
 				"action/run.mjs",
 				"action/tests/**/*.test.mjs"
 			],
@@ -24,7 +26,8 @@
 				"tools/api/**/*.mjs",
 				"tools/docs/**/*.mjs",
 				"action/**/*.mjs",
-				"tools/fuzz/**/*.mjs"
+				"tools/fuzz/**/*.mjs",
+				"tools/benchmarks/**/*.mjs"
 			]
 		},
 		"packages/schema-generator": {

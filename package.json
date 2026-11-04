@@ -28,6 +28,7 @@
 		"schema:check": "node tools/schema-generator/generate.mjs check",
 		"schema:diff": "node tools/schema-generator/diff.mjs",
 		"api:check": "node tools/api/api.mjs check",
+		"bench": "node tools/benchmarks/bench.mjs",
 		"api:write": "node tools/api/api.mjs write",
 		"changeset": "changeset",
 		"version-packages": "changeset version",

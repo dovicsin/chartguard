@@ -17,6 +17,7 @@ import {
 	setOption
 } from '../../../packages/integrations/echarts-runtime/dist/index.js';
 import { addSeries, checkUpdate, createChart } from '../../../packages/integrations/highcharts-runtime/dist/index.js';
+import { fastest, reference } from '../../benchmarks/lib/measure.mjs';
 import { createChartjs } from '../lib/chartjs.mjs';
 
 /**
@@ -132,30 +133,6 @@ function withGetters(value, onRead) {
 		? value.map((item) => withGetters(item, onRead))
 		: Object.fromEntries(Object.entries(value).map(([key, item]) => [key, withGetters(item, onRead)]));
 	return Object.defineProperty(copy, 'planted', { enumerable: true, get: () => (onRead(), 1) });
-}
-
-const timed = (body) => {
-	const start = performance.now();
-	body();
-	return performance.now() - start;
-};
-
-/** A fixed CPU task (sorting 200 000 numbers): the unit the absolute budget is measured in. */
-const reference = () => {
-	const numbers = Array.from({ length: 200_000 }, (_, index) => (index * 7919) % 200_003);
-	return numbers.sort((a, b) => a - b)[0];
-};
-
-/**
- * The fastest of `runs` timings of each body, run in turn. For CPU-bound code the minimum is the
- * cost without interference (garbage collection, other test files, coverage); interleaving puts the
- * same interference on both sides. Time is a budget here, never a hang guard (E-rows).
- */
-function fastest(bodies, runs = 15) {
-	const best = bodies.map(() => Number.POSITIVE_INFINITY);
-	for (let run = 0; run < runs; run += 1)
-		bodies.forEach((body, index) => (best[index] = Math.min(best[index], timed(body))));
-	return best;
 }
 
 /** What a wrapper could leave behind in this process: globals, built-in prototypes, console, the chart registries. */

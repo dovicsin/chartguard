@@ -35,6 +35,7 @@
 !/tools/api/surfaces/*.api.md
 !/tools/docs/**/*.mjs
 !/tools/fuzz/**/*.mjs
+!/tools/benchmarks/**/*.mjs
 !/.changeset/config.json
 
 # Public governance (CG-00-05); issue and PR templates and the contributor guide in docs/ stay local
