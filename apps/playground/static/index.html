@@ -40,7 +40,13 @@
 				<h2 id="editor-title" class="pane__title">
 					Configuration <small id="editor-hint">JSON, validated as you type</small>
 				</h2>
-				<textarea id="editor" spellcheck="false" autocomplete="off" aria-describedby="syntax"></textarea>
+				<textarea
+					id="editor"
+					spellcheck="false"
+					autocomplete="off"
+					aria-labelledby="editor-title"
+					aria-describedby="syntax"
+				></textarea>
 				<p id="syntax" class="syntax" role="alert"></p>
 				<button id="undo" class="undo" type="button" hidden>Undo fix</button>
 			</section>

@@ -26,7 +26,7 @@ function exportSection(entry) {
 			: `<ul class="tags">${entry.tags.map((tag) => `<li><code>${escape(tag)}</code></li>`).join('')}</ul>`;
 	return `<section class="export" id="${escape(entry.name)}">
 	<h2><code>${escape(entry.name)}</code> <span class="kind">${escape(entry.kind)}</span></h2>
-	<pre><code>${escape(entry.declaration)}</code></pre>
+	<pre tabindex="0"><code>${escape(entry.declaration)}</code></pre>
 	${doc}${tags}
 </section>`;
 }

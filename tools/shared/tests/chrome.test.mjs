@@ -131,3 +131,10 @@ test('a process that exits while its Chrome runs stops it and removes its profil
 	);
 	assert.equal(await stopped(pid), true, 'the stand-in Chrome was stopped');
 });
+
+test('runs one after another leave no exit listener behind (E76)', posix, async (t) => {
+	const binary = fakeChrome(t, { stdout: '<html></html>', stderr: '', status: 0 });
+	const before = process.listenerCount('exit');
+	for (let run = 0; run < 12; run += 1) await dumpDom('http://127.0.0.1/', { binary });
+	assert.equal(process.listenerCount('exit'), before);
+});

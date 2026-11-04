@@ -23,7 +23,7 @@ const isWebOrAnchor = (href) => /^https:\/\//u.test(href) || href.startsWith('#'
 /**
  * Markdown as the reference renders it: raw HTML escaped (shown as text, never parsed), links only to
  * the web (https) or to an anchor (a relative link names a file of the repository, not of the site,
- * and stays text), headings with anchors.
+ * and stays text), headings with anchors, code blocks reachable by keyboard.
  */
 export const markdown = new Marked({
 	renderer: {
@@ -36,6 +36,13 @@ export const markdown = new Marked({
 		},
 		image({ text }) {
 			return escape(text);
+		},
+		// A code block may scroll sideways: it can take the keyboard's focus to be scrolled (WCAG 2.1.1).
+		// It is not a named region: a page holds many, and landmarks must be told apart by name.
+		code({ text, lang }) {
+			const language = lang?.split(/\s/u)[0] ?? '';
+			const type = language === '' ? '' : ` class="language-${escape(language)}"`;
+			return `<pre tabindex="0"><code${type}>${escape(text)}\n</code></pre>\n`;
 		},
 		heading({ tokens, depth }) {
 			const text = this.parser.parseInline(tokens);
