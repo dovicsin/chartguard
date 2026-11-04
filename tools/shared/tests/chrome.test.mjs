@@ -18,6 +18,34 @@ function fakeChrome(t, { stdout, stderr, status }) {
 	return binary;
 }
 
+/** Whether `pid` runs: it exists and, where Linux says so, is not a zombie (killed, not yet reaped). */
+function alive(pid) {
+	try {
+		process.kill(pid, 0);
+	} catch (error) {
+		if (error.code === 'ESRCH') return false;
+		throw error;
+	}
+	try {
+		return !/^\d+ \(.*\) Z/su.test(readFileSync(`/proc/${String(pid)}/stat`, 'utf8'));
+	} catch {
+		return true;
+	}
+}
+
+/**
+ * Whether `pid` stops running. A killed process is gone once it is reaped (as a zombie it no longer
+ * runs): under load that can follow its parent's exit by a while. Counted, never timed: at most 500
+ * checks of 10 ms.
+ */
+async function stopped(pid) {
+	for (let check = 0; check < 500; check += 1) {
+		if (!alive(pid)) return true;
+		await new Promise((resolve) => setTimeout(resolve, 10));
+	}
+	return false;
+}
+
 const posix = { skip: process.platform === 'win32' ? 'needs a POSIX shell' : false };
 
 test('a page Chrome dumped completely is returned', posix, async (t) => {
@@ -70,7 +98,7 @@ test('each Chrome gets a profile of its own, removed after it exits, however it 
 	assert.deepEqual(readdirSync(own), [], 'removed when Chrome does not start');
 });
 
-test('a process that exits while its Chrome runs stops it and removes its profile (E76)', posix, (t) => {
+test('a process that exits while its Chrome runs stops it and removes its profile (E76)', posix, async (t) => {
 	// Under a full parallel check a test process can end before its Chrome closes: the profile stayed.
 	const own = mkdtempSync(join(tmpdir(), 'chartguard-chrome-tmp-'));
 	t.after(() => rmSync(own, { recursive: true, force: true }));
@@ -101,5 +129,5 @@ test('a process that exits while its Chrome runs stops it and removes its profil
 		readdirSync(own).filter((name) => name.startsWith('chartguard-chrome-profile-')),
 		[]
 	);
-	assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' }, 'the stand-in Chrome was stopped');
+	assert.equal(await stopped(pid), true, 'the stand-in Chrome was stopped');
 });
