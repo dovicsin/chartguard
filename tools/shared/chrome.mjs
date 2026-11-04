@@ -1,5 +1,7 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { skipOutsideCi } from './ci.mjs';
 
@@ -19,6 +21,32 @@ export function browserSkipReason() {
 	return CHROME === undefined ? skipOutsideCi('needs Chrome (set CHROME_PATH)') : undefined;
 }
 
+/** The Chromes still running, by their profile: stopped and removed if this process exits first. */
+const running = new Map();
+
+/** Stops every Chrome still running and removes its profile (an exit handler: synchronous only). */
+function stopRunning() {
+	for (const [profile, chrome] of running) {
+		chrome.kill('SIGKILL');
+		rmSync(profile, { recursive: true, force: true });
+	}
+	running.clear();
+}
+
+/** Starts Chrome and records it as running; a Chrome that cannot start removes its profile. */
+function start(binary, args, profile, removeProfile) {
+	let chrome;
+	try {
+		chrome = spawn(binary, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+	} catch (error) {
+		removeProfile();
+		throw error;
+	}
+	if (running.size === 0) process.once('exit', stopRunning);
+	running.set(profile, chrome);
+	return chrome;
+}
+
 /** Collects a child's output stream as text. */
 function collect(stream) {
 	let text = '';
@@ -30,12 +58,20 @@ function collect(stream) {
  * The DOM of `url` after the page ran, in headless Chrome with virtual time. `offline` blocks every
  * host name lookup, for pages that run upstream code: nothing it does can reach the network. A
  * Chrome that exits with a failure rejects with its status and stderr: what it printed before is
- * a partial page, never a result. `binary` replaces the Chrome found here (tests).
+ * a partial page, never a result. `binary` replaces the Chrome found here (tests). Each Chrome runs
+ * in a profile of its own, removed when it exits however it exits: without one, headless Chrome
+ * leaves a profile with its cache under ~/.cache for every run (E76). A process that exits while its
+ * Chrome runs stops it and removes the profile.
  */
 export function dumpDom(url, { offline = false, virtualTime = 120_000, binary = CHROME } = {}) {
 	const sandbox = process.getuid?.() === 0 ? ['--no-sandbox'] : [];
 	const network = offline ? ['--host-resolver-rules=MAP * ~NOTFOUND'] : [];
 	const budget = `--virtual-time-budget=${String(virtualTime)}`;
+	const profile = mkdtempSync(join(tmpdir(), 'chartguard-chrome-profile-'));
+	const removeProfile = () => {
+		running.delete(profile);
+		rmSync(profile, { recursive: true, force: true });
+	};
 	// Virtual time runs a page's self-test in seconds; Chrome would take its URL updates for a flood
 	// (more than 200 navigations in 10 s) and drop them, a fragment change included.
 	const flooding = '--disable-ipc-flooding-protection';
@@ -46,6 +82,7 @@ export function dumpDom(url, { offline = false, virtualTime = 120_000, binary = 
 		'--headless=new',
 		'--disable-gpu',
 		'--no-first-run',
+		`--user-data-dir=${profile}`,
 		...sandbox,
 		...network,
 		budget,
@@ -55,11 +92,15 @@ export function dumpDom(url, { offline = false, virtualTime = 120_000, binary = 
 		url
 	];
 	return new Promise((resolve, reject) => {
-		const chrome = spawn(binary, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+		const chrome = start(binary, args, profile, removeProfile);
 		const html = collect(chrome.stdout);
 		const errors = collect(chrome.stderr);
-		chrome.on('error', reject);
+		chrome.on('error', (error) => {
+			removeProfile();
+			reject(error);
+		});
 		chrome.on('close', (status, signal) => {
+			removeProfile();
 			if (status === 0) resolve(html());
 			else reject(new Error(`Chrome exited with ${String(status ?? signal)} for ${url}:\n${errors()}`));
 		});
