@@ -58,7 +58,7 @@ jobs:
       security-events: write # only for the SARIF upload
     steps:
       - uses: actions/checkout@v5
-      - uses: dovicsin/chartguard@main # pin a release tag or a commit SHA
+      - uses: dovicsin/chartguard@v0.1.1 # a release tag, never moved
         with:
           command: validate
           library: chartjs

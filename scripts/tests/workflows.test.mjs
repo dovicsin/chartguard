@@ -15,6 +15,10 @@ const WORKFLOWS = fileURLToPath(new URL('../../.github/workflows/', import.meta.
  */
 const JOB_WRITES = new Set(['pages', 'id-token', 'security-events']);
 
+/** A write scope one named job needs beyond those: the release's tag job writes its tags (E92). */
+const NAMED_WRITES = new Map([['release.yml tag', 'contents']]);
+const mayWrite = (name, id, scope) => JOB_WRITES.has(scope) || NAMED_WRITES.get(`${name} ${id}`) === scope;
+
 /** Whether a permissions block only reads: an object of `read`/`none` scopes. */
 const readsOnly = (permissions) =>
 	permissions !== null &&
@@ -35,7 +39,7 @@ function jobProblems(name, id, job) {
 	if (typeof job.permissions === 'string')
 		return [...problems, `${name}: job ${id} sets permissions to ${job.permissions}`];
 	for (const [scope, level] of Object.entries(job.permissions ?? {}))
-		if (level === 'write' && !JOB_WRITES.has(scope)) problems.push(`${name}: job ${id} writes ${scope}`);
+		if (level === 'write' && !mayWrite(name, id, scope)) problems.push(`${name}: job ${id} writes ${scope}`);
 	return problems;
 }
 
@@ -76,6 +80,13 @@ test('the guard catches a writing token, a missing timeout and a job that writes
 		}),
 		['w: job a writes contents']
 	);
+	// Contents only for the release's tag job, by name: the same job elsewhere, or another job there, is caught.
+	const tag = { ...job, permissions: { contents: 'write' } };
+	assert.deepEqual(workflowProblems('release.yml', { permissions: {}, jobs: { tag } }), []);
+	assert.deepEqual(workflowProblems('ci.yml', { permissions: {}, jobs: { tag } }), ['ci.yml: job tag writes contents']);
+	assert.deepEqual(workflowProblems('release.yml', { permissions: {}, jobs: { publish: tag } }), [
+		'release.yml: job publish writes contents'
+	]);
 	assert.deepEqual(workflowProblems('w', { permissions: {}, jobs: { a: { ...job, permissions: 'write-all' } } }), [
 		'w: job a sets permissions to write-all'
 	]);

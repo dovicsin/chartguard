@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       # Pin the action to a release tag or a commit SHA of dovicsin/chartguard.
-      - uses: dovicsin/chartguard@main
+      - uses: dovicsin/chartguard@v0.1.1
         with:
           command: validate
           library: chartjs

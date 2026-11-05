@@ -172,3 +172,22 @@ test('every published README shows how to install its package from npm (E90)', (
 	assert.equal(installsItself('npm install @chartguard/core\n', '@chartguard/core'), false);
 	assert.equal(installsItself('```sh\nnpm install @chartguard/core-x\n```\n', '@chartguard/core'), false);
 });
+
+/** Every `dovicsin/chartguard@<ref>` a public document or the users' example workflow pins the action to. */
+const actionPins = (text) =>
+	[...text.matchAll(/dovicsin\/chartguard@(?<ref>[\w.-]+)/gu)].map(({ groups }) => groups?.ref);
+
+test('what users copy pins the action to the release tag of the current CLI, never a moving branch (E92)', () => {
+	const cli = publishedPackages(ROOT).find(({ manifest }) => manifest.name === '@chartguard/cli')?.manifest.version;
+	const files = ['README.md', 'apps/reference/guides/ci.md', 'examples/github/chartguard.yml'];
+	const pins = files.flatMap((file) =>
+		actionPins(readFileSync(join(ROOT, file), 'utf8')).map((ref) => `${file}: ${String(ref)}`)
+	);
+	assert.equal(pins.length, files.length);
+	assert.deepEqual(
+		pins.filter((pin) => !pin.endsWith(`: v${String(cli)}`)),
+		[]
+	);
+	assert.deepEqual(actionPins('- uses: dovicsin/chartguard@main # x'), ['main']);
+	assert.deepEqual(actionPins('uses: dovicsin/chartguard@v0.1.1'), ['v0.1.1']);
+});

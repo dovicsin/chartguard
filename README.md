@@ -68,7 +68,7 @@ Exit codes: `0` nothing fails, `1` findings that fail (`--fail-on error|warning|
 
 ```yaml
 - uses: actions/checkout@v5
-- uses: dovicsin/chartguard@main # pin a commit SHA
+- uses: dovicsin/chartguard@v0.1.1 # a release tag, never moved
   with:
     command: validate # or analyze, quality (advisory)
     library: chartjs

@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 
 import { parse } from 'yaml';
 
+import { releaseTags } from '../release-tags.mjs';
+
 /**
  * E91: what the release must hold. It starts only by hand on main, publishes only a commit CI passed
  * and only after the site is deployed, in the `release` environment (the maintainer approves), with
@@ -17,6 +19,7 @@ const read = (file) => parse(readFileSync(join(WORKFLOWS, file), 'utf8'));
 
 const publishSteps = (release) => release.jobs?.publish?.steps ?? [];
 const publishRuns = (release) => publishSteps(release).map(({ run }) => String(run ?? ''));
+const tagRuns = (release) => (release.jobs?.tag?.steps ?? []).map(({ run }) => String(run ?? ''));
 const usesAction = (prefix) => (step) => String(step.uses ?? '').startsWith(prefix);
 const installs = (run) => /\bnpm (?:ci|install)\b(?! --global npm@)/u.test(run);
 
@@ -78,6 +81,30 @@ const PROPERTIES = [
 	[
 		'uses no stored credential but NPM_TOKEN',
 		(release) => (JSON.stringify(release).match(/secrets\.\w+/gu) ?? []).every((name) => name === 'secrets.NPM_TOKEN')
+	],
+	// E92: the tags, written after publishing by a job that can do nothing else.
+	['tags after publishing', (release) => release.jobs?.tag?.needs === 'publish'],
+	[
+		'the tag job writes only contents',
+		(release) => JSON.stringify(release.jobs?.tag?.permissions) === JSON.stringify({ contents: 'write' })
+	],
+	[
+		'the tag job installs nothing and persists no credential',
+		(release) =>
+			tagRuns(release).every((run) => !/\bnpm (?:ci|install)\b|\bnpx\b/u.test(run)) &&
+			(release.jobs?.tag?.steps ?? []).every(
+				(step) => !usesAction('actions/checkout@')(step) || step.with?.['persist-credentials'] === false
+			)
+	],
+	[
+		'the tag job never moves a tag',
+		(release) =>
+			tagRuns(release).some(
+				(run) =>
+					run.includes('node scripts/release-tags.mjs') &&
+					run.indexOf('git/ref/tags/$tag') !== -1 &&
+					run.indexOf('git/ref/tags/$tag') < run.indexOf('git/refs"')
+			) && tagRuns(release).every((run) => !/PATCH|DELETE|force|git push/iu.test(run))
 	]
 ];
 
@@ -122,14 +149,44 @@ const BROKEN = [
 	[
 		(copy) => Object.assign(stepOf(copy, 'npx vsce publish'), { env: { VSCE_PAT: '${{ secrets.VSCE_PAT }}' } }),
 		['uses no stored credential but NPM_TOKEN']
+	],
+	[(copy) => Object.assign(copy.jobs.tag, { needs: 'verify' }), ['tags after publishing']],
+	[
+		(copy) => Object.assign(copy.jobs.tag, { permissions: { contents: 'write', 'id-token': 'write' } }),
+		['the tag job writes only contents']
+	],
+	[
+		(copy) => copy.jobs.tag.steps.push({ run: 'npm ci --ignore-scripts' }),
+		['the tag job installs nothing and persists no credential']
+	],
+	[
+		(copy) => Object.assign(copy.jobs.tag.steps[0], { with: {} }),
+		['the tag job installs nothing and persists no credential']
+	],
+	[(copy) => copy.jobs.tag.steps.push({ run: 'git push --force origin "v0.1.1"' }), ['the tag job never moves a tag']],
+	[
+		(copy) =>
+			Object.assign(copy.jobs.tag.steps.at(-1), {
+				run: 'node scripts/release-tags.mjs | while read -r tag; do gh api "repos/$R/git/refs" -f "ref=refs/tags/$tag"; done'
+			}),
+		['the tag job never moves a tag']
 	]
 ];
 
-test('the release publishes by hand from main, after CI and the site, approved, with OIDC (E91)', () => {
+test('the release publishes by hand from main, after CI and the site, approved, with OIDC, then tags (E91, E92)', () => {
 	assert.deepEqual(releaseProblems(RELEASE, PAGES), []);
 });
 
 test('the release guard catches each property broken alone', () => {
 	for (const [change, expected] of BROKEN) assert.deepEqual(releaseProblems(changed(change), PAGES), expected);
 	assert.deepEqual(releaseProblems(RELEASE, { on: { workflow_dispatch: null } }), ['pages.yml can be called']);
+});
+
+test('a release tags each published package at its version and the action at its CLI version (E92)', () => {
+	const manifests = [
+		{ name: '@chartguard/core', version: '0.2.0' },
+		{ name: '@chartguard/cli', version: '0.1.3' }
+	];
+	assert.deepEqual(releaseTags(manifests), ['@chartguard/cli@0.1.3', '@chartguard/core@0.2.0', 'v0.1.3']);
+	assert.throws(() => releaseTags([{ name: '@chartguard/core', version: '0.2.0' }]), /no @chartguard\/cli/u);
 });
