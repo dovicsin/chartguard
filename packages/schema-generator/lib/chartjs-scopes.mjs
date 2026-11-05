@@ -15,7 +15,7 @@ const ELEMENTS = ['point', 'line', 'bar', 'arc'];
 const RUNTIME = {
 	scopes: { file: 'dist/chart.js', pattern: 'datasetElementScopeKeys(datasetType, elementType) {' },
 	prefixes: { file: 'dist/chart.js', pattern: 'const prefixes = active ? [' },
-	animations: { file: 'dist/chunks/helpers.dataset.js', pattern: "_fallback: 'animation'" }
+	animations: { file: 'dist/chunks/index.js', pattern: "_fallback: 'animation'" }
 };
 
 const changed = upstreamChanged('chart.js');

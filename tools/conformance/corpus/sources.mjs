@@ -8,8 +8,8 @@
 export const SOURCES = {
 	chartjs: {
 		repository: 'chartjs/Chart.js',
-		ref: 'v4.5.1',
-		commit: '9c5cf9fac7ec04a71b516e2aff3f7d76876be369',
+		ref: 'v4.6.1',
+		commit: '76d8cf895a7485dc838c90ef37e2bc9d9e388fcb',
 		license: 'MIT',
 		licensePath: 'LICENSE.md',
 		select: (path) => path.startsWith('docs/samples/') && path.endsWith('.md') && path !== 'docs/samples/utils.md',

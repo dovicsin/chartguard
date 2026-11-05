@@ -14,11 +14,11 @@ import {
 
 const DURATION: Default<number> = {
 	value: 1000,
-	pointer: 'chart.js@4.5.1 dist/chunks/helpers.dataset.js:783 duration: 1000,'
+	pointer: 'chart.js@4.6.1 dist/chunks/index.js:783 duration: 1000,'
 };
 const LOOP: Default<boolean> = {
 	value: false,
-	pointer: 'chart.js@4.5.1 dist/chunks/helpers.dataset.js:787 loop: undefined,'
+	pointer: 'chart.js@4.6.1 dist/chunks/index.js:787 loop: undefined,'
 };
 
 const isDynamic = (fact: Fact<unknown>): boolean => fact.known && typeof fact.value === 'function';

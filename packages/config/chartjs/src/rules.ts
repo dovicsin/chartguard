@@ -74,5 +74,5 @@ const fillNeedsFiller: ConfigRule = {
 	}
 };
 
-/** Rules over several options at once, each mirroring a check of the chart.js 4.5.1 runtime (CG-02-08). */
+/** Rules over several options at once, each mirroring a check of the chart.js 4.6.1 runtime (CG-02-08). */
 export const RULES: readonly ConfigRule[] = [fillNeedsFiller];

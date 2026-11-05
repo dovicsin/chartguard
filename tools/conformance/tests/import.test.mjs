@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { text } from '../corpus/import.mjs';
+import { text, verifiedCommit } from '../corpus/import.mjs';
 
 /** The corpus importer's requests: GitHub's limits for unauthenticated calls are shared by every hosted runner. */
 const API = 'https://api.github.com/repos/highcharts/highcharts/git/trees/abc?recursive=1';
@@ -74,4 +74,26 @@ test('CI imports the Highcharts corpus with the workflow token (E46)', () => {
 	const step = /- run: npm run conformance:import -- highcharts\n((?: {8}.*\n|\s*#.*\n)*)/u.exec(workflow);
 	assert.ok(step !== null, 'the import step');
 	assert.match(step[1], /^ {8}env:\n(?: {10}#.*\n)* {10}GITHUB_TOKEN: \$\{\{ github\.token \}\}$/mu);
+});
+
+test('a tag pin must name its commit; an annotated tag is followed; a branch pin is its commit alone (E98)', async () => {
+	const responses = {
+		'https://api.github.com/repos/o/r/git/ref/tags/v2.0.0': { object: { type: 'commit', sha: 'new' } },
+		'https://api.github.com/repos/o/r/git/ref/tags/v3.0.0': { object: { type: 'tag', sha: 't', url: 'tag-url' } },
+		'tag-url': { object: { type: 'commit', sha: 'c3' } }
+	};
+	const requested = [];
+	const read = async (url) => {
+		requested.push(url);
+		return JSON.stringify(responses[url]);
+	};
+	assert.equal(await verifiedCommit({ repository: 'o/r', ref: 'v2.0.0', commit: 'new' }, read), 'new');
+	await assert.rejects(
+		verifiedCommit({ repository: 'o/r', ref: 'v2.0.0', commit: 'old' }, read),
+		/v2\.0\.0 is commit new, not the pinned old/u
+	);
+	assert.equal(await verifiedCommit({ repository: 'o/r', ref: 'v3.0.0', commit: 'c3' }, read), 'c3');
+	requested.length = 0;
+	assert.equal(await verifiedCommit({ repository: 'o/r', ref: 'gh-pages', commit: 'x' }, read), 'x');
+	assert.deepEqual(requested, []);
 });

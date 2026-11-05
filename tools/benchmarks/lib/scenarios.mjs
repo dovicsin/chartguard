@@ -253,7 +253,7 @@ export const SCENARIOS = [
 	{
 		id: 'schema-chartjs-gzip',
 		unit: 'KB',
-		measure: schemaKb('../../../packages/config/chartjs/dist/generated/chartjs-4.5.1.json')
+		measure: schemaKb('../../../packages/config/chartjs/dist/generated/chartjs-4.6.1.json')
 	},
 	{
 		id: 'schema-echarts-gzip',

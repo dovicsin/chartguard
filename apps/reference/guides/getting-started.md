@@ -47,7 +47,7 @@ Each library has a validator package with no runtime dependency on the library:
 ```ts
 import { validate } from '@chartguard/config-chartjs';
 
-const result = validate(config, { libraryVersion: '4.5.1' });
+const result = validate(config, { libraryVersion: '4.6.1' });
 if (!result.valid) for (const finding of result.diagnostics) console.error(finding.code, finding.path, finding.message);
 console.log(result.status, result.coverage); // e.g. "partial", "partial"
 ```

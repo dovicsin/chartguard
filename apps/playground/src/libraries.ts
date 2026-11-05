@@ -14,7 +14,7 @@ export interface Library {
 export const LIBRARIES: readonly Library[] = [
 	{
 		id: 'chartjs',
-		label: 'Chart.js 4.5.1',
+		label: 'Chart.js 4.6.1',
 		adapter: async (): Promise<Adapter> => {
 			const [config, quality] = await Promise.all([
 				import('@chartguard/config-chartjs'),

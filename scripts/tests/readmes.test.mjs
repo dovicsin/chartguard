@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import test from 'node:test';
@@ -147,4 +148,30 @@ test('every ts and js example of a public document compiles against the built pa
 	});
 	assert.deepEqual(problems, []);
 	rmSync(directory, { recursive: true, force: true });
+});
+
+/** The lines the README shows after `$ npx chartguard …` in its first `sh` block that has one. */
+function shownOutput(readme) {
+	const block = /```sh\n\$ npx chartguard [^\n]*\n(?<output>[\s\S]*?)```/u.exec(readme);
+	return block?.groups?.output ?? '';
+}
+
+test("the README's example output is what the CLI prints on examples/chartjs-invalid.json, digest included", () => {
+	const shown = shownOutput(readFileSync(join(ROOT, 'README.md'), 'utf8'));
+	assert.notEqual(shown, '', 'the README shows a CLI run');
+	const run = spawnSync(
+		process.execPath,
+		[
+			join(ROOT, 'packages/cli/bin/chartguard.mjs'),
+			'validate',
+			'--library',
+			'chartjs',
+			'--file',
+			'examples/chartjs-invalid.json'
+		],
+		{ cwd: ROOT, encoding: 'utf8' }
+	);
+	assert.equal(run.status, 1, run.stderr);
+	assert.equal(shown, run.stdout);
+	assert.equal(shownOutput('```sh\n$ npx chartguard validate\na\nb\n```\n'), 'a\nb\n');
 });

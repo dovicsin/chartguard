@@ -7,10 +7,10 @@
  * - `Chart.version` is a static data property of the class, inherited by a subclass.
  */
 export const SOURCES = [
-	'chart.js@4.5.1 dist/chart.js:5356 config.data = initData(config.data);',
-	'chart.js@4.5.1 dist/chart.js:5175 const local = config.plugins || [];',
-	'chart.js@4.5.1 dist/chart.js:5158 return options === false && !all ? [] : createDescriptors(chart, plugins, options, all);',
-	'chart.js@4.5.1 dist/chart.js:5189 if (!all && options === false) {',
-	'chart.js@4.5.1 dist/chart.js:5134 if (callback(method, params, plugin) === false && args.cancelable) {',
-	'chart.js@4.5.1 dist/chart.js:5638 static version = version;'
+	'chart.js@4.6.1 dist/chart.js:5367 config.data = initData(config.data);',
+	'chart.js@4.6.1 dist/chart.js:5186 const local = config.plugins || [];',
+	'chart.js@4.6.1 dist/chart.js:5169 return options === false && !all ? [] : createDescriptors(chart, plugins, options, all);',
+	'chart.js@4.6.1 dist/chart.js:5200 if (!all && options === false) {',
+	'chart.js@4.6.1 dist/chart.js:5145 if (callback(method, params, plugin) === false && args.cancelable) {',
+	'chart.js@4.6.1 dist/chart.js:5649 static version = version;'
 ] as const;

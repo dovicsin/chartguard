@@ -24,7 +24,7 @@ test('the bundle: a small entry without schemas or TypeScript, one lazy chunk pe
 		.filter((file) => file.endsWith('.js'))
 		.map((file) => readFileSync(join(outdir, 'chunks', file), 'utf8'));
 	// The committed schemas ship; a Highcharts-derived one may not be redistributed (CG-01-05).
-	const bundled = ['"chart.js@4.5.1"', '"echarts@6.1.0"', '"highcharts@13.1.1"'].map((locator) =>
+	const bundled = ['"chart.js@4.6.1"', '"echarts@6.1.0"', '"highcharts@13.1.1"'].map((locator) =>
 		chunks.some((text) => text.includes(locator))
 	);
 	assert.deepEqual(bundled, [true, true, false]);

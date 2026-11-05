@@ -141,7 +141,7 @@ test('an extended validator chooses the same types; a plugin controller decides 
 const typesOf = (built) => Object.fromEntries(Object.entries(built.scales).map(([id, scale]) => [id, scale.type]));
 
 /**
- * The type chart.js@4.5.1 builds for each configured scale. A chart that fails after building its
+ * The type chart.js@4.6.1 builds for each configured scale. A chart that fails after building its
  * scales (a radial scale in a cartesian chart cannot be drawn) is read from `Chart.instances`.
  */
 function runtimeTypes(config) {
@@ -197,7 +197,7 @@ function contractCases() {
 	);
 }
 
-test('runtime contract: every scale type chosen is the one chart.js@4.5.1 builds, checked as if named', () => {
+test('runtime contract: every scale type chosen is the one chart.js@4.6.1 builds, checked as if named', () => {
 	let decided = 0;
 	for (const config of contractCases()) {
 		const built = runtimeTypes(config);

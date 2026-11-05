@@ -23,15 +23,15 @@ import { INDEX_AXIS } from './series.js';
 /** Bar and line charts default their index scale to `category` and their value scale to `linear`. */
 const BY_ROLE: Readonly<Record<string, { readonly index: Default<string>; readonly value: Default<string> }>> = {
 	bar: {
-		index: { value: 'category', pointer: "chart.js@4.5.1 dist/chart.js:1393 type: 'category'," },
-		value: { value: 'linear', pointer: "chart.js@4.5.1 dist/chart.js:1400 type: 'linear'," }
+		index: { value: 'category', pointer: "chart.js@4.6.1 dist/chart.js:1393 type: 'category'," },
+		value: { value: 'linear', pointer: "chart.js@4.6.1 dist/chart.js:1400 type: 'linear'," }
 	},
 	line: {
 		index: {
 			value: 'category',
-			pointer: "chart.js@4.5.1 dist/chart.js:2097 type: 'category' [in class LineController]"
+			pointer: "chart.js@4.6.1 dist/chart.js:2098 type: 'category' [in class LineController]"
 		},
-		value: { value: 'linear', pointer: "chart.js@4.5.1 dist/chart.js:2100 type: 'linear' [in class LineController]" }
+		value: { value: 'linear', pointer: "chart.js@4.6.1 dist/chart.js:2101 type: 'linear' [in class LineController]" }
 	}
 };
 /** Scatter charts default both scales to `linear`, radar charts their `r` scale to `radialLinear`. */
@@ -39,32 +39,32 @@ const BY_AXIS: Readonly<Record<string, Partial<Record<Axis, Default<string>>>>> 
 	scatter: {
 		x: {
 			value: 'linear',
-			pointer: "chart.js@4.5.1 dist/chart.js:2472 type: 'linear' [in class ScatterController] [in x: {]"
+			pointer: "chart.js@4.6.1 dist/chart.js:2481 type: 'linear' [in class ScatterController] [in x: {]"
 		},
 		y: {
 			value: 'linear',
-			pointer: "chart.js@4.5.1 dist/chart.js:2475 type: 'linear' [in class ScatterController] [in y: {]"
+			pointer: "chart.js@4.6.1 dist/chart.js:2484 type: 'linear' [in class ScatterController] [in y: {]"
 		}
 	},
 	radar: {
 		r: {
 			value: 'radialLinear',
-			pointer: "chart.js@4.5.1 dist/chart.js:2402 type: 'radialLinear' [in class RadarController]"
+			pointer: "chart.js@4.6.1 dist/chart.js:2411 type: 'radialLinear' [in class RadarController]"
 		}
 	}
 };
 /** A scale title is hidden and empty unless set (`title: { display: false, text: '' }`). */
 const TITLE_SHOWN: Default<boolean> = {
 	value: false,
-	pointer: 'chart.js@4.5.1 dist/chunks/helpers.dataset.js:956 display: false,'
+	pointer: 'chart.js@4.6.1 dist/chunks/index.js:956 display: false,'
 };
 const TITLE_TEXT: Default<string | string[]> = {
 	value: '',
-	pointer: "chart.js@4.5.1 dist/chunks/helpers.dataset.js:957 text: '',"
+	pointer: "chart.js@4.6.1 dist/chunks/index.js:957 text: '',"
 };
 const REVERSE: Default<boolean> = {
 	value: false,
-	pointer: 'chart.js@4.5.1 dist/chunks/helpers.dataset.js:934 reverse: false,'
+	pointer: 'chart.js@4.6.1 dist/chunks/index.js:934 reverse: false,'
 };
 
 /**
@@ -73,7 +73,7 @@ const REVERSE: Default<boolean> = {
  */
 const UNSTACKED: Default<string> = {
 	value: 'chart',
-	pointer: 'chart.js@4.5.1 dist/chart.js:2923 if (!stack || !STATIC_POSITIONS.includes(pos)) {'
+	pointer: 'chart.js@4.6.1 dist/chart.js:2932 if (!stack || !STATIC_POSITIONS.includes(pos)) {'
 };
 
 function panelOf(config: unknown, path: readonly string[], key: string): Fact<string> {
@@ -84,7 +84,7 @@ function panelOf(config: unknown, path: readonly string[], key: string): Fact<st
 /** A linear scale labels its ticks with plain numbers unless a callback formats them. */
 const NUMERIC: Default<string> = {
 	value: '',
-	pointer: 'chart.js@4.5.1 dist/chart.js:10364 callback: Ticks.formatters.numeric [in class LinearScale extends]'
+	pointer: 'chart.js@4.6.1 dist/chart.js:10446 callback: Ticks.formatters.numeric [in class LinearScale extends]'
 };
 
 /** The unit around the tick labels: none on a linear scale without a callback; a callback decides at runtime. */

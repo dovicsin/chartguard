@@ -182,7 +182,11 @@ function artifactsIn(paths) {
 }
 
 test('R12 no schema artifact whose upstream license does not allow it is tracked by git (CG-01-05)', () => {
-	const tracked = spawnSync('git', ['ls-files', '-z', '--', '*.json'], { cwd: ROOT, encoding: 'utf8' });
+	// Tracked, and what `git add` would track (not ignored): a new artifact is checked before its first commit.
+	const tracked = spawnSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', '*.json'], {
+		cwd: ROOT,
+		encoding: 'utf8'
+	});
 	assert.equal(tracked.status, 0, tracked.stderr);
 	// Tracked files deleted in the working tree (a move not committed yet) have nothing to check.
 	const found = artifactsIn(tracked.stdout.split('\0').filter((path) => path !== '' && existsSync(join(ROOT, path))));

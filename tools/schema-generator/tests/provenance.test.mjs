@@ -35,7 +35,7 @@ function lineOf(file, text) {
 /** A minimal artifact with one object whose property `name` cites `pointer`. */
 const citing = (name, pointer, { source = 'chartjs', confidence = 'authoritative' } = {}) => ({
 	sources: {
-		chartjs: { kind: 'npm-package', locator: 'chart.js@4.5.1' },
+		chartjs: { kind: 'npm-package', locator: 'chart.js@4.6.1' },
 		typescript: { kind: 'npm-package', locator: 'typescript@5.9.3' }
 	},
 	definitions: {

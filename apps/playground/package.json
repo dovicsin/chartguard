@@ -22,7 +22,7 @@
 		"@chartguard/quality-echarts": "0.1.1",
 		"@chartguard/quality-highcharts": "0.1.1",
 		"@chartguard/source-checks": "0.1.1",
-		"chart.js": "4.5.1",
+		"chart.js": "4.6.1",
 		"chartjs-adapter-date-fns": "^3.0.0",
 		"date-fns": "^4.1.0",
 		"echarts": "6.1.0",

@@ -56,7 +56,7 @@ test('libraryVersion "auto": the version installed for the linted file, found up
 	const old = project(t, { 'chart.js': '3.9.1' });
 	assert.deepEqual(lint(WRONG_MIN, old, 'src/bar.js', auto), ['chartguard/config-warnings CFG_UNSUPPORTED_VERSION $']);
 	// The pinned version installed: the findings are confirmed.
-	const pinned = project(t, { 'chart.js': '4.5.1' });
+	const pinned = project(t, { 'chart.js': '4.6.1' });
 	assert.deepEqual(lint(WRONG_MIN, pinned, 'src/bar.js', auto), [
 		'chartguard/valid-config CFG_TYPE $.options.scales.y.min'
 	]);

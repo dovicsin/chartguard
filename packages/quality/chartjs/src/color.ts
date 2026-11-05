@@ -25,8 +25,8 @@ const COLORED_BY: Readonly<
 
 /** Chart.js's own colours, used when nothing else colours a dataset. */
 const DEFAULT = {
-	backgroundColor: "chart.js@4.5.1 dist/chunks/helpers.dataset.js:1024 this.backgroundColor = 'rgba(0,0,0,0.1)';",
-	borderColor: "chart.js@4.5.1 dist/chunks/helpers.dataset.js:1025 this.borderColor = 'rgba(0,0,0,0.1)';"
+	backgroundColor: "chart.js@4.6.1 dist/chunks/index.js:1024 this.backgroundColor = 'rgba(0,0,0,0.1)';",
+	borderColor: "chart.js@4.6.1 dist/chunks/index.js:1025 this.borderColor = 'rgba(0,0,0,0.1)';"
 } as const;
 
 const NONE: Fact<boolean> = { known: true, value: false, path: '$', source: 'config' };

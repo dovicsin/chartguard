@@ -25,11 +25,11 @@ import { valuesOf } from './values.js';
 export const INDEX_AXIS: Default<string> = {
 	value: 'x',
 	pointer:
-		"chart.js@4.5.1 dist/chart.js:5234 return datasetOptions.indexAxis || options.indexAxis || datasetDefaults.indexAxis || 'x';"
+		"chart.js@4.6.1 dist/chart.js:5245 return datasetOptions.indexAxis || options.indexAxis || datasetDefaults.indexAxis || 'x';"
 };
-const FILL: Default<unknown> = { value: false, pointer: 'chart.js@4.5.1 dist/chart.js:6955 fill: false,' };
+const FILL: Default<unknown> = { value: false, pointer: 'chart.js@4.6.1 dist/chart.js:7019 fill: false,' };
 /** Stacked when the value scale says so, or when it says nothing and the dataset has a `stack`. */
-const STACKED = 'chart.js@4.5.1 dist/chart.js:478 return stacked || stacked === undefined && meta.stack !== undefined;';
+const STACKED = 'chart.js@4.6.1 dist/chart.js:478 return stacked || stacked === undefined && meta.stack !== undefined;';
 
 const CARTESIAN: Readonly<Record<string, SeriesKind>> = {
 	bar: 'bar',
@@ -44,7 +44,7 @@ const RADIAL = new Set(['radar', 'polarArea']);
 /** A bar grows from zero unless its `base` is set (`startValue = baseValue ?? start`, with `start` zero unless stacked). */
 const BASE: Default<number> = {
 	value: 0,
-	pointer: 'chart.js@4.5.1 dist/chart.js:1574 let start = 0; [in _calculateBarValuePixels(index)]'
+	pointer: 'chart.js@4.6.1 dist/chart.js:1574 let start = 0; [in _calculateBarValuePixels(index)]'
 };
 
 /** A bar's `base`, through the dataset, the options for bar datasets and the chart options (`datasetScopeKeys`). */

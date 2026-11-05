@@ -16,26 +16,26 @@ interface Fact {
  */
 const OVERRIDES: Readonly<Record<string, Readonly<Record<string, Fact>>>> = {
 	bar: {
-		_index_: { value: 'category', pointer: 'chart.js@4.5.1 dist/chart.js:1392 _index_: { [in class BarController]' },
-		_value_: { value: 'linear', pointer: 'chart.js@4.5.1 dist/chart.js:1399 _value_: { [in class BarController]' }
+		_index_: { value: 'category', pointer: 'chart.js@4.6.1 dist/chart.js:1392 _index_: { [in class BarController]' },
+		_value_: { value: 'linear', pointer: 'chart.js@4.6.1 dist/chart.js:1399 _value_: { [in class BarController]' }
 	},
 	bubble: {
-		x: { value: 'linear', pointer: 'chart.js@4.5.1 dist/chart.js:1683 x: { [in class BubbleController]' },
-		y: { value: 'linear', pointer: 'chart.js@4.5.1 dist/chart.js:1686 y: { [in class BubbleController]' }
+		x: { value: 'linear', pointer: 'chart.js@4.6.1 dist/chart.js:1683 x: { [in class BubbleController]' },
+		y: { value: 'linear', pointer: 'chart.js@4.6.1 dist/chart.js:1686 y: { [in class BubbleController]' }
 	},
 	doughnut: {},
 	line: {
-		_index_: { value: 'category', pointer: 'chart.js@4.5.1 dist/chart.js:2096 _index_: { [in class LineController]' },
-		_value_: { value: 'linear', pointer: 'chart.js@4.5.1 dist/chart.js:2099 _value_: { [in class LineController]' }
+		_index_: { value: 'category', pointer: 'chart.js@4.6.1 dist/chart.js:2097 _index_: { [in class LineController]' },
+		_value_: { value: 'linear', pointer: 'chart.js@4.6.1 dist/chart.js:2100 _value_: { [in class LineController]' }
 	},
 	pie: {},
 	polarArea: {
-		r: { value: 'radialLinear', pointer: 'chart.js@4.5.1 dist/chart.js:2250 r: { [in class PolarAreaController]' }
+		r: { value: 'radialLinear', pointer: 'chart.js@4.6.1 dist/chart.js:2253 r: { [in class PolarAreaController]' }
 	},
-	radar: { r: { value: 'radialLinear', pointer: 'chart.js@4.5.1 dist/chart.js:2401 r: { [in class RadarController]' } },
+	radar: { r: { value: 'radialLinear', pointer: 'chart.js@4.6.1 dist/chart.js:2410 r: { [in class RadarController]' } },
 	scatter: {
-		x: { value: 'linear', pointer: 'chart.js@4.5.1 dist/chart.js:2471 x: { [in class ScatterController]' },
-		y: { value: 'linear', pointer: 'chart.js@4.5.1 dist/chart.js:2474 y: { [in class ScatterController]' }
+		x: { value: 'linear', pointer: 'chart.js@4.6.1 dist/chart.js:2480 x: { [in class ScatterController]' },
+		y: { value: 'linear', pointer: 'chart.js@4.6.1 dist/chart.js:2483 y: { [in class ScatterController]' }
 	}
 };
 
@@ -45,17 +45,17 @@ const OVERRIDES: Readonly<Record<string, Readonly<Record<string, Fact>>>> = {
  * Every other built-in leaves it to `options.indexAxis`, else `'x'`.
  */
 const INDEX_AXIS: Readonly<Record<string, Fact & { readonly via?: string }>> = {
-	doughnut: { value: 'r', pointer: "chart.js@4.5.1 dist/chart.js:1843 indexAxis: 'r' [in class DoughnutController]" },
+	doughnut: { value: 'r', pointer: "chart.js@4.6.1 dist/chart.js:1844 indexAxis: 'r' [in class DoughnutController]" },
 	pie: {
 		value: 'r',
-		pointer: "chart.js@4.5.1 dist/chart.js:1843 indexAxis: 'r' [in class DoughnutController]",
-		via: 'chart.js@4.5.1 dist/chart.js:4980 parentScope ? defaults.get(parentScope) : {},'
+		pointer: "chart.js@4.6.1 dist/chart.js:1844 indexAxis: 'r' [in class DoughnutController]",
+		via: 'chart.js@4.6.1 dist/chart.js:4991 parentScope ? defaults.get(parentScope) : {},'
 	},
 	polarArea: {
 		value: 'r',
-		pointer: "chart.js@4.5.1 dist/chart.js:2213 indexAxis: 'r', [in class PolarAreaController]"
+		pointer: "chart.js@4.6.1 dist/chart.js:2214 indexAxis: 'r', [in class PolarAreaController]"
 	},
-	radar: { value: 'r', pointer: "chart.js@4.5.1 dist/chart.js:2390 indexAxis: 'r', [in class RadarController]" }
+	radar: { value: 'r', pointer: "chart.js@4.6.1 dist/chart.js:2399 indexAxis: 'r', [in class RadarController]" }
 };
 
 const AXES = new Set(['x', 'y', 'r']);
@@ -175,12 +175,12 @@ function untyped(scale: object): boolean {
  * datasets bound to it, else `radialLinear`, `category` or `linear` by its axis. Undefined when the
  * scale names its own type or anything on the way cannot be read. Read from:
  *
- * - 'chart.js@4.5.1 dist/chart.js:5234 return datasetOptions.indexAxis || options.indexAxis || datasetDefaults.indexAxis'
- * - 'chart.js@4.5.1 dist/chart.js:5266 const axis = opts.axis || axisFromPosition(opts.position) || id.length > 1'
- * - 'chart.js@4.5.1 dist/chart.js:5306 const defaultScaleOptions = chartDefaults.scales || {};'
- * - 'chart.js@4.5.1 dist/chart.js:5318 const indexAxis = dataset.indexAxis || getIndexAxis(type, options);'
- * - "chart.js@4.5.1 dist/chart.js:5323 const id = dataset[axis + 'AxisID'] || axis;"
- * - "chart.js@4.5.1 dist/chart.js:5806 dtype: isRadial ? 'radialLinear' : isHorizontal ? 'category' : 'linear'"
+ * - 'chart.js@4.6.1 dist/chart.js:5245 return datasetOptions.indexAxis || options.indexAxis || datasetDefaults.indexAxis'
+ * - 'chart.js@4.6.1 dist/chart.js:5277 const axis = opts.axis || axisFromPosition(opts.position) || id.length > 1'
+ * - 'chart.js@4.6.1 dist/chart.js:5317 const defaultScaleOptions = chartDefaults.scales || {};'
+ * - 'chart.js@4.6.1 dist/chart.js:5329 const indexAxis = dataset.indexAxis || getIndexAxis(type, options);'
+ * - "chart.js@4.6.1 dist/chart.js:5334 const id = dataset[axis + 'AxisID'] || axis;"
+ * - "chart.js@4.6.1 dist/chart.js:5817 dtype: isRadial ? 'radialLinear' : isHorizontal ? 'category' : 'linear'"
  *
  * The runtime's own defaults are assumed, as everywhere in the schema: a caller that changes
  * `Chart.overrides` or registers a scale whose defaults set a `type` under the scale's id is not modelled.
@@ -291,7 +291,7 @@ const MAX_BUILT = 64;
 
 /**
  * The manifest to validate `config` with: one that checks every scale the runtime gives a type
- * (`mergeScaleConfig`, chart.js@4.5.1) against that type. A partial update is checked against the
+ * (`mergeScaleConfig`, chart.js@4.6.1) against that type. A partial update is checked against the
  * shared manifest: the chart it is merged into decides what it leaves out (A47).
  */
 export function withScaleTypes(manifest: SchemaManifest, config: unknown, incomplete: boolean): SchemaManifest {

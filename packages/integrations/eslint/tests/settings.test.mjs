@@ -37,7 +37,7 @@ test('libraryVersion: another minor is no confirmed error, another major is not 
 				settings: { chartguard: { libraryVersion: { chartjs: '3.9.1' } } },
 				errors: [
 					finding(
-						'CFG_UNSUPPORTED_VERSION $: 3.9.1 is not supported: this schema describes chartjs 4.5.1. Not validated.',
+						'CFG_UNSUPPORTED_VERSION $: 3.9.1 is not supported: this schema describes chartjs 4.6.1. Not validated.',
 						call
 					)
 				]

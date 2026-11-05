@@ -25,7 +25,7 @@ import { addedScales, seriesOf } from './series.js';
 
 const TITLE_SHOWN: Default<boolean> = {
 	value: false,
-	pointer: 'chart.js@4.5.1 dist/chart.js:8960 display: false, [in var plugin_title]'
+	pointer: 'chart.js@4.6.1 dist/chart.js:9042 display: false, [in var plugin_title]'
 };
 
 /** The Chart.js config as library-neutral chart semantics (CG-05-02, CG-05-03). */

@@ -4,7 +4,7 @@ import test from 'node:test';
 import { checkArtifact } from '@chartguard/config-core';
 
 import { schema, validate } from '../dist/index.js';
-import artifact from '../src/generated/chartjs-4.5.1.json' with { type: 'json' };
+import artifact from '../src/generated/chartjs-4.6.1.json' with { type: 'json' };
 import { KNOWN_VALID } from './fixtures/known-valid.mjs';
 import { RUNTIME_CONTRACT } from './fixtures/runtime-contract.mjs';
 
@@ -37,10 +37,10 @@ test('unknown chart types and keys carry suggestions', () => {
 
 test('the manifest is generated for the exact pinned version', () => {
 	const { manifest } = schema();
-	assert.equal(manifest.version, '4.5.1');
+	assert.equal(manifest.version, '4.6.1');
 	assert.equal(manifest.coverage, 'partial');
 	// The schema names its library and the compiler that read it (CG-07-06).
-	assert.equal(manifest.source, 'chart.js@4.5.1, typescript@5.9.3');
+	assert.equal(manifest.source, 'chart.js@4.6.1, typescript@5.9.3');
 });
 
 test('the shipped artifact is well-formed, so the adapter may skip the check at import time', () => {

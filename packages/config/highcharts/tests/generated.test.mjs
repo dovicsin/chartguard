@@ -94,7 +94,7 @@ test('registries: a series type whose module is not loaded is rejected; a regist
 test('createValidator refuses a malformed artifact or one for another library', () => {
 	assert.throws(() => createValidator({ irVersion: 1 }), /Invalid schema artifact/);
 	const chartjs = JSON.parse(
-		readFileSync(fileURLToPath(new URL('../../chartjs/src/generated/chartjs-4.5.1.json', import.meta.url)), 'utf8')
+		readFileSync(fileURLToPath(new URL('../../chartjs/src/generated/chartjs-4.6.1.json', import.meta.url)), 'utf8')
 	);
 	assert.throws(() => createValidator(chartjs), {
 		message: 'Expected a highcharts schema artifact, got one for chartjs.'

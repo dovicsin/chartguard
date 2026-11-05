@@ -183,9 +183,9 @@ test('--library-version: another minor downgrades confirmed errors, another majo
 	const major = await run(['validate', '--library', 'chartjs', '--file', file, '--library-version', '3.9.1']);
 	assert.equal(major.code, 0);
 	assert.match(major.out, /CFG_UNSUPPORTED_VERSION \$: 3\.9\.1 is not supported/);
-	const exact = await run(['validate', '--library', 'chartjs', '--file', file, '--library-version', '4.5.1']);
+	const exact = await run(['validate', '--library', 'chartjs', '--file', file, '--library-version', '4.6.1']);
 	assert.equal(exact.code, 1);
-	assert.equal((await run(['quality', '--library', 'chartjs', '--file', file, '--library-version', '4.5.1'])).code, 2);
+	assert.equal((await run(['quality', '--library', 'chartjs', '--file', file, '--library-version', '4.6.1'])).code, 2);
 });
 
 test('--library-version auto finds the installed package upward from the file', async (t) => {
@@ -220,6 +220,6 @@ test('analyze passes the version on to every extracted config', async () => {
 	assert.match(out, /^config @ line 2: partial$/m);
 	assert.match(
 		out,
-		/warning: \S+ \$ 3\.0\.0 is not supported: this schema describes chartjs 4\.5\.1\. Not validated\./
+		/warning: \S+ \$ 3\.0\.0 is not supported: this schema describes chartjs 4\.6\.1\. Not validated\./
 	);
 });

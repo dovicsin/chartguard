@@ -8,7 +8,7 @@ import {
 import type { ConfigValidator, ValidationOptions, ValidationResult } from '@chartguard/core';
 
 import { asCoreExtension, type ChartjsExtension, withControllers } from './controllers.js';
-import artifact from './generated/chartjs-4.5.1.json' with { type: 'json' };
+import artifact from './generated/chartjs-4.6.1.json' with { type: 'json' };
 import { RULES } from './rules.js';
 import { withScaleTypes } from './scales.js';
 
@@ -18,7 +18,7 @@ export { type Extension, ExtensionError } from '@chartguard/config-core';
 let lowered: LoweredSchema | undefined;
 
 /**
- * Generated from the chart.js@4.5.1 type declarations by tools/schema-generator. The artifact's
+ * Generated from the chart.js@4.6.1 type declarations by tools/schema-generator. The artifact's
  * structure and provenance are verified by this package's tests before it is committed, so importing
  * the package only parses JSON; lowering to the engine schema happens once, on first use.
  */
@@ -27,7 +27,7 @@ export function schema(): LoweredSchema {
 	return lowered;
 }
 
-/** Validates a Chart.js config against the chart.js@4.5.1 schema and the adapter's rules over several options. */
+/** Validates a Chart.js config against the chart.js@4.6.1 schema and the adapter's rules over several options. */
 export function validate(input: unknown, options?: ValidationOptions): ValidationResult {
 	const manifest = schema().manifest;
 	return validateConfig(input, withScaleTypes(manifest, input, options?.incomplete === true), options, RULES);

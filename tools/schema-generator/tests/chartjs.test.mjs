@@ -68,11 +68,11 @@ test("an empty open definition is only an object TypeScript's library declares: 
 
 test('the artifact is well-formed and pinned to the verified upstream package', () => {
 	assert.deepEqual(checkArtifact(artifact).problems, []);
-	assert.equal(artifact.libraryVersion, '4.5.1');
+	assert.equal(artifact.libraryVersion, '4.6.1');
 	assert.equal(artifact.coverage, 'partial');
 	assert.deepEqual(artifact.sources.chartjs, {
 		kind: 'npm-package',
-		locator: 'chart.js@4.5.1',
+		locator: 'chart.js@4.6.1',
 		integrity: verifiedUpstream(ROOT, 'chartjs').integrity,
 		license: 'MIT'
 	});
@@ -146,7 +146,7 @@ test('a built-in plugin entry may be a boolean or null: getOpts disables it with
 			id
 		);
 		const pointers = plugins.properties[id].provenance.sources.map(({ pointer }) => pointer);
-		assert.ok(pointers.includes('chart.js/dist/chart.js:5203'), `${id} cites createDescriptors skipping null`);
+		assert.ok(pointers.includes('chart.js/dist/chart.js:5214'), `${id} cites createDescriptors skipping null`);
 	}
 });
 
@@ -158,7 +158,7 @@ test('responsive says what the runtime does with a value that is not a boolean, 
 		const { onMismatch, provenance } = options.properties.responsive;
 		assert.match(onMismatch ?? '', /compares responsive with !==/, name);
 		const pointers = provenance.sources.map(({ pointer }) => pointer);
-		assert.ok(pointers.includes('chart.js/dist/chart.js:5968'), `${name} cites the comparison`);
+		assert.ok(pointers.includes('chart.js/dist/chart.js:5979'), `${name} cites the comparison`);
 	}
 	// Only the options the runtime mishandles carry an effect.
 	const annotated = Object.values(artifact.definitions).flatMap((definition) =>

@@ -209,7 +209,7 @@ test('the running Chart.js version is the one validated against, unless the call
 		results[0].diagnostics.map((d) => `${d.severity} ${d.code}`),
 		['warning CFG_VERSION_MISMATCH', 'warning CFG_TYPE']
 	);
-	plugin({ options: { libraryVersion: '4.5.1' } }).beforeInit(chart);
+	plugin({ options: { libraryVersion: '4.6.1' } }).beforeInit(chart);
 	assert.deepEqual(
 		results[1].diagnostics.map((d) => `${d.severity} ${d.code}`),
 		['error CFG_TYPE']

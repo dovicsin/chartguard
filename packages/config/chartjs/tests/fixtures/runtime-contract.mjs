@@ -1,6 +1,6 @@
 /**
  * Configurations whose validator findings and runtime behaviour are both pinned. `findings` is
- * every diagnostic as `severity code path`; `runtime` is how chart.js@4.5.1 reacts
+ * every diagnostic as `severity code path`; `runtime` is how chart.js@4.6.1 reacts
  * (tools/conformance): `accepted`, `complained` or `rejected`. Wherever the two disagree, `why`
  * says which kind of disagreement it is (`Type contract:`, `Unresolved:`,
  * `False negative (CG-XX-YY):`); see the ECharts table for the definitions.

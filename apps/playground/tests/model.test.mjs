@@ -72,7 +72,7 @@ test('the JSON view: findings by severity at their values, the suggestion, the s
 	assert.equal(text.slice(type.range.start, type.range.end), '"yes"');
 	assert.equal(unknown.suggestion, 'Did you mean "responsive"?');
 	assert.equal(view.summary, '1 error(s), 1 warning(s), 0 info');
-	assert.match(view.schema, /^schema 4\.5\.1 · sha256-[0-9a-f]{12} · coverage (full|partial)$/u);
+	assert.match(view.schema, /^schema 4\.6\.1 · sha256-[0-9a-f]{12} · coverage (full|partial)$/u);
 	assert.deepEqual(view.verdict, { text: 'invalid', tone: 'error' });
 	assert.deepEqual(view.draw.kind, 'config');
 	const broken = shownJson('{\n  "type": bar}', inspect('{\n  "type": bar}', adapter), 'chartjs');

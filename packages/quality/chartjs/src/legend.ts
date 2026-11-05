@@ -18,13 +18,13 @@ import {
  */
 const UNLABELLED: Default<string> = {
 	value: 'undefined',
-	pointer: 'chart.js@4.5.1 dist/chart.js:8803 text: datasets[meta.index].label,'
+	pointer: 'chart.js@4.6.1 dist/chart.js:8885 text: datasets[meta.index].label,'
 };
 
 /** The legend is drawn unless the config turns it off. */
 const DISPLAYED: Default<boolean> = {
 	value: true,
-	pointer: 'chart.js@4.5.1 dist/chart.js:8773 display: true, [in var plugin_legend]'
+	pointer: 'chart.js@4.6.1 dist/chart.js:8855 display: true, [in var plugin_legend]'
 };
 
 /**

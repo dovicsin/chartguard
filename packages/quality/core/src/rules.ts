@@ -11,7 +11,7 @@ import { percentWithoutUnit } from './units.js';
 
 /**
  * Bars encode values by their length from zero. The runtimes draw bars from zero while zero is in the
- * axis range (chart.js@4.5.1 `getBaseValue`: `min < 0 && max < 0 ? max : min > 0 && max > 0 ? min : 0`);
+ * axis range (chart.js@4.6.1 `getBaseValue`: `min < 0 && max < 0 ? max : min > 0 && max > 0 ? min : 0`);
  * an axis whose range excludes zero cuts every bar short by the same amount, and so does a bar base
  * other than zero (Chart.js `base`, ECharts `startValue`, Highcharts `threshold`).
  */

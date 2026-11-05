@@ -15,8 +15,11 @@ const WORKFLOWS = fileURLToPath(new URL('../../.github/workflows/', import.meta.
  */
 const JOB_WRITES = new Set(['pages', 'id-token', 'security-events']);
 
-/** A write scope one named job needs beyond those: the release's tag job writes its tags (E92). */
-const NAMED_WRITES = new Map([['release.yml tag', 'contents']]);
+/** A write scope one named job needs beyond those: the release's tag job writes its tags (E92), the upstream watch opens issues (E97). */
+const NAMED_WRITES = new Map([
+	['release.yml tag', 'contents'],
+	['upstream.yml watch', 'issues']
+]);
 const mayWrite = (name, id, scope) => JOB_WRITES.has(scope) || NAMED_WRITES.get(`${name} ${id}`) === scope;
 
 /** Whether a permissions block only reads: an object of `read`/`none` scopes. */
@@ -235,4 +238,30 @@ test('the extension is tested in the pinned VS Code and in the oldest one its ma
 		runs.map((step) => step.env?.VSCODE_TEST_VERSION ?? 'pinned'),
 		['pinned', 'minimum']
 	);
+});
+
+/** The scripts of the upstream workflow's watch job. */
+const watchRuns = (workflow) => (workflow.jobs?.watch?.steps ?? []).map(({ run }) => String(run ?? ''));
+/** Whether every issue the watch opens is looked up first, among open and closed ones, so none is opened twice. */
+const opensOnce = (workflow) =>
+	watchRuns(workflow).some(
+		(run) =>
+			run.includes('node scripts/upstream-releases.mjs') &&
+			run.includes('gh issue list') &&
+			run.includes('--state all') &&
+			run.indexOf('gh issue list') < run.indexOf('gh issue create')
+	);
+
+test('the upstream watch runs monthly and by hand and opens an issue for a newer release only once (E97)', () => {
+	const upstream = parse(readFileSync(join(WORKFLOWS, 'upstream.yml'), 'utf8'));
+	assert.deepEqual(Object.keys(upstream.on).sort(), ['schedule', 'workflow_dispatch']);
+	assert.match(upstream.on.schedule[0].cron, /^\d+ \d+ 1 \* \*$/u);
+	assert.equal(opensOnce(upstream), true);
+	const without = structuredClone(upstream);
+	without.jobs.watch.steps.at(-1).run =
+		'node scripts/upstream-releases.mjs | while read -r t b; do gh issue create --title "$t"; done';
+	assert.equal(opensOnce(without), false);
+	const openOnly = structuredClone(upstream);
+	openOnly.jobs.watch.steps.at(-1).run = openOnly.jobs.watch.steps.at(-1).run.replace('--state all', '--state open');
+	assert.equal(opensOnce(openOnly), false);
 });

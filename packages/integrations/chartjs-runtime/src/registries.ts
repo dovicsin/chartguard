@@ -35,7 +35,7 @@ function inlineIds(plugins: unknown): { readonly ids: readonly string[]; readonl
 
 /**
  * The registry context of a live Chart.js (CG-04-05): the controllers, scales and plugins `Chart.registry`
- * holds now (chart.js@4.5.1: `registry.getController`/`getScale` throw for any other; a plugin that is
+ * holds now (chart.js@4.6.1: `registry.getController`/`getScale` throw for any other; a plugin that is
  * neither registered nor inline never runs). Pass the config's own `plugins` so the inline ones count;
  * when one of them cannot be read, the plugins are an incomplete context. The config's plugins are
  * read through own data properties only: none of its getters runs. A `Chart` without a readable registry gives no context, so no claim.

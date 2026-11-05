@@ -1,4 +1,4 @@
-chart.js 4.5.1 (MIT)
+chart.js 4.6.1 (MIT)
 
 The MIT License (MIT)
 

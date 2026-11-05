@@ -4,7 +4,7 @@ import { type Fact, isString, type Item, type Listed, MAX_ITEMS, readFact, unkno
 export type Axis = 'x' | 'y' | 'r';
 
 /**
- * The scales a chart builds, in the order `chart.scales` holds them (chart.js@4.5.1 `mergeScaleConfig`):
+ * The scales a chart builds, in the order `chart.scales` holds them (chart.js@4.6.1 `mergeScaleConfig`):
  * the configured ones first, then those the datasets' types add. `axis` is undefined where the config
  * does not say: a scale whose axis is not readable, or in place of scales that cannot be read at all.
  */
@@ -84,9 +84,9 @@ export function scalesOf(config: unknown, datasets: Listed<Item>, added: Dataset
 
 /** Per axis, the line of `linkScales` that defaults a dataset's scale to the first scale on that axis. */
 const FIRST_SCALE: Readonly<Record<Axis, string>> = {
-	x: "chart.js@4.5.1 dist/chart.js:621 const xid = meta.xAxisID = valueOrDefault(dataset.xAxisID, getFirstScaleId(chart, 'x'));",
-	y: "chart.js@4.5.1 dist/chart.js:622 const yid = meta.yAxisID = valueOrDefault(dataset.yAxisID, getFirstScaleId(chart, 'y'));",
-	r: "chart.js@4.5.1 dist/chart.js:623 const rid = meta.rAxisID = valueOrDefault(dataset.rAxisID, getFirstScaleId(chart, 'r'));"
+	x: "chart.js@4.6.1 dist/chart.js:621 const xid = meta.xAxisID = valueOrDefault(dataset.xAxisID, getFirstScaleId(chart, 'x'));",
+	y: "chart.js@4.6.1 dist/chart.js:622 const yid = meta.yAxisID = valueOrDefault(dataset.yAxisID, getFirstScaleId(chart, 'y'));",
+	r: "chart.js@4.6.1 dist/chart.js:623 const rid = meta.rAxisID = valueOrDefault(dataset.rAxisID, getFirstScaleId(chart, 'r'));"
 };
 
 /**

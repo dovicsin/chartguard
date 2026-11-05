@@ -1,0 +1,40 @@
+name: upstream
+# Watches the chart libraries the schemas are pinned to (CG-07-01: the latest release is supported):
+# once a month, and by hand, each pin is compared with the newest release on npm, and a newer one gets
+# an issue, opened once. Nothing here changes the repository.
+on:
+  schedule:
+    - cron: '17 6 1 * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: upstream
+  cancel-in-progress: false
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 26
+      - name: Open an issue for each newer release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          node scripts/upstream-releases.mjs | while IFS=$'\t' read -r title body; do
+            if [ -n "$(gh issue list --repo "$REPOSITORY" --state all --search "\"$title\" in:title" --json number --jq '.[].number')" ]; then
+              echo "$title: an issue exists"
+            else
+              gh issue create --repo "$REPOSITORY" --title "$title" --body "$body" --label upstream
+            fi
+          done

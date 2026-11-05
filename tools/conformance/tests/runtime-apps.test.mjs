@@ -67,18 +67,17 @@ test(
 		const report = await runApp('chartjs');
 		assert.deepEqual(report, {
 			library: 'chartjs',
-			// A responsive chart updates again once it is attached to the page (Chart.js resizes it): that
-			// update is checked too, and the blocked bar chart stays blocked.
+			// Attaching a responsive chart to the page no longer updates it again: Chart.js 4.6 floors the
+			// canvas size before comparing it (chart.js@4.6.1 dist/chunks/index.js:2327, `retinaScale`), so an
+			// unchanged size is no resize. 4.5.1 compared the fractional size and updated each blocked chart once more.
 			results: [
 				{ phase: 'create', valid: true, errors: [] },
 				{ phase: 'update', valid: true, errors: [] },
 				{ phase: 'update', valid: false, errors: ['CFG_TYPE $.data.datasets[0].borderWidth'] },
 				{ phase: 'create', valid: false, errors: ['CFG_UNREGISTERED $.data.datasets[0]'] },
-				{ phase: 'update', valid: false, errors: ['CFG_UNREGISTERED $.data.datasets[0]'] },
-				// An invalid scale, checked at creation: it stands at the creation render on attach and at a
-				// later update while the scales are unchanged, so nothing is drawn (A46).
+				// An invalid scale, checked at creation: it stands at the creation render and at a later
+				// update while the scales are unchanged, so nothing is drawn (A46).
 				{ phase: 'create', valid: false, errors: ['CFG_TYPE $.options.scales.y.min'] },
-				{ phase: 'update', valid: false, errors: ['CFG_TYPE $.options.scales.y.min'] },
 				{ phase: 'update', valid: false, errors: ['CFG_TYPE $.options.scales.y.min'] }
 			],
 			threw: false,

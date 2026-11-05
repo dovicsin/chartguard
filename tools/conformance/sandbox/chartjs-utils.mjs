@@ -1,5 +1,5 @@
 /**
- * Deterministic stand-in for the Chart.js docs `Utils` helper (docs/scripts/utils.js at v4.5.1,
+ * Deterministic stand-in for the Chart.js docs `Utils` helper (docs/scripts/utils.js at v4.6.1,
  * MIT): the same functions and constants the samples call, with a fixed seed and a fixed base
  * date instead of `Date.now()`, and without the luxon / @kurkle/color dependencies.
  */

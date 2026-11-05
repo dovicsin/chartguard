@@ -20,7 +20,7 @@ import {
 
 const NICE = [1, 2, 5];
 
-/** `niceNum` (chart.js@4.5.1 dist/chunks/helpers.dataset.js:301). */
+/** `niceNum` (chart.js@4.6.1 dist/chunks/index.js:301). */
 function niceNum(range: number): number {
 	const rounded = Math.round(range);
 	const near = Math.abs(range - rounded) < range / 1000 ? rounded : range;
@@ -29,7 +29,7 @@ function niceNum(range: number): number {
 	return (NICE.find((step) => fraction <= step) ?? 10) * magnitude;
 }
 
-/** `_decimalPlaces` (dist/chunks/helpers.dataset.js:364). */
+/** `_decimalPlaces` (dist/chunks/index.js:364). */
 function decimalPlaces(value: number): number {
 	let [scale, places] = [1, 0];
 	while (Math.round(value * scale) / scale !== value) [scale, places] = [scale * 10, places + 1];
@@ -76,13 +76,13 @@ const UNMODELLED = [
 /** Linear scales place their range on ticks (`bounds: 'ticks'`). */
 const BOUNDS: Default<string> = {
 	value: 'ticks',
-	pointer: "chart.js@4.5.1 dist/chunks/helpers.dataset.js:936 bounds: 'ticks',"
+	pointer: "chart.js@4.6.1 dist/chunks/index.js:936 bounds: 'ticks',"
 };
 
 /** The most ticks a linear scale makes, at least two (`Math.max(2, maxTicks)`, dist/chart.js:10312). */
 const MAX_TICKS: Default<number> = {
 	value: 11,
-	pointer: 'chart.js@4.5.1 dist/chart.js:10298 maxTicksLimit = maxTicksLimit || 11;'
+	pointer: 'chart.js@4.6.1 dist/chart.js:10380 maxTicksLimit = maxTicksLimit || 11;'
 };
 
 /** Above this many ticks the sizes are not listed one by one: the range is left to the layout. */

@@ -7,7 +7,7 @@ import test from 'node:test';
 import { contentIntegrity, installedUpstream, pinOf, UpstreamError, verifiedUpstream } from '../index.mjs';
 
 /** A project with `chart.js` at `installed`, and a lockfile entry unless `locked` is false. */
-function project(t, { installed = '4.5.1', integrity, locked = true } = {}) {
+function project(t, { installed = '4.6.1', integrity, locked = true } = {}) {
 	const root = mkdtempSync(join(tmpdir(), 'schema-lock-'));
 	t.after(() => rmSync(root, { recursive: true, force: true }));
 	mkdirSync(join(root, 'node_modules/chart.js/dist'), { recursive: true });
@@ -23,7 +23,7 @@ function project(t, { installed = '4.5.1', integrity, locked = true } = {}) {
 test('the maintainer pin refuses an install that differs from it', (t) => {
 	assert.throws(
 		() => verifiedUpstream(project(t, { installed: '4.5.0' }), 'chartjs'),
-		/installed 4\.5\.0, pinned 4\.5\.1/
+		/installed 4\.5\.0, pinned 4\.6\.1/
 	);
 	assert.throws(() => verifiedUpstream(project(t, { integrity: 'sha512-other' }), 'chartjs'), /integrity differs/);
 	assert.throws(() => verifiedUpstream(project(t), 'd3'), { name: 'UpstreamError', message: 'No upstream pin for d3' });
@@ -38,7 +38,7 @@ test('an installed pin is the same major as the generator pin, with the integrit
 	assert.equal(hashed.integrity, contentIntegrity(join(root, 'node_modules/chart.js')));
 	assert.throws(() => installedUpstream(project(t, { installed: '3.9.1' }), 'chartjs'), {
 		name: 'UpstreamError',
-		message: 'chart.js 3.9.1 is not supported: this generator reads 4.x (pinned 4.5.1).'
+		message: 'chart.js 3.9.1 is not supported: this generator reads 4.x (pinned 4.6.1).'
 	});
 	assert.throws(() => installedUpstream(mkdtempSync(join(tmpdir(), 'empty-')), 'chartjs'), UpstreamError);
 });
@@ -47,7 +47,7 @@ test('a lockfile entry for another version is not the integrity of this install'
 	const root = project(t, { installed: '4.4.9', locked: false });
 	writeFileSync(
 		join(root, 'package-lock.json'),
-		JSON.stringify({ packages: { 'node_modules/chart.js': { version: '4.5.1', integrity: 'sha512-stale' } } })
+		JSON.stringify({ packages: { 'node_modules/chart.js': { version: '4.6.1', integrity: 'sha512-stale' } } })
 	);
 	assert.match(installedUpstream(root, 'chartjs').integrity, /^sha256-/);
 });

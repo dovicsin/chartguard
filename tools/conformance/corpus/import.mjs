@@ -50,10 +50,25 @@ async function treePaths({ repository, commit }) {
 	return tree.tree.filter((entry) => entry.type === 'blob').map((entry) => entry.path);
 }
 
+/**
+ * The pinned commit, once a tag `ref` is shown to name it (E98): a pin is a ref and a commit, and
+ * moving one without the other imports what the commit names under the other's name. A branch
+ * (`gh-pages`) moves, so its commit alone is the pin. An annotated tag is followed to its commit.
+ */
+export async function verifiedCommit({ repository, ref, commit }, read = text) {
+	if (!/^v\d/u.test(ref)) return commit;
+	let { object } = JSON.parse(await read(`${API}/repos/${repository}/git/ref/tags/${ref}`));
+	if (object.type === 'tag') ({ object } = JSON.parse(await read(object.url)));
+	if (object.sha !== commit)
+		throw new Error(`${repository} ${ref} is commit ${object.sha}, not the pinned ${commit}: change both together`);
+	return commit;
+}
+
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');
 
 async function importCorpus(library, retrieved) {
 	const source = SOURCES[library];
+	await verifiedCommit(source);
 	const raw = (path) => text(`${RAW}/${source.repository}/${source.commit}/${path}`);
 	const paths = (await treePaths(source)).filter(source.select).sort();
 	const files = [];

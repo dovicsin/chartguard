@@ -1,8 +1,8 @@
 @chartguard/config-chartjs
 Copyright the ChartGuard contributors. Licensed under the MIT License (LICENSE).
 
-dist/generated/chartjs-4.5.1.json is derived from Chart.js 4.5.1 (npm package
-chart.js@4.5.1): from its TypeScript declarations (dist/types) and, where the
+dist/generated/chartjs-4.6.1.json is derived from Chart.js 4.6.1 (npm package
+chart.js@4.6.1): from its TypeScript declarations (dist/types) and, where the
 declarations leave a fact out, from its runtime code (dist/chart.js). Chart.js is
 licensed under the MIT License, Copyright (c) 2014-2024 Chart.js Contributors.
 

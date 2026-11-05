@@ -166,13 +166,13 @@ function datasetUnions(emitter, datasetVariants, { registry, provenance }) {
 }
 
 /**
- * `toFont` (dist/chunks/helpers.dataset.js) reads a font's `size` with `parseInt` when it is a string,
+ * `toFont` (dist/chunks/index.js) reads a font's `size` with `parseInt` when it is a string,
  * and tests `style` against its own pattern (`unset`, `oblique 10deg` are styles too): a string is
  * a size, and any string a style the runtime decides itself (A6: runtime-handled values are accepted).
  */
 const FONT_FACTS = {
-	size: { file: 'dist/chunks/helpers.dataset.js', pattern: 'size = parseInt(size, 10);' },
-	style: { file: 'dist/chunks/helpers.dataset.js', pattern: "if (style && !('' + style).match(FONT_STYLE)) {" }
+	size: { file: 'dist/chunks/index.js', pattern: 'size = parseInt(size, 10);' },
+	style: { file: 'dist/chunks/index.js', pattern: "if (style && !('' + style).match(FONT_STYLE)) {" }
 };
 const STRING = { kind: 'string' };
 

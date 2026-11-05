@@ -10,7 +10,7 @@ ChartGuard checks chart configurations for **Chart.js**, **Apache ECharts** and 
 
 ```sh
 $ npx chartguard validate --library chartjs --file chart.json
-chartjs invalid (coverage: partial; schema 4.5.1, sha256-75174f7a234c)
+chartjs invalid (coverage: partial; schema 4.6.1, sha256-c6892856c58f)
   WARNING CFG_UNKNOWN_KEY $.options.scales.y.beginAtZerro: Unknown property "beginAtZerro" for this partial schema. Did you mean "beginAtZero"?
   ERROR CFG_TYPE $.options.scales.y.min: Expected number | function, got string.
 ```
@@ -83,7 +83,7 @@ A complete workflow to copy, with the SARIF upload, is [`examples/github/chartgu
 
 ## Principles and limits
 
-- **Partial coverage, said out loud.** The Chart.js and ECharts schemas are generated from the `chart.js@4.5.1` and `echarts@6.1.0` declarations and checked against each library's runtime and official examples. Every result says `valid`, `partial` or `invalid` and which schema checked it. For another minor or patch version, confirmed errors are reported as warnings; another major is not validated.
+- **Partial coverage, said out loud.** The Chart.js and ECharts schemas are generated from the `chart.js@4.6.1` and `echarts@6.1.0` declarations and checked against each library's runtime and official examples. Every result says `valid`, `partial` or `invalid` and which schema checked it. For another minor or patch version, confirmed errors are reported as warnings; another major is not validated.
 - **Highcharts** ships only a hand-curated subset: its license does not allow distributing a schema derived from it. `npx chartguard schema build --library highcharts` builds the full schema on your machine from your installed `highcharts`, and every tool then uses it for exactly that version.
 - **Unknown stays unknown.** A value built at run time, a plugin ChartGuard does not know, or a part of the source it cannot read is reported as partial, never as a confident error.
 - **Nothing is run.** Source is read with the TypeScript compiler, never executed (the playground runs it only on request, in an isolated frame); validators never call getters or your callbacks. No published package reaches the network or starts a process.
