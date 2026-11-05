@@ -28,7 +28,7 @@ export class MessageReader {
 	private buffered = Buffer.alloc(0);
 
 	/** Every body completed by `chunk`, in order. */
-	push(chunk: Buffer): string[] {
+	push(chunk: Uint8Array): string[] {
 		this.buffered = Buffer.concat([this.buffered, chunk]);
 		const bodies: string[] = [];
 		for (;;) {

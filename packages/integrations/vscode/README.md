@@ -1,6 +1,8 @@
 # ChartGuard for VS Code
 
-Not published yet (CG-06-05). Chart.js, ECharts and Highcharts configs in JavaScript and TypeScript, checked as you type.
+Chart.js, ECharts and Highcharts configs in JavaScript and TypeScript, checked as you type.
+
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
 - **What is checked:** the configs a file hands to a chart library (`new Chart`, `setOption` on `echarts.init`, `Highcharts.chart`, the React wrappers, your own wrappers in `chartguard.patterns`), read without running anything.
 - **Problems:** values the runtime rejects or misreads (errors), unknown keys, deprecations and values without effect (warnings), and the quality review's advice (information: it depends on context). Each stands at the value it is about.

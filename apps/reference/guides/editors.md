@@ -1,6 +1,6 @@
 # Editors
 
-**Status:** pre-release (0.x). The ESLint plugin and the VS Code extension are not published yet.
+**Status:** pre-release (0.x). Settings and findings may still change between minor versions.
 
 Both read the configs a file hands to Chart.js, ECharts or Highcharts, without running anything, and
 report each finding at the range that wrote its value. They share one checker, so they report the

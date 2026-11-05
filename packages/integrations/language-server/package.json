@@ -1,7 +1,6 @@
 {
 	"name": "@chartguard/language-server",
 	"version": "0.1.0",
-	"private": true,
 	"description": "Language server (LSP over stdio) with ChartGuard's chart config findings and verified edits (CG-06-04)",
 	"type": "module",
 	"license": "MIT",

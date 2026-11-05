@@ -2,7 +2,7 @@
 
 Advisory quality review of Chart.js configs: it reads the chart the config describes (what the runtime would draw, with its defaults) and reports presentation problems such as bars that do not start at zero, unreadable colours or charts assistive technology cannot describe. Findings are advice, never a verdict: there is no error severity and no `valid`.
 
-**Status:** pre-release (0.x): not published to npm yet, and the API may still change between minor versions.
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
 ```ts
 import { analyze } from "@chartguard/quality-chartjs";

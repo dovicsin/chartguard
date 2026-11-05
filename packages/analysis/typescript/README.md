@@ -16,7 +16,7 @@ analysis.tsconfig; // the tsconfig used, if any
 
 `analyzeProject` throws `ProjectConfigError` for a tsconfig that cannot be read or has invalid options. Nothing is emitted, no tsconfig `include` pattern is expanded and no language-service plugin is loaded.
 
-**Status:** pre-release (0.x): not published to npm yet, and the API may still change between minor versions.
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
 ## Paths, several files, limits
 

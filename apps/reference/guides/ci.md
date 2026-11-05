@@ -1,6 +1,6 @@
 # Continuous integration
 
-**Status:** pre-release (0.x). Nothing is published yet, so pin exact versions when you install.
+**Status:** pre-release (0.x). A minor version may still change the API, so pin exact versions when you install.
 
 ## Any CI: the command line
 

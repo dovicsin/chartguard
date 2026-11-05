@@ -14,14 +14,29 @@ import {
 	rootOf
 } from './protocol.js';
 
+/** The server's name and version, as it tells the client in `initialize`. */
 export const meta = { name: 'chartguard-language-server', version: '0.1.0' };
 
 /** Where the editor's settings are read: every problem in them is named so. */
 const PREFIX = 'chartguard';
 
+/**
+ * What `serve` reads of the stream the client writes to (`process.stdin`, a socket, a `PassThrough`),
+ * declared without Node's types so a consumer compiles without `@types/node` (E81).
+ */
+export interface InputStream {
+	on(event: 'data', listener: (chunk: Uint8Array) => void): unknown;
+}
+
+/** What `serve` writes to the stream the client reads (`process.stdout`, a socket, a `PassThrough`). */
+export interface OutputStream {
+	write(chunk: Uint8Array): unknown;
+}
+
+/** What `serve` runs on: the stream pair, how long a changed document rests, what ends it. */
 export interface ServeOptions {
-	readonly input: NodeJS.ReadableStream;
-	readonly output: NodeJS.WritableStream;
+	readonly input: InputStream;
+	readonly output: OutputStream;
 	/** How long a document rests after a change before it is checked again, in milliseconds. */
 	readonly delay?: number;
 	/** Called once the connection ends: 0 after `shutdown` then `exit`, 1 otherwise. */
@@ -46,12 +61,12 @@ class Server {
 
 	constructor(private readonly options: ServeOptions) {
 		this.checker = this.checkerFor(undefined);
-		options.input.on('data', (chunk: Buffer) => {
+		options.input.on('data', (chunk) => {
 			this.receive(chunk);
 		});
 	}
 
-	private receive(chunk: Buffer): void {
+	private receive(chunk: Uint8Array): void {
 		if (this.state === 'ended') return;
 		let bodies: string[];
 		try {

@@ -2,6 +2,8 @@
 
 Generates ChartGuard schema artifacts from a chart library's own published TypeScript declarations and runtime code. Every fact in an artifact cites the line of the installed package it was read from, and a build fails if a fact does not trace to that line; nothing from the package is executed. An artifact names everything it was built from: the library (exact version and integrity), the TypeScript compiler that read it (its lib files give the members of DOM and built-in types; the generator depends on one exact TypeScript and refuses another), and the generator's version, so the same inputs build the same bytes.
 
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
+
 ChartGuard's Chart.js and ECharts adapters ship their schemas. The Highcharts schema cannot ship: the Highcharts license does not clear redistributing option metadata derived from it. Build it on your machine, from your own installed `highcharts`, under your own license:
 
 ```sh

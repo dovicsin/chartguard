@@ -1,8 +1,9 @@
 name: pages
 # Publishes the playground (apps/playground/dist/web) to GitHub Pages. Only when started by hand
-# (Actions → pages → Run workflow): whether and where to publish is the maintainer's decision.
+# (Actions → pages → Run workflow), or by the release workflow before it publishes.
 on:
   workflow_dispatch:
+  workflow_call:
 # Read-only by default; only the deploy job may write Pages, with an OIDC token for it.
 permissions:
   contents: read

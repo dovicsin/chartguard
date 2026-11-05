@@ -2,6 +2,8 @@
 
 Highcharts configuration validator. **Partial coverage**: a clean result means no confirmed error was found, not that the configuration is complete or correct (read `status`).
 
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
+
 This package does **not** ship a schema derived from Highcharts. The Highcharts license does not clear redistributing option metadata derived from its declarations, so the full schema is generated on your machine from your own installed `highcharts`, under your own license.
 
 ## Two ways to validate

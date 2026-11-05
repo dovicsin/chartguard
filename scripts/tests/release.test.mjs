@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { manifestsUnder } from '../../tools/shared/workspace.mjs';
+import { manifestsUnder, publishedPackages } from '../../tools/shared/workspace.mjs';
 
 /** CG-00-06: independently versioned packages, published public under one scope, from this repository. */
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
@@ -80,4 +80,75 @@ test('a changeset releasing the generator releases the adapters whose schemas it
 test('a changeset file is tracked, never ignored', () => {
 	const ignored = spawnSync('git', ['check-ignore', '--no-index', '.changeset/brave-cats-sing.md'], { cwd: ROOT });
 	assert.equal(ignored.status, 1, 'git check-ignore finds no rule ignoring a changeset');
+});
+
+/**
+ * What every published README says of its state (E90): a tarball's README is the package's page on
+ * npm (the extension's on the Marketplace) from the moment it is published, so it says what stays
+ * true then, never that the package is not published.
+ */
+const STATUS =
+	'**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.';
+const UNPUBLISHED = /\bnot (?:yet )?published\b|\bnothing is published\b|\bnot yet: publishing\b/iu;
+
+/** The problems of a published README's text: no status line, or a claim that turns false on publishing. */
+function statusProblems(text) {
+	const problems = [];
+	if (text.split(STATUS).length !== 2) problems.push('states its status once, as STATUS');
+	if (UNPUBLISHED.test(text)) problems.push('says it is not published');
+	return problems;
+}
+
+test('every published README says it is a pre-release and never that it is unpublished', () => {
+	const extension = manifestsUnder(join(ROOT, 'packages')).filter(({ manifest }) => manifest.publisher !== undefined);
+	assert.ok(extension.length === 1, 'the VS Code extension is found by its publisher');
+	const found = [...publishedPackages(ROOT), ...extension].flatMap(({ path }) =>
+		statusProblems(readFileSync(join(path, 'README.md'), 'utf8')).map(
+			(problem) => `${relative(ROOT, path).split(sep).join('/')}: ${problem}`
+		)
+	);
+	// The guides are deployed before every release (the release workflow runs Pages first).
+	const guides = join(ROOT, 'apps', 'reference', 'guides');
+	for (const name of readdirSync(guides).filter((file) => file.endsWith('.md')))
+		if (UNPUBLISHED.test(readFileSync(join(guides, name), 'utf8')))
+			found.push(`guides/${name}: says it is not published`);
+	assert.deepEqual(found, []);
+	assert.deepEqual(statusProblems(`# a\n\n${STATUS}\n`), []);
+	assert.deepEqual(statusProblems('# a\n\nPartial.\n'), ['states its status once, as STATUS']);
+	assert.deepEqual(statusProblems(`# a\n\n${STATUS}\n\n${STATUS}\n`), ['states its status once, as STATUS']);
+	assert.deepEqual(statusProblems(`# a\n\n${STATUS}\n\nNot published yet (CG-06-05).\n`), ['says it is not published']);
+	assert.deepEqual(statusProblems(`# a\n\n${STATUS}\n\n- Not yet: publishing.\n`), ['says it is not published']);
+	assert.deepEqual(statusProblems(`# a\n\n${STATUS}\n\nNothing is published yet.\n`), ['says it is not published']);
+	assert.deepEqual(statusProblems(`# a\n\n${STATUS}\n\nPublished from CI.\n`), []);
+});
+
+/** The `meta` a package's source declares (`export const meta = { name: '…', version: '…' }`), each with its version. */
+const META = /export const meta = \{ name: '(?<name>[^']+)', version: '(?<version>[^']+)' \}/gu;
+
+/** The source files of a package, below `src` (generated JSON and build output aside; none for a JavaScript package). */
+function sourcesOf(directory) {
+	if (!existsSync(directory)) return [];
+	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+		if (entry.isDirectory()) return entry.name === 'generated' ? [] : sourcesOf(join(directory, entry.name));
+		return entry.name.endsWith('.ts') ? [join(directory, entry.name)] : [];
+	});
+}
+
+/** The version a package tells its host (ESLint's `meta`, the language server's `serverInfo`) differing from its own. */
+const staleMeta = (text, version) =>
+	[...text.matchAll(META)].filter((match) => match.groups?.version !== version).map((match) => match.groups?.name);
+
+test('a version a package tells its host is its own: Changesets bumps the manifest, this fails until the source follows (E90)', () => {
+	let found = 0;
+	const stale = publishedPackages(ROOT).flatMap(({ path, manifest }) =>
+		sourcesOf(join(path, 'src')).flatMap((file) => {
+			const text = readFileSync(file, 'utf8');
+			found += [...text.matchAll(META)].length;
+			return staleMeta(text, manifest.version).map((name) => `${relative(ROOT, file)}: ${String(name)}`);
+		})
+	);
+	assert.deepEqual(stale, []);
+	assert.ok(found >= 2, 'the ESLint plugin and the language server declare their meta');
+	assert.deepEqual(staleMeta("export const meta = { name: 'x', version: '0.1.0' };", '0.2.0'), ['x']);
+	assert.deepEqual(staleMeta("export const meta = { name: 'x', version: '0.2.0' };", '0.2.0'), []);
 });

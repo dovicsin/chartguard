@@ -4,7 +4,7 @@ Shared diagnostics, statuses and runtime contracts.
 
 Every ChartGuard package speaks the types defined here: a `Diagnostic` (code, severity, path, message, confidence, an optional fix), a `ValidationResult` (`valid`, `status`, `coverage`, the schema that checked it) and a `QualityReport`. You use it directly to apply a fix, to locate a finding in JSON text, or to stop a chart from being created with an invalid config.
 
-**Status:** pre-release (0.x): not published to npm yet, and the API may still change between minor versions.
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
 ```ts
 import { Chart, type ChartConfiguration } from "chart.js";

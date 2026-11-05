@@ -65,6 +65,7 @@ function findingsRule(rule: FindingKind, description: string, offers: Offers = {
 	};
 }
 
+/** The plugin's rules: `valid-config` (errors), `config-warnings` (warnings, renames as fixes), `chart-quality` (advice, edits as suggestions). */
 export const rules = {
 	'valid-config': findingsRule(
 		'valid-config',
@@ -97,6 +98,7 @@ const recommended: Linter.Config = {
 	}
 };
 
+/** The plugin for a flat config: its `rules` and `configs.recommended`, which turns all three on. */
 const plugin: Plugin = { meta, rules, configs: { recommended } };
 // A flat config registers the plugin it names itself.
 recommended.plugins = { chartguard: plugin };

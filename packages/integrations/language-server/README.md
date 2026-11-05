@@ -1,6 +1,8 @@
 # @chartguard/language-server
 
-Not published (CG-06-04 part 2). A language server over stdio: `chartguard-language-server --stdio`.
+A language server over stdio: `chartguard-language-server --stdio`.
+
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
 - Checks JavaScript and TypeScript documents (`javascript`, `javascriptreact`, `typescript`, `typescriptreact`) as they open and change (incremental text sync: each change applied at LSP positions, a batch in one pass over the text in the orders editors send it; one that cannot be applied, or a batch in no order that would take too many passes, withdraws the document's findings until it is opened again), with `@chartguard/source-checks`: the configs a document hands to Chart.js, ECharts or Highcharts, read without running anything.
 - Diagnostics: validator errors (Error), warnings (Warning) and quality findings (Information, advisory), each at the range that wrote its value, source `ChartGuard`, code the kind (`valid-config`, `config-warnings`, `chart-quality`).

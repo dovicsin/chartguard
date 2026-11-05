@@ -2,6 +2,8 @@
 
 Validator for Apache ECharts options, **generated** from the `echarts@6.1.0` TypeScript declarations (`EChartsOption`). Coverage is reported as `partial` until official examples pass against the runtime (CG-01-08).
 
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
+
 ```ts
 import { validate } from '@chartguard/config-echarts';
 const result = validate(option);

@@ -1,7 +1,6 @@
 {
 	"name": "@chartguard/eslint-plugin",
 	"version": "0.1.0",
-	"private": true,
 	"description": "ESLint 9 plugin: chart configs handed to Chart.js, ECharts or Highcharts, checked in source (partial, CG-06-03)",
 	"type": "module",
 	"license": "MIT",

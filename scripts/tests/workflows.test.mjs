@@ -11,7 +11,7 @@ const WORKFLOWS = fileURLToPath(new URL('../../.github/workflows/', import.meta.
 
 /**
  * The write scopes a job may ask for, by what it does: deploying Pages (CG-06-06 part 4), uploading
- * SARIF to code scanning (the users' workflow, CG-06-08).
+ * SARIF to code scanning (the users' workflow, CG-06-08), an OIDC token to publish (the release).
  */
 const JOB_WRITES = new Set(['pages', 'id-token', 'security-events']);
 
@@ -21,9 +21,17 @@ const readsOnly = (permissions) =>
 	typeof permissions === 'object' &&
 	Object.values(permissions).every((scope) => scope === 'read' || scope === 'none');
 
-/** One job's problems: no timeout, a blanket permission, a write scope it does not need. */
+/**
+ * Whether a job's bound is its own: a job that calls a workflow of this directory cannot take a
+ * timeout (GitHub refuses one there); the called workflow's jobs are checked as every file here is.
+ */
+const calledHere = (job) => typeof job.uses === 'string' && /^\.\/\.github\/workflows\/[\w.-]+\.ya?ml$/u.test(job.uses);
+
+/** One job's problems: no timeout, a workflow called from elsewhere, a blanket permission, a write scope it does not need. */
 function jobProblems(name, id, job) {
-	const problems = typeof job['timeout-minutes'] === 'number' ? [] : [`${name}: job ${id} has no timeout-minutes`];
+	const problems =
+		typeof job['timeout-minutes'] === 'number' || calledHere(job) ? [] : [`${name}: job ${id} has no timeout-minutes`];
+	if (typeof job.uses === 'string' && !calledHere(job)) problems.push(`${name}: job ${id} calls ${job.uses}`);
 	if (typeof job.permissions === 'string')
 		return [...problems, `${name}: job ${id} sets permissions to ${job.permissions}`];
 	for (const [scope, level] of Object.entries(job.permissions ?? {}))
@@ -71,6 +79,15 @@ test('the guard catches a writing token, a missing timeout and a job that writes
 	assert.deepEqual(workflowProblems('w', { permissions: {}, jobs: { a: { ...job, permissions: 'write-all' } } }), [
 		'w: job a sets permissions to write-all'
 	]);
+	// A job calling a workflow of this directory is bounded by that workflow's jobs; any other is not ours.
+	assert.deepEqual(
+		workflowProblems('w', { permissions: {}, jobs: { a: { uses: './.github/workflows/pages.yml' } } }),
+		[]
+	);
+	assert.deepEqual(
+		workflowProblems('w', { permissions: {}, jobs: { a: { uses: 'someone/else/.github/workflows/x.yml@v1' } } }),
+		['w: job a has no timeout-minutes', 'w: job a calls someone/else/.github/workflows/x.yml@v1']
+	);
 });
 
 /** Every `run:` script of a workflow's jobs or a composite action's steps. */

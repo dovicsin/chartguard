@@ -2,6 +2,8 @@
 
 Safe paths for creating and changing Highcharts charts: options are checked for the Highcharts version that runs, and an update as `chart.update` applies it to this chart. Nothing is patched; call these instead of `Highcharts.chart`, `chart.update` and `chart.addSeries`.
 
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
+
 ```ts
 import Highcharts from "highcharts";
 import { createValidator } from "@chartguard/config-highcharts";

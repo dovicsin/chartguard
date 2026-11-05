@@ -2,6 +2,8 @@
 
 Checks a Chart.js config when the chart is created and every time it is updated, through Chart.js's own plugin hooks. Opt-in per chart: nothing is registered globally and Chart.js is not patched.
 
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
+
 ```ts
 import { Chart } from "chart.js";
 import { guard } from "@chartguard/runtime-chartjs";

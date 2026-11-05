@@ -2,7 +2,7 @@
 
 Validates chart configurations for **Chart.js**, **Apache ECharts** and **Highcharts**, and flags visualization patterns that may mislead.
 
-> **Status: early development, partial coverage.** The Chart.js and ECharts schemas are generated from the `chart.js@4.5.1` and `echarts@6.1.0` type declarations. Highcharts ships only a hand-curated subset (its license does not allow distributing a derived schema); `chartguard schema build --library highcharts` generates the full schema locally from your installed `highcharts`. Coverage is **partial** everywhere, so a clean result means "no confirmed error", not "fully compatible". Nothing is published to npm, the VS Code Marketplace or the web yet: the ESLint plugin, the language server, the VS Code extension, the GitHub Action, the playground and the reference work from this repository and are pre-release.
+> **Status: early development, partial coverage.** The Chart.js and ECharts schemas are generated from the `chart.js@4.5.1` and `echarts@6.1.0` type declarations. Highcharts ships only a hand-curated subset (its license does not allow distributing a derived schema); `chartguard schema build --library highcharts` generates the full schema locally from your installed `highcharts`. Coverage is **partial** everywhere, so a clean result means "no confirmed error", not "fully compatible". Everything is pre-release (0.x): the npm packages, the VS Code extension, the GitHub Action, the [playground](https://dovicsin.github.io/chartguard/) and the [reference](https://dovicsin.github.io/chartguard/reference/).
 
 ## Packages
 

@@ -2,7 +2,7 @@
 
 The validation engine the library adapters (`@chartguard/config-chartjs`, `-echarts`, `-highcharts`) are built on: it reads a schema artifact (a versioned, provenance-carrying description of a library's options), walks a config against it and reports `CFG_*` findings. You use it directly to describe a plugin's options for an adapter's `withExtensions`, or to validate against a schema artifact of your own.
 
-**Status:** pre-release (0.x): not published to npm yet, and the API may still change between minor versions.
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
 ```ts
 import { s } from "@chartguard/config-core";

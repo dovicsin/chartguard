@@ -2,6 +2,8 @@
 
 A safe `setOption` for Apache ECharts: the option is checked as the call will apply it to this chart, then set. Nothing is patched; call it instead of `chart.setOption`.
 
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
+
 ```ts
 import * as echarts from "echarts";
 import { setOption } from "@chartguard/runtime-echarts";

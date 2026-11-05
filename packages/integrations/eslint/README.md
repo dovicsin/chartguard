@@ -1,6 +1,8 @@
 # @chartguard/eslint-plugin
 
-Partial: three rules (`valid-config`, `config-warnings`, `chart-quality`), not published yet.
+Three rules: `valid-config`, `config-warnings` and `chart-quality`.
+
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
 ```js
 // eslint.config.js
@@ -38,4 +40,3 @@ export default [
   - `project`: `true` for each file's nearest tsconfig, or a tsconfig path relative to ESLint's working directory.
   Settings that cannot be used stop ESLint with every problem listed.
 - `"auto"` reads the install, not a lockfile: under Yarn PnP name the version.
-- Not yet: publishing.

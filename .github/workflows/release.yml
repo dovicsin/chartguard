@@ -1,0 +1,81 @@
+name: release
+# Publishes every package whose version is not on npm yet (with provenance) and the VS Code extension
+# to the Marketplace. Only when started by hand (Actions → release → Run workflow) on main, only for a
+# commit whose CI run succeeded, and only after the maintainer approves the `release` environment.
+# Both registries are reached with this run's OIDC token (trusted publishing): no stored token.
+on:
+  workflow_dispatch:
+# Read-only by default; each job asks for what it needs.
+permissions:
+  contents: read
+# One release at a time; a running one finishes.
+concurrency:
+  group: release
+  cancel-in-progress: false
+jobs:
+  # The commit's CI run (every check, every platform's consumers) succeeded; nothing is rerun here.
+  verify:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    steps:
+      - name: The commit passed CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          passed=$(gh api "repos/$REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$SHA&event=push&status=success" --jq '.total_count')
+          if [ "$passed" = 0 ]; then
+            echo "::error::No successful CI run for $SHA: wait for it, or fix main first."
+            exit 1
+          fi
+  # The site first, so the documentation links in what is published resolve (decided 2026-11-05).
+  pages:
+    needs: verify
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
+  publish:
+    needs: [verify, pages]
+    runs-on: ubuntu-latest
+    # A hang guard far above an honest run (install, build, publish), never a time budget.
+    timeout-minutes: 30
+    environment:
+      name: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      # No dependency cache: a release builds only from what the lockfile pins.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 26
+          registry-url: https://registry.npmjs.org
+      - run: npm install --global npm@11.21.1
+      # No lifecycle script runs in the job that holds the publishing token (esbuild finds its binary
+      # in its platform package; vsce-sign's binary is only needed to sign).
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm run schema:check
+      # Changesets publishes, in dependency order, every package whose version npm does not have.
+      # Trusted publishing (OIDC) adds provenance; NPM_TOKEN is only the fallback for a package npm
+      # does not know yet, which cannot have a trusted publisher.
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
+        run: npx changeset publish
+      - name: Package the extension
+        working-directory: packages/integrations/vscode
+        run: npx vsce package --no-dependencies --pre-release --out chartguard.vsix
+      - name: Publish the extension
+        working-directory: packages/integrations/vscode
+        run: npx vsce publish --oidc --packagePath chartguard.vsix --skip-duplicate

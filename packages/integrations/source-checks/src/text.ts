@@ -11,6 +11,7 @@ import { type Engine, findingsOf, type Reading, type SourceFinding } from './fin
 export type { TextEdit } from './edits.js';
 export type { Engine, FindingKind, SourceFinding } from './findings.js';
 
+/** What `checkText` read of one text and found in it. */
 export interface TextCheck {
 	/** False when TypeScript cannot read the text (syntax errors, limits): then nothing is claimed (A7). */
 	readonly readable: boolean;

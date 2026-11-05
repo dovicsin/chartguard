@@ -2,6 +2,8 @@
 
 Library-neutral chart semantics and the advisory quality rules that read them. The adapters (`@chartguard/quality-chartjs`, `-echarts`, `-highcharts`) turn a config into `ChartSemantics`; `review(chart, options?)` returns a `QualityReport`: findings only, never a verdict, never an error.
 
+**Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
+
 ## Facts
 
 Every fact is one of:
