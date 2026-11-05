@@ -1,7 +1,7 @@
 {
 	"name": "@chartguard/source-checks",
 	"version": "0.1.1",
-	"description": "Chart config findings in JavaScript and TypeScript source, with verified edits, for editors and linters (CG-06-04)",
+	"description": "Chart config findings in JavaScript and TypeScript source, with verified edits, shared by the ESLint plugin and the language server",
 	"type": "module",
 	"license": "MIT",
 	"repository": {

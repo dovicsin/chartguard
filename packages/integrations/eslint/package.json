@@ -1,7 +1,7 @@
 {
 	"name": "@chartguard/eslint-plugin",
 	"version": "0.1.1",
-	"description": "ESLint 9 plugin: chart configs handed to Chart.js, ECharts or Highcharts, checked in source (partial, CG-06-03)",
+	"description": "ESLint 9 plugin: Chart.js, ECharts and Highcharts configs checked in JavaScript and TypeScript source, with fixes for renames and suggested quality edits",
 	"type": "module",
 	"license": "MIT",
 	"repository": {

@@ -1,6 +1,8 @@
 name: ci
 on:
+  # Branch pushes only: a release pushes a tag per package, each the commit main already checked.
   push:
+    branches: ['**']
   pull_request:
 # The workflow only reads the repository; nothing it runs can write to it.
 permissions:
@@ -38,6 +40,11 @@ jobs:
       # The extension in a real VS Code (downloaded once per run; it needs Node 22+ and a display).
       - if: matrix.node == 26
         run: xvfb-run -a npm run test:vscode -w packages/integrations/vscode
+      # And in the oldest VS Code the manifest accepts (engines.vscode), so the range it declares is tested.
+      - if: matrix.node == 26
+        run: xvfb-run -a npm run test:vscode -w packages/integrations/vscode
+        env:
+          VSCODE_TEST_VERSION: minimum
   # Each published package as its users get it (CG-07-05): packed, installed alone by npm in a fresh
   # project, loaded with import and require, its bin run, its declarations compiled; on every
   # platform, on the lowest Node the packages support (engines) and on the target.

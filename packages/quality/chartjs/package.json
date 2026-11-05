@@ -1,7 +1,7 @@
 {
 	"name": "@chartguard/quality-chartjs",
 	"version": "0.1.1",
-	"description": "chartjs quality adapter starter",
+	"description": "Chart.js adapter for the ChartGuard quality rules: the chart as Chart.js draws it, reviewed for misleading or inaccessible patterns",
 	"type": "module",
 	"license": "MIT",
 	"repository": {

@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 
 import ts from 'typescript';
 
+import { publishedPackages } from '../../tools/shared/workspace.mjs';
+
 /**
  * The public documents (CG-06-07): the root README, CONTRIBUTING, SECURITY and every package README
  * are tracked and published; `docs/` is local only. A link into it is broken for every reader, and an
@@ -52,6 +54,23 @@ test('the docs/ pattern catches links and paths, not words that end in docs', ()
 		assert.equal(DOCS.test(line), true, line);
 	for (const line of ['https://www.chartjs.org/docs/latest/', 'mydocs/x', 'the docs are local'])
 		assert.equal(DOCS.test(line), false, line);
+});
+
+/** An internal roadmap task code (`CG-06-03`): it means nothing to a reader of a published page. */
+const TASK = /\bCG-\d{2}-\d{2}\b/u;
+
+test('no public document and no published package description names an internal roadmap task', () => {
+	const documents = publicDocuments().flatMap((file) =>
+		readFileSync(file, 'utf8')
+			.split('\n')
+			.flatMap((line, index) => (TASK.test(line) ? [`${relative(ROOT, file)}:${String(index + 1)}`] : []))
+	);
+	const descriptions = publishedPackages(ROOT)
+		.filter(({ manifest }) => TASK.test(manifest.description ?? ''))
+		.map(({ manifest }) => manifest.name);
+	assert.deepEqual([...documents, ...descriptions], []);
+	assert.equal(TASK.test('(CG-06-03 part 1)'), true);
+	assert.equal(TASK.test('CG-6-3, CGX-06-03'), false);
 });
 
 /** The `ts` and `js` blocks of a Markdown text, with the line each starts on. */

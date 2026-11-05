@@ -9,7 +9,13 @@ import { fileURLToPath } from 'node:url';
 
 import { KEYS, settingsOf } from '../dist/settings.js';
 import { built, bundle, byCodeUnit, NOTICES } from '../scripts/bundle.mjs';
-import { QUIET_FLAGS, SETTINGS, VSCODE_VERSION } from '../scripts/run-vscode-tests.mjs';
+import {
+	MINIMUM_VSCODE_VERSION,
+	QUIET_FLAGS,
+	SETTINGS,
+	testVersion,
+	VSCODE_VERSION
+} from '../scripts/run-vscode-tests.mjs';
 
 /** The VS Code extension (CG-06-05) outside VS Code: its settings, its bundles and what its VSIX holds. */
 const PACKAGE = fileURLToPath(new URL('..', import.meta.url));
@@ -95,4 +101,15 @@ test('a bundle build that warns is refused, naming the warning (a module that re
 	);
 	writeFileSync(entry, 'export const answer = 42;\n');
 	assert.equal((await built({ ...options, outfile: join(directory, 'ok.cjs') })).warnings.length, 0);
+});
+
+test('the oldest VS Code the manifest accepts is the one the editor tests also run in, and the API types are its own', () => {
+	// engines.vscode `^X` accepts X and later: X is tested in CI beside the pinned version.
+	assert.equal(manifest.engines.vscode, `^${MINIMUM_VSCODE_VERSION}`);
+	// The declarations the extension compiles against are those of X: an API added later fails the build.
+	assert.equal(manifest.devDependencies['@types/vscode'], MINIMUM_VSCODE_VERSION);
+	assert.equal(testVersion(undefined), VSCODE_VERSION);
+	assert.equal(testVersion('minimum'), MINIMUM_VSCODE_VERSION);
+	assert.equal(testVersion('1.100.0'), '1.100.0');
+	assert.throws(() => testVersion('latest'), /must be "minimum" or an exact version/u);
 });

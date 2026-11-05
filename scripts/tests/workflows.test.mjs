@@ -220,3 +220,19 @@ test('CI runs the action both ways a user can: built from its checkout and with 
 		['published']
 	);
 });
+
+test('CI checks every branch push and pull request, never a tag push: a release tags commits main already checked', () => {
+	const ci = parse(readFileSync(join(WORKFLOWS, 'ci.yml'), 'utf8'));
+	assert.deepEqual(ci.on.push, { branches: ['**'] });
+	assert.equal(ci.on.push.tags, undefined);
+	assert.ok('pull_request' in ci.on);
+});
+
+test('the extension is tested in the pinned VS Code and in the oldest one its manifest accepts', () => {
+	const ci = parse(readFileSync(join(WORKFLOWS, 'ci.yml'), 'utf8'));
+	const runs = ci.jobs.check.steps.filter(({ run }) => typeof run === 'string' && run.includes('test:vscode'));
+	assert.deepEqual(
+		runs.map((step) => step.env?.VSCODE_TEST_VERSION ?? 'pinned'),
+		['pinned', 'minimum']
+	);
+});

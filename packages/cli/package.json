@@ -1,7 +1,7 @@
 {
 	"name": "@chartguard/cli",
 	"version": "0.1.1",
-	"description": "Single-library explicit CLI for chart checks",
+	"description": "Command line for ChartGuard: validate chart configs, review their quality and analyze JavaScript/TypeScript source (text, JSON, SARIF, GitHub annotations)",
 	"type": "module",
 	"license": "MIT",
 	"repository": {

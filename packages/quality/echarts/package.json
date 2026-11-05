@@ -1,7 +1,7 @@
 {
 	"name": "@chartguard/quality-echarts",
 	"version": "0.1.1",
-	"description": "echarts quality adapter starter",
+	"description": "Apache ECharts adapter for the ChartGuard quality rules: the chart as ECharts draws it, reviewed for misleading or inaccessible patterns",
 	"type": "module",
 	"license": "MIT",
 	"repository": {

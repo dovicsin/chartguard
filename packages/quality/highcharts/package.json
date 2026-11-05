@@ -1,7 +1,7 @@
 {
 	"name": "@chartguard/quality-highcharts",
 	"version": "0.1.1",
-	"description": "highcharts quality adapter starter",
+	"description": "Highcharts adapter for the ChartGuard quality rules: the chart as Highcharts draws it, reviewed for misleading or inaccessible patterns",
 	"type": "module",
 	"license": "MIT",
 	"repository": {

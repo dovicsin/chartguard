@@ -18,6 +18,20 @@ const ROOT = join(PACKAGE, '..', '..', '..');
 export const VSCODE_VERSION = '1.144.1';
 
 /**
+ * The oldest VS Code the manifest accepts (`engines.vscode`), where the extension is tested too, so the
+ * range it declares is one it was run in. `VSCODE_TEST_VERSION=minimum` takes it.
+ */
+export const MINIMUM_VSCODE_VERSION = '1.91.0';
+
+/** The version a run takes: `minimum`, an exact version, or the pinned one. */
+export function testVersion(requested) {
+	if (requested === undefined || requested === '') return VSCODE_VERSION;
+	if (requested === 'minimum') return MINIMUM_VSCODE_VERSION;
+	if (/^\d+\.\d+\.\d+$/u.test(requested)) return requested;
+	throw new Error(`VSCODE_TEST_VERSION must be "minimum" or an exact version, not "${requested}"`);
+}
+
+/**
  * The test profile's settings: nothing opens beside the test's editor (a view or editor taking focus
  * cancels `showTextDocument`), no AI features, no updates, no telemetry.
  */
@@ -58,7 +72,9 @@ await runAsEntryPoint(import.meta.url, async () => {
 				'--disable-workspace-trust',
 				...QUIET_FLAGS
 			],
-			...(executable === undefined ? { version: VSCODE_VERSION } : { vscodeExecutablePath: executable })
+			...(executable === undefined
+				? { version: testVersion(process.env['VSCODE_TEST_VERSION']) }
+				: { vscodeExecutablePath: executable })
 		});
 	} finally {
 		rmSync(profile, { recursive: true, force: true });

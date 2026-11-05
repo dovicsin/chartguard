@@ -8,4 +8,4 @@ The chart config checks of JavaScript and TypeScript source that `@chartguard/es
 npm install --save-dev @chartguard/source-checks
 ```
 
-`@chartguard/source-checks/text` runs without Node (the playground, CG-06-06 part 3): `checkText(text, fileName, engine)` reads one text alone and returns `{ readable, uses, findings }`, the same findings `SourceChecker` gives for that file; `engine` validates and reviews each library's configs (no settings, no install, no built schema).
+`@chartguard/source-checks/text` runs without Node (the playground uses it): `checkText(text, fileName, engine)` reads one text alone and returns `{ readable, uses, findings }`, the same findings `SourceChecker` gives for that file; `engine` validates and reviews each library's configs (no settings, no install, no built schema).

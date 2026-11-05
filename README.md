@@ -1,6 +1,6 @@
 # ChartGuard
 
-ChartGuard checks chart configurations for **Chart.js**, **Apache ECharts** and **Highcharts** before they are drawn. It tells you which values the chart library would reject or misread, and separately gives advice on charts that may mislead or exclude readers. It never runs your code.
+ChartGuard checks chart configurations for **Chart.js**, **Apache ECharts** and **Highcharts** before they are drawn. It tells you which values the chart library would reject or misread, and separately gives advice on charts that may mislead or exclude readers. Its checks never run your code; only the playground runs source, when you ask it to, in a sandboxed frame without network access.
 
 > **Status: pre-release (0.x), partial coverage.** Everything is a pre-release: the npm packages, the VS Code extension, the GitHub Action, the playground and the reference. A minor version may still change the API. A clean result means "no confirmed error was found", not "the config is correct".
 
@@ -86,7 +86,7 @@ A complete workflow to copy, with the SARIF upload, is [`examples/github/chartgu
 - **Partial coverage, said out loud.** The Chart.js and ECharts schemas are generated from the `chart.js@4.5.1` and `echarts@6.1.0` declarations and checked against each library's runtime and official examples. Every result says `valid`, `partial` or `invalid` and which schema checked it. For another minor or patch version, confirmed errors are reported as warnings; another major is not validated.
 - **Highcharts** ships only a hand-curated subset: its license does not allow distributing a schema derived from it. `npx chartguard schema build --library highcharts` builds the full schema on your machine from your installed `highcharts`, and every tool then uses it for exactly that version.
 - **Unknown stays unknown.** A value built at run time, a plugin ChartGuard does not know, or a part of the source it cannot read is reported as partial, never as a confident error.
-- **Nothing is run.** Source is read with the TypeScript compiler, never executed; validators never call getters or your callbacks. No published package reaches the network or starts a process.
+- **Nothing is run.** Source is read with the TypeScript compiler, never executed (the playground runs it only on request, in an isolated frame); validators never call getters or your callbacks. No published package reaches the network or starts a process.
 - **Independent packages.** Each adapter installs on its own and never pulls in another chart library.
 - **Quality rules are advice.** They depend on context, so they never make a config invalid, and you can turn each off or give the page context the chart leaves to it.
 

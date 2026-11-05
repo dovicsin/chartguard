@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 
 import { releaseTags } from '../release-tags.mjs';
+import { cliFoundError, smokePackages } from '../smoke-published.mjs';
 
 /**
  * E91: what the release must hold. It starts only by hand on main, publishes only a commit CI passed
@@ -108,6 +109,33 @@ const PROPERTIES = [
 	]
 ];
 
+/** A job that runs the registry smoke test after publishing, with no persisted git credential. */
+function smokes(job) {
+	const steps = job?.steps ?? [];
+	return (
+		job?.needs === 'publish' &&
+		steps.some(({ run }) => run === 'node scripts/smoke-published.mjs') &&
+		steps.every((step) => !usesAction('actions/checkout@')(step) || step.with?.['persist-credentials'] === false)
+	);
+}
+
+/** A script that creates the tag's release only after finding it does not exist, for a tag that does. */
+const releasesOnce = (run) =>
+	run.includes('gh release view "$tag"') &&
+	run.includes('gh release create "$tag"') &&
+	run.includes('--verify-tag') &&
+	run.indexOf('gh release view') < run.indexOf('gh release create');
+
+PROPERTIES.push(
+	['smoke-tests what npm serves after publishing', (release) => smokes(release.jobs?.smoke)],
+	[
+		"releases the action's tag once, never editing a release",
+		(release) =>
+			tagRuns(release).some(releasesOnce) &&
+			tagRuns(release).every((run) => !/gh release (?:edit|delete|upload)/u.test(run))
+	]
+);
+
 const releaseProblems = (release, pages) =>
 	PROPERTIES.filter(([, holds]) => !holds(release, pages)).map(([problem]) => problem);
 
@@ -166,14 +194,33 @@ const BROKEN = [
 	[(copy) => copy.jobs.tag.steps.push({ run: 'git push --force origin "v0.1.1"' }), ['the tag job never moves a tag']],
 	[
 		(copy) =>
-			Object.assign(copy.jobs.tag.steps.at(-1), {
-				run: 'node scripts/release-tags.mjs | while read -r tag; do gh api "repos/$R/git/refs" -f "ref=refs/tags/$tag"; done'
-			}),
+			Object.assign(
+				copy.jobs.tag.steps.find(({ name }) => name === 'Tag the release'),
+				{
+					run: 'node scripts/release-tags.mjs | while read -r tag; do gh api "repos/$R/git/refs" -f "ref=refs/tags/$tag"; done'
+				}
+			),
 		['the tag job never moves a tag']
 	]
 ];
 
-test('the release publishes by hand from main, after CI and the site, approved, with OIDC, then tags (E91, E92)', () => {
+BROKEN.push(
+	[(copy) => Object.assign(copy.jobs.smoke, { needs: 'verify' }), ['smoke-tests what npm serves after publishing']],
+	[(copy) => Object.assign(copy.jobs.smoke.steps[0], { with: {} }), ['smoke-tests what npm serves after publishing']],
+	[
+		(copy) => copy.jobs.tag.steps.push({ run: 'gh release edit v0.1.1 --notes x' }),
+		["releases the action's tag once, never editing a release"]
+	],
+	[
+		(copy) =>
+			Object.assign(copy.jobs.tag.steps.at(-1), {
+				run: 'tag=v1\ngh release create "$tag" --verify-tag --generate-notes'
+			}),
+		["releases the action's tag once, never editing a release"]
+	]
+);
+
+test('the release publishes by hand from main, after CI and the site, approved, with OIDC, then tags, releases and smoke-tests the registry (E91, E92)', () => {
 	assert.deepEqual(releaseProblems(RELEASE, PAGES), []);
 });
 
@@ -189,4 +236,18 @@ test('a release tags each published package at its version and the action at its
 	];
 	assert.deepEqual(releaseTags(manifests), ['@chartguard/cli@0.1.3', '@chartguard/core@0.2.0', 'v0.1.3']);
 	assert.throws(() => releaseTags([{ name: '@chartguard/core', version: '0.2.0' }]), /no @chartguard\/cli/u);
+});
+
+test('after a release, what npm serves is installed and used as a user does: the CLI and an adapter at their versions', () => {
+	const manifests = [
+		{ name: '@chartguard/cli', version: '0.1.3' },
+		{ name: '@chartguard/config-chartjs', version: '0.2.0' },
+		{ name: '@chartguard/core', version: '0.2.0' }
+	];
+	assert.deepEqual(smokePackages(manifests), ['@chartguard/cli@0.1.3', '@chartguard/config-chartjs@0.2.0']);
+	assert.throws(() => smokePackages(manifests.slice(1)), /no @chartguard\/cli/u);
+	assert.equal(cliFoundError({ status: 1, stdout: '  ERROR CFG_TYPE $.options.scales.y.min' }), true);
+	assert.equal(cliFoundError({ status: 0, stdout: '' }), false);
+	assert.equal(cliFoundError({ status: 1, stdout: 'ChartGuard: usage' }), false);
+	assert.equal(cliFoundError({ status: 2, stdout: 'CFG_TYPE' }), false);
 });

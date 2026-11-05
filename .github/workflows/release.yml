@@ -2,7 +2,8 @@ name: release
 # Publishes every package whose version is not on npm yet (with provenance) and the VS Code extension
 # to the Marketplace. Only when started by hand (Actions → release → Run workflow) on main, only for a
 # commit whose CI run succeeded, and only after the maintainer approves the `release` environment.
-# Both registries are reached with this run's OIDC token (trusted publishing): no stored token.
+# Both registries are reached with this run's OIDC token (trusted publishing); the one stored token,
+# NPM_TOKEN, is only the fallback for a package npm does not know yet (see the publish step).
 on:
   workflow_dispatch:
 # Read-only by default; each job asks for what it needs.
@@ -111,3 +112,31 @@ jobs:
               echo "$tag: $SHA"
             fi
           done
+      # The action's tag gets a GitHub release (a pre-release while the packages are 0.x), with notes
+      # GitHub generates from the commits since the previous one. One that exists is never edited.
+      - name: Release the action's tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag=$(node scripts/release-tags.mjs | grep '^v')
+          if gh release view "$tag" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            echo "release $tag exists: left as it is"
+          else
+            gh release create "$tag" --repo "$REPOSITORY" --verify-tag --prerelease --generate-notes --title "ChartGuard $tag"
+          fi
+  # What npm now serves, installed in a fresh project as a user does, on the lowest supported Node: the
+  # consumers job checked the packed tarballs before publishing, this checks the registry after it.
+  smoke:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: node scripts/smoke-published.mjs
