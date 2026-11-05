@@ -31,7 +31,7 @@
 		"bench": "node tools/benchmarks/bench.mjs",
 		"api:write": "node tools/api/api.mjs write",
 		"changeset": "changeset",
-		"version-packages": "changeset version",
+		"version-packages": "changeset version && npm run schema:generate",
 		"conformance:import": "node tools/conformance/corpus/import.mjs",
 		"playground": "node apps/playground/scripts/serve.mjs",
 		"typecheck": "tsc -b tsconfig.json",

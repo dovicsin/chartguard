@@ -1,0 +1,15 @@
+@chartguard/config-chartjs
+Copyright the ChartGuard contributors. Licensed under the MIT License (LICENSE).
+
+dist/generated/chartjs-4.5.1.json is derived from Chart.js 4.5.1 (npm package
+chart.js@4.5.1): from its TypeScript declarations (dist/types) and, where the
+declarations leave a fact out, from its runtime code (dist/chart.js). Chart.js is
+licensed under the MIT License, Copyright (c) 2014-2024 Chart.js Contributors.
+
+Some value lists in it (the names of DOM events, the members of built-in types)
+come from the lib files of the TypeScript compiler that read the declarations
+(npm package typescript@5.9.3), licensed under the Apache License, Version 2.0.
+
+The artifact names each source with its exact version and integrity, and each
+fact cites the file and line it was read from. THIRD-PARTY-NOTICES.txt carries
+the licence and notices of each source, as they ship them.

@@ -3,6 +3,7 @@ import {
 	copyFileSync,
 	mkdirSync,
 	mkdtempSync,
+	readFileSync,
 	rmSync,
 	statSync,
 	symlinkSync,
@@ -111,6 +112,14 @@ test('Highcharts: plugin schemas extend the built schema; a schema that cannot b
 	assert.throws(
 		() => lint(code, project(t), 'src/a.js', { extensions: { highcharts: [mine] } }),
 		/settings\.chartguard\.extensions\.highcharts: the curated Highcharts subset has no extension points; build the full schema/u
+	);
+	// Built by another generator (CG-07-06): rebuilt, never used as if it were this one's.
+	const path = join(built, 'node_modules', '.cache', 'chartguard', 'highcharts-13.1.1.json');
+	const artifact = JSON.parse(readFileSync(path, 'utf8'));
+	writeFileSync(path, JSON.stringify({ ...artifact, generator: { ...artifact.generator, version: '0.0.9' } }));
+	assert.throws(
+		() => lint(code, built, 'src/a.js', {}),
+		/highcharts-13\.1\.1\.json cannot be used: it was built by @chartguard\/schema-generator 0\.0\.9 with typescript@\S+; this ChartGuard builds with .*\nRebuild it: chartguard schema build --library highcharts/u
 	);
 	writeFileSync(join(built, 'node_modules', '.cache', 'chartguard', 'highcharts-13.1.1.json'), '{ broken');
 	assert.throws(

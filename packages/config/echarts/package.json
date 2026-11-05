@@ -16,7 +16,8 @@
 	"files": [
 		"dist/",
 		"README.md",
-		"NOTICE"
+		"NOTICE",
+		"THIRD-PARTY-NOTICES.txt"
 	],
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",

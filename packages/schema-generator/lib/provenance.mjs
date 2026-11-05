@@ -1,5 +1,7 @@
 import ts from 'typescript';
 
+import { COMPILER_SOURCE } from './types.mjs';
+
 const PACKAGE_PATH = /^.*\/node_modules\//;
 
 /** `chart.js/dist/types/index.d.ts` for a file under node_modules, else undefined. */
@@ -7,11 +9,19 @@ function packageRelative(fileName) {
 	return PACKAGE_PATH.test(fileName) ? fileName.replace(PACKAGE_PATH, '') : undefined;
 }
 
+/** `typescript/lib/lib.dom.d.ts:12`-style pointer: a package-relative file and the line a declaration starts on. */
+function pointerOf(path, declaration) {
+	const file = declaration.getSourceFile();
+	const { line } = file.getLineAndCharacterOfPosition(declaration.getStart(file));
+	return `${path}:${String(line + 1)}`;
+}
+
 /**
  * Which published declaration a fact cites, and how that becomes a provenance record.
  * Pointers are package-relative (`chart.js/dist/types/index.d.ts:12`); local paths never leak.
  * Only declarations inside the pinned package count: TypeScript's own lib (`Pick`, `Partial`)
- * and other installed packages are not evidence for the pinned source.
+ * and other installed packages are not evidence for the pinned source. A fact TypeScript's lib
+ * declares (the members of `Array` or of the DOM's event map) cites that lib, as `derived` (CG-07-06).
  */
 export class Provenance {
 	constructor(checker, { sourceId, packageName }) {
@@ -64,16 +74,27 @@ export class Provenance {
 		return (referenced.flags & ts.SymbolFlags.Alias) !== 0 ? this.checker.getAliasedSymbol(referenced) : referenced;
 	}
 
+	/** The `typescript/lib/…` path of a symbol declared in TypeScript's own lib files. */
+	libPath(symbol) {
+		const fileName = symbol?.declarations?.[0]?.getSourceFile().fileName;
+		const relative = fileName === undefined ? undefined : packageRelative(fileName);
+		return relative?.startsWith(`${COMPILER_SOURCE}/lib/`) === true ? relative : undefined;
+	}
+
 	/** A fact without a declaration in the pinned package cannot claim authority: it is `derived`. */
 	of(symbol) {
 		const path = this.pinnedPath(symbol);
-		if (path === undefined) return { confidence: 'derived', sources: [{ source: this.sourceId }] };
-		const declaration = symbol.declarations[0];
-		const file = declaration.getSourceFile();
-		const { line } = file.getLineAndCharacterOfPosition(declaration.getStart(file));
-		return {
-			confidence: 'authoritative',
-			sources: [{ source: this.sourceId, pointer: `${path}:${String(line + 1)}` }]
-		};
+		if (path !== undefined)
+			return {
+				confidence: 'authoritative',
+				sources: [{ source: this.sourceId, pointer: pointerOf(path, symbol.declarations[0]) }]
+			};
+		const lib = this.libPath(symbol);
+		if (lib !== undefined)
+			return {
+				confidence: 'derived',
+				sources: [{ source: COMPILER_SOURCE, pointer: pointerOf(lib, symbol.declarations[0]) }]
+			};
+		return { confidence: 'derived', sources: [{ source: this.sourceId }] };
 	}
 }

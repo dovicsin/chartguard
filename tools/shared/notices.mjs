@@ -18,17 +18,31 @@ function packageOf(file, known) {
 /** Code-unit order, never by locale (D12). */
 export const byCodeUnit = (a, b) => (a < b ? -1 : Number(a > b));
 
-/** A package's licence and notice files, as it ships them. */
+/** A package's licence and notice files, as it ships them, with LF line ends (a tracked copy is checked out with LF). */
 const legalFiles = (directory) =>
 	readdirSync(directory)
 		.filter((name) => /^(licen[cs]e|notice|copying)(\.|$)/iu.test(name))
 		.sort()
-		.map((name) => readFileSync(join(directory, name), 'utf8').trim());
+		.map((name) => readFileSync(join(directory, name), 'utf8').replaceAll(/\r\n?/gu, '\n').trim());
+
+/**
+ * One entry per package directory, with its licence and notices, in code-unit order of their names: the
+ * same package and version installed twice (a nested copy) is one entry, since it says the same.
+ */
+export function packageNotices(directories) {
+	const entries = [...new Set(directories)].map((directory) => {
+		const { name, version, license } = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'));
+		return { name, text: [`${name} ${version} (${String(license)})`, ...legalFiles(directory)].join('\n\n') };
+	});
+	const unique = [...new Map(entries.map((entry) => [entry.text, entry])).values()];
+	unique.sort((a, b) => byCodeUnit(a.name, b.name) || byCodeUnit(a.text, b.text));
+	return unique;
+}
 
 /**
  * Every package a bundle holds code of (`inputs`: the bundler's metafile inputs), with its licence and
- * notices, in code-unit order of their names: a bundle publishes their code, so it carries what they
- * ask to be carried (E58). `own`: the directory of the package that makes the bundle, left out.
+ * notices: a bundle publishes their code, so it carries what they ask to be carried (E58). `own`: the
+ * directory of the package that makes the bundle, left out.
  */
 export function noticesOf(inputs, own) {
 	const packages = new Set();
@@ -37,12 +51,7 @@ export function noticesOf(inputs, own) {
 		const directory = packageOf(resolve(input), packages);
 		if (directory !== undefined && directory !== ownDirectory) packages.add(directory);
 	}
-	const entries = [...packages].map((directory) => {
-		const { name, version, license } = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'));
-		return { name, text: [`${name} ${version} (${String(license)})`, ...legalFiles(directory)].join('\n\n') };
-	});
-	entries.sort((a, b) => byCodeUnit(a.name, b.name));
-	return entries;
+	return packageNotices(packages);
 }
 
 /** The notices file's text: each package's entry, separated by a rule. */

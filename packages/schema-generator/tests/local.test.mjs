@@ -5,7 +5,15 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { buildLocalSchema, generateArtifact, localSchemaPath, pinOf, verifiedUpstream } from '../index.mjs';
+import {
+	buildLocalSchema,
+	compilerPin,
+	generateArtifact,
+	localSchemaPath,
+	pinOf,
+	verifiedUpstream
+} from '../index.mjs';
+import { otherBuild } from '../lib/paths.mjs';
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url));
 const INSTALLED = join(ROOT, 'node_modules', 'highcharts');
@@ -91,4 +99,30 @@ test('another major, a missing install and a library whose schema ships are refu
 		name: 'UpstreamError',
 		message: 'chartjs ships its schema with its adapter; there is nothing to build.'
 	});
+});
+
+test("a schema another generator or compiler built is named as such; this generator's own is not (CG-07-06)", (t) => {
+	const built = JSON.parse(readFileSync(buildLocalSchema(project(t), 'highcharts').path, 'utf8'));
+	assert.equal(otherBuild(built), undefined);
+	const { name, version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+	const ours = `${name} ${version} with typescript@${compilerPin().version}`;
+	const older = { ...built, generator: { name, version: '0.0.9' } };
+	assert.equal(
+		otherBuild(older),
+		`it was built by ${name} 0.0.9 with typescript@${compilerPin().version}; this ChartGuard builds with ${ours}`
+	);
+	const compiler = {
+		...built,
+		sources: { ...built.sources, typescript: { ...built.sources.typescript, locator: 'typescript@5.8.3' } }
+	};
+	assert.match(otherBuild(compiler), /built by .* with typescript@5\.8\.3; /u);
+	// Built before the compiler was recorded, or not a schema at all: named, never thrown.
+	const unrecorded = { ...built.sources };
+	delete unrecorded.typescript;
+	assert.match(otherBuild({ ...built, sources: unrecorded }), /with no recorded compiler; /u);
+	for (const value of [null, 1, 'x', [], { generator: 'x', sources: [] }, { generator: { name: 1 } }])
+		assert.match(
+			otherBuild(value),
+			/^it was built by an unnamed generator of no recorded version with no recorded compiler; /u
+		);
 });

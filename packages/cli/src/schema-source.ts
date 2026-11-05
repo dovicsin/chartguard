@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 import type { ConfigValidator } from '@chartguard/core';
-import { localSchemaPath } from '@chartguard/schema-generator/paths';
+import { localSchemaPath, otherBuild } from '@chartguard/schema-generator/paths';
 
 import { InputError, RunInputError } from './errors.js';
 import { findInstall } from './installed.js';
@@ -58,16 +58,18 @@ function extended<T>(
 
 /**
  * The Highcharts validator over a built schema, with the plugin schemas: a refused extension is the
- * user's input (C6); a schema that does not load is the user's to rebuild.
+ * user's input (C6); a schema that does not load, or that another generator or compiler built, is the
+ * user's to rebuild (CG-07-06).
  */
 async function generatedValidator(path: string, text: string, plugins: PluginSchemas): Promise<ConfigValidator> {
 	const adapter = (await import('@chartguard/config-highcharts')) as HighchartsAdapter;
 	try {
-		return extended(plugins, adapter.ExtensionError, (extensions) =>
-			adapter.createValidator(JSON.parse(text), { extensions })
-		);
+		const artifact: unknown = JSON.parse(text);
+		const other = otherBuild(artifact);
+		if (other !== undefined) throw rebuild(path, 'highcharts', other);
+		return extended(plugins, adapter.ExtensionError, (extensions) => adapter.createValidator(artifact, { extensions }));
 	} catch (error) {
-		if (error instanceof RunInputError) throw error;
+		if (error instanceof InputError) throw error;
 		throw rebuild(path, 'highcharts', error instanceof Error ? error.message : String(error));
 	}
 }

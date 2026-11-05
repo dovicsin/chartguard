@@ -18,6 +18,9 @@ function buildLocalSchema(root: string, library: string): {
     integrity: string;
 };
 
+### compilerPin
+function compilerPin(): any;
+
 ### contentIntegrity
 function contentIntegrity(directory: any): string;
 
@@ -52,6 +55,15 @@ function pinOf(library: any): any;
 ### serialize
 function serialize(artifact: any): string;
 
+### sourceDirectory
+function sourceDirectory(root: any, packageName: any): string;
+
+### untracedFacts
+function untracedFacts(root: any, artifact: any): string[];
+
+### verifiedCompiler
+function verifiedCompiler(version: any): any;
+
 ### verifiedUpstream
 function verifiedUpstream(root: any, library: any): any;
 
@@ -67,3 +79,6 @@ LOCAL_ARTIFACTS: "node_modules/.cache/chartguard"
 
 ### localSchemaPath
 function localSchemaPath(root: string, library: string, version: string): string;
+
+### otherBuild
+function otherBuild(artifact: unknown): string | undefined;

@@ -162,3 +162,15 @@ test('CI runs the lowest Node the packages support on every platform, and one ta
 	assert.equal(setupNode(parse(read('.github/workflows/pages.yml')).jobs.build), target);
 	assert.equal(parse(read('action.yml')).inputs['node-version'].default, String(target));
 });
+
+test('every platform and Node the consumers job covers regenerates the committed schemas from LF checkouts (CG-07-06)', () => {
+	const root = join(WORKFLOWS, '..', '..');
+	const { steps } = parse(readFileSync(join(WORKFLOWS, 'ci.yml'), 'utf8')).jobs.consumers;
+	const runs = steps.map((step) => step.run);
+	assert.ok(runs.indexOf('npm run schema:check') > runs.indexOf('npm run build'), 'schema:check after the build');
+	// Windows runners check text out with CRLF unless the repository says otherwise.
+	const attributes = readFileSync(join(root, '.gitattributes'), 'utf8')
+		.split('\n')
+		.filter((line) => line.trim() !== '' && !line.startsWith('#'));
+	assert.deepEqual(attributes, ['* text=auto eol=lf']);
+});

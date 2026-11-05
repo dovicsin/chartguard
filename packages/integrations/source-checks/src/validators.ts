@@ -6,6 +6,7 @@ import type { ConfigValidator, QualityReport } from '@chartguard/core';
 import * as qualityChartjs from '@chartguard/quality-chartjs';
 import * as qualityEcharts from '@chartguard/quality-echarts';
 import * as qualityHighcharts from '@chartguard/quality-highcharts';
+import { otherBuild } from '@chartguard/schema-generator/paths';
 
 import { builtSchema, findInstall, notInstalled } from './install.js';
 import { type ChartGuardSettings, SettingsError } from './settings.js';
@@ -39,16 +40,24 @@ function shipped(
 	return extended(prefix, library, adapter.ExtensionError, () => adapter.withExtensions(extensions as never[]));
 }
 
-/** A built Highcharts schema with the extensions; a schema that does not load is the user's to rebuild. */
+const rebuild = (prefix: string, path: string, reason: string): SettingsError =>
+	new SettingsError(prefix, [
+		`${path} cannot be used: ${reason}\nRebuild it: chartguard schema build --library highcharts`
+	]);
+
+/**
+ * A built Highcharts schema with the extensions; a schema that does not load, or that another generator
+ * or compiler built, is the user's to rebuild (CG-07-06).
+ */
 function fromBuilt(prefix: string, path: string, text: string, extensions: readonly unknown[]): ConfigValidator {
 	let artifact: unknown;
 	try {
 		artifact = JSON.parse(text);
 	} catch (error) {
-		throw new SettingsError(prefix, [
-			`${path} cannot be used: ${(error as Error).message}\nRebuild it: chartguard schema build --library highcharts`
-		]);
+		throw rebuild(prefix, path, (error as Error).message);
 	}
+	const other = otherBuild(artifact);
+	if (other !== undefined) throw rebuild(prefix, path, other);
 	return extended(prefix, 'highcharts', highcharts.ExtensionError, () =>
 		highcharts.createValidator(artifact, { extensions: extensions as never[] })
 	);

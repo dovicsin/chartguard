@@ -58,6 +58,8 @@ jobs:
       - run: npm install --global npm@11.21.1
       - run: npm ci
       - run: npm run build
+      # The committed schemas regenerate byte for byte on every platform and Node (CG-07-06).
+      - run: npm run schema:check
       - run: node --test scripts/tests/consumers.test.mjs scripts/tests/smoke.test.mjs
   # Trends across commits (CG-07-03): every commit to main is measured and recorded in a history
   # that runs hand on through the Actions cache; a value that rose while still within its budget is

@@ -93,7 +93,8 @@ test('the manifest is generated for the exact pinned version and stays partial',
 	const { manifest, lossy } = schema();
 	assert.equal(manifest.version, '6.1.0');
 	assert.equal(manifest.coverage, 'partial');
-	assert.equal(manifest.source, 'echarts@6.1.0');
+	// The schema names its library and the compiler that read it (CG-07-06).
+	assert.equal(manifest.source, 'echarts@6.1.0, typescript@5.9.3');
 	assert.ok(lossy.length > 0);
 	assert.equal(schema(), schema());
 });

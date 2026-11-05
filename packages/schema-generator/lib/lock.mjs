@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join, relative, sep } from 'node:path';
 
 /** The upstream pins this generator was written and verified against (one exact version per library). */
 const PINS = JSON.parse(readFileSync(new URL('../upstream-sources.json', import.meta.url), 'utf8'));
@@ -19,6 +20,34 @@ export function pinOf(library) {
 	const pin = PINS.libraries.find((entry) => entry.library === library);
 	if (pin === undefined) throw new UpstreamError(`No upstream pin for ${library}`);
 	return pin;
+}
+
+/**
+ * The TypeScript this generator was verified with. Its lib files decide the members of the DOM and
+ * built-in types the declarations name, so another version builds another artifact (CG-07-06).
+ */
+export function compilerPin() {
+	return PINS.compiler;
+}
+
+/** Throws `UpstreamError` unless `version` (the TypeScript the generator loaded) is the pinned compiler. */
+export function verifiedCompiler(version) {
+	const pin = compilerPin();
+	if (version !== pin.version)
+		throw new UpstreamError(
+			`typescript ${version} is loaded, but this generator builds schemas only with typescript ${pin.version}: another version reads the declarations differently.`
+		);
+	return pin;
+}
+
+/**
+ * The directory of a package an artifact names as a source: the pinned compiler is the TypeScript
+ * this generator loads (its own exact dependency); a library is the project's install under `root`.
+ */
+export function sourceDirectory(root, packageName) {
+	if (packageName === compilerPin().package)
+		return dirname(createRequire(import.meta.url).resolve(`${packageName}/package.json`));
+	return join(root, 'node_modules', packageName);
 }
 
 function installedVersion(root, packageName) {

@@ -6,5 +6,15 @@
 export { digestOf, omit, serialize, withDigest } from './lib/digest.mjs';
 export { generateArtifact, isRedistributable, LIBRARIES } from './lib/generate.mjs';
 export { buildLocalSchema } from './lib/local.mjs';
-export { contentIntegrity, installedUpstream, pinOf, UpstreamError, verifiedUpstream } from './lib/lock.mjs';
+export {
+	compilerPin,
+	contentIntegrity,
+	installedUpstream,
+	pinOf,
+	sourceDirectory,
+	UpstreamError,
+	verifiedCompiler,
+	verifiedUpstream
+} from './lib/lock.mjs';
 export { LOCAL_ARTIFACTS, localSchemaPath } from './lib/paths.mjs';
+export { untracedFacts } from './lib/trace.mjs';

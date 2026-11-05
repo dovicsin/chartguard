@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -8,7 +8,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { KEYS, settingsOf } from '../dist/settings.js';
-import { bundle, byCodeUnit, NOTICES } from '../scripts/bundle.mjs';
+import { built, bundle, byCodeUnit, NOTICES } from '../scripts/bundle.mjs';
 import { QUIET_FLAGS, SETTINGS, VSCODE_VERSION } from '../scripts/run-vscode-tests.mjs';
 
 /** The VS Code extension (CG-06-05) outside VS Code: its settings, its bundles and what its VSIX holds. */
@@ -81,4 +81,18 @@ test('the editor tests run in an exact VS Code with a quiet profile (E75)', () =
 	assert.equal(SETTINGS['workbench.startupEditor'], 'none');
 	assert.equal(SETTINGS['chat.disableAIFeatures'], true);
 	assert.deepEqual(QUIET_FLAGS, ['--skip-welcome', '--skip-release-notes']);
+});
+
+test('a bundle build that warns is refused, naming the warning (a module that reads beside itself breaks in CommonJS)', async (t) => {
+	const directory = mkdtempSync(join(tmpdir(), 'chartguard-bundle-'));
+	t.after(() => rmSync(directory, { recursive: true, force: true }));
+	const entry = join(directory, 'entry.mjs');
+	writeFileSync(entry, "export const manifest = new URL('../package.json', import.meta.url).href;\n");
+	const options = { bundle: true, platform: 'node', format: 'cjs', logLevel: 'silent', entryPoints: [entry] };
+	await assert.rejects(
+		built({ ...options, outfile: join(directory, 'out.cjs') }),
+		/esbuild warned:\n.*entry\.mjs:1 .*import\.meta/su
+	);
+	writeFileSync(entry, 'export const answer = 42;\n');
+	assert.equal((await built({ ...options, outfile: join(directory, 'ok.cjs') })).warnings.length, 0);
 });

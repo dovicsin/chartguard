@@ -107,6 +107,23 @@ test('a corrupt built schema is an input error that says to rebuild it', async (
 	assert.match(broken.err, /cannot be used: .*\n.*Rebuild it: chartguard schema build --library highcharts/s);
 });
 
+test('a schema another generator built is an input error that names both and says to rebuild it (CG-07-06)', async (t) => {
+	const { root, config, schema } = project(t);
+	await run(['schema', 'build', '--library', 'highcharts', '--dir', root]);
+	const built = JSON.parse(readFileSync(schema, 'utf8'));
+	writeFileSync(schema, JSON.stringify({ ...built, generator: { ...built.generator, version: '0.0.9' } }));
+	const stale = await run(['validate', '--library', 'highcharts', '--file', config]);
+	assert.equal(stale.code, 2);
+	assert.match(
+		stale.err,
+		/cannot be used: it was built by @chartguard\/schema-generator 0\.0\.9 with typescript@\S+; this ChartGuard builds with @chartguard\/schema-generator \S+ with typescript@\S+\nRebuild it: chartguard schema build --library highcharts/u
+	);
+	await run(['schema', 'build', '--library', 'highcharts', '--dir', root]);
+	const rebuilt = await run(['validate', '--library', 'highcharts', '--file', config, '--json']);
+	assert.notEqual(rebuilt.code, 2, rebuilt.err);
+	assert.equal(JSON.parse(rebuilt.out).schema.kind, 'generated');
+});
+
 test('analyze validates every extracted config with the built schema too', async (t) => {
 	const { root, source } = project(t);
 	await run(['schema', 'build', '--library', 'highcharts', '--dir', root]);

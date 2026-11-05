@@ -26,3 +26,5 @@ if (chart !== undefined) {
 - Without `validator`, the shipped curated subset is used. It describes `13.x`, so for your exact version its errors are reported as warnings.
 
 The options you pass are never changed and their getters are never run.
+
+Highcharts is your own install, under its own licence (https://www.highcharts.com/license); this package contains no Highcharts code.

@@ -39,7 +39,8 @@ test('the manifest is generated for the exact pinned version', () => {
 	const { manifest } = schema();
 	assert.equal(manifest.version, '4.5.1');
 	assert.equal(manifest.coverage, 'partial');
-	assert.equal(manifest.source, 'chart.js@4.5.1');
+	// The schema names its library and the compiler that read it (CG-07-06).
+	assert.equal(manifest.source, 'chart.js@4.5.1, typescript@5.9.3');
 });
 
 test('the shipped artifact is well-formed, so the adapter may skip the check at import time', () => {

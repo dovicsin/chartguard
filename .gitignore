@@ -5,6 +5,7 @@
 
 # Root tooling
 !/.gitignore
+!/.gitattributes
 !/.editorconfig
 !/.npmrc
 !/.prettierignore
@@ -37,6 +38,8 @@
 !/tools/fuzz/**/*.mjs
 !/tools/benchmarks/**/*.mjs
 !/.changeset/config.json
+# The changesets a release versions packages by (`npx changeset`).
+!/.changeset/*.md
 
 # Public governance (CG-00-05); issue and PR templates and the contributor guide in docs/ stay local
 !/CONTRIBUTING.md
@@ -63,6 +66,8 @@
 !/packages/**/package.json
 !/packages/**/README.md
 !/packages/**/NOTICE
+!/packages/**/LICENSE
+!/packages/**/THIRD-PARTY-NOTICES.txt
 !/packages/**/tsconfig.json
 !/packages/**/src/**/*.ts
 !/packages/**/src/generated/*.json

@@ -7,12 +7,18 @@
 		"name": "@chartguard/schema-generator",
 		"version": "0.1.0"
 	},
-	"digest": "sha256-5bc7f2ff5c36992dbfdc4c2ed2c7195b4c7c7779a75c3a1c383b4c397275551a",
+	"digest": "sha256-57e655f0045fb60f731732e170b2b95640d167275e739afee945885f3a68ce1b",
 	"sources": {
 		"echarts": {
 			"kind": "npm-package",
 			"locator": "echarts@6.1.0",
 			"integrity": "sha512-q0yaFPggC9FUdsWH4blavRWFmxdrIodbkoKNAjJudAI6CA9gNPxHtV2RcZNEepZVlk4yvBYkOkbk6HIVpIyHZA==",
+			"license": "Apache-2.0"
+		},
+		"typescript": {
+			"kind": "npm-package",
+			"locator": "typescript@5.9.3",
+			"integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
 			"license": "Apache-2.0"
 		}
 	},

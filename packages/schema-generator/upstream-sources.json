@@ -1,6 +1,16 @@
 {
 	"inventoryDate": "2026-10-17",
 	"roadmapId": "CG-01-01",
+	"compiler": {
+		"package": "typescript",
+		"version": "5.9.3",
+		"integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
+		"license": {
+			"spdx": "Apache-2.0",
+			"redistribution": "allowed-with-license-and-notice"
+		},
+		"use": "Reads every declaration. Its own lib files (lib.dom.d.ts, lib.es5.d.ts) give the members of the DOM and built-in types the declarations name, so an artifact is reproducible only with this exact version (CG-07-06)."
+	},
 	"libraries": [
 		{
 			"library": "chartjs",
