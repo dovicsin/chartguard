@@ -109,7 +109,8 @@ jobs:
           path: bench-history.jsonl
           retention-days: 90
   # The GitHub Action on this repository's own examples (CG-06-08): a valid file passes with exit
-  # code 0 and a SARIF log; an invalid one fails its step with 1 and its annotations.
+  # code 0 and a SARIF log; an invalid one fails its step with 1 and its annotations, built from this
+  # checkout and with the published CLI.
   action:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -127,11 +128,21 @@ jobs:
         with:
           library: chartjs
           files: examples/chartjs-invalid.json
+      # The published CLI, as users pin it (`chartguard-version`): the latest release from npm.
+      - id: published
+        uses: ./
+        continue-on-error: true
+        with:
+          library: chartjs
+          files: examples/chartjs-invalid.json
+          chartguard-version: latest
       - name: Check the outcomes
         env:
           VALID: ${{ steps.valid.outputs.exit-code }}
           INVALID: ${{ steps.invalid.outputs.exit-code }}
+          PUBLISHED: ${{ steps.published.outputs.exit-code }}
         run: |
           test "$VALID" = 0
           test "$INVALID" = 1
+          test "$PUBLISHED" = 1
           node -e "const log = JSON.parse(require('fs').readFileSync('chartguard.sarif', 'utf8')); if (log.version !== '2.1.0') process.exit(1);"

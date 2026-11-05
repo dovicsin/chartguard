@@ -191,3 +191,21 @@ test('every platform and Node the consumers job covers regenerates the committed
 		.filter((line) => line.trim() !== '' && !line.startsWith('#'));
 	assert.deepEqual(attributes, ['* text=auto eol=lf']);
 });
+
+/** The CLI sources the action steps of a job use: `checkout` (built from the action's checkout) or `published`. */
+const cliSources = (job) =>
+	new Set(
+		(job.steps ?? [])
+			.filter((step) => step.uses === './')
+			.map((step) => (String(step.with?.['chartguard-version'] ?? '') === '' ? 'checkout' : 'published'))
+	);
+
+test('CI runs the action both ways a user can: built from its checkout and with the published CLI (CG-06-08)', () => {
+	const ci = parse(readFileSync(join(WORKFLOWS, 'ci.yml'), 'utf8'));
+	assert.deepEqual([...cliSources(ci.jobs.action)].sort(), ['checkout', 'published']);
+	assert.deepEqual([...cliSources({ steps: [{ uses: './', with: { library: 'chartjs' } }] })], ['checkout']);
+	assert.deepEqual(
+		[...cliSources({ steps: [{ uses: './', with: { 'chartguard-version': 'latest' } }] })],
+		['published']
+	);
+});
