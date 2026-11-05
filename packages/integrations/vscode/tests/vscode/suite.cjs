@@ -53,14 +53,64 @@ async function shownProblems() {
 	return { document, found };
 }
 
+/** How often a code action request the editor cancelled is asked again: a bound, never a wait. */
+const CANCELLED_ATTEMPTS = 5;
+
+/**
+ * The code actions at `range`. VS Code cancels the request when the document's code action providers
+ * change while it runs (`getCodeActions` cancels on the registry's `onDidChange`): an extension that
+ * activates meanwhile, such as the built-in TypeScript one on a loaded machine. The editor then asks
+ * again, and so does this; any other failure is the test's.
+ */
+async function codeActionsAt(uri, range) {
+	for (let attempt = 1; ; attempt += 1) {
+		try {
+			return await vscode.commands.executeCommand('vscode.executeCodeActionProvider', uri, range);
+		} catch (error) {
+			const cancelled = error instanceof Error && error.message === 'Canceled';
+			if (!cancelled || attempt >= CANCELLED_ATTEMPTS) throw error;
+			console.log(`code actions: cancelled by the editor (attempt ${String(attempt)}), asked again`);
+		}
+	}
+}
+
+/**
+ * The cancellation `codeActionsAt` answers, made to happen: a provider that, the first time it is
+ * asked, registers another for the document, so the providers change while the request runs. VS Code
+ * cancels that request (a plain one fails `Canceled`); asked again, the rename comes back.
+ */
+async function cancelledRequest(document, found) {
+	const deprecated = found.find((diagnostic) => kindOf(diagnostic) === 'config-warnings');
+	let late;
+	const registrations = [];
+	const changing = () =>
+		vscode.languages.registerCodeActionsProvider('javascript', {
+			provideCodeActions() {
+				if (late === undefined) {
+					late = vscode.languages.registerCodeActionsProvider('javascript', { provideCodeActions: () => [] });
+					registrations.push(late);
+				}
+				return [];
+			}
+		});
+	try {
+		registrations.push(changing());
+		await assert.rejects(
+			vscode.commands.executeCommand('vscode.executeCodeActionProvider', document.uri, deprecated.range),
+			/Canceled/u
+		);
+		late = undefined;
+		const actions = await codeActionsAt(document.uri, deprecated.range);
+		assert.ok(actions.some(({ title }) => title === 'Rename as the runtime does: clockwise'));
+	} finally {
+		for (const registration of registrations) registration.dispose();
+	}
+}
+
 /** The runtime's own rename, as a quick fix the editor applies. */
 async function quickFix(document, found) {
 	const deprecated = found.find((diagnostic) => kindOf(diagnostic) === 'config-warnings');
-	const actions = await vscode.commands.executeCommand(
-		'vscode.executeCodeActionProvider',
-		document.uri,
-		deprecated.range
-	);
+	const actions = await codeActionsAt(document.uri, deprecated.range);
 	const rename = actions.find(({ title }) => title === 'Rename as the runtime does: clockwise');
 	assert.ok(rename, JSON.stringify(actions.map(({ title }) => title)));
 	assert.equal(await vscode.workspace.applyEdit(rename.edit), true);
@@ -156,6 +206,7 @@ async function step(name, check) {
 /** Runs inside VS Code with the extension under development and `tests/vscode/workspace` open (CG-06-05). */
 exports.run = async () => {
 	const { document, found } = await step('shown problems', shownProblems);
+	await step('cancelled request', () => cancelledRequest(document, found));
 	await step('quick fix', () => quickFix(document, found));
 	await step('settings', () => settingsApply(document));
 	await step('latency', () => latency(document));
