@@ -1,4 +1,4 @@
-import type { FindingKind, TextEdit } from '@chartguard/source-checks';
+import { type FindingKind, KIND_DOCUMENTATION, type TextEdit } from '@chartguard/source-checks';
 import type { ESLint, Linter, Rule } from 'eslint';
 
 import { analysisOf } from './analysis.js';
@@ -27,7 +27,7 @@ function findingsRule(rule: FindingKind, description: string, offers: Offers = {
 	return {
 		meta: {
 			type: rule === 'chart-quality' ? 'suggestion' : 'problem',
-			docs: { description },
+			docs: { description, url: KIND_DOCUMENTATION[rule] },
 			schema: [],
 			messages: { finding: '{{text}}', edit: '{{text}}' },
 			...offers

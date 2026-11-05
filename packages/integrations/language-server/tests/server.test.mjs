@@ -58,6 +58,19 @@ test('an opened document gets its findings at LSP positions; a changed one again
 	});
 });
 
+test('a client that supports code descriptions gets each code linked to its explanation; others get none (CG-06-07)', async () => {
+	const linked = connect();
+	await linked.initialize({ capabilities: { textDocument: { publishDiagnostics: { codeDescriptionSupport: true } } } });
+	const [finding] = (await linked.open(uri('chart.js'), WRONG)).params.diagnostics;
+	assert.deepEqual(finding.codeDescription, {
+		href: 'https://dovicsin.github.io/chartguard/reference/codes.html#CFG_TYPE'
+	});
+	const plain = connect();
+	await plain.initialize({ capabilities: { textDocument: { publishDiagnostics: { codeDescriptionSupport: false } } } });
+	const [unlinked] = (await plain.open(uri('chart.js'), WRONG)).params.diagnostics;
+	assert.equal('codeDescription' in unlinked, false);
+});
+
 test('incremental changes apply in order, each at LSP positions in the text the one before left (CG-07-03)', async () => {
 	const client = connect();
 	await client.initialize();

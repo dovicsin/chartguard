@@ -1,5 +1,11 @@
 import { type ChartLibrary, type ChartUse, rangeAt, type SourceRange } from '@chartguard/analysis-typescript';
-import type { Diagnostic, QualityReport, ValidationOptions, ValidationResult } from '@chartguard/core';
+import {
+	type Diagnostic,
+	type QualityReport,
+	REFERENCE_URL,
+	type ValidationOptions,
+	type ValidationResult
+} from '@chartguard/core';
 import type ts from 'typescript';
 
 import { type EditSite, offsetOf, renameEdit, type TextEdit, valueEdit } from './edits.js';
@@ -7,6 +13,13 @@ import { insertEdit } from './insert.js';
 
 /** What a finding is: the validator's error, its warning, or the advisory quality review's warning. */
 export type FindingKind = 'valid-config' | 'config-warnings' | 'chart-quality';
+
+/** Where a kind of finding is explained in the reference: the validator's codes, or the quality rules. */
+export const KIND_DOCUMENTATION: Readonly<Record<FindingKind, string>> = {
+	'valid-config': `${REFERENCE_URL}codes.html`,
+	'config-warnings': `${REFERENCE_URL}codes.html`,
+	'chart-quality': `${REFERENCE_URL}rules.html`
+};
 
 /** One finding in the checked text, from `start` to `end` (offsets), with the edit it may offer. */
 export interface SourceFinding {
@@ -17,6 +30,8 @@ export interface SourceFinding {
 	readonly message: string;
 	readonly start: number;
 	readonly end: number;
+	/** Where the finding is explained (the engine's `documentationUrl`). */
+	readonly documentationUrl?: string;
 	/** A behaviour-preserving edit a tool may apply: the runtime's own rename. */
 	readonly fix?: TextEdit;
 	/** An edit that changes the drawing, offered and never applied without the user. */
@@ -69,7 +84,14 @@ function placed(
 
 /** A finding with its edit: only for a config read completely (an unread part may hold what the edit changes). */
 function findingOf(kind: FindingKind, diagnostic: Diagnostic, use: ChartUse, reading: Reading): SourceFinding {
-	const finding = { kind, code: diagnostic.code, path: diagnostic.path, ...placed(diagnostic, use, reading) };
+	const { documentationUrl } = diagnostic;
+	const finding = {
+		kind,
+		code: diagnostic.code,
+		path: diagnostic.path,
+		...placed(diagnostic, use, reading),
+		...(documentationUrl === undefined ? {} : { documentationUrl })
+	};
 	const { fix } = diagnostic;
 	if (fix === undefined || !use.complete) return finding;
 	const site: EditSite = { file: reading.file, inFile: reading.inFile, use };

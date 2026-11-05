@@ -1,6 +1,6 @@
 import { relative, sep } from 'node:path';
 
-import { type Diagnostic, locateJsonPath, parseJsonSource, type Severity } from '@chartguard/core';
+import { type Diagnostic, locateJsonPath, parseJsonSource, referenceUrl, type Severity } from '@chartguard/core';
 
 import { cliVersion } from './version.js';
 
@@ -55,17 +55,18 @@ export function sourceRegion({ line, column, endLine, endColumn }: Diagnostic): 
 	return { startLine: line, startColumn, endLine: endLine ?? line, endColumn: endColumn ?? startColumn };
 }
 
+/**
+ * A rule per code, its help the code's anchor in the reference: what every finding of the code shares.
+ * A page about one finding (a deprecation's migration) is that result's, never its rule's.
+ */
 function rulesOf(findings: readonly SarifFinding[]): object[] {
-	const rules = new Map<string, { id: string; helpUri?: string }>();
-	for (const { diagnostic } of findings) {
-		const known = rules.get(diagnostic.code);
-		if (known === undefined || (known.helpUri === undefined && diagnostic.documentationUrl !== undefined))
-			rules.set(diagnostic.code, {
-				id: diagnostic.code,
-				...(diagnostic.documentationUrl === undefined ? {} : { helpUri: diagnostic.documentationUrl })
-			});
-	}
-	return [...rules.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
+	const codes = [...new Set(findings.map(({ diagnostic }) => diagnostic.code))];
+	return codes.sort((a, b) => (a < b ? -1 : Number(a > b))).map((id) => ({ id, helpUri: referenceUrl(id) }));
+}
+
+/** A finding's own page, when it is not its code's (the rule's help). */
+function ownPage({ code, documentationUrl }: Diagnostic): object {
+	return documentationUrl === undefined || documentationUrl === referenceUrl(code) ? {} : { documentationUrl };
 }
 
 function resultOf({ diagnostic, file, region, exact, suppressed }: SarifFinding): object {
@@ -78,7 +79,7 @@ function resultOf({ diagnostic, file, region, exact, suppressed }: SarifFinding)
 			{ physicalLocation: { artifactLocation: { uri: uriOf(file) }, ...(region === undefined ? {} : { region }) } }
 		],
 		logicalLocations: [{ fullyQualifiedName: path, kind: 'member' }],
-		properties: { path, confidence, ...(exact === undefined ? {} : { exact }) },
+		properties: { path, confidence, ...(exact === undefined ? {} : { exact }), ...ownPage(diagnostic) },
 		...(suppressed === undefined ? {} : { suppressions: [{ kind: 'external', justification: suppressed }] })
 	};
 }

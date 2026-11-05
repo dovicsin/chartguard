@@ -1,4 +1,4 @@
-import { type Diagnostic, isRecord } from '@chartguard/core';
+import { type Diagnostic, documented, isRecord } from '@chartguard/core';
 import ts from 'typescript';
 
 import { Bindings } from './bindings.js';
@@ -57,9 +57,19 @@ export interface AnalysedFile {
 	readonly fileName: string;
 }
 
+/** The output with a link to the reference on every finding: the file's, each object's and each use's (CG-06-07). */
+function documentedOutput({ readable, objects, uses, diagnostics }: AnalysisOutput): AnalysisOutput {
+	return {
+		readable,
+		objects: objects.map((object) => ({ ...object, diagnostics: object.diagnostics.map(documented) })),
+		uses: uses.map((use) => ({ ...use, diagnostics: use.diagnostics.map(documented) })),
+		diagnostics: diagnostics.map(documented)
+	};
+}
+
 /** The output for a file that is not read at all (CG-03-08). */
 export function refused(diagnostic: Diagnostic): AnalysisOutput {
-	return { readable: false, objects: [], uses: [], diagnostics: [diagnostic] };
+	return documentedOutput({ readable: false, objects: [], uses: [], diagnostics: [diagnostic] });
 }
 
 type ObjectDeclaration = ts.VariableDeclaration & { readonly name: ts.Identifier; readonly initializer: ts.Expression };
@@ -161,7 +171,12 @@ export class Extraction {
 		};
 		visit(file);
 		const limit = decoder.exhausted ? [truncation(fileName)] : [];
-		return { readable, objects: objects.objects, uses: uses.uses, diagnostics: [...diagnostics, ...limit] };
+		return documentedOutput({
+			readable,
+			objects: objects.objects,
+			uses: uses.uses,
+			diagnostics: [...diagnostics, ...limit]
+		});
 	}
 }
 

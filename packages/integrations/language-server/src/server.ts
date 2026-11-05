@@ -1,7 +1,7 @@
 import { SettingsError, SourceChecker, type SourceFinding } from '@chartguard/source-checks';
 
 import { changedText } from './changes.js';
-import { actionsOf, diagnosticOf, fileNameOf, isChecked, type OpenDocument } from './documents.js';
+import { actionsOf, type ClientSupport, diagnosticOf, fileNameOf, isChecked, type OpenDocument } from './documents.js';
 import { framed, FramingError, MessageReader } from './framing.js';
 import { Lines, type Range } from './positions.js';
 import {
@@ -9,6 +9,7 @@ import {
 	ERRORS,
 	type InitializeParams,
 	isMessage,
+	linksOf,
 	type NotificationParams,
 	rootOf
 } from './protocol.js';
@@ -38,7 +39,7 @@ class Server {
 	private readonly reader = new MessageReader();
 	private checker: SourceChecker | undefined;
 	private root = process.cwd();
-	private annotations = false;
+	private client: ClientSupport = { annotations: false, links: false };
 	private state: 'new' | 'running' | 'shut down' | 'ended' = 'new';
 	/** The last setup problem said, so a problem every check meets is said once. */
 	private said: string | undefined;
@@ -115,7 +116,7 @@ class Server {
 
 	private initialize(params: InitializeParams): object {
 		this.root = rootOf(params) ?? this.root;
-		this.annotations = annotationsOf(params);
+		this.client = { annotations: annotationsOf(params), links: linksOf(params) };
 		this.checker = this.checkerFor(params.initializationOptions?.settings?.[PREFIX]);
 		this.state = 'running';
 		return {
@@ -227,7 +228,7 @@ class Server {
 		if (document === undefined || this.state !== 'running') return;
 		const checked = { ...document, findings: this.findingsOf(document) };
 		this.documents.set(uri, checked);
-		const diagnostics = checked.findings.map((finding) => diagnosticOf(checked, finding));
+		const diagnostics = checked.findings.map((finding) => diagnosticOf(checked, finding, this.client));
 		this.notify('textDocument/publishDiagnostics', { uri, version: document.version, diagnostics });
 	}
 
@@ -250,7 +251,7 @@ class Server {
 	private codeActions(params: Record<string, unknown>): object[] {
 		const { textDocument, range } = params as { textDocument?: { uri: string }; range?: Range };
 		const document = textDocument === undefined ? undefined : this.documents.get(textDocument.uri);
-		return document === undefined || range === undefined ? [] : actionsOf(document, range, this.annotations);
+		return document === undefined || range === undefined ? [] : actionsOf(document, range, this.client);
 	}
 
 	private say(message: string): void {

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import test, { after } from 'node:test';
 
+import { REFERENCE_URL, referenceUrl } from '@chartguard/core';
 import { RULE_CATALOG } from '@chartguard/quality-core';
 
 import { codeFromText } from '../../../scripts/tests/browser-guards.mjs';
@@ -11,7 +12,8 @@ import { documentedExports, parseSurface, publishedEntryPoints } from '../../../
 import { buildReference, ROOT } from '../scripts/build.mjs';
 import { CODES } from '../scripts/codes.mjs';
 import { emittedCodes } from '../scripts/emitted.mjs';
-import { markdown } from '../scripts/html.mjs';
+import { guideMarkdown, markdown } from '../scripts/html.mjs';
+import { GUIDES } from '../scripts/pages.mjs';
 
 /** The reference site (CG-06-07): built once from tracked sources, then read as a reader's browser would. */
 const outdir = mkdtempSync(join(tmpdir(), 'reference-'));
@@ -149,4 +151,47 @@ test('the browser script makes no code or markup from text, and every page allow
 		assert.match(html, /script-src 'self';/u, path);
 		assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)/u, path);
 	}
+});
+
+test('every code a package emits has the anchor its findings link to, on the site the Pages workflow deploys (CG-06-07)', async () => {
+	await built;
+	const anchors = new Set(attributes(readFileSync(join(outdir, 'codes.html'), 'utf8'), 'id').map(unescape));
+	const codes = [...emittedCodes(ROOT).keys(), ...RULE_CATALOG.map(({ code }) => code)];
+	const missing = codes.filter((code) => {
+		const url = new URL(referenceUrl(code));
+		return url.href !== `${REFERENCE_URL}codes.html${url.hash}` || !anchors.has(decodeURIComponent(url.hash.slice(1)));
+	});
+	assert.deepEqual(missing, []);
+	// The reference is the repository's Pages site, at `/reference/`, where the workflow puts it.
+	const repository = JSON.parse(readFileSync(join(ROOT, 'packages', 'core', 'package.json'), 'utf8')).repository.url;
+	const [, owner, name] = /github\.com\/([\w-]+)\/([\w.-]+?)(?:\.git)?$/u.exec(repository) ?? [];
+	assert.equal(REFERENCE_URL, `https://${owner}.github.io/${name}/reference/`);
+	const workflow = readFileSync(join(ROOT, '.github', 'workflows', 'pages.yml'), 'utf8');
+	assert.match(workflow, /cp -R apps\/reference\/dist\/web site\/reference\n/u);
+});
+
+test('the guides are pages of the site: in the navigation, searchable, their site links kept, a README link still text', async () => {
+	const site = await built;
+	assert.deepEqual(
+		site.guides.map(({ name }) => name),
+		GUIDES
+	);
+	for (const name of GUIDES) {
+		const html = readFileSync(join(outdir, 'guides', `${name}.html`), 'utf8');
+		assert.match(html, /<h1 id="[\w-]+">/u, name);
+		assert.match(html, /<a href="\.\.\/guides\/getting-started\.html">Guides<\/a>/u, name);
+	}
+	const start = readFileSync(join(outdir, 'guides', 'getting-started.html'), 'utf8');
+	assert.match(start, /<a href="\.\.\/codes\.html">codes page<\/a>/u);
+	const index = JSON.parse(readFileSync(join(outdir, 'search-index.json'), 'utf8'));
+	assert.deepEqual(
+		index.filter(({ kind }) => kind === 'guide').map(({ url }) => url),
+		GUIDES.map((name) => `guides/${name}.html`)
+	);
+	// A guide's relative link is a page of the site; anything else stays text, as in a README.
+	for (const href of ['../codes.html#CFG_TYPE', 'ci.html', '../../'])
+		assert.match(guideMarkdown.parse(`[x](${href})`), /<a href=/u, href);
+	for (const href of ['../README.md', 'javascript:alert(1)', '//example.com/a.html', '../../docs/x.md'])
+		assert.doesNotMatch(guideMarkdown.parse(`[x](${href})`), /<a href=/u, href);
+	assert.doesNotMatch(markdown.parse('[x](../codes.html)'), /<a href=/u);
 });

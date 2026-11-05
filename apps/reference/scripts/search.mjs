@@ -1,5 +1,5 @@
 import { CODES } from './codes.mjs';
-import { pageName } from './pages.mjs';
+import { pageName, titleOf } from './pages.mjs';
 
 /** Markdown reduced to words a search matches: no markup, one line. */
 const plain = (text) =>
@@ -13,10 +13,17 @@ const plain = (text) =>
 const summary = (text) => /^.*?[.!?](?:\s|$)/u.exec(plain(text))?.[0].trim() ?? plain(text).slice(0, 160);
 
 /**
- * What the search page finds (CG-06-07): every package, export, code and rule, with the page and
- * anchor it is on, a kind, a title, a summary and the words it matches.
+ * What the search page finds (CG-06-07): every guide, package, export, code and rule, with the page
+ * and anchor it is on, a kind, a title, a summary and the words it matches.
  */
-export function searchIndex({ packages, apis, rules }) {
+export function searchIndex({ guides, packages, apis, rules }) {
+	const guideEntries = guides.map(({ name, text }) => ({
+		kind: 'guide',
+		title: titleOf(text),
+		url: `guides/${name}.html`,
+		summary: summary(text.replace(/^# .+$/mu, '')),
+		text: plain(text)
+	}));
 	const packageEntries = packages.map(({ name, description, readme }) => ({
 		kind: 'package',
 		title: name,
@@ -47,5 +54,5 @@ export function searchIndex({ packages, apis, rules }) {
 		summary: `${id}: ${title}`,
 		text: plain(`${id} ${title} ${rationale}`)
 	}));
-	return [...codeEntries, ...ruleEntries, ...exportEntries, ...packageEntries];
+	return [...guideEntries, ...codeEntries, ...ruleEntries, ...exportEntries, ...packageEntries];
 }

@@ -55,14 +55,29 @@ export interface Diagnostic {
 	readonly severity: number;
 	readonly source: 'ChartGuard';
 	readonly code: SourceFinding['kind'];
+	/** Where the finding is explained: the editor links the code to it. */
+	readonly codeDescription?: { readonly href: string };
 	readonly message: string;
 }
 
-export const diagnosticOf = ({ lines }: OpenDocument, finding: SourceFinding): Diagnostic => ({
+/** What the client declared it supports, which decides the shape of what is sent to it. */
+export interface ClientSupport {
+	/** Change annotations in document changes: an edit that changes the drawing is confirmed first. */
+	readonly annotations: boolean;
+	/** `codeDescription` on a diagnostic: its code links to where the finding is explained. */
+	readonly links: boolean;
+}
+
+export const diagnosticOf = (
+	{ lines }: OpenDocument,
+	finding: SourceFinding,
+	{ links }: Pick<ClientSupport, 'links'>
+): Diagnostic => ({
 	range: lines.rangeOf(finding.start, finding.end),
 	severity: SEVERITY[finding.kind],
 	source: 'ChartGuard',
 	code: finding.kind,
+	...(links && finding.documentationUrl !== undefined ? { codeDescription: { href: finding.documentationUrl } } : {}),
 	message: finding.message
 });
 
@@ -89,11 +104,11 @@ function suggestedEdit(document: OpenDocument, edit: TextEdit, description: stri
 /**
  * The code actions for the findings in `range`: the runtime's own rename as a preferred quick fix;
  * an edit that changes the drawing as a quick fix never preferred, which the editor asks to confirm
- * where it can (`annotations`).
+ * where it can (`client.annotations`).
  */
-export function actionsOf(document: OpenDocument, range: Range, annotations: boolean): object[] {
+export function actionsOf(document: OpenDocument, range: Range, client: ClientSupport): object[] {
 	return document.findings.flatMap((finding) => {
-		const diagnostic = diagnosticOf(document, finding);
+		const diagnostic = diagnosticOf(document, finding, client);
 		if (!overlaps(range, diagnostic.range)) return [];
 		const { fix, suggestion } = finding;
 		const actions: object[] = [];
@@ -111,7 +126,7 @@ export function actionsOf(document: OpenDocument, range: Range, annotations: boo
 				kind: 'quickfix',
 				isPreferred: false,
 				diagnostics: [diagnostic],
-				edit: suggestedEdit(document, suggestion.edit, suggestion.description, annotations)
+				edit: suggestedEdit(document, suggestion.edit, suggestion.description, client.annotations)
 			});
 		return actions;
 	});

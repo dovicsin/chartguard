@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import plugin from '../dist/index.js';
@@ -110,4 +111,16 @@ test('TSX through typescript-eslint: a react-chartjs-2 element is a use', () => 
 		],
 		invalid: [{ code, filename: 'view.tsx', errors: [finding(TYPE, at(code, "'x'"))] }]
 	});
+});
+
+test("each rule's documentation is the reference page of its findings: the codes, or the quality rules (CG-06-07)", () => {
+	const reference = 'https://dovicsin.github.io/chartguard/reference/';
+	assert.deepEqual(
+		Object.entries(plugin.rules).map(([name, rule]) => [name, rule.meta.docs.url]),
+		[
+			['valid-config', `${reference}codes.html`],
+			['config-warnings', `${reference}codes.html`],
+			['chart-quality', `${reference}rules.html`]
+		]
+	);
 });

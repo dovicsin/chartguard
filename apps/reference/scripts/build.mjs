@@ -10,7 +10,18 @@ import { manifestsUnder } from '../../../tools/shared/workspace.mjs';
 import { collectExamples } from '../../playground/scripts/build.mjs';
 import { CODES, GROUPS } from './codes.mjs';
 import { emittedCodes } from './emitted.mjs';
-import { apiIndex, apiPage, codesPage, indexPage, packagePage, pageName, rulesPage, searchPage } from './pages.mjs';
+import {
+	apiIndex,
+	apiPage,
+	codesPage,
+	guidePage,
+	GUIDES,
+	indexPage,
+	packagePage,
+	pageName,
+	rulesPage,
+	searchPage
+} from './pages.mjs';
 import { searchIndex } from './search.mjs';
 
 const APP = fileURLToPath(new URL('..', import.meta.url));
@@ -58,6 +69,7 @@ export async function collect() {
 	);
 	return {
 		readme: readFileSync(join(ROOT, 'README.md'), 'utf8'),
+		guides: GUIDES.map((name) => ({ name, text: readFileSync(join(APP, 'guides', `${name}.md`), 'utf8') })),
 		packages: packagesOf(entryPoints),
 		apis,
 		emitted,
@@ -78,6 +90,7 @@ export async function buildReference(outdir = OUT) {
 	rmSync(outdir, { recursive: true, force: true });
 	cpSync(join(APP, 'static'), outdir, { recursive: true });
 	write(outdir, 'index.html', indexPage(site.readme, site.packages));
+	for (const guide of site.guides) write(outdir, `guides/${guide.name}.html`, guidePage(guide, site.guides));
 	for (const entry of site.packages) write(outdir, `packages/${pageName(entry.name)}.html`, packagePage(entry));
 	for (const { specifier, exports } of site.apis)
 		write(outdir, `api/${pageName(specifier)}.html`, apiPage(specifier, exports));
@@ -86,7 +99,7 @@ export async function buildReference(outdir = OUT) {
 		'api/index.html',
 		apiIndex(site.apis.map(({ specifier, exports }) => ({ specifier, count: exports.length })))
 	);
-	write(outdir, 'codes.html', codesPage(GROUPS, CODES, site.facts));
+	write(outdir, 'codes.html', codesPage(GROUPS, CODES, site.facts, site.rules));
 	write(outdir, 'rules.html', rulesPage(site.rules));
 	write(outdir, 'search.html', searchPage());
 	write(outdir, 'search-index.json', JSON.stringify(searchIndex(site)));

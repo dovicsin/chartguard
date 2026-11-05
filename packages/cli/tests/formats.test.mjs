@@ -54,6 +54,46 @@ test('validate --format sarif: every finding a result at the region of its value
 	assert.ok(['partial', 'full'].includes(properties.coverage));
 });
 
+test("a SARIF rule's help is its code's reference anchor; a page about one finding stays that result's (CG-06-07)", async (t) => {
+	// Two deprecations of one code, each with its own migration page: the rule's help was the first one's.
+	const config = { series: [{ type: 'pie', data: [1], label: { margin: 8 }, clockWise: false }] };
+	const root = sourceProject(t, { 'pie.json': JSON.stringify(config) });
+	const { out } = await run([
+		'validate',
+		'--library',
+		'echarts',
+		'--file',
+		join(root, 'pie.json'),
+		'--format',
+		'sarif'
+	]);
+	const { tool, results } = assertSarif(JSON.parse(out));
+	assert.deepEqual(tool.driver.rules, [
+		{ id: 'CFG_DEPRECATED', helpUri: 'https://dovicsin.github.io/chartguard/reference/codes.html#CFG_DEPRECATED' }
+	]);
+	const page = 'https://echarts.apache.org/en/option.html';
+	assert.deepEqual(
+		results.map(({ properties }) => [properties.path, properties.documentationUrl]),
+		[
+			['$.series[0].label.margin', `${page}#series-pie.label.edgeDistance`],
+			['$.series[0].clockWise', `${page}#series-pie.clockwise`]
+		]
+	);
+	// A finding explained by its code alone carries no page of its own.
+	const invalid = await run([
+		'validate',
+		'--library',
+		'chartjs',
+		'--file',
+		example('chartjs-invalid.json'),
+		'--format',
+		'sarif'
+	]);
+	const run0 = assertSarif(JSON.parse(invalid.out));
+	assert.ok(run0.results.every(({ properties }) => properties.documentationUrl === undefined));
+	assert.ok(run0.tool.driver.rules.every(({ id, helpUri }) => helpUri.endsWith(`codes.html#${id}`)));
+});
+
 test('a region spans the value it is about, its end column exclusive', async (t) => {
 	const root = sourceProject(t, { 'typo.json': '{\n  "xAxis": { "type": "catgory" },\n  "yAxis": {}\n}' });
 	const { out } = await run([

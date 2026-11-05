@@ -21,6 +21,7 @@ export interface InitializeParams {
 	readonly rootUri?: string | null;
 	readonly workspaceFolders?: readonly { readonly uri: string }[] | null;
 	readonly capabilities?: {
+		readonly textDocument?: { readonly publishDiagnostics?: { readonly codeDescriptionSupport?: boolean } };
 		readonly workspace?: {
 			readonly workspaceEdit?: { readonly documentChanges?: boolean; readonly changeAnnotationSupport?: object };
 		};
@@ -54,6 +55,11 @@ export function rootOf({ workspaceFolders, rootUri }: InitializeParams): string 
 export function annotationsOf({ capabilities }: InitializeParams): boolean {
 	const edits = capabilities?.workspace?.workspaceEdit;
 	return edits?.documentChanges === true && edits.changeAnnotationSupport !== undefined;
+}
+
+/** Whether the client links a diagnostic's code to its `codeDescription` (LSP 3.16). */
+export function linksOf({ capabilities }: InitializeParams): boolean {
+	return capabilities?.textDocument?.publishDiagnostics?.codeDescriptionSupport === true;
 }
 
 export const isMessage = (value: unknown): value is Message =>

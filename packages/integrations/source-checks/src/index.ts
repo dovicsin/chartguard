@@ -4,5 +4,5 @@
  */
 export { SourceChecker } from './check.js';
 export type { TextEdit } from './edits.js';
-export type { FindingKind, SourceFinding } from './findings.js';
+export { type FindingKind, KIND_DOCUMENTATION, type SourceFinding } from './findings.js';
 export { type ChartGuardSettings, SettingsError } from './settings.js';

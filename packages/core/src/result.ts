@@ -1,4 +1,5 @@
 import type { Coverage, Diagnostic, ValidationResult, ValidationStatus } from './diagnostic.js';
+import { documented } from './reference.js';
 
 /** Whether the finding is a confirmed error: severity `error`, whatever its code. */
 export function isConfirmedError(diagnostic: Diagnostic): boolean {
@@ -20,7 +21,10 @@ function statusOf(coverage: Coverage, diagnostics: readonly Diagnostic[]): Valid
 	return 'valid';
 }
 
-/** The only place that derives `valid` and `status`; callers never assemble a result by hand. */
+/**
+ * The only place that derives `valid` and `status`; callers never assemble a result by hand. Every
+ * finding leaves it with a `documentationUrl`.
+ */
 export function result(
 	library: string,
 	schemaVersion: string,
@@ -28,5 +32,12 @@ export function result(
 	diagnostics: Diagnostic[]
 ): ValidationResult {
 	const status = statusOf(coverage, diagnostics);
-	return { valid: status !== 'invalid', status, library, schemaVersion, coverage, diagnostics };
+	return {
+		valid: status !== 'invalid',
+		status,
+		library,
+		schemaVersion,
+		coverage,
+		diagnostics: diagnostics.map(documented)
+	};
 }

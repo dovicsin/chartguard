@@ -53,6 +53,10 @@ export interface Diagnostic {
 	path: string;
 	ruleId?: string;
 	suggestion?: string;
+	/**
+	 * Where the finding is explained: its code's anchor in the published reference, or a page the
+	 * adapter names for it (a deprecation's migration). Present on every finding of a result or report.
+	 */
 	documentationUrl?: string;
 	/**
 	 * `rename-key`: present only when applying it cannot change what the runtime does, so a tool may

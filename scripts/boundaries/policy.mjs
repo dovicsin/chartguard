@@ -88,7 +88,10 @@ export const POLICY = {
 		// typescript: the source a user runs in the sandbox is transpiled in the page (CG-06-06 part 4).
 		external: [...CHART_RUNTIMES.chartjs, ...CHART_RUNTIMES.echarts, 'date-fns', 'fflate', 'typescript']
 	}),
-	/** The reference site's generator (CG-06-07): build-time scripts that read the packages' catalogs. */
-	'@chartguard/reference': rule({ internal: [QUALITY_CORE], external: ['marked', 'typescript'] }),
+	/**
+	 * The reference site's generator (CG-06-07): build-time scripts that read the packages' catalogs,
+	 * and core's `referenceUrl`, the URL every finding links to, which the site must have an anchor for.
+	 */
+	'@chartguard/reference': rule({ internal: [CORE, QUALITY_CORE], external: ['marked', 'typescript'] }),
 	...Object.fromEntries(LIBRARIES.flatMap(libraryRules))
 };

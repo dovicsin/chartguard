@@ -67,7 +67,8 @@ test('a let or var object is reported with its binding and is never complete', (
 			confidence: 'unknown',
 			file: 'a.ts',
 			line: 1,
-			column: 5
+			column: 5,
+			documentationUrl: 'https://dovicsin.github.io/chartguard/reference/codes.html#CFG_REASSIGNABLE'
 		},
 		{
 			code: 'CFG_MUTATED',
@@ -77,7 +78,8 @@ test('a let or var object is reported with its binding and is never complete', (
 			confidence: 'unknown',
 			file: 'a.ts',
 			line: 2,
-			column: 1
+			column: 1,
+			documentationUrl: 'https://dovicsin.github.io/chartguard/reference/codes.html#CFG_MUTATED'
 		}
 	]);
 	assert.deepEqual(plain(named('var config = { foo: 1 };').value), { foo: 1 });

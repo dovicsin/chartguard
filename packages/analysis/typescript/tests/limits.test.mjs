@@ -124,3 +124,21 @@ test('the bracket count follows template substitutions and regular expressions: 
 	for (const source of ['}`${', '`${a}}}}`', '${', '/[(/', '`${`${`${'])
 		assert.equal(typeof extractStaticConfigs(source).readable, 'boolean');
 });
+
+test('every finding of an analysis links to its code in the reference: a refusal, a syntax error, an object, a use (CG-06-07)', () => {
+	const reference = (code) => `https://dovicsin.github.io/chartguard/reference/codes.html#${code}`;
+	const links = (diagnostics) => diagnostics.map(({ code, documentationUrl }) => [code, documentationUrl]);
+	const large = extractStaticConfigs(`const config = { a: "${'x'.repeat(2_000_001)}" };`);
+	assert.deepEqual(links(large.diagnostics), [['CFG_TOO_LARGE', reference('CFG_TOO_LARGE')]]);
+	const broken = extractStaticConfigs("import { Chart } from 'chart.js';\nlet config = {;\nnew Chart(c, config);");
+	assert.ok(broken.diagnostics.length > 0);
+	for (const [code, url] of links(broken.diagnostics)) assert.equal(url, reference(code));
+	const used = extractStaticConfigs(
+		"import { Chart } from 'chart.js';\nlet config = { type: 'bar' };\nnew Chart(c, config);"
+	);
+	const [object] = used.objects;
+	const [use] = used.uses;
+	assert.deepEqual(links(object.diagnostics), [['CFG_REASSIGNABLE', reference('CFG_REASSIGNABLE')]]);
+	assert.ok(use.diagnostics.length > 0);
+	for (const [code, url] of links(use.diagnostics)) assert.equal(url, reference(code));
+});

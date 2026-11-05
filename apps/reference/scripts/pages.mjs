@@ -1,4 +1,4 @@
-import { escape, markdown, page } from './html.mjs';
+import { escape, guideMarkdown, markdown, page } from './html.mjs';
 
 /** A package or entry point's page name: `@chartguard/analysis-typescript/project` → `analysis-typescript-project`. */
 export const pageName = (specifier) => specifier.replace(/^@chartguard\//u, '').replaceAll('/', '-');
@@ -79,15 +79,25 @@ function codeSection({ code, title, meaning, action }, { packages, examples }) {
 </section>`;
 }
 
-/** Every `CFG_*` code by group: meaning, what to do, the packages that emit it, examples that show it. */
-export function codesPage(groups, codes, facts) {
+/** A quality code: its title and where its rule is explained, so every code has an anchor on this page. */
+const qualitySection = ({ code, title, id }) => `<section class="code" id="${code}">
+	<h2><code>${code}</code> ${escape(title)}</h2>
+	<p>A finding of the quality review's <code>${escape(id)}</code> rule: advice about how the chart reads, never an error. <a href="rules.html#${code}">Why, its sources and its limits</a>.</p>
+</section>`;
+
+/**
+ * Every `CFG_*` code by group: meaning, what to do, the packages that emit it, examples that show it;
+ * then every quality code, pointing at its rule. A finding's `documentationUrl` is its code's anchor here.
+ */
+export function codesPage(groups, codes, facts, rules) {
 	const body = groups.map(({ id, title }) => {
 		const own = codes.filter(({ group }) => group === id);
 		return `<h2 class="group" id="${id}">${escape(title)}</h2>\n${own.map((entry) => codeSection(entry, facts.get(entry.code))).join('\n')}`;
 	});
+	body.push(`<h2 class="group" id="quality">Quality review</h2>\n${rules.map(qualitySection).join('\n')}`);
 	const intro = `<h1>Codes</h1>
 <p>Every finding has a code. A code says what kind of finding it is; its severity (error, warning, info) and confidence say how sure it is: an <em>error</em> is a confirmed problem the runtime rejects or misreads, a <em>warning</em> a likely one or a problem without a crash, <em>info</em> a note about what could not be checked. The quality review's codes (<code>VIS_*</code>) are on the <a href="rules.html">quality rules</a> page.</p>
-<p class="index">${codes.map(({ code }) => `<a href="#${code}"><code>${code}</code></a>`).join(' · ')}</p>`;
+<p class="index">${[...codes, ...rules].map(({ code }) => `<a href="#${code}"><code>${code}</code></a>`).join(' · ')}</p>`;
 	return page({ title: 'Codes', base: '', body: `${intro}\n${body.join('\n')}` });
 }
 
@@ -129,6 +139,22 @@ export function indexPage(readme, packages) {
 		.join('\n');
 	const body = `${markdown.parse(readme)}\n<h2 id="packages">Packages</h2>\n<ul class="packages">${list}</ul>`;
 	return page({ title: 'Overview', base: '', body });
+}
+
+/** The guides' order and the page each is written to (`guides/<name>.html`). */
+export const GUIDES = ['getting-started', 'ci', 'editors'];
+
+/** The title of a Markdown text: its first level-one heading. */
+export const titleOf = (text) => /^# (.+)$/mu.exec(text)?.[1] ?? '';
+
+/** A guide: its Markdown, with links to the site's pages, and the other guides after it. */
+export function guidePage({ name, text }, guides) {
+	const others = guides
+		.filter((guide) => guide.name !== name)
+		.map((guide) => `<li><a href="${guide.name}.html">${escape(titleOf(guide.text))}</a></li>`)
+		.join('');
+	const body = `${guideMarkdown.parse(text)}\n<h2 id="other-guides">Other guides</h2>\n<ul>${others}</ul>`;
+	return page({ title: titleOf(text), base: '../', body });
 }
 
 /** The search page: a field and the results its script lists from `search-index.json`. */

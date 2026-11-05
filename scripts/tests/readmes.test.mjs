@@ -13,7 +13,7 @@ import ts from 'typescript';
  */
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 
-/** Every package README below `packages/`, and the repository's own public documents. */
+/** Every package README below `packages/`, the reference's guides, and the repository's own public documents. */
 function publicDocuments() {
 	const readmes = [];
 	const visit = (directory) => {
@@ -24,7 +24,15 @@ function publicDocuments() {
 		}
 	};
 	visit(join(ROOT, 'packages'));
-	return [...['README.md', 'CONTRIBUTING.md', 'SECURITY.md'].map((name) => join(ROOT, name)), ...readmes.sort()];
+	const guides = join(ROOT, 'apps', 'reference', 'guides');
+	const guideFiles = readdirSync(guides)
+		.filter((name) => name.endsWith('.md'))
+		.map((name) => join(guides, name));
+	return [
+		...['README.md', 'CONTRIBUTING.md', 'SECURITY.md'].map((name) => join(ROOT, name)),
+		...readmes.sort(),
+		...guideFiles.sort()
+	];
 }
 
 /** A mention of the local `docs/` folder: a link target or a path (`../../docs/…`), never a URL's segment. */

@@ -25,10 +25,13 @@ function diagnosticsWhen(uri, ready) {
 	});
 }
 
+/** A diagnostic's kind: VS Code holds a code with a link to its explanation as `{ value, target }`. */
+const kindOf = ({ code }) => (typeof code === 'object' ? code.value : code);
+
 /** The kinds of the validator's findings; quality findings (advisory) are checked apart. */
 const codes = (diagnostics) =>
 	diagnostics
-		.map(({ code }) => code)
+		.map(kindOf)
 		.filter((code) => code !== 'chart-quality')
 		.sort();
 
@@ -39,18 +42,20 @@ async function shownProblems() {
 	await vscode.window.showTextDocument(document);
 	const found = await diagnosticsWhen(document.uri, (list) => codes(list).length >= 2);
 	assert.deepEqual(codes(found), ['config-warnings', 'valid-config']);
-	const quality = found.filter(({ code }) => code === 'chart-quality');
+	const quality = found.filter((diagnostic) => kindOf(diagnostic) === 'chart-quality');
 	assert.ok(quality.length > 0);
 	for (const { severity } of quality) assert.equal(severity, vscode.DiagnosticSeverity.Information);
-	const wrong = found.find(({ code }) => code === 'valid-config');
+	const wrong = found.find((diagnostic) => kindOf(diagnostic) === 'valid-config');
 	assert.equal(document.getText(wrong.range), "'x'");
+	// The code links to where the finding is explained (CG-06-07).
+	assert.equal(wrong.code.target.toString(true), 'https://dovicsin.github.io/chartguard/reference/codes.html#CFG_TYPE');
 	assert.equal(wrong.severity, vscode.DiagnosticSeverity.Error);
 	return { document, found };
 }
 
 /** The runtime's own rename, as a quick fix the editor applies. */
 async function quickFix(document, found) {
-	const deprecated = found.find(({ code }) => code === 'config-warnings');
+	const deprecated = found.find((diagnostic) => kindOf(diagnostic) === 'config-warnings');
 	const actions = await vscode.commands.executeCommand(
 		'vscode.executeCodeActionProvider',
 		document.uri,

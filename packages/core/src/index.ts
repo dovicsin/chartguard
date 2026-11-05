@@ -22,5 +22,6 @@ export { locateJsonKey, locateJsonPath, parseJsonSource } from './json-source.js
 export type { OwnProperty } from './object.js';
 export { isContainer, isRecord, ownDataProperty } from './object.js';
 export { keySegment, pathSegments } from './paths.js';
+export { documented, REFERENCE_URL, referenceUrl } from './reference.js';
 export { isConfirmedError, result } from './result.js';
 export { suggestion, type SuggestionBudget, suggestionBudget } from './suggestion.js';

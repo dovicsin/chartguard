@@ -111,6 +111,9 @@ interface QualityReport {
     readonly disabled: readonly string[];
 }
 
+### REFERENCE_URL
+REFERENCE_URL = "https://dovicsin.github.io/chartguard/reference/"
+
 ### RegistryContext
 interface RegistryContext {
     readonly names: readonly string[];
@@ -169,6 +172,9 @@ function applyFix(config: unknown, fix: Fix, path?: string): unknown;
 ### createValidateBeforeCreate
 function createValidateBeforeCreate(library: string, validate: ConfigValidator): ValidateBeforeCreate;
 
+### documented
+function documented(diagnostic: Diagnostic): Diagnostic;
+
 ### isConfirmedError
 function isConfirmedError(diagnostic: Diagnostic): boolean;
 
@@ -197,6 +203,9 @@ function parseJsonSource(text: string): JsonSource;
 
 ### pathSegments
 function pathSegments(path: string): (string | number)[] | undefined;
+
+### referenceUrl
+function referenceUrl(code: string): string;
 
 ### result
 function result(library: string, schemaVersion: string, coverage: Coverage, diagnostics: Diagnostic[]): ValidationResult;

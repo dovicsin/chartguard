@@ -93,6 +93,7 @@
 !/apps/playground/scripts/*.mjs
 !/apps/playground/tests/*.mjs
 !/apps/reference/package.json
+!/apps/reference/guides/*.md
 !/apps/reference/static/*
 !/apps/reference/scripts/*.mjs
 !/apps/reference/tests/*.mjs

@@ -1,4 +1,4 @@
-import { type Diagnostic, pathSegments, type QualityReport, type Suppression } from '@chartguard/core';
+import { type Diagnostic, documented, pathSegments, type QualityReport, type Suppression } from '@chartguard/core';
 
 import type { QualityRule, RuleInfo } from './catalog.js';
 import type { ChartSemantics } from './chart.js';
@@ -40,6 +40,7 @@ function suppression(rule: QualityRule, diagnostic: Diagnostic, settings: Settin
  * The rules' findings on the chart, as the caller's options shape them (CG-05-05): a rule `off`, or one
  * the ruleset leaves out (CG-06-02 part 4b), does not run; a level sets the severity of its findings; a finding the context meets, or a setting
  * ignores at its path, is kept in `suppressed` with why. Advisory only: no verdict, never an error.
+ * Every finding links to its code in the reference (`documentationUrl`).
  */
 export function review(chart: ChartSemantics, options?: QualityOptions): QualityReport {
 	const settings = checkQualityOptions(options, QUALITY_RULES);
@@ -54,7 +55,7 @@ export function review(chart: ChartSemantics, options?: QualityOptions): Quality
 			continue;
 		}
 		for (const finding of rule.check(seen)) {
-			const diagnostic = level === undefined ? finding : { ...finding, severity: level };
+			const diagnostic = documented(level === undefined ? finding : { ...finding, severity: level });
 			const why = suppression(rule, diagnostic, settings);
 			if (why === undefined) diagnostics.push(diagnostic);
 			else suppressed.push(why);
