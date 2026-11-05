@@ -5,9 +5,9 @@
 	"coverage": "partial",
 	"generator": {
 		"name": "@chartguard/schema-generator",
-		"version": "0.1.0"
+		"version": "0.1.1"
 	},
-	"digest": "sha256-e90a8f5047d294cca085809a9986e3ed6d7119a2b6e79ddfb423ce551496ca92",
+	"digest": "sha256-75174f7a234c07e5b654f36f2bf08c5f40211a844a15d838299cb170e0eb2d27",
 	"sources": {
 		"chartjs": {
 			"kind": "npm-package",

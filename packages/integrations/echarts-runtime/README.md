@@ -4,6 +4,10 @@ A safe `setOption` for Apache ECharts: the option is checked as the call will ap
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+```sh
+npm install @chartguard/runtime-echarts
+```
+
 ```ts
 import * as echarts from "echarts";
 import { setOption } from "@chartguard/runtime-echarts";

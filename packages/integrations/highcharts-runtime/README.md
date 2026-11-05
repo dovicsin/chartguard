@@ -4,6 +4,10 @@ Safe paths for creating and changing Highcharts charts: options are checked for 
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+```sh
+npm install @chartguard/runtime-highcharts
+```
+
 ```ts
 import Highcharts from "highcharts";
 import { createValidator } from "@chartguard/config-highcharts";

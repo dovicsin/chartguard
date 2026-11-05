@@ -3,6 +3,10 @@
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
 ```sh
+npm install --save-dev @chartguard/cli
+```
+
+```sh
 chartguard validate --library <chartjs|echarts|highcharts> --file 'charts/**/*.json' [--ignore '**/draft/**']
 chartguard analyze  --library <chartjs|echarts|highcharts> --file chart.ts [--name <variable>] [--project <tsconfig.json>] [--patterns <file.json>]
 chartguard quality  --library <chartjs|echarts|highcharts> --file config.json [--settings settings.json] [--ruleset misleads]

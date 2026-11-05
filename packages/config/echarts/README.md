@@ -4,6 +4,10 @@ Validator for Apache ECharts options, **generated** from the `echarts@6.1.0` Typ
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+```sh
+npm install @chartguard/config-echarts
+```
+
 ```ts
 import { validate } from '@chartguard/config-echarts';
 const result = validate(option);

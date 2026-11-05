@@ -1,6 +1,6 @@
 {
 	"name": "@chartguard/eslint-plugin",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "ESLint 9 plugin: chart configs handed to Chart.js, ECharts or Highcharts, checked in source (partial, CG-06-03)",
 	"type": "module",
 	"license": "MIT",
@@ -31,7 +31,7 @@
 		"test": "node --test tests/*.test.mjs"
 	},
 	"dependencies": {
-		"@chartguard/source-checks": "0.1.0"
+		"@chartguard/source-checks": "0.1.1"
 	},
 	"peerDependencies": {
 		"eslint": "^9.0.0"

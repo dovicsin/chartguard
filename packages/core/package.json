@@ -1,6 +1,6 @@
 {
 	"name": "@chartguard/core",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Shared diagnostics, statuses and runtime contracts",
 	"type": "module",
 	"license": "MIT",

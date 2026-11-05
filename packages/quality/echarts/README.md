@@ -4,6 +4,10 @@ Advisory quality review of Apache ECharts configs: it reads the chart the config
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+```sh
+npm install @chartguard/quality-echarts
+```
+
 ```ts
 import { analyze } from "@chartguard/quality-echarts";
 

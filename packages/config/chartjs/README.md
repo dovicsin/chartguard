@@ -4,6 +4,10 @@ Dependency-light validator for Chart.js, with a schema generated from the `chart
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+```sh
+npm install @chartguard/config-chartjs
+```
+
 ```ts
 import { validate } from "@chartguard/config-chartjs";
 const result = validate(config);

@@ -4,6 +4,10 @@ Three rules: `valid-config`, `config-warnings` and `chart-quality`.
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+```sh
+npm install --save-dev @chartguard/eslint-plugin
+```
+
 ```js
 // eslint.config.js
 import chartguard from '@chartguard/eslint-plugin';

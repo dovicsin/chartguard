@@ -4,6 +4,12 @@ Chart.js, ECharts and Highcharts configs in JavaScript and TypeScript, checked a
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+Install it from the Extensions view (search for ChartGuard and choose the pre-release), or:
+
+```sh
+code --install-extension chartguard.chartguard --pre-release
+```
+
 - **What is checked:** the configs a file hands to a chart library (`new Chart`, `setOption` on `echarts.init`, `Highcharts.chart`, the React wrappers, your own wrappers in `chartguard.patterns`), read without running anything.
 - **Problems:** values the runtime rejects or misreads (errors), unknown keys, deprecations and values without effect (warnings), and the quality review's advice (information: it depends on context). Each stands at the value it is about.
 - **Quick fixes:** the runtime's own renames (`clockWise` → `clockwise`) where the edit cannot change anything else. An edit that changes the drawing (bars that do not start at zero) is offered too, never preferred, and VS Code shows it for confirmation first.

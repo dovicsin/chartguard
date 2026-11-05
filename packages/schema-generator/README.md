@@ -4,6 +4,10 @@ Generates ChartGuard schema artifacts from a chart library's own published TypeS
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+```sh
+npm install --save-dev @chartguard/schema-generator
+```
+
 ChartGuard's Chart.js and ECharts adapters ship their schemas. The Highcharts schema cannot ship: the Highcharts license does not clear redistributing option metadata derived from it. Build it on your machine, from your own installed `highcharts`, under your own license:
 
 ```sh

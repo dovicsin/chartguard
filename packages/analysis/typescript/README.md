@@ -18,6 +18,10 @@ analysis.tsconfig; // the tsconfig used, if any
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+```sh
+npm install --save-dev @chartguard/analysis-typescript
+```
+
 ## Paths, several files, limits
 
 Every object and use has `paths`: for each path of its value, the source range that wrote it (in whichever file) or why it is unknown (`call`, `name`, `spread`, `choice`, `mutated`, `cycle`, `limit`, …); `rangeAt(paths, "$.options.responsive")` gives the range a finding is about.

@@ -4,6 +4,10 @@ The validation engine the library adapters (`@chartguard/config-chartjs`, `-echa
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+```sh
+npm install @chartguard/config-core
+```
+
 ```ts
 import { s } from "@chartguard/config-core";
 import { withExtensions } from "@chartguard/config-chartjs";

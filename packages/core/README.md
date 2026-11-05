@@ -6,6 +6,10 @@ Every ChartGuard package speaks the types defined here: a `Diagnostic` (code, se
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+```sh
+npm install @chartguard/core
+```
+
 ```ts
 import { Chart, type ChartConfiguration } from "chart.js";
 import { createValidateBeforeCreate, locateJsonPath, parseJsonSource } from "@chartguard/core";

@@ -4,6 +4,10 @@ Checks a Chart.js config when the chart is created and every time it is updated,
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+```sh
+npm install @chartguard/runtime-chartjs
+```
+
 ```ts
 import { Chart } from "chart.js";
 import { guard } from "@chartguard/runtime-chartjs";

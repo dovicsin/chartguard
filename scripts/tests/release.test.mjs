@@ -152,3 +152,23 @@ test('a version a package tells its host is its own: Changesets bumps the manife
 	assert.deepEqual(staleMeta("export const meta = { name: 'x', version: '0.1.0' };", '0.2.0'), ['x']);
 	assert.deepEqual(staleMeta("export const meta = { name: 'x', version: '0.2.0' };", '0.2.0'), []);
 });
+
+/** The command that installs `name` (`npm install [--save-dev] <name>`) in a `sh` block of a README. */
+const installsItself = (text, name) =>
+	[...text.matchAll(/```sh\n(?<body>[\s\S]*?)```/gu)].some(({ groups }) =>
+		(groups?.body ?? '')
+			.split('\n')
+			.some((line) => new RegExp(`^npm install (?:--save-dev )?${name.replace('/', '\\/')}$`, 'u').test(line))
+	);
+
+test('every published README shows how to install its package from npm (E90)', () => {
+	const missing = publishedPackages(ROOT)
+		.filter(({ path, manifest }) => !installsItself(readFileSync(join(path, 'README.md'), 'utf8'), manifest.name))
+		.map(({ manifest }) => manifest.name);
+	assert.deepEqual(missing, []);
+	assert.equal(installsItself('```sh\nnpm install @chartguard/core\n```\n', '@chartguard/core'), true);
+	assert.equal(installsItself('```sh\nnpm install --save-dev @chartguard/cli\n```\n', '@chartguard/cli'), true);
+	assert.equal(installsItself('```sh\nnpm install @chartguard/core\n```\n', '@chartguard/cli'), false);
+	assert.equal(installsItself('npm install @chartguard/core\n', '@chartguard/core'), false);
+	assert.equal(installsItself('```sh\nnpm install @chartguard/core-x\n```\n', '@chartguard/core'), false);
+});

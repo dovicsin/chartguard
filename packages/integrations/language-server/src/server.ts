@@ -15,7 +15,7 @@ import {
 } from './protocol.js';
 
 /** The server's name and version, as it tells the client in `initialize`. */
-export const meta = { name: 'chartguard-language-server', version: '0.1.0' };
+export const meta = { name: 'chartguard-language-server', version: '0.1.1' };
 
 /** Where the editor's settings are read: every problem in them is named so. */
 const PREFIX = 'chartguard';

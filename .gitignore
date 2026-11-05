@@ -68,6 +68,8 @@
 !/packages/**/NOTICE
 !/packages/**/LICENSE
 !/packages/**/THIRD-PARTY-NOTICES.txt
+# What each release changed, written by `npm run version-packages` (the repository's history; not packed).
+!/packages/**/CHANGELOG.md
 !/packages/**/tsconfig.json
 !/packages/**/src/**/*.ts
 !/packages/**/src/generated/*.json
@@ -93,6 +95,7 @@
 !/apps/playground/scripts/*.mjs
 !/apps/playground/tests/*.mjs
 !/apps/reference/package.json
+!/apps/*/CHANGELOG.md
 !/apps/reference/guides/*.md
 !/apps/reference/static/*
 !/apps/reference/scripts/*.mjs

@@ -11,7 +11,7 @@ import { analysisOf } from './analysis.js';
  * own renames as fixes), `chart-quality` the advisory quality warnings (with their verified edits as
  * suggestions, never applied without the user). Info findings are no claim.
  */
-export const meta = { name: '@chartguard/eslint-plugin', version: '0.1.0' };
+export const meta = { name: '@chartguard/eslint-plugin', version: '0.1.1' };
 
 /** ESLint's fixer for an edit: the checked text is ESLint's, so its offsets are ESLint's. */
 const fixer =

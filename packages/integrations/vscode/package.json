@@ -2,7 +2,7 @@
 	"name": "chartguard",
 	"displayName": "ChartGuard",
 	"description": "Chart.js, ECharts and Highcharts configs checked in JavaScript and TypeScript as you type, with the runtime's own renames as quick fixes",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"private": true,
 	"publisher": "chartguard",
 	"license": "MIT",
@@ -88,7 +88,7 @@
 		"package": "vsce package --no-dependencies"
 	},
 	"dependencies": {
-		"@chartguard/language-server": "0.1.0",
+		"@chartguard/language-server": "0.1.1",
 		"vscode-languageclient": "11.0.0"
 	},
 	"devDependencies": {

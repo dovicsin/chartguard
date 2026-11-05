@@ -4,6 +4,10 @@ Library-neutral chart semantics and the advisory quality rules that read them. T
 
 **Status:** pre-release (0.x). Coverage is partial, and the API and settings may still change between minor versions.
 
+```sh
+npm install @chartguard/quality-core
+```
+
 ## Facts
 
 Every fact is one of:

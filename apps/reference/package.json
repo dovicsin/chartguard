@@ -1,6 +1,6 @@
 {
 	"name": "@chartguard/reference",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"private": true,
 	"description": "The user and API reference site, generated from the packages' READMEs, declarations and catalogs",
 	"type": "module",
@@ -13,8 +13,8 @@
 		"test": "node --test tests/*.test.mjs"
 	},
 	"dependencies": {
-		"@chartguard/core": "0.1.0",
-		"@chartguard/quality-core": "0.1.0",
+		"@chartguard/core": "0.1.1",
+		"@chartguard/quality-core": "0.1.1",
 		"marked": "18.1.1",
 		"typescript": "^5.8.3"
 	}
